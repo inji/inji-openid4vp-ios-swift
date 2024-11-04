@@ -9,7 +9,11 @@ public struct ClientMetadata: Codable {
     
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.name = try container.decode(String.self, forKey: .name)
+        guard let name = try container.decodeIfPresent(String.self, forKey: .name) else {
+            Logger.error("ClientMetadata : name field should be present.")
+            throw AuthorizationRequestException.missingInput(fieldName: "client_metadata : name")
+        }
+        self.name = name
     }
     
     static func decodeAndValidateClientMetadata(clientMetadata: String) throws -> ClientMetadata {
@@ -28,7 +32,7 @@ public struct ClientMetadata: Codable {
         }
         
         guard !decodedClientMetadata.name.isEmpty else {
-            Logger.error("ClientMetadata: name should not be empty")
+            Logger.error("ClientMetadata : name field should not be empty")
             throw AuthorizationRequestException.invalidInput(fieldName: "client_metadata : name")
         }
         
