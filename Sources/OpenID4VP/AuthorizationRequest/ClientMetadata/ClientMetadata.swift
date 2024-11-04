@@ -14,11 +14,22 @@ public struct ClientMetadata: Codable {
     
     static func decodeAndValidateClientMetadata(clientMetadata: String) throws -> ClientMetadata {
         
-        let decodedClientMetadata = try JSONDecoder().decode(ClientMetadata.self, from: clientMetadata.data(using: .utf8)!)
+        guard let encodedData = clientMetadata.data(using: .utf8) else {
+            Logger.error("Failed to convert client_metadata string to UTF-8 data.")
+            throw AuthorizationRequestException.utf8Encoding(fieldName: "client_metadata")
+        }
+        
+        let decodedClientMetadata: ClientMetadata
+        do {
+            decodedClientMetadata = try JSONDecoder().decode(ClientMetadata.self, from: encodedData)
+        } catch {
+            Logger.error("Json Decoding of ClientMetadata failed due to this error: \(error).")
+            throw AuthorizationRequestException.jsonDecodingFailed
+        }
         
         guard !decodedClientMetadata.name.isEmpty else {
             Logger.error("ClientMetadata: name should not be empty")
-            throw AuthorizationRequestException.parameterValuesAreEmpty
+            throw AuthorizationRequestException.invalidInput(fieldName: "client_metadata : name")
         }
         
         return decodedClientMetadata
