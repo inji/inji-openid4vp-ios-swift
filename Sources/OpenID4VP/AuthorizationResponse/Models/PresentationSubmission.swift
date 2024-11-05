@@ -1,6 +1,6 @@
 struct DescriptorMap: Encodable{
     let id: String
-    let format: Format
+    let format: FormatType
     let path: String
 }
 

@@ -47,9 +47,6 @@ struct Fields: Codable {
             throw AuthorizationRequestException.invalidPresentationDefinition
         }
 
-
-
-        
         if let filter = filter {
             try filter.validate()
         }

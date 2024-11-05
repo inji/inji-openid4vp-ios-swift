@@ -1,19 +1,21 @@
 import Foundation
 
-struct PresentationDefinition: Decodable {
+public struct PresentationDefinition: Codable {
     let id: String
     let name: String?
     let purpose: String?
     let input_descriptors: [InputDescriptor]
+    let format: Format?
     
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case purpose
         case input_descriptors
+        case format
     }
     
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
@@ -31,6 +33,7 @@ struct PresentationDefinition: Decodable {
         self.input_descriptors = inputDescriptors
         self.name = try container.decodeIfPresent(String.self, forKey: .name)
         self.purpose = try container.decodeIfPresent(String.self, forKey: .purpose)
+        self.format = try container.decodeIfPresent(Format.self, forKey: .format)
         
         try validate()
     }
@@ -44,6 +47,10 @@ struct PresentationDefinition: Decodable {
         guard !input_descriptors.isEmpty else {
             Logger.error("PresentationDefinition : Input descriptor should not be empty.")
             throw AuthorizationRequestException.invalidInput(fieldName: "input descriptors")
+        }
+        
+        if let format = format {
+            try format.validate()
         }
         
         for descriptor in input_descriptors {

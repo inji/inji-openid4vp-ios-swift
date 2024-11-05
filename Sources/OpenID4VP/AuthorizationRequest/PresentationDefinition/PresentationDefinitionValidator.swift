@@ -7,8 +7,8 @@ struct PresentationDefinitionValidator {
         Logger.getLogTag(className: String(describing: self))
         
         guard let jsonData = presentatioDefinition.data(using: .utf8) else {
-            Logger.error("Json Decoding of presentationDefinition failed.")
-            throw AuthorizationRequestException.jsonDecodingFailed
+            Logger.error("Failed to convert presentation_definition string to UTF-8 data.")
+            throw AuthorizationRequestException.utf8Encoding(fieldName: "presentation_definition")
         }
         
         do {

@@ -1,10 +1,12 @@
-enum AuthorizationResponseException: Error {
+import Foundation
+
+enum AuthorizationResponseException: Error, LocalizedError {
     case credentialsMapIsEmpty
     case credentialsMapValueIsEmpty
     case jsonEncodingException(fieldName: String)
     case invalidURL
     
-    var localizedDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .jsonEncodingException(let fieldName):
             return "Error occurred while serializing \(fieldName)"

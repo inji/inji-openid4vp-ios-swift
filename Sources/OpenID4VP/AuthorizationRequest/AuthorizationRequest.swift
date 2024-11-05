@@ -7,16 +7,48 @@ extension Dictionary where Key == String, Value == String {
     }
 }
 
-public struct AuthorizationRequest {
+public struct AuthorizationRequest: Encodable {
     let clientId: String
-    let presentationDefinition: String?
+    var presentationDefinition: Any
     let responseType: String
     let responseMode: String
     let nonce: String
     let state: String
     let responseUri: String
+    var clientMetadata: Any?
     
-    static func getAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void) throws -> AuthorizationRequest {
+    enum CodingKeys: String, CodingKey {
+        case client_id
+        case presentation_definition
+        case response_type
+        case response_mode
+        case nonce
+        case state
+        case response_uri
+        case client_metadata
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(clientId, forKey: .client_id)
+        if let presentationDefString = presentationDefinition as? String {
+            try container.encode(presentationDefString, forKey: .presentation_definition)
+        } else if let presentationDefObject = presentationDefinition as? PresentationDefinition {
+            try container.encode(presentationDefObject, forKey: .presentation_definition)
+        }
+        try container.encode(responseType, forKey: .response_type)
+        try container.encode(responseMode, forKey: .response_mode)
+        try container.encode(nonce, forKey: .nonce)
+        try container.encode(state, forKey: .state)
+        try container.encode(responseUri, forKey: .response_uri)
+        if let clientMetadataString = clientMetadata as? String {
+            try container.encode(clientMetadataString, forKey: .client_metadata)
+        } else if let clientMetadataObject = clientMetadata as? ClientMetadata {
+            try container.encode(clientMetadataObject, forKey: .client_metadata)
+        }
+    }
+    
+    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void) throws -> AuthorizationRequest {
         
         Logger.getLogTag(className: String(describing: self))
         
@@ -58,14 +90,14 @@ public struct AuthorizationRequest {
         
         return AuthorizationRequest(
             clientId: params["client_id"]!,
-            presentationDefinition: params["presentation_definition"],
+            presentationDefinition: params["presentation_definition"]!,
             responseType: params["response_type"]!,
             responseMode: params["response_mode"]!,
             nonce: params["nonce"]!,
             state: params["state"]!,
-            responseUri: params["response_uri"]!
+            responseUri: params["response_uri"]!,
+            clientMetadata: params["client_metadata"]
         )
-        
     }
     
     private static func extractQueryParams(from queryItems: [URLQueryItem]) throws -> [String: String] {
@@ -84,26 +116,17 @@ public struct AuthorizationRequest {
     
     
     private static func validateQueryParams(_ values: [String: String], _ setResponseUri: (String) -> Void) throws {
+        
+        //Keep response_uri as first param in this list because if any other required param is not present then we need this response_uri to send error to the verifier
         var requiredKeys = [
+            "response_uri",
+            "presentation_definition",
             "client_id",
             "response_type",
             "response_mode",
             "nonce",
             "state",
-            "response_uri"
         ]
-        
-        var errorMessage: String
-        
-        let presentationDefinition = values["presentation_definition"]
-        
-        if (presentationDefinition != nil) {
-            requiredKeys.append("presentation_definition")
-        } else {
-            errorMessage = "presentation_definition request param must be present."
-            Logger.error(errorMessage)
-            throw AuthorizationRequestException.invalidQueryParams(message: errorMessage)
-        }
         
         for key in requiredKeys {
             if values[key] == nil  {
@@ -117,6 +140,10 @@ public struct AuthorizationRequest {
                 Logger.error("AuthorizationRequest parameter \(key) should not be null.")
                 throw AuthorizationRequestException.invalidInput(fieldName: key)
             }
+        }
+        
+        if values["client_metadata"] != nil {
+            requiredKeys.append("client_metadata")
         }
     }
 }

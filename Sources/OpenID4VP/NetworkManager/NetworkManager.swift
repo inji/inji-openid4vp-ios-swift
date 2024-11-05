@@ -5,7 +5,7 @@ public protocol NetworkManaging {
 }
 
 public struct NetworkManager: NetworkManaging {
-    static var shared = NetworkManager()
+    public static var shared = NetworkManager()
     
     public func sendHTTPPostRequest(requestBody: String, url: URL) async throws -> String? {
         

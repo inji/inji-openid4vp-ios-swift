@@ -80,7 +80,7 @@ This method will also notify the Verifier about the error by sending it to the r
 
 | Name                | Type             | Description                                                                                               | Sample                                            |
 |---------------------|------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------|
-| vpResponseMetadata      |  | Contains a VPResponseMetadata which has proof details such as  jws, signatureAlgorithm, publicKey, domain | `VPResponseMetadata(jws: "jws", signatureAlgorithm: "signatureAlgoType", publicKey: "publicKey", domain: "domain")`                            |
+| vpResponseMetadata      | VPResponseMetadata | Contains a VPResponseMetadata which has proof details such as  jws, signatureAlgorithm, publicKey, domain | `VPResponseMetadata(jws: "jws", signatureAlgorithm: "signatureAlgoType", publicKey: "publicKey", domain: "domain")`                            |
 
 
 ###### Exceptions
@@ -90,3 +90,24 @@ This method will also notify the Verifier about the error by sending it to the r
 3. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
+
+
+### sendErrorToVerifier
+- Receives an exception and sends it's message to the Verifier via a HTTP POST request.
+
+```
+ openID4VP.sendErrorToVerifier(error: Error)
+```
+
+###### Parameters
+
+| Name  | Type   | Description                   | Sample                                                                                |
+|-------|--------|-------------------------------|---------------------------------------------------------------------------------------|
+| error | Error  | Contains the exception object | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
+
+
+###### Exceptions
+
+1. InvalidResponse is thrown if there is no response or response is null.
+2. InterruptedIOException is thrown if the connection is timed out when network call is made.
+3. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.

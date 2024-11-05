@@ -1,9 +1,11 @@
-enum NetworkRequestException: Error {
+import Foundation
+
+enum NetworkRequestException: Error, LocalizedError {
     case invalidResponse
     case networkRequestFailed(message: String)
     case interruptedIOException
     
-    var localizedDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .networkRequestFailed(let message):
             return message

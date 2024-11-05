@@ -5,12 +5,14 @@ struct InputDescriptor: Codable {
     let name: String?
     let purpose: String?
     let constraints: Constraints
+    let format: Format?
     
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case purpose
         case constraints
+        case format
     }
     
     init(from decoder: Decoder) throws {
@@ -30,6 +32,8 @@ struct InputDescriptor: Codable {
         self.constraints = constraints
         self.name = try container.decodeIfPresent(String.self, forKey: .name)
         self.purpose = try container.decodeIfPresent(String.self, forKey: .purpose)
+        self.format = try container.decodeIfPresent(Format.self, forKey: .format)
+        
     }
     
     func validate() throws {
@@ -38,6 +42,7 @@ struct InputDescriptor: Codable {
             throw AuthorizationRequestException.invalidInput(fieldName: "id")
         }
         
+        try format?.validate()
         try constraints.validate()
     }
 }

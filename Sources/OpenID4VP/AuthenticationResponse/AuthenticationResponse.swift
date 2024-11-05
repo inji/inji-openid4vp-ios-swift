@@ -1,40 +1,30 @@
 import Foundation
 
 public struct AuthenticationResponse {
-    public let response: [String: String]
     
-    static func getAuthenticationResponse(_ authorizationRequest: AuthorizationRequest,_ trustedVerifierJSON: [Verifier], setPresentationDefinitionId: (String) -> Void) throws -> AuthenticationResponse {
+    static func validateAuthorizationRequestPartially(_ authorizationRequest: AuthorizationRequest,_ trustedVerifierJSON: [Verifier], updateAuthorizationRequest: (PresentationDefinition, ClientMetadata?) -> Void) throws {
         
         Logger.getLogTag(className: String(describing: self))
         
-        var responseDict: [String: String] = [:]
+        var clientMetadata: ClientMetadata?
         
-        try verifyClientId(verifierList: trustedVerifierJSON, clientId: authorizationRequest.clientId)
+        try validateVerifier(verifierList: trustedVerifierJSON, clientId: authorizationRequest.clientId, responseUri: authorizationRequest.responseUri)
         
-        if (authorizationRequest.presentationDefinition != nil) {
-            let presentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition:  authorizationRequest.presentationDefinition!)
-            
-            responseDict["presentation_definition"] = authorizationRequest.presentationDefinition
-            
-            setPresentationDefinitionId(presentationDefinition.id)
-            
+        let presentationDefinition: PresentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: authorizationRequest.presentationDefinition as! String)
+        
+        if let clientMeta = authorizationRequest.clientMetadata {
+            clientMetadata = try ClientMetadata.decodeAndValidateClientMetadata(clientMetadata: clientMeta as! String)
         }
-        return AuthenticationResponse(response: responseDict)
+        
+        updateAuthorizationRequest(presentationDefinition, clientMetadata)
     }
     
-    private static func verifyClientId(verifierList: [Verifier], clientId: String) throws {
+    private static func validateVerifier(verifierList: [Verifier], clientId receivedClientId: String, responseUri receivedResponseUri: String) throws {
         
-            for verifier in verifierList {
-                if verifier.clientId == clientId {
-                    guard !verifier.responseUris.isEmpty else {
-                        Logger.error("Response uri in verifier :\(verifier) is empty")
-                        throw VerifierVerificationException.responseUriIsEmpty
-                    }
-                    return
-                }
-            }
-        
-        Logger.error("Client id not found in \(verifierList)")
-        throw VerifierVerificationException.invalidVerifierClientID(message: "VP sharing failed: Verifier authentication was unsuccessful")
+        guard verifierList.contains(where: { $0.clientId == receivedClientId && $0.responseUris.contains(receivedResponseUri) }) else {
+            
+            Logger.error("Client ID \(receivedClientId) not found in verifier list: \(verifierList)")
+            throw VerifierVerificationException.invalidVerifierClientID(message: "VP sharing failed: Verifier authentication was unsuccessful")
+        }
     }
 }

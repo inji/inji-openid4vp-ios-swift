@@ -1,8 +1,10 @@
-enum VerifierVerificationException: Error {
+import Foundation
+
+enum VerifierVerificationException: Error, LocalizedError {
     case invalidVerifierClientID(message: String)
     case responseUriIsEmpty
     
-    var localizedDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .invalidVerifierClientID(let message):
             return message

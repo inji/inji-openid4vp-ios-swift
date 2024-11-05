@@ -1,10 +1,9 @@
 import Foundation
 
 public class OpenID4VP {
-    let traceabilityId: String
+    public let traceabilityId: String
     let networkManager: NetworkManaging
     var authorizationRequest: AuthorizationRequest?
-    private var presentationDefinitionId: String?
     private var responseUri: String?
 
     public init(traceabilityId: String, networkManager: NetworkManaging? = nil) {
@@ -12,25 +11,31 @@ public class OpenID4VP {
         self.networkManager = networkManager ?? NetworkManager.shared
     }
 
-    public func setPresentationDefinitionId(_ id: String) {
-        self.presentationDefinitionId = id
+    public func updateAuthorizationRequest(_ presentationDefinition: PresentationDefinition, _ clientMetadata: ClientMetadata?) {
+        self.authorizationRequest?.presentationDefinition = presentationDefinition as PresentationDefinition
+       
+        if let clientMetadata = clientMetadata {
+            self.authorizationRequest?.clientMetadata = clientMetadata
+        }
     }
 
-    public func setResponseUri(_ responseUri: String){
+    public func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
     }
 
-    public func authenticateVerifier(encodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier]) async throws -> AuthenticationResponse {
+    public func authenticateVerifier(encodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier]) async throws -> AuthorizationRequest {
 
         Logger.setLogTag(className:String(describing: type(of: self)), traceabilityId: traceabilityId)
 
         do {
-            authorizationRequest =  try AuthorizationRequest.getAuthorizationRequest(encodedAuthorizationRequest: encodedAuthorizationRequest, setResponseUri: setResponseUri)
-
-            return try AuthenticationResponse.getAuthenticationResponse(authorizationRequest!, trustedVerifierJSON, setPresentationDefinitionId: setPresentationDefinitionId)
+            authorizationRequest =  try AuthorizationRequest.validateAndGetAuthorizationRequest(encodedAuthorizationRequest: encodedAuthorizationRequest, setResponseUri: setResponseUri)
+            
+            try AuthenticationResponse.validateAuthorizationRequestPartially(authorizationRequest!, trustedVerifierJSON, updateAuthorizationRequest: updateAuthorizationRequest)
+            
+            return authorizationRequest!
 
         } catch(let exception) {
-            await sendErrorToResponseUri(error: exception, uri: responseUri ?? "")
+            await sendErrorToVerifier(error: exception)
             throw exception
         }
     }
@@ -43,18 +48,18 @@ public class OpenID4VP {
     public func shareVerifiablePresentation(vpResponseMetadata: VPResponseMetadata) async throws -> String? {
 
         do {
-            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, responseUri: authorizationRequest!.responseUri,presentationDefinitionId: presentationDefinitionId!, networkManager: networkManager)
+            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, responseUri: authorizationRequest!.responseUri,presentationDefinitionId: (authorizationRequest?.presentationDefinition as! PresentationDefinition).id, networkManager: networkManager)
         } catch(let exception) {
-            await sendErrorToResponseUri(error: exception, uri: responseUri ?? "")
+            await sendErrorToVerifier(error: exception)
             throw exception
         }
     }
 
-    private func sendErrorToResponseUri(error: Error, uri: String) async {
+    public func sendErrorToVerifier(error: Error) async {
 
         Logger.getLogTag(className: String(describing: type(of: self)))
 
-        guard let url = URL(string: uri) else { return }
+        guard let url = URL(string: responseUri!) else { return }
 
         let errorInfo = """
         {

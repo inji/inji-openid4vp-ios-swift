@@ -19,13 +19,11 @@ struct Constraints: Codable {
     }
     
     func validate() throws {
-        guard let fields = fields, !fields.isEmpty else {
-            Logger.error("Constraints : Fields should not be empty.")
-            throw AuthorizationRequestException.invalidPresentationDefinition
-        }
         
-        for field in fields {
-            try field.validate()
+        if let fields = fields {
+            for field in fields {
+                try field.validate()
+            }
         }
         
         if let limitDisclosure = limitDisclosure {
