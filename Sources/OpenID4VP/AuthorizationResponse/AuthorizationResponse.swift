@@ -65,13 +65,15 @@ struct AuthorizationResponse{
             throw AuthorizationResponseException.jsonEncodingException(fieldName: "presentationSubmission")
         }
         
-        let requestBody = """
-        {
-            "vp_token": \(encodedVPTokenData),
-            "presentation_submission": \(encodedPresentationSubmissionData)
-            "state": \(state)
-        }
-        """
+        var bodyComponents = [URLQueryItem]()
+        bodyComponents.append(URLQueryItem(name: "vp_token", value: encodedVPTokenData))
+        bodyComponents.append(URLQueryItem(name: "presentation_submission", value: encodedPresentationSubmissionData))
+        bodyComponents.append(URLQueryItem(name: "state", value: state))
+        
+        var urlComponents = URLComponents()
+        urlComponents.queryItems = bodyComponents
+
+        let requestBody = urlComponents.percentEncodedQuery!
         
         guard let url = URL(string: responseUri) else {
             Logger.error("Invalid response uri.")
