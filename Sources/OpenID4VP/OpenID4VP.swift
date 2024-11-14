@@ -48,7 +48,7 @@ public class OpenID4VP {
     public func shareVerifiablePresentation(vpResponseMetadata: VPResponseMetadata) async throws -> String? {
 
         do {
-            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, responseUri: authorizationRequest!.responseUri,presentationDefinitionId: (authorizationRequest?.presentationDefinition as! PresentationDefinition).id, networkManager: networkManager)
+            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, state: authorizationRequest!.state, responseUri: authorizationRequest!.responseUri,presentationDefinitionId: (authorizationRequest?.presentationDefinition as! PresentationDefinition).id, networkManager: networkManager)
         } catch(let exception) {
             await sendErrorToVerifier(error: exception)
             throw exception

@@ -40,7 +40,7 @@ struct AuthorizationResponse{
         }
     }
     
-    static func shareVp(vpResponseMetadata: VPResponseMetadata, nonce: String, responseUri: String, presentationDefinitionId: String, networkManager: NetworkManaging) async throws -> String? {
+    static func shareVp(vpResponseMetadata: VPResponseMetadata, nonce: String, state: String, responseUri: String, presentationDefinitionId: String, networkManager: NetworkManaging) async throws -> String? {
         
         try vpResponseMetadata.validate()
         
@@ -50,10 +50,10 @@ struct AuthorizationResponse{
         
         let vpToken = VpToken.constructVpToken(signingVPToken: vpTokenForSigning!, proof: proof)
         
-        return try await constructHttpRequestBody(vpToken: vpToken, presentationSubmission: presentationSubmission, responseUri: responseUri, networkManager: networkManager)
+        return try await constructHttpRequestBody(vpToken: vpToken, presentationSubmission: presentationSubmission, responseUri: responseUri, state: state, networkManager: networkManager)
     }
     
-    private static func constructHttpRequestBody(vpToken: VpToken, presentationSubmission: PresentationSubmission, responseUri: String, networkManager: NetworkManaging = NetworkManager.shared) async throws -> String? {
+    private static func constructHttpRequestBody(vpToken: VpToken, presentationSubmission: PresentationSubmission, responseUri: String, state: String, networkManager: NetworkManaging = NetworkManager.shared) async throws -> String? {
         
         guard let encodedVPTokenData = try? encodeToJsonString(vpToken) else {
             Logger.error("Vp token encoding failed.")
@@ -65,12 +65,15 @@ struct AuthorizationResponse{
             throw AuthorizationResponseException.jsonEncodingException(fieldName: "presentationSubmission")
         }
         
-        let requestBody = """
-        {
-            "vp_token": \(encodedVPTokenData),
-            "presentation_submission": \(encodedPresentationSubmissionData)
-        }
-        """
+        var bodyComponents = [URLQueryItem]()
+        bodyComponents.append(URLQueryItem(name: "vp_token", value: encodedVPTokenData))
+        bodyComponents.append(URLQueryItem(name: "presentation_submission", value: encodedPresentationSubmissionData))
+        bodyComponents.append(URLQueryItem(name: "state", value: state))
+        
+        var urlComponents = URLComponents()
+        urlComponents.queryItems = bodyComponents
+
+        let requestBody = urlComponents.percentEncodedQuery!
         
         guard let url = URL(string: responseUri) else {
             Logger.error("Invalid response uri.")
