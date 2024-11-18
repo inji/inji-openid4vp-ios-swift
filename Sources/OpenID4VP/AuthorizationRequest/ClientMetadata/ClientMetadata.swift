@@ -2,9 +2,11 @@ import Foundation
 
 public struct ClientMetadata: Codable {
     let name: String
+    let logo_url: String?
     
     enum CodingKeys: String, CodingKey {
         case name
+        case logo_url
     }
     
     public init(from decoder: any Decoder) throws {
@@ -14,6 +16,7 @@ public struct ClientMetadata: Codable {
             throw AuthorizationRequestException.missingInput(fieldName: "client_metadata : name")
         }
         self.name = name
+        self.logo_url = try container.decodeIfPresent(String.self, forKey: .logo_url)
     }
     
     static func decodeAndValidateClientMetadata(clientMetadata: String) throws -> ClientMetadata {
@@ -36,6 +39,12 @@ public struct ClientMetadata: Codable {
             throw AuthorizationRequestException.invalidInput(fieldName: "client_metadata : name")
         }
         
+        if(decodedClientMetadata.logo_url != nil){
+            guard decodedClientMetadata.logo_url!.isEmpty else {
+                Logger.error("ClientMetadata : logo_url should not be empty.")
+                throw AuthorizationRequestException.invalidInput(fieldName: "client_metadata : logo_url")
+            }
+        }
         return decodedClientMetadata
     }
 }
