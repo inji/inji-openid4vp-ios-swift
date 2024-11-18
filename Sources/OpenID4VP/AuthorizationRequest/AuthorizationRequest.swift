@@ -48,7 +48,7 @@ public struct AuthorizationRequest: Encodable {
         }
     }
     
-    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void) throws -> AuthorizationRequest {
+    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging) async throws -> AuthorizationRequest {
         
         Logger.getLogTag(className: String(describing: self))
         
@@ -68,11 +68,11 @@ public struct AuthorizationRequest: Encodable {
         
         let decodedRequest = "\(baseUrl)?\(decodedQuery)"
         
-        return try parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri)
+        return try await parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri, networkManager: networkManager)
         
     }
     
-    private static func parseAuthorizationRequest(decodedAuthorizationRequest: String, setResponseUri: (String) -> Void) throws -> AuthorizationRequest {
+    private static func parseAuthorizationRequest(decodedAuthorizationRequest: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging) async throws -> AuthorizationRequest {
         
         guard let encodedRequestUrl = urlEncodedRequest(decodedAuthorizationRequest) else {
             Logger.error("URLEncoding of the AuthorizationRequest failed while parsing.")
@@ -87,10 +87,10 @@ public struct AuthorizationRequest: Encodable {
         let params = try extractQueryParams(from: queryItems)
         
         try validateQueryParams(params,setResponseUri)
-        
+        let presentationDefinition = try await fetchPresentationDefinition(params: params, networkManager: networkManager)
         return AuthorizationRequest(
             clientId: params["client_id"]!,
-            presentationDefinition: params["presentation_definition"]!,
+            presentationDefinition: presentationDefinition,
             responseType: params["response_type"]!,
             responseMode: params["response_mode"]!,
             nonce: params["nonce"]!,
@@ -112,6 +112,29 @@ public struct AuthorizationRequest: Encodable {
         }
         
         return extractedValues
+    }
+    
+    private static func fetchPresentationDefinition(params: [String: String], networkManager: NetworkManaging) async throws -> String{
+        let exception: Error
+        let hasPresentationDefinition = params["presentation_definition"] != nil
+        let hasPresentationDefinitionUri = params["presentation_definition_uri"] != nil
+        let presentationDefinition: String
+        
+        if hasPresentationDefinition && hasPresentationDefinitionUri {
+            exception = AuthorizationRequestException.invalidQueryParams(message: "Either presentation_definition or presentation_definition_uri request param can be provided but not both")
+            Logger.error(exception.localizedDescription)
+            throw exception
+        }else if(hasPresentationDefinition){
+            presentationDefinition = params["presentation_definition"]!
+        }else if(hasPresentationDefinitionUri){
+            guard let url = URL(string: params["presentation_definition_uri"]!) else { throw AuthorizationRequestException.urlCreationFailed }
+            presentationDefinition = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, body: nil, headers: nil) ?? ""
+        }else {
+            exception = AuthorizationRequestException.invalidQueryParams(message: "Either presentation_definition or presentation_definition_uri request param must be present")
+            Logger.error(exception.localizedDescription)
+            throw exception
+        }
+        return presentationDefinition
     }
     
     

@@ -80,6 +80,6 @@ struct AuthorizationResponse{
             throw AuthorizationResponseException.invalidURL
         }
         
-        return try await networkManager.sendHTTPPostRequest(requestBody: requestBody, url: url)
+        return try await networkManager.sendHTTPRequest(url: url,method: HTTP_METHOD.POST, body: requestBody, headers: ["Content_Type" : "application/x-www-form-urlencoded"])
     }
 }
