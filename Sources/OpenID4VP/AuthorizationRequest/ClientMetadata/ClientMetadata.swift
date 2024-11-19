@@ -3,6 +3,7 @@ import Foundation
 public struct ClientMetadata: Codable {
     let name: String
     let logo_url: String?
+    static let className = String(describing: PresentationDefinitionValidator.self)
     
     enum CodingKeys: String, CodingKey {
         case name
@@ -12,8 +13,7 @@ public struct ClientMetadata: Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         guard let name = try container.decodeIfPresent(String.self, forKey: .name) else {
-            Logger.error("ClientMetadata : name field should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "client_metadata : name")
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["client_metadata","name"], className: ClientMetadata.className)
         }
         self.name = name
         self.logo_url = try container.decodeIfPresent(String.self, forKey: .logo_url)
@@ -22,27 +22,23 @@ public struct ClientMetadata: Codable {
     static func decodeAndValidateClientMetadata(clientMetadata: String) throws -> ClientMetadata {
         
         guard let encodedData = clientMetadata.data(using: .utf8) else {
-            Logger.error("Failed to convert client_metadata string to UTF-8 data.")
-            throw AuthorizationRequestException.utf8Encoding(fieldName: "client_metadata")
+            throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: ["client_metadata"], className: ClientMetadata.className)
         }
         
         let decodedClientMetadata: ClientMetadata
         do {
             decodedClientMetadata = try JSONDecoder().decode(ClientMetadata.self, from: encodedData)
         } catch {
-            Logger.error("Json Decoding of ClientMetadata failed due to this error: \(error).")
-            throw AuthorizationRequestException.jsonDecodingFailed
+            throw error
         }
         
-        guard !decodedClientMetadata.name.isEmpty else {
-            Logger.error("ClientMetadata : name field should not be empty")
-            throw AuthorizationRequestException.invalidInput(fieldName: "client_metadata : name")
+        guard isNeitherNullNorEmpty(field: decodedClientMetadata.name) else {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata","name"], className: ClientMetadata.className)
         }
         
         if(decodedClientMetadata.logo_url != nil){
-            guard decodedClientMetadata.logo_url!.isEmpty else {
-                Logger.error("ClientMetadata : logo_url should not be empty.")
-                throw AuthorizationRequestException.invalidInput(fieldName: "client_metadata : logo_url")
+            guard isNeitherNullNorEmpty(field: decodedClientMetadata.logo_url!) else {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata","logo_url"], className: ClientMetadata.className)
             }
         }
         return decodedClientMetadata

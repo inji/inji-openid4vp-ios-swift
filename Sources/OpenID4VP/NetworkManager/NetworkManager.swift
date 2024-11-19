@@ -6,11 +6,9 @@ public protocol NetworkManaging {
 
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
+    static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
     
     public func sendHTTPRequest(url: URL, method: HTTP_METHOD, body: String?, headers: [String: String]?) async throws -> String? {
-        
-        Logger.getLogTag(className: String(describing: self))
-        
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         
@@ -22,26 +20,30 @@ public struct NetworkManager: NetworkManaging {
             ()
         }
         
+        var exception: Error
         do {
             let (_, response) = try await URLSession.shared.data(for: request)
-            
             guard let httpResponse = response as? HTTPURLResponse else {
-                Logger.error("Invalid response received.")
-                throw NetworkRequestException.invalidResponse
+                exception = NetworkRequestException.invalidResponse(message: "Invalid response received")
+                Logger.error(NetworkManager.logTag, exception)
+                throw exception
             }
             
             if httpResponse.statusCode == 200 {
                 return "Success: Request completed successfully."
             } else {
-                Logger.error("Request failed with status code: \(httpResponse.statusCode)")
-                throw NetworkRequestException.networkRequestFailed(message: "Network Request failed with error response: \(httpResponse)")
+                exception = NetworkRequestException.networkRequestFailed(message: "\(httpResponse)")
+                Logger.error(NetworkManager.logTag, exception)
+                throw exception
             }
         } catch let error as URLError where error.code == .timedOut {
-            Logger.error("Network request timed out.")
-            throw NetworkRequestException.interruptedIOException
+            exception = NetworkRequestException.networkRequestTimeout
+            Logger.error(NetworkManager.logTag, exception)
+            throw exception
         } catch {
-            Logger.error("Network request failed due to unknown error: \(error.localizedDescription)")
-            throw NetworkRequestException.networkRequestFailed(message: error.localizedDescription)
+            exception = NetworkRequestException.networkRequestFailed(message: "\(error.localizedDescription)")
+            Logger.error(NetworkManager.logTag, exception)
+            throw exception
         }
     }
 }

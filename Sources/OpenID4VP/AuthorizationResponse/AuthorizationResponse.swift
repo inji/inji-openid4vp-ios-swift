@@ -3,25 +3,14 @@ import Foundation
 struct AuthorizationResponse{
     static var vpTokenForSigning: VpTokenForSigning?
     static var descriptorMap: [DescriptorMap]?
+    static let className = String(describing: AuthorizationResponse.self)
     
     static func constructVpForSigning(_ credentialsMap: [String: [String]]) throws -> String {
-        
-        Logger.getLogTag(className: String(describing: self))
-        
         var credentialsArray: [String] = []
         var descriptorsMap: [DescriptorMap] = []
         var path: Int = 0
         
-        guard !credentialsMap.isEmpty else {
-            Logger.error("Credential map is empty.")
-            throw AuthorizationResponseException.credentialsMapIsEmpty
-        }
-        
         for (key,values) in credentialsMap {
-            if values.isEmpty {
-                Logger.error("Value is empty for \(key) in credentialsMap.")
-                throw AuthorizationResponseException.credentialsMapValueIsEmpty
-            }
             for vc in values {
                 credentialsArray.append(vc)
                 descriptorsMap.append(DescriptorMap(id: key, format: .ldp_vc, path: "$.verifiableCredential[\(path)]"))
@@ -34,9 +23,8 @@ struct AuthorizationResponse{
         
         do {
            return try encodeToJsonString(self.vpTokenForSigning)!
-        } catch {
-            Logger.error("VpToken generation for signing failed.")
-            throw AuthorizationResponseException.jsonEncodingException(fieldName: "vpTokenForSigning")
+        } catch let error{
+            throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["vp_token_for_signing"], className: AuthorizationResponse.className)
         }
     }
     
@@ -54,15 +42,17 @@ struct AuthorizationResponse{
     }
     
     private static func constructHttpRequestBody(vpToken: VpToken, presentationSubmission: PresentationSubmission, responseUri: String, state: String, networkManager: NetworkManaging = NetworkManager.shared) async throws -> String? {
-        
-        guard let encodedVPTokenData = try? encodeToJsonString(vpToken) else {
-            Logger.error("Vp token encoding failed.")
-            throw AuthorizationResponseException.jsonEncodingException(fieldName: "vpToken")
+        let encodedVPTokenData: String,encodedPresentationSubmissionData: String
+        do {
+            encodedVPTokenData = try encodeToJsonString(vpToken)!
+        } catch let error{
+            throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["vp_token"], className: AuthorizationResponse.className)
         }
-        
-        guard let encodedPresentationSubmissionData = try? encodeToJsonString(presentationSubmission) else {
-            Logger.error("Presentation Submission encoding failed.")
-            throw AuthorizationResponseException.jsonEncodingException(fieldName: "presentationSubmission")
+    
+        do {
+            encodedPresentationSubmissionData = try encodeToJsonString(presentationSubmission)!
+        } catch let error{
+            throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["presentation_submission"], className: AuthorizationResponse.className)
         }
         
         var bodyComponents = [URLQueryItem]()
@@ -76,8 +66,7 @@ struct AuthorizationResponse{
         let requestBody = urlComponents.percentEncodedQuery!
         
         guard let url = URL(string: responseUri) else {
-            Logger.error("Invalid response uri.")
-            throw AuthorizationResponseException.invalidURL
+            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["response_uri"], className: AuthorizationResponse.className)
         }
         
         return try await networkManager.sendHTTPRequest(url: url,method: HTTP_METHOD.POST, body: requestBody, headers: ["Content_Type" : "application/x-www-form-urlencoded"])

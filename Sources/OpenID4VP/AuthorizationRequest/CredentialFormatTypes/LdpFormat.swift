@@ -2,6 +2,7 @@ import Foundation
 
 struct LdpFormat: Codable {
     let proofType: [String]
+    static let className = String(describing: LdpFormat.self)
     
     enum CodingKeys: String, CodingKey {
         case proofType = "proof_type"
@@ -9,8 +10,7 @@ struct LdpFormat: Codable {
     
     func validate() throws {
         guard !proofType.isEmpty else {
-            Logger.error("LdpFormat : proof_type should not be empty.")
-            throw AuthorizationRequestException.invalidInput(fieldName: "proof_type")
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["ldpFormat","proof_type"], className: LdpFormat.className)
         }
     }
     
