@@ -7,6 +7,7 @@ struct Fields: Codable {
     let purpose: String?
     let filter: Filter?
     let optional: Bool?
+    static let className = String(describing: PresentationDefinitionValidator.self)
     
     enum CodingKeys: String, CodingKey {
         case path
@@ -21,8 +22,7 @@ struct Fields: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         guard let path = try container.decodeIfPresent([String].self, forKey: .path) else {
-            Logger.error("Field : path should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "path")
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["fields","path"], className: Fields.className)
         }
         
         self.path = path
@@ -37,14 +37,12 @@ struct Fields: Codable {
     
     func validate() throws {
         guard !path.isEmpty else {
-            Logger.error("Field : path should not be empty.")
-            throw AuthorizationRequestException.invalidInput(fieldName: "path")
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["fields","path"], className: Fields.className)
         }
         
         let pathPrefixArray = ["$.","$["]
         if !path.allSatisfy({ p in pathPrefixArray.contains(where: { p.hasPrefix($0) }) }) {
-            Logger.error("Field : path is invalid.")
-            throw AuthorizationRequestException.invalidPresentationDefinition
+            throw Logger.handleException(exceptionType: "InvalidInputPattern", fieldPath: ["fields","path"], className: Fields.className)
         }
 
         if let filter = filter {

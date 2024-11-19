@@ -3,6 +3,7 @@ import Foundation
 struct Constraints: Codable {
     let fields: [Fields]?
     let limitDisclosure: LimitDisclosure?
+    static let className = String(describing: Constraints.self)
     
     enum CodingKeys: String, CodingKey {
         case fields
@@ -27,9 +28,12 @@ struct Constraints: Codable {
         }
         
         if let limitDisclosure = limitDisclosure {
+            guard isNeitherNullNorEmpty(field: limitDisclosure.rawValue) else {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["constraints","limit_disclosure"], className: Constraints.className)
+            }
+            
             guard limitDisclosure == .required || limitDisclosure == .preferred else {
-                Logger.error("Constraints : LimitDisclosure should be either 'required' or 'preferred'.")
-                throw AuthorizationRequestException.invalidInput(fieldName: "limit disclosure")
+                throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: Constraints.className)
             }
         }
     }

@@ -6,6 +6,7 @@ public struct PresentationDefinition: Codable {
     let purpose: String?
     let input_descriptors: [InputDescriptor]
     let format: Format?
+    static let className = String(describing: PresentationDefinitionValidator.self)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -20,13 +21,11 @@ public struct PresentationDefinition: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         guard let id = try container.decodeIfPresent(String.self, forKey: .id) else {
-            Logger.error("PresentationDefinition : Id should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "id")
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["presentation_definition","id"], className: PresentationDefinition.className)
         }
         
         guard let inputDescriptors = try container.decodeIfPresent([InputDescriptor].self, forKey: .input_descriptors) else {
-            Logger.error("PresentationDefinition : Input Descriptor should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "input descriptors")
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["presentation_definition","input_descriptors"], className: PresentationDefinition.className)
         }
         
         self.id = id
@@ -40,13 +39,11 @@ public struct PresentationDefinition: Codable {
     
     func validate() throws {
         guard !id.isEmpty else {
-            Logger.error("PresentationDefinition : Id should not be empty.")
-            throw AuthorizationRequestException.invalidInput(fieldName: "id")
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","id"], className: PresentationDefinition.className)
         }
         
         guard !input_descriptors.isEmpty else {
-            Logger.error("PresentationDefinition : Input descriptor should not be empty.")
-            throw AuthorizationRequestException.invalidInput(fieldName: "input descriptors")
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: PresentationDefinition.className)
         }
         
         if let format = format {

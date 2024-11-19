@@ -6,6 +6,7 @@ struct InputDescriptor: Codable {
     let purpose: String?
     let constraints: Constraints
     let format: Format?
+    static let className = String(describing: PresentationDefinitionValidator.self)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -19,13 +20,11 @@ struct InputDescriptor: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         guard let id = try container.decodeIfPresent(String.self, forKey: .id) else {
-            Logger.error("Input Descriptor : Id should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "id")
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
         }
         
         guard let constraints = try container.decodeIfPresent(Constraints.self, forKey: .constraints) else {
-            Logger.error("Input Descriptor : Constraints should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "constraints")
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["input_descriptor","constraints"], className: InputDescriptor.className)
         }
         
         self.id = id
@@ -38,8 +37,7 @@ struct InputDescriptor: Codable {
     
     func validate() throws {
         guard !id.isEmpty else {
-            Logger.error("Input Descriptor : Id should not be empty.")
-            throw AuthorizationRequestException.invalidInput(fieldName: "id")
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
         }
         
         try format?.validate()
