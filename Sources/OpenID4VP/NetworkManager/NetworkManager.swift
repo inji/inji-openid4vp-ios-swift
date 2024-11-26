@@ -12,30 +12,30 @@ public struct NetworkManager: NetworkManaging {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         
-        switch method {
-        case .POST:
-            request.setValue(headers?["Content-Type"], forHTTPHeaderField: "Content-Type")
-            request.httpBody = body?.data(using: .utf8)
-        case .GET:
-            ()
+        if let headers = headers {
+            for (key, value) in headers {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+        }
+        if method == .POST, let body = body {
+            request.httpBody = body.data(using: .utf8)
         }
         
         var exception: Error
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
                 exception = NetworkRequestException.invalidResponse(message: "Invalid response received")
                 Logger.error(NetworkManager.logTag, exception)
                 throw exception
             }
             
-            if httpResponse.statusCode == 200 {
-                return "Success: Request completed successfully."
-            } else {
-                exception = NetworkRequestException.networkRequestFailed(message: "\(httpResponse)")
+            guard let bodyString = String(data: data, encoding: .utf8), httpResponse.statusCode == 200 else {
+                let exception = NetworkRequestException.networkRequestFailed(message: "\(httpResponse)")
                 Logger.error(NetworkManager.logTag, exception)
                 throw exception
             }
+            return bodyString
         } catch let error as URLError where error.code == .timedOut {
             exception = NetworkRequestException.networkRequestTimeout
             Logger.error(NetworkManager.logTag, exception)
