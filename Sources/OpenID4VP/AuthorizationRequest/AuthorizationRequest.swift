@@ -79,13 +79,13 @@ public struct AuthorizationRequest: Encodable {
             throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Exception occurred when extracting the query params from Authorization Request", className: AuthorizationRequest.className)
         }
         
-        let params = try extractQueryParams(from: queryItems)
+        var params = try extractQueryParams(from: queryItems)
         
-        try validateQueryParams(params,setResponseUri)
-        let presentationDefinition = try await fetchPresentationDefinition(params: params, networkManager: networkManager)
+        params = try await validateQueryParams(params,setResponseUri,networkManager)
+    
         return AuthorizationRequest(
             clientId: params["client_id"]!,
-            presentationDefinition: presentationDefinition,
+            presentationDefinition: params["presentation_definition"]!,
             responseType: params["response_type"]!,
             responseMode: params["response_mode"]!,
             nonce: params["nonce"]!,
@@ -106,19 +106,38 @@ public struct AuthorizationRequest: Encodable {
     }
     
     private static func fetchPresentationDefinition(params: [String: String], networkManager: NetworkManaging) async throws -> String{
-        let hasPresentationDefinition = params["presentation_definition"] != nil
-        let hasPresentationDefinitionUri = params["presentation_definition_uri"] != nil
+        let hasPresentationDefinition = params.keys.contains("presentation_definition")
+        let hasPresentationDefinitionUri = params.keys.contains("presentation_definition_uri")
         let presentationDefinition: String
         
         if hasPresentationDefinition && hasPresentationDefinitionUri {
+            
             throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param can be provided but not both", className: AuthorizationRequest.className)
+            
         }else if(hasPresentationDefinition){
+            
+            if params["presentation_definition"] == nil  {
+                throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["presentation_definition"], className: AuthorizationRequest.className)
+            } else if !isNeitherNullNorEmpty(field: params["presentation_definition"]!) {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition"], className: AuthorizationRequest.className)
+            }
+            
             presentationDefinition = params["presentation_definition"]!
+            
         }else if(hasPresentationDefinitionUri){
+            
+            if params["presentation_definition_uri"] == nil  {
+                throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
+            } else if !isNeitherNullNorEmpty(field: params["presentation_definition_uri"]!) {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
+            }
+            
             guard let url = URL(string: params["presentation_definition_uri"]!) else {
                 throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
             }
+            
             presentationDefinition = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, body: nil, headers: nil) ?? ""
+            
         }else {
             throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param must be present", className: AuthorizationRequest.className)
         }
@@ -126,11 +145,18 @@ public struct AuthorizationRequest: Encodable {
     }
     
     
-    private static func validateQueryParams(_ values: [String: String], _ setResponseUri: (String) -> Void) throws {
+    private static func validateQueryParams(_ paramsToValidate: [String: String], _ setResponseUri: (String) -> Void, _ networkManager: NetworkManaging) async throws -> [String: String]{
         
-        //Keep response_uri as first param in this list because if any other required param is not present then we need this response_uri to send error to the verifier
+        var values = paramsToValidate
+        if values["response_uri"] == nil {
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["response_uri"], className: AuthorizationRequest.className)
+        } else if !isNeitherNullNorEmpty(field: values["response_uri"]!) {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["response_uri"], className: AuthorizationRequest.className)
+        } else {
+            setResponseUri(values["response_uri"]!)
+        }
+        
         var requiredKeys = [
-            "response_uri",
             "presentation_definition",
             "client_id",
             "response_type",
@@ -140,13 +166,13 @@ public struct AuthorizationRequest: Encodable {
         ]
         
         for key in requiredKeys {
+            if key == "presentation_definition" {
+                values[key] = try await fetchPresentationDefinition(params: values, networkManager: networkManager)
+            }
             if values[key] == nil  {
                 throw Logger.handleException(exceptionType: "MissingInput", fieldPath: [key], className: AuthorizationRequest.className)
             }
-            if key == "response_uri" {
-                setResponseUri(values["response_uri"]!)
-            }
-            if values[key] == "" || values[key] == "null" {
+            if !isNeitherNullNorEmpty(field: values[key]!) {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: [key], className: AuthorizationRequest.className)
             }
         }
@@ -154,5 +180,6 @@ public struct AuthorizationRequest: Encodable {
         if values["client_metadata"] != nil {
             requiredKeys.append("client_metadata")
         }
+        return values
     }
 }
