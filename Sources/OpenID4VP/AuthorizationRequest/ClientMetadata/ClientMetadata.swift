@@ -43,13 +43,13 @@ public struct ClientMetadata: Codable {
             throw error
         }
         
-        if let clientName = decodedClientMetadata.client_name {
+        if decodedClientMetadata.client_name != nil {
             guard isNeitherNullNorEmpty(field: decodedClientMetadata.client_name!) else {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata","client_name"], className: ClientMetadata.className)
             }
         }
         
-        if let logoUri = decodedClientMetadata.logo_uri {
+        if decodedClientMetadata.logo_uri != nil {
             guard isNeitherNullNorEmpty(field: decodedClientMetadata.logo_uri!) else {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata","logo_uri"], className: ClientMetadata.className)
             }
