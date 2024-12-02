@@ -3,6 +3,7 @@ public struct VPResponseMetadata {
     let signatureAlgorithm: String
     let publicKey: String
     let domain: String
+    static let className = String(describing: VPResponseMetadata.self)
     
     public init(jws: String, signatureAlgorithm: String, publicKey: String, domain: String) {
         self.jws = jws
@@ -21,7 +22,7 @@ public struct VPResponseMetadata {
         
         for (_, value) in requiredParams {
             if value.isEmpty || value == "null" {
-                throw AuthorizationRequestException.invalidInput(fieldName: "\(value)")
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["vp response metadata",value], className: VPResponseMetadata.className)
             }
         }
     }

@@ -2,6 +2,7 @@ import Foundation
 
 struct Format: Codable {
     let ldpVc: LdpFormat
+    static let className = String(describing: Format.self)
     
     enum CodingKeys: String, CodingKey {
         case ldpVc = "ldp_vc"
@@ -9,7 +10,13 @@ struct Format: Codable {
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.ldpVc = try container.decodeIfPresent(LdpFormat.self, forKey: .ldpVc)!
+        self.ldpVc = try container.decodeRequired(
+            LdpFormat.self,
+            forKey: .ldpVc,
+            fieldPath: ["format", "ldp_vc"],
+            className: Format.className,
+            isMandatory: true
+        )!
     }
     
     func validate() throws {

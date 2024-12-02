@@ -15,3 +15,34 @@ func getQueryItems(_ encodedUrl: URL) -> [URLQueryItem]? {
 }
 
 
+extension KeyedDecodingContainer {
+    func decodeRequired<T>(
+        _ type: T.Type,
+        forKey key: K,
+        fieldPath: [String],
+        className: String,
+        isMandatory: Bool
+    ) throws -> T? where T: Decodable {
+        if isMandatory {
+            guard contains(key) else {
+                throw Logger.handleException(
+                    exceptionType: "MissingInput",
+                    fieldPath: fieldPath,
+                    className: className
+                )
+            }
+        }
+        if contains(key) {
+            let rawValue = try decodeIfPresent(T?.self, forKey: key)
+            if rawValue == nil {
+                throw Logger.handleException(
+                    exceptionType: "InvalidInput",
+                    fieldPath: fieldPath,
+                    className: InputDescriptor.className
+                )
+            }
+            return rawValue!
+        }
+        return nil
+    }
+}

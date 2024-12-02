@@ -1,41 +1,55 @@
 import Foundation
 
 public protocol NetworkManaging {
-    func sendHTTPPostRequest(requestBody: String, url: URL) async throws -> String?
+    func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> String?
 }
 
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
+    static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
     
-    public func sendHTTPPostRequest(requestBody: String, url: URL) async throws -> String? {
-        
-        Logger.getLogTag(className: String(describing: self))
-        
+    public func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> String? {
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = requestBody.data(using: .utf8)
+        request.httpMethod = method.rawValue
         
+        if let headers = headers {
+            for (key, value) in headers {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+        }
+        if method == .POST, let body = bodyParams {
+            request.httpBody = body.data(using: .utf8)
+        }
+        
+        var exception: Error
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            
+            let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
-                Logger.error("Invalid response received.")
-                throw NetworkRequestException.invalidResponse
+                exception = NetworkRequestException.invalidResponse(message: "Invalid response received")
+                Logger.error(NetworkManager.logTag, exception)
+                throw exception
             }
             
-            if httpResponse.statusCode == 200 {
-                return "Success: Request completed successfully."
-            } else {
-                Logger.error("Request failed with status code: \(httpResponse.statusCode)")
-                throw NetworkRequestException.networkRequestFailed(message: "Network Request failed with error response: \(httpResponse)")
+            guard let bodyString = String(data: data, encoding: .utf8), httpResponse.statusCode == 200 else {
+                let exception = NetworkRequestException.networkRequestFailed(message: "\(httpResponse)")
+                Logger.error(NetworkManager.logTag, exception)
+                throw exception
             }
+            return bodyString
         } catch let error as URLError where error.code == .timedOut {
-            Logger.error("Network request timed out.")
-            throw NetworkRequestException.interruptedIOException
+            exception = NetworkRequestException.networkRequestTimeout
+            Logger.error(NetworkManager.logTag, exception)
+            throw exception
         } catch {
-            Logger.error("Network request failed due to unknown error: \(error.localizedDescription)")
-            throw NetworkRequestException.networkRequestFailed(message: error.localizedDescription)
+            exception = NetworkRequestException.networkRequestFailed(message: "\(error.localizedDescription)")
+            Logger.error(NetworkManager.logTag, exception)
+            throw exception
         }
     }
+}
+
+
+public enum HTTP_METHOD: String, Codable {
+    case POST
+    case GET
 }

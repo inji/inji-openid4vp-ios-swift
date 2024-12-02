@@ -16,6 +16,7 @@ public struct AuthorizationRequest: Encodable {
     let state: String
     let responseUri: String
     var clientMetadata: Any?
+    static let className = String(describing: AuthorizationRequest.self)
     
     enum CodingKeys: String, CodingKey {
         case client_id
@@ -48,46 +49,40 @@ public struct AuthorizationRequest: Encodable {
         }
     }
     
-    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void) throws -> AuthorizationRequest {
-        
-        Logger.getLogTag(className: String(describing: self))
+    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging) async throws -> AuthorizationRequest {
         
         let requestParts = encodedAuthorizationRequest.components(separatedBy: "?")
            guard requestParts.count > 1 else {
-               Logger.error("Invalid AuthorizationRequest format. No query string found.")
-               throw AuthorizationRequestException.decodingException
+               throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
            }
            
         let baseUrl = requestParts[0]
         let encodedQuery = requestParts[1]
         
         guard let decodedQuery = decodeAuthorizationRequest(encodedQuery) else {
-            Logger.error("Decoding of the AuthorizationRequest failed.")
-            throw AuthorizationRequestException.decodingException
+            throw Logger.handleException(exceptionType: "Decoding", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
         }
         
         let decodedRequest = "\(baseUrl)?\(decodedQuery)"
         
-        return try parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri)
+        return try await parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri, networkManager: networkManager)
         
     }
     
-    private static func parseAuthorizationRequest(decodedAuthorizationRequest: String, setResponseUri: (String) -> Void) throws -> AuthorizationRequest {
+    private static func parseAuthorizationRequest(decodedAuthorizationRequest: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging) async throws -> AuthorizationRequest {
         
         guard let encodedRequestUrl = urlEncodedRequest(decodedAuthorizationRequest) else {
-            Logger.error("URLEncoding of the AuthorizationRequest failed while parsing.")
-            throw AuthorizationRequestException.urlCreationFailed
+            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
         }
         
         guard let queryItems = getQueryItems(encodedRequestUrl) else {
-            Logger.error("Query items retrieval from AuthorizationRequest failed.")
-            throw AuthorizationRequestException.queryItemsRetrievalFailed
+            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Exception occurred when extracting the query params from Authorization Request", className: AuthorizationRequest.className)
         }
         
-        let params = try extractQueryParams(from: queryItems)
+        var params = try extractQueryParams(from: queryItems)
         
-        try validateQueryParams(params,setResponseUri)
-        
+        params = try await validateQueryParams(params,setResponseUri,networkManager)
+    
         return AuthorizationRequest(
             clientId: params["client_id"]!,
             presentationDefinition: params["presentation_definition"]!,
@@ -104,22 +99,61 @@ public struct AuthorizationRequest: Encodable {
         var extractedValues: [String: String] = [:]
         
         for queryItem in queryItems {
-            guard let value = queryItem.value, !value.isEmpty else {
-                Logger.error("Query parameter value should not be empty: \(queryItem)")
-                throw AuthorizationRequestException.parameterValuesAreEmpty
-            }
-            extractedValues[queryItem.name] = value
+            extractedValues[queryItem.name] = queryItem.value
         }
         
         return extractedValues
     }
     
-    
-    private static func validateQueryParams(_ values: [String: String], _ setResponseUri: (String) -> Void) throws {
+    private static func fetchPresentationDefinition(params: [String: String], networkManager: NetworkManaging) async throws -> String{
+        let hasPresentationDefinition = params.keys.contains("presentation_definition")
+        let hasPresentationDefinitionUri = params.keys.contains("presentation_definition_uri")
+        let presentationDefinition: String
         
-        //Keep response_uri as first param in this list because if any other required param is not present then we need this response_uri to send error to the verifier
+        if hasPresentationDefinition && hasPresentationDefinitionUri {
+            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param can be provided but not both", className: AuthorizationRequest.className)
+            
+        } else if(hasPresentationDefinition){
+            
+            let value = params["presentation_definition"]!
+            if !isNeitherNullNorEmpty(field: value) && !(value != "null") {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition"], className: AuthorizationRequest.className)
+            }
+            presentationDefinition = params["presentation_definition"]!
+            
+        }else if(hasPresentationDefinitionUri){
+            
+            let value = params["presentation_definition_uri"]!
+            
+            if !isNeitherNullNorEmpty(field: value) && !(value != "null") {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
+            }
+            
+            guard let url = URL(string: params["presentation_definition_uri"]!) else {
+                throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
+            }
+            
+            presentationDefinition = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil) ?? ""
+            
+        }else {
+            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param must be present", className: AuthorizationRequest.className)
+        }
+        return presentationDefinition
+    }
+    
+    
+    private static func validateQueryParams(_ paramsToValidate: [String: String], _ setResponseUri: (String) -> Void, _ networkManager: NetworkManaging) async throws -> [String: String]{
+        
+        var values = paramsToValidate
+        if values["response_uri"] == nil {
+            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["response_uri"], className: AuthorizationRequest.className)
+        } else if !isNeitherNullNorEmpty(field: values["response_uri"]!) && !(values["response_uri"]! != "null") {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["response_uri"], className: AuthorizationRequest.className)
+        } else {
+            setResponseUri(values["response_uri"]!)
+        }
+        
         var requiredKeys = [
-            "response_uri",
             "presentation_definition",
             "client_id",
             "response_type",
@@ -129,21 +163,20 @@ public struct AuthorizationRequest: Encodable {
         ]
         
         for key in requiredKeys {
+            if key == "presentation_definition" {
+                values[key] = try await fetchPresentationDefinition(params: values, networkManager: networkManager)
+            }
             if values[key] == nil  {
-                Logger.error("AuthorizationRequest parameter \(key) should not be null.")
-                throw AuthorizationRequestException.missingInput(fieldName: key)
+                throw Logger.handleException(exceptionType: "MissingInput", fieldPath: [key], className: AuthorizationRequest.className)
             }
-            if key == "response_uri" {
-                setResponseUri(values["response_uri"]!)
-            }
-            if values[key] == "" || values[key] == "null" {
-                Logger.error("AuthorizationRequest parameter \(key) should not be null.")
-                throw AuthorizationRequestException.invalidInput(fieldName: key)
+            if !isNeitherNullNorEmpty(field: values[key]!) && !(values[key]! != "null") {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: [key], className: AuthorizationRequest.className)
             }
         }
         
         if values["client_metadata"] != nil {
             requiredKeys.append("client_metadata")
         }
+        return values
     }
 }
