@@ -6,6 +6,7 @@ public struct PresentationDefinition: Codable {
     let purpose: String?
     let input_descriptors: [InputDescriptor]
     let format: Format?
+    static let className = String(describing: PresentationDefinitionValidator.self)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -16,42 +17,71 @@ public struct PresentationDefinition: Codable {
     }
     
     public init(from decoder: Decoder) throws {
-        
         let container = try decoder.container(keyedBy: CodingKeys.self)
+          
         
-        guard let id = try container.decodeIfPresent(String.self, forKey: .id) else {
-            Logger.error("PresentationDefinition : Id should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "id")
-        }
+        self.id = try container.decodeRequired(
+            String.self,
+            forKey: .id,
+            fieldPath: ["presentation_definition", "id"],
+            className: PresentationDefinition.className,
+            isMandatory: true
+        )!
         
-        guard let inputDescriptors = try container.decodeIfPresent([InputDescriptor].self, forKey: .input_descriptors) else {
-            Logger.error("PresentationDefinition : Input Descriptor should be present.")
-            throw AuthorizationRequestException.missingInput(fieldName: "input descriptors")
-        }
+        self.input_descriptors = try container.decodeRequired(
+            [InputDescriptor].self,
+            forKey: .input_descriptors,
+            fieldPath: ["presentation_definition", "input_descriptors"],
+            className: PresentationDefinition.className,
+            isMandatory: true
+        )!
         
-        self.id = id
-        self.input_descriptors = inputDescriptors
-        self.name = try container.decodeIfPresent(String.self, forKey: .name)
-        self.purpose = try container.decodeIfPresent(String.self, forKey: .purpose)
-        self.format = try container.decodeIfPresent(Format.self, forKey: .format)
+        self.name = try container.decodeRequired(
+            String.self,
+            forKey: .name,
+            fieldPath: ["presentation_definition", "name"],
+            className: PresentationDefinition.className,
+            isMandatory: false)
+
+        self.purpose = try container.decodeRequired(
+            String.self,
+            forKey: .purpose,
+            fieldPath: ["presentation_definition", "purpose"],
+            className: PresentationDefinition.className,
+            isMandatory: false)
+        
+        self.format = try container.decodeRequired(
+            Format.self,
+            forKey: .format,
+            fieldPath: ["presentation_definition", "format"],
+            className: PresentationDefinition.className,
+            isMandatory: false)
         
         try validate()
     }
     
     func validate() throws {
-        guard !id.isEmpty else {
-            Logger.error("PresentationDefinition : Id should not be empty.")
-            throw AuthorizationRequestException.invalidInput(fieldName: "id")
+        guard isNeitherNullNorEmpty(field: id) else {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","id"], className: PresentationDefinition.className)
         }
         
         guard !input_descriptors.isEmpty else {
-            Logger.error("PresentationDefinition : Input descriptor should not be empty.")
-            throw AuthorizationRequestException.invalidInput(fieldName: "input descriptors")
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: PresentationDefinition.className)
         }
         
-        if let format = format {
-            try format.validate()
+       if let name = name {
+           guard isNeitherNullNorEmpty(field: name) else {
+               throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","name"], className: PresentationDefinition.className)
+           }
         }
+        
+        if let purpose = purpose {
+            guard isNeitherNullNorEmpty(field: purpose) else {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","purpose"], className: PresentationDefinition.className)
+            }
+        }
+        
+        try format?.validate()
         
         for descriptor in input_descriptors {
             try descriptor.validate()

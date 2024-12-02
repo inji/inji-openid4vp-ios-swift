@@ -25,10 +25,10 @@ public class OpenID4VP {
 
     public func authenticateVerifier(encodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier]) async throws -> AuthorizationRequest {
 
-        Logger.setLogTag(className:String(describing: type(of: self)), traceabilityId: traceabilityId)
+        Logger.setTraceabilityId(className:String(describing: type(of: self)), traceabilityId: traceabilityId)
 
         do {
-            authorizationRequest =  try AuthorizationRequest.validateAndGetAuthorizationRequest(encodedAuthorizationRequest: encodedAuthorizationRequest, setResponseUri: setResponseUri)
+            authorizationRequest =  try await AuthorizationRequest.validateAndGetAuthorizationRequest(encodedAuthorizationRequest: encodedAuthorizationRequest, setResponseUri: setResponseUri, networkManager: networkManager as NetworkManaging)
             
             try AuthenticationResponse.validateAuthorizationRequestPartially(authorizationRequest!, trustedVerifierJSON, updateAuthorizationRequest: updateAuthorizationRequest)
             
@@ -56,11 +56,9 @@ public class OpenID4VP {
     }
 
     public func sendErrorToVerifier(error: Error) async {
-
-        Logger.getLogTag(className: String(describing: type(of: self)))
-
         guard let url = URL(string: responseUri!) else { return }
-
+        let logTag = Logger.getLogTag(String(describing: OpenID4VP.self))
+        
         let errorInfo = """
         {
             "error": \(error),
@@ -69,10 +67,10 @@ public class OpenID4VP {
         """
 
         do {
-            let response =  try await networkManager.sendHTTPPostRequest(requestBody: errorInfo, url: url)
+            let response =  try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.POST, bodyParams: errorInfo, headers: ["Content_Type" : "application/x-www-form-urlencoded"])
             print("\(String(describing: response))")
         } catch {
-            Logger.error("Unexpected error occurred while sending the error to verifier: \(error)")
+            Logger.error(logTag, NetworkRequestException.invalidResponse(message: "Unexpected error occurred while sending the error to verifier: \(error)"))
         }
     }
 }

@@ -1,27 +1,48 @@
 import Foundation
 
 enum AuthorizationRequestException: Error, Equatable, LocalizedError {
-    case jsonDecodingFailed
+    case jsonDecodingFailed(fieldPath: String, message: String)
+    case jsonEncodingFailed(fieldPath: String, message: String)
     case invalidPresentationDefinition
     case invalidQueryParams(message: String)
-    case invalidInput(fieldName: String)
-    case missingInput(fieldName: String)
-    case decodingException
-    case utf8Encoding(fieldName: String)
-    case urlCreationFailed
+    case invalidInput(fieldPath: String)
+    case invalidLimitDisclosure
+    case missingInput(fieldPath: String)
+    case decodingException(fieldPath: String)
+    case utf8Encoding(fieldPath: String)
+    case urlCreationFailed(message: String)
     case queryItemsRetrievalFailed
     case parameterValuesAreEmpty
+    case invalidVerifierClientID
+    case invalidInputPattern(fieldPath: String)
+    case unexpectedError(message: String)
     
     public var errorDescription: String? {
         switch self {
         case .invalidInput(let fieldName):
-            return "Invalid input for key : \(fieldName)"
+            return "Invalid Input: \(fieldName) value cannot be empty or null"
         case .missingInput(let fieldName):
-            return "Missing Input: \(fieldName) param is required."
+            return "Missing Input: \(fieldName) param is required"
         case .invalidQueryParams(let message):
             return message
-        case .utf8Encoding(let fieldName):
-            return "Failed to convert \(fieldName) string to UTF-8 data"
+        case .invalidLimitDisclosure:
+            return "Invalid Input: constraints->limit_disclosure value should be either required or preferred"
+        case .decodingException(let fieldPath):
+            return "Error occurred while decoding \(fieldPath)"
+        case .utf8Encoding(let fieldPath):
+            return "Failed to convert \(fieldPath) string to UTF-8 data"
+        case .jsonDecodingFailed(let fieldPath, let message):
+            return "Json Decoding failed for \(fieldPath) due to this error: \(message)."
+        case .jsonEncodingFailed(let fieldPath, let message):
+            return "Json Encoding failed for \(fieldPath) due to this error: \(message)."
+        case .invalidVerifierClientID:
+            return "VP sharing failed: Verifier authentication was unsuccessful"
+        case .invalidInputPattern:
+            return "Invalid Input Pattern: $fieldName pattern is not matching with OpenId4VP specification"
+        case .unexpectedError(let message):
+            return message
+        case .urlCreationFailed(let message):
+            return message
         default:
             return "An error occurred."
         }

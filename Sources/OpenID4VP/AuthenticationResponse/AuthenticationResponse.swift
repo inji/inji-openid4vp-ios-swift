@@ -1,10 +1,9 @@
 import Foundation
 
 public struct AuthenticationResponse {
+    static let className = String(describing: AuthenticationResponse.self)
     
     static func validateAuthorizationRequestPartially(_ authorizationRequest: AuthorizationRequest,_ trustedVerifierJSON: [Verifier], updateAuthorizationRequest: (PresentationDefinition, ClientMetadata?) -> Void) throws {
-        
-        Logger.getLogTag(className: String(describing: self))
         
         var clientMetadata: ClientMetadata?
         
@@ -22,9 +21,7 @@ public struct AuthenticationResponse {
     private static func validateVerifier(verifierList: [Verifier], clientId receivedClientId: String, responseUri receivedResponseUri: String) throws {
         
         guard verifierList.contains(where: { $0.clientId == receivedClientId && $0.responseUris.contains(receivedResponseUri) }) else {
-            
-            Logger.error("Client ID \(receivedClientId) not found in verifier list: \(verifierList)")
-            throw VerifierVerificationException.invalidVerifierClientID(message: "VP sharing failed: Verifier authentication was unsuccessful")
+            throw Logger.handleException(exceptionType: "InvalidVerifierClientID", className: AuthenticationResponse.className)
         }
     }
 }
