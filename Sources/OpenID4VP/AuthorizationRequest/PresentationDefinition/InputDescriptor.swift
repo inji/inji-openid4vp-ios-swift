@@ -16,31 +16,87 @@ struct InputDescriptor: Codable {
         case format
     }
     
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        guard let id = try container.decodeIfPresent(String.self, forKey: .id) else {
-            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
-        }
+        self.id = try container.decodeRequired(
+            String.self,
+            forKey: .id,
+            fieldPath: ["input_descriptor", "id"],
+            className: InputDescriptor.className,
+            isMandatory: true
+        )!
         
-        guard let constraints = try container.decodeIfPresent(Constraints.self, forKey: .constraints) else {
-            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["input_descriptor","constraints"], className: InputDescriptor.className)
-        }
+        self.constraints = try container.decodeRequired(
+            Constraints.self,
+            forKey: .constraints,
+            fieldPath: ["input_descriptor", "constraints"],
+            className: InputDescriptor.className,
+            isMandatory: true
+        )!
         
-        self.id = id
-        self.constraints = constraints
-        self.name = try container.decodeIfPresent(String.self, forKey: .name)
-        self.purpose = try container.decodeIfPresent(String.self, forKey: .purpose)
-        self.format = try container.decodeIfPresent(Format.self, forKey: .format)
+        self.name = try container.decodeRequired(
+            String.self,
+            forKey: .name,
+            fieldPath: ["input_descriptor", "name"],
+            className: InputDescriptor.className,
+            isMandatory: false)
         
+        self.purpose = try container.decodeRequired(
+            String.self,
+            forKey: .purpose,
+            fieldPath: ["input_descriptor", "purpose"],
+            className: InputDescriptor.className,
+            isMandatory: false)
+        
+        self.format = try container.decodeRequired(
+            Format.self,
+            forKey: .format,
+            fieldPath: ["input_descriptor", "format"],
+            className: InputDescriptor.className,
+            isMandatory: false)
+        
+        try validate()
     }
     
     func validate() throws {
-        guard !id.isEmpty else {
+        guard isNeitherNullNorEmpty(field: id) else {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
         }
         
-        try format?.validate()
+        if let name = name {
+            guard isNeitherNullNorEmpty(field: name) else {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","name"], className: InputDescriptor.className)
+            }
+        }
+        
+        if let purpose = purpose {
+            guard isNeitherNullNorEmpty(field: purpose) else {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","purpose"], className: InputDescriptor.className)
+            }
+        }
+    
         try constraints.validate()
+        
+        try format?.validate()
+    }
+    
+    private static func validateField<T: Decodable>(
+        container: KeyedDecodingContainer<CodingKeys>,
+        key: CodingKeys,
+        fieldPath: [String]
+    ) throws -> T? {
+        if container.contains(key) {
+            let rawValue = try container.decodeIfPresent(T?.self, forKey: key)
+            if rawValue == nil {
+                throw Logger.handleException(
+                    exceptionType: "InvalidInput",
+                    fieldPath: fieldPath,
+                    className: InputDescriptor.className
+                )
+            }
+            return rawValue!
+        }
+        return nil
     }
 }

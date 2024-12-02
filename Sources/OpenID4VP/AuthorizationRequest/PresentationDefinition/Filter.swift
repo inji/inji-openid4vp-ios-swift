@@ -12,17 +12,22 @@ struct Filter: Codable {
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        self.type = try container.decodeRequired(
+            String.self,
+            forKey: .type,
+            fieldPath: ["filter", "type"],
+            className: Filter.className,
+            isMandatory: true
+        )!
         
-        guard let type = try container.decodeIfPresent(String.self, forKey: .type) else {
-            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["filter","type"], className: Filter.className)
-        }
-        
-        guard let pattern = try container.decodeIfPresent(String.self, forKey: .pattern) else {
-            throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["filter","pattern"], className: Filter.className)
-        }
-        
-        self.type = type
-        self.pattern = pattern
+        self.pattern = try container.decodeRequired(
+            String.self,
+            forKey: .pattern,
+            fieldPath: ["filter", "pattern"],
+            className: Filter.className,
+            isMandatory: true
+        )!
         
         try validate()
     }

@@ -111,24 +111,21 @@ public struct AuthorizationRequest: Encodable {
         let presentationDefinition: String
         
         if hasPresentationDefinition && hasPresentationDefinitionUri {
-            
             throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param can be provided but not both", className: AuthorizationRequest.className)
             
-        }else if(hasPresentationDefinition){
+        } else if(hasPresentationDefinition){
             
-            if params["presentation_definition"] == nil  {
-                throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["presentation_definition"], className: AuthorizationRequest.className)
-            } else if !isNeitherNullNorEmpty(field: params["presentation_definition"]!) {
+            let value = params["presentation_definition"]!
+            if !isNeitherNullNorEmpty(field: value) && !(value != "null") {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition"], className: AuthorizationRequest.className)
             }
-            
             presentationDefinition = params["presentation_definition"]!
             
         }else if(hasPresentationDefinitionUri){
             
-            if params["presentation_definition_uri"] == nil  {
-                throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
-            } else if !isNeitherNullNorEmpty(field: params["presentation_definition_uri"]!) {
+            let value = params["presentation_definition_uri"]!
+            
+            if !isNeitherNullNorEmpty(field: value) && !(value != "null") {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
             }
             
@@ -136,7 +133,7 @@ public struct AuthorizationRequest: Encodable {
                 throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
             }
             
-            presentationDefinition = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, body: nil, headers: nil) ?? ""
+            presentationDefinition = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil) ?? ""
             
         }else {
             throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param must be present", className: AuthorizationRequest.className)
@@ -150,7 +147,7 @@ public struct AuthorizationRequest: Encodable {
         var values = paramsToValidate
         if values["response_uri"] == nil {
             throw Logger.handleException(exceptionType: "MissingInput", fieldPath: ["response_uri"], className: AuthorizationRequest.className)
-        } else if !isNeitherNullNorEmpty(field: values["response_uri"]!) {
+        } else if !isNeitherNullNorEmpty(field: values["response_uri"]!) && !(values["response_uri"]! != "null") {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["response_uri"], className: AuthorizationRequest.className)
         } else {
             setResponseUri(values["response_uri"]!)
@@ -172,7 +169,7 @@ public struct AuthorizationRequest: Encodable {
             if values[key] == nil  {
                 throw Logger.handleException(exceptionType: "MissingInput", fieldPath: [key], className: AuthorizationRequest.className)
             }
-            if !isNeitherNullNorEmpty(field: values[key]!) {
+            if !isNeitherNullNorEmpty(field: values[key]!) && !(values[key]! != "null") {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: [key], className: AuthorizationRequest.className)
             }
         }
