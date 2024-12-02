@@ -11,20 +11,31 @@ struct Constraints: Codable {
     }
     
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        self.fields = try container.decodeIfPresent([Fields].self, forKey: .fields)
-        self.limitDisclosure = try container.decodeIfPresent(LimitDisclosure.self, forKey: .limitDisclosure)
-        
-        try validate()
-    }
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            
+            self.fields = try container.decodeRequired(
+                [Fields].self,
+                forKey: .fields,
+                fieldPath: ["constraints", "fields"],
+                className: Constraints.className,
+                isMandatory: false
+            )
+            
+            self.limitDisclosure = try container.decodeRequired(
+                LimitDisclosure.self,
+                forKey: .limitDisclosure,
+                fieldPath: ["constraints", "limitDisclosure"],
+                className: Constraints.className,
+                isMandatory: false
+            )
+            
+            try validate()
+        }
     
     func validate() throws {
         
-        if let fields = fields {
-            for field in fields {
-                try field.validate()
-            }
+        if let fields = fields, !fields.isEmpty {
+            try fields.forEach { try $0.validate() }
         }
         
         if let limitDisclosure = limitDisclosure {
@@ -36,5 +47,24 @@ struct Constraints: Codable {
                 throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: Constraints.className)
             }
         }
+    }
+    
+    private static func validateField<T: Decodable>(
+        container: KeyedDecodingContainer<CodingKeys>,
+        key: CodingKeys,
+        fieldPath: [String]
+    ) throws -> T? {
+        if container.contains(key) {
+            let rawValue = try container.decodeIfPresent(T?.self, forKey: key)
+            if rawValue == nil {
+                throw Logger.handleException(
+                    exceptionType: "InvalidInput",
+                    fieldPath: fieldPath,
+                    className: Constraints.className
+                )
+            }
+            return rawValue!
+        }
+        return nil
     }
 }

@@ -1,14 +1,14 @@
 import Foundation
 
 public protocol NetworkManaging {
-    func sendHTTPRequest(url: URL, method: HTTP_METHOD, body: String?, headers: [String: String]?) async throws -> String?
+    func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> String?
 }
 
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
     
-    public func sendHTTPRequest(url: URL, method: HTTP_METHOD, body: String?, headers: [String: String]?) async throws -> String? {
+    public func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> String? {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         
@@ -17,7 +17,7 @@ public struct NetworkManager: NetworkManaging {
                 request.setValue(value, forHTTPHeaderField: key)
             }
         }
-        if method == .POST, let body = body {
+        if method == .POST, let body = bodyParams {
             request.httpBody = body.data(using: .utf8)
         }
         
