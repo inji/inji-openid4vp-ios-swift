@@ -4,7 +4,7 @@
 ## Functionalities
 - Decode and parse the Verifier's encoded Authorization Request received from the Wallet.
 - Authenticates the Verifier using the received clientId and returns the valid Presentation Definition to the Wallet.
-- Receives the list of verifiable credentials(VC's) from the Wallet which are selected by the Wallet end user based on the credentials requested as part of Verifier Authorization request.
+- Receives the list of verifiable credentials(VC's) from the Wallet which are selected by the end user based on the credentials requested as part of Verifier Authorization request.
 - Constructs the verifiable presentation and send it to wallet for generating Json Web Signature (JWS).
 - Receives the signed Verifiable presentation and sends a POST request with generated vp_token and presentation_submission to the Verifier response_uri endpoint.
 
