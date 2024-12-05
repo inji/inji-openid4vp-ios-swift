@@ -54,13 +54,7 @@ struct AuthorizationResponse{
         } catch let error {
             throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["presentation_submission"], className: AuthorizationResponse.className)
         }
-
-        func encodeQueryValue(_ value: String) -> String {
-            var allowedCharacterSet = CharacterSet.urlQueryAllowed
-            allowedCharacterSet.remove("+")
-            return value.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? value
-        }
-
+        
         var bodyComponents = [URLQueryItem]()
         bodyComponents.append(URLQueryItem(name: "vp_token", value: encodeQueryValue(encodedVPTokenData)))
         bodyComponents.append(URLQueryItem(name: "presentation_submission", value: encodeQueryValue(encodedPresentationSubmissionData)))
@@ -70,7 +64,7 @@ struct AuthorizationResponse{
         urlComponents.queryItems = bodyComponents
 
         let requestBody = urlComponents.query
-        print(requestBody)
+        
         guard let url = URL(string: responseUri) else {
             throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["response_uri"], className: AuthorizationResponse.className)
         }
