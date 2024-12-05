@@ -18,7 +18,7 @@ class OpenID4VPTests: XCTestCase {
 
     let jws = "wemcn3234ns"
     let signatureAlgoType = "RsaSignature2018"
-    let publicKey = "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw1DguW+qyrL/CZUZjLd1\\nweD6ar0mnDNtxMTNboL9/p26yB10BcLWnMF8R3ejWoeLvhNDk1w6rr4/3dQKw39k\\nVl/qyNDAJs6WGYlesABNep/693U8VeQSre4/Puh6Lw9GsNpzsIGSaJawCohsP+2w\\nXboSpZ7gGwR6CfTTgIkrxJrWJqDJ6dWLNh5XAA1bRhGt4MO3wVP1tWUbsqphzm4c\\npGmvsz7FMH4RIfYSi/u5qyz6b28leQwj+WBNbBZP6HanGRuUqbga8CIvgvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n"
+    let publicKey = "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n"
     let domain = "https://example"
     let descriptorMap: [DescriptorMap] = [
         DescriptorMap(id: "bank_input", format: .ldp_vc, path: "$.verifiableCredential[0]"),
