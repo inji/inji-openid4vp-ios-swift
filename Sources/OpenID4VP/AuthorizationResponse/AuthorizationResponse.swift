@@ -42,33 +42,40 @@ struct AuthorizationResponse{
     }
     
     private static func constructHttpRequestBody(vpToken: VpToken, presentationSubmission: PresentationSubmission, responseUri: String, state: String, networkManager: NetworkManaging = NetworkManager.shared) async throws -> String? {
-        let encodedVPTokenData: String,encodedPresentationSubmissionData: String
+        let encodedVPTokenData: String, encodedPresentationSubmissionData: String
         do {
             encodedVPTokenData = try encodeToJsonString(vpToken)!
-        } catch let error{
+        } catch let error {
             throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["vp_token"], className: AuthorizationResponse.className)
         }
-    
+
         do {
             encodedPresentationSubmissionData = try encodeToJsonString(presentationSubmission)!
-        } catch let error{
+        } catch let error {
             throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["presentation_submission"], className: AuthorizationResponse.className)
         }
-        
+
+        func encodeQueryValue(_ value: String) -> String {
+            var allowedCharacterSet = CharacterSet.urlQueryAllowed
+            allowedCharacterSet.remove("+")
+            return value.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? value
+        }
+
         var bodyComponents = [URLQueryItem]()
-        bodyComponents.append(URLQueryItem(name: "vp_token", value: encodedVPTokenData))
-        bodyComponents.append(URLQueryItem(name: "presentation_submission", value: encodedPresentationSubmissionData))
-        bodyComponents.append(URLQueryItem(name: "state", value: state))
-        
+        bodyComponents.append(URLQueryItem(name: "vp_token", value: encodeQueryValue(encodedVPTokenData)))
+        bodyComponents.append(URLQueryItem(name: "presentation_submission", value: encodeQueryValue(encodedPresentationSubmissionData)))
+        bodyComponents.append(URLQueryItem(name: "state", value: encodeQueryValue(state)))
+
         var urlComponents = URLComponents()
         urlComponents.queryItems = bodyComponents
 
-        let requestBody = urlComponents.percentEncodedQuery!
-        
+        let requestBody = urlComponents.query
+        print(requestBody)
         guard let url = URL(string: responseUri) else {
             throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["response_uri"], className: AuthorizationResponse.className)
         }
-        
-        return try await networkManager.sendHTTPRequest(url: url,method: HTTP_METHOD.POST, bodyParams: requestBody, headers: ["Content-Type" : "application/x-www-form-urlencoded"])
+
+        return try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.POST, bodyParams: requestBody ?? "", headers: ["Content-Type" : "application/x-www-form-urlencoded"])
     }
+
 }
