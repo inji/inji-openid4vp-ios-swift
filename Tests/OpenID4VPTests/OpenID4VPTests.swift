@@ -83,7 +83,22 @@ class OpenID4VPTests: XCTestCase {
         let decoded: Any?
 
         do {
-            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidEncodedVpRequest, trustedVerifierJSON: verifiers)
+            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidEncodedVpRequest, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        } catch {
+            decoded = nil
+        }
+        XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+        XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
+    }
+    
+    func testReturnDataForValidRequestWhenClientValidationIsFalse() async {
+
+        let verifiers = createVerifiers(from: testVerifierList)
+
+        let decoded: Any?
+
+        do {
+            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidEncodedVpRequest, trustedVerifierJSON: verifiers, shouldValidateClient: false)
         } catch {
             decoded = nil
         }
@@ -95,7 +110,7 @@ class OpenID4VPTests: XCTestCase {
         let verifiers = createVerifiers(from: testVerifierList)
 
         let error = await Task {
-            try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testInvalidPresentationDefinitionVpRequest, trustedVerifierJSON: verifiers)
+            try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testInvalidPresentationDefinitionVpRequest, trustedVerifierJSON: verifiers, shouldValidateClient: true)
         }.result
 
         switch error {
@@ -111,7 +126,7 @@ class OpenID4VPTests: XCTestCase {
         let verifiers = createVerifiers(from: testVerifierList)
         
         let error = await Task {
-            try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: invalidClientMetadata, trustedVerifierJSON: verifiers)
+            try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: invalidClientMetadata, trustedVerifierJSON: verifiers, shouldValidateClient: true)
         }.result
 
         switch error {
