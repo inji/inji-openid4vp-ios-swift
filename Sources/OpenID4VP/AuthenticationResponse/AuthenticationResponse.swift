@@ -3,11 +3,11 @@ import Foundation
 public struct AuthenticationResponse {
     static let className = String(describing: AuthenticationResponse.self)
     
-    static func validateAuthorizationRequestPartially(_ authorizationRequest: AuthorizationRequest,_ trustedVerifierJSON: [Verifier], updateAuthorizationRequest: (PresentationDefinition, ClientMetadata?) -> Void) throws {
-        
+    static func validateAuthorizationRequestPartially(_ authorizationRequest: AuthorizationRequest,_ trustedVerifierJSON: [Verifier], updateAuthorizationRequest: (PresentationDefinition, ClientMetadata?) -> Void, shouldValidateClient: Bool) throws {
         var clientMetadata: ClientMetadata?
-        
-        try validateVerifier(verifierList: trustedVerifierJSON, clientId: authorizationRequest.clientId, responseUri: authorizationRequest.responseUri)
+        if(shouldValidateClient ){
+            try validateVerifier(verifierList: trustedVerifierJSON, clientId: authorizationRequest.clientId, responseUri: authorizationRequest.responseUri)
+        }
         
         let presentationDefinition: PresentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: authorizationRequest.presentationDefinition as! String)
         
@@ -17,6 +17,7 @@ public struct AuthenticationResponse {
         
         updateAuthorizationRequest(presentationDefinition, clientMetadata)
     }
+    
     
     private static func validateVerifier(verifierList: [Verifier], clientId receivedClientId: String, responseUri receivedResponseUri: String) throws {
         
