@@ -23,7 +23,7 @@ public class OpenID4VP {
         self.responseUri = responseUri
     }
 
-    public func authenticateVerifier(encodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier], shouldValidateClient: Bool) async throws -> AuthorizationRequest {
+    public func authenticateVerifier(encodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier], shouldValidateClient: Bool = false) async throws -> AuthorizationRequest {
 
         Logger.setTraceabilityId(className:String(describing: type(of: self)), traceabilityId: traceabilityId)
 
