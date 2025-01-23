@@ -28,9 +28,9 @@ public class OpenID4VP {
         Logger.setTraceabilityId(className:String(describing: type(of: self)), traceabilityId: traceabilityId)
 
         do {
-            authorizationRequest =  try await AuthorizationRequest.validateAndGetAuthorizationRequest(encodedAuthorizationRequest: encodedAuthorizationRequest, setResponseUri: setResponseUri, networkManager: networkManager as NetworkManaging)
+            authorizationRequest =  try await AuthorizationRequest.validateAndGetAuthorizationRequest(encodedAuthorizationRequest: encodedAuthorizationRequest,setResponseUri: setResponseUri, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON, networkManager: networkManager as NetworkManaging)
             
-            try AuthenticationResponse.validateAuthorizationRequestPartially(authorizationRequest!, trustedVerifierJSON, updateAuthorizationRequest: updateAuthorizationRequest, shouldValidateClient: shouldValidateClient)
+            try AuthenticationResponse.validateAuthorizationRequestPartially(authorizationRequest!, updateAuthorizationRequest: updateAuthorizationRequest)
             
             return authorizationRequest!
 
@@ -48,7 +48,7 @@ public class OpenID4VP {
     public func shareVerifiablePresentation(vpResponseMetadata: VPResponseMetadata) async throws -> String? {
 
         do {
-            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, state: authorizationRequest!.state, responseUri: authorizationRequest!.responseUri,presentationDefinitionId: (authorizationRequest?.presentationDefinition as! PresentationDefinition).id, networkManager: networkManager)
+            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, state: authorizationRequest!.state, responseUri: authorizationRequest!.responseUri!,presentationDefinitionId: (authorizationRequest?.presentationDefinition as! PresentationDefinition).id, networkManager: networkManager)
         } catch(let exception) {
             await sendErrorToVerifier(error: exception)
             throw exception

@@ -42,10 +42,27 @@ class Logger {
             exception = AuthorizationRequestException.decodingException(fieldPath: fieldPathAsString)
         case "InvalidVerifierClientID":
             exception = AuthorizationRequestException.invalidVerifierClientID
+        case "EmptyVerifierList":
+            exception = AuthorizationRequestException.emptyVerifierList
+        case "InvalidVerifierRedirectUri":
+            exception = AuthorizationRequestException.invalidVerifierRedirectUri
         case "InvalidLimitDisclosure":
             exception = AuthorizationRequestException.invalidLimitDisclosure
+        case "InvalidClientIdScheme":
+            exception = ProofVerificationException.invalidClientIdScheme(message: message ?? "")
+        case "UrlCreationFailed":
+            exception = ProofVerificationException.urlCreationFailed(message: message ?? "")
+        case "PublicKeyNotFound":
+            exception = ProofVerificationException.publicKeyNotFound
+        case "PublicKeyExtractionFailed":
+            exception = ProofVerificationException.publicKeyExtractionFailed
+        case "KidExtractionFailed":
+            exception = ProofVerificationException.kidExtractionFailed(message: message ?? "")
+        case "InvalidSignature":
+            exception = ProofVerificationException.invalidSignature(message: message ?? "")
+        case "ProofVerificationFailed":
+            exception = ProofVerificationException.proofVerificationFailed(message: message ?? "")
         default:
-            // Handle unexpected exception types, e.g., log an error
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }
         error(getLogTag(className), exception)
