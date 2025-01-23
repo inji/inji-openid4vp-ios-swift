@@ -14,6 +14,8 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case queryItemsRetrievalFailed
     case parameterValuesAreEmpty
     case invalidVerifierClientID
+    case invalidVerifierRedirectUri
+    case emptyVerifierList
     case invalidInputPattern(fieldPath: String)
     case unexpectedError(message: String)
     
@@ -36,6 +38,10 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
         case .jsonEncodingFailed(let fieldPath, let message):
             return "Json Encoding failed for \(fieldPath) due to this error: \(message)."
         case .invalidVerifierClientID:
+            return "VP sharing failed: Verifier authentication was unsuccessful"
+        case .emptyVerifierList:
+            return "Verifiers Validation failed: Trusted Verifiers list is empty"
+        case .invalidVerifierRedirectUri:
             return "VP sharing failed: Verifier authentication was unsuccessful"
         case .invalidInputPattern:
             return "Invalid Input Pattern: $fieldName pattern is not matching with OpenId4VP specification"
