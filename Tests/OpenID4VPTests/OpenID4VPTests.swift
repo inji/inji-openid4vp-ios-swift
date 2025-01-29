@@ -120,23 +120,21 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
     
-    // jwt -> client_id_scheme = did 
+    // jwt -> client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
-
-           mockNetworkManager.response = didResponse
-           mockNetworkManager.jwtResponse = jwtResponse
-
-            let verifiers = createVerifiers(from: testVerifierList)
-
-        let decoded: Any?
-
+        mockNetworkManager.setMockResponse(for: URL(string: "https://7af8-2401-4900-71c2-f74a-8d88-aa5b-2f16-294b.ngrok-free.app/verifier/get-auth-request-obj")!,response: jwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:web:adityankannan-tw.github.io:openid4vp:files")!,response: didResponse)
+        let verifiers = createVerifiers(from: testVerifierList)
+        
+        let decodedAuthorizationRequest: Any?
         do {
-            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+            decodedAuthorizationRequest = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: verifiers, shouldValidateClient: true)
         } catch {
-            decoded = nil
+            decodedAuthorizationRequest = nil
         }
-        XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
-        XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
+        
+        XCTAssertTrue(decodedAuthorizationRequest is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+        XCTAssertTrue(decodedAuthorizationRequest != nil, "decodedResponse should not be null")
     }
     
     func testReturnDataForValidRequestWhenClientValidationIsFalse() async {
@@ -208,13 +206,11 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testSendVpSuccess() async throws {
-        
+        mockNetworkManager.setMockResponse(for: URL(string: "https://example.com")!, response: "Success: Request completed successfully.")
         do{ let presentationDefinition: PresentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: decodedPresentationDefinition)
             
             openID4VP.updateAuthorizationRequest(presentationDefinition, nil)
         }catch{}
-
-        mockNetworkManager.response = "Success: Request completed successfully."
         
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
         
@@ -230,8 +226,8 @@ class OpenID4VPTests: XCTestCase {
             openID4VP.updateAuthorizationRequest(presentationDefinition, nil)
         }catch{}
         
-        let errorMessage = "Network Request failed with error"
-        mockNetworkManager.error = NetworkRequestException.networkRequestFailed(message: errorMessage)
+        let errorMessage = "Network Request failed with error response: response"
+        mockNetworkManager.setMockResponse(for: URL(string: "https://example.com")!, error: NetworkRequestException.networkRequestFailed(message: errorMessage))
 
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
 
@@ -246,6 +242,7 @@ class OpenID4VPTests: XCTestCase {
                 XCTFail("Expected NetworkRequestException.networkRequestFailed but got \(error)")
             }
         } catch {
+            XCTFail("Expected NetworkRequestException.networkRequestFailed but got \(error)")
         }
     }
 }

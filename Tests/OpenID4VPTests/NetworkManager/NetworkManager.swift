@@ -2,17 +2,19 @@ import Foundation
 @testable import OpenID4VP
 
 class MockNetworkManager: NetworkManaging {
-    var response: String?
-    var jwtResponse: String?
-    var error: Error?
-
+    private var mockResponses: [URL: (response: String?, error: Error?)] = [:]
+    
+    func setMockResponse(for url: URL, response: String? = nil, error: Error? = nil) {
+        mockResponses[url] = (response, error)
+    }
+    
     func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> String? {
-        if error != nil {
-            throw NetworkRequestException.networkRequestFailed(message: "Network Request failed with error")
+        if let (response, error) = mockResponses[url] {
+            if let error = error {
+                throw error
+            }
+            return response ?? "Success: Request completed successfully."
         }
-        if url.path.contains("/verifier/get-auth-request-obj"){
-            return jwtResponse
-        }
-        return response
+        return "Success: Request completed successfully."
     }
 }
