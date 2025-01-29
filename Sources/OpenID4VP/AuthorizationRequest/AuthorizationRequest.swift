@@ -127,13 +127,9 @@ public struct AuthorizationRequest: Encodable {
     static func processResponseAndFetchAuthRequestParams(authorizationRequest: String, networkManager: NetworkManaging) async throws -> [String: String] {
         if authorizationRequest.components(separatedBy: ".").count == 3 {
             let authRequestParamaeters =  try extractPayloadJsonFromJwt(jwtToken: authorizationRequest)
-           
-            print(authRequestParamaeters)
             
             let proofJwtManager = ProofJwtManager(networkManager: networkManager)
             try await proofJwtManager.verifyJWT(jwtToken: authorizationRequest, clientId: authRequestParamaeters["client_id"]!, clienIdScheme: authRequestParamaeters["client_id_scheme"]!)
-        
-            print(authRequestParamaeters)
         
             return authRequestParamaeters
             
