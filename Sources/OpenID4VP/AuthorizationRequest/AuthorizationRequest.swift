@@ -68,35 +68,16 @@ public struct AuthorizationRequest: Encodable {
         let baseUrl = requestParts[0]
         let encodedQuery = requestParts[1]
         
-        if isJWT(encodedQuery) {
-            
-            let requestJson = try extractPayloadJsonFromJwt(jwtToken: encodedQuery)
-            
-            if(shouldValidateClient){
-                let proofJwtManager = ProofJwtManager(networkManager: networkManager)
-                try await proofJwtManager.verifyJWT(jwtToken: encodedQuery, clientId: requestJson["client_id"]!, clienIdScheme: requestJson["client_id_scheme"]!)
-            }
-            
-            let params = try await validateQueryParams(requestJson,setResponseUri,networkManager)
-            
-            authorizationRequest = createAuthorizationRequest(from: params)
-            
-        } else {
-            guard let decodedQuery = decodeAuthorizationRequest(encodedQuery) else {
-                throw Logger.handleException(exceptionType: "Decoding", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
-            }
-            let decodedRequest = "\(baseUrl)?\(decodedQuery)"
-            
-            authorizationRequest = try await parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri, networkManager: networkManager)
-            
-            if(shouldValidateClient){
-                try validateVerifier(verifierList: trustedVerifierJSON, authorizationRequest: authorizationRequest!)
-            }
+        guard let decodedQuery = decodeAuthorizationRequest(encodedQuery) else {
+            throw Logger.handleException(exceptionType: "Decoding", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
         }
-        return authorizationRequest!
+        
+        let decodedRequest = "\(baseUrl)?\(decodedQuery)"
+        
+        return try await parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri, networkManager: networkManager, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON)
     }
     
-    private static func parseAuthorizationRequest(decodedAuthorizationRequest: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging) async throws -> AuthorizationRequest {
+    private static func parseAuthorizationRequest(decodedAuthorizationRequest: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier]) async throws -> AuthorizationRequest {
         
         guard let encodedRequestUrl = urlEncodedRequest(decodedAuthorizationRequest) else {
             throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
@@ -107,10 +88,71 @@ public struct AuthorizationRequest: Encodable {
         }
         
         var params = try extractQueryParams(from: queryItems)
+        var authRequestParams = try await fetchAuthRequestData(params: params, networkManager: networkManager)
         
-        params = try await validateQueryParams(params,setResponseUri,networkManager)
+        params = try await validateQueryParams(authRequestParams,setResponseUri,networkManager)
         
-        return createAuthorizationRequest(from: params)
+        var  authorizationRequestObj = createAuthorizationRequest(from: params)
+        
+        if(shouldValidateClient){
+            try validateVerifier(verifierList: trustedVerifierJSON, authorizationRequest: authorizationRequestObj)
+        }
+        return authorizationRequestObj
+        
+    }
+    
+    static func fetchAuthRequestData(params: [String: String], networkManager: NetworkManaging) async throws -> [String: String] {
+       guard let requestUri = params["request_uri"] else {
+           return params
+       }
+       do {
+           if !isNeitherNullNorEmpty(field: requestUri) && !(requestUri != "null") {
+               throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
+           }
+           let requestUriMethod = params["request_uri_method"] ?? "get HTTP/1.1"
+           let httpMethod = try determineHttpMethod(method: requestUriMethod)
+           
+           guard let url = URL(string: params["request_uri"]!) else {
+               throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
+           }
+           
+           let authorizationRequestParams = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil) ?? ""
+           
+           return try await processResponseAndFetchAuthRequestParams(authorizationRequest: authorizationRequestParams, networkManager: networkManager)
+       } catch {
+           throw error
+       }
+    }
+    
+    static func processResponseAndFetchAuthRequestParams(authorizationRequest: String, networkManager: NetworkManaging) async throws -> [String: String] {
+        if authorizationRequest.components(separatedBy: ".").count == 3 {
+            let authRequestParamaeters =  try extractPayloadJsonFromJwt(jwtToken: authorizationRequest)
+           
+            print(authRequestParamaeters)
+            
+            let proofJwtManager = ProofJwtManager(networkManager: networkManager)
+            try await proofJwtManager.verifyJWT(jwtToken: authorizationRequest, clientId: authRequestParamaeters["client_id"]!, clienIdScheme: authRequestParamaeters["client_id_scheme"]!)
+        
+            print(authRequestParamaeters)
+        
+            return authRequestParamaeters
+            
+        }
+        else{
+            let str = makeBase64Standard(authorizationRequest)
+            return try decodeBase64ToJSON(str)
+        }
+    }
+
+    static func determineHttpMethod(method: String) throws -> HTTP_METHOD {
+       if method.contains("get") {
+           return HTTP_METHOD.GET
+       } else if method.contains("post") {
+           return HTTP_METHOD.POST
+       } else {
+           throw NSError(domain: "UnsupportedMethod", code: 2,
+                        userInfo: ["description": "Unsupported HTTP method: \(method)"])
+       }
     }
     
     private static func extractQueryParams(from queryItems: [URLQueryItem]) throws -> [String: String] {
