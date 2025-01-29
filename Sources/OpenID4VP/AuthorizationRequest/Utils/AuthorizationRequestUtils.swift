@@ -20,6 +20,60 @@ func createAuthorizationRequest(from params: [String: String]) -> AuthorizationR
     )
 }
 
+func baseRequiredKeys(params: [String: String]) -> [String] {
+    var keys = [
+        "presentation_definition",
+        "client_id",
+        "client_id_scheme",
+        "response_type",
+        "nonce",
+        "state"
+    ]
+    
+    if params["client_metadata"] != nil {
+        keys.append("client_metadata")
+    }
+    return keys
+}
+
+func validateUriCombinations(
+    redirectUri: String?,
+    responseUri: String?,
+    responseMode: String?
+) throws {
+    let allNil = redirectUri == nil && responseUri == nil && responseMode == nil
+    let allPresent = redirectUri != nil && responseUri != nil && responseMode != nil
+    
+    if allNil {
+        throw Logger.handleException(
+            exceptionType: "MissingInput",
+            fieldPath: ["response_uri", "response_mode", "redirect_uri"],
+            className: AuthorizationRequest.className
+        )
+    }
+    if allPresent {
+        throw Logger.handleException(
+            exceptionType: "InvalidInput",
+            fieldPath: ["response_uri", "response_mode", "redirect_uri"],
+            className: AuthorizationRequest.className
+        )
+    }
+}
+
+func updateRequiredKeys(
+    _ requiredKeys: inout [String],
+    redirectUri: String?,
+    responseUri: String?,
+    responseMode: String?
+) {
+    if redirectUri != nil, responseUri == nil, responseMode == nil {
+        requiredKeys.append("redirect_uri")
+    }
+    if responseUri != nil, responseMode != nil, redirectUri == nil {
+        requiredKeys.append(contentsOf: ["response_uri", "response_mode"])
+    }
+}
+
 func validateVerifier(verifierList: [Verifier], authorizationRequest: AuthorizationRequest) throws {
     
     let clientIdScheme = authorizationRequest.clientIdScheme

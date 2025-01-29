@@ -22,6 +22,7 @@ public struct AuthorizationRequest: Encodable {
     var clientMetadata: Any?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
+    static var validateClient: Bool?
     
     enum CodingKeys: String, CodingKey {
         case client_id
@@ -72,6 +73,8 @@ public struct AuthorizationRequest: Encodable {
             throw Logger.handleException(exceptionType: "Decoding", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
         }
         
+        validateClient = shouldValidateClient
+        
         let decodedRequest = "\(baseUrl)?\(decodedQuery)"
         
         return try await parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri, networkManager: networkManager, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON)
@@ -88,49 +91,58 @@ public struct AuthorizationRequest: Encodable {
         }
         
         var params = try extractQueryParams(from: queryItems)
+        
         var authRequestParams = try await fetchAuthRequestData(params: params, networkManager: networkManager)
         
         params = try await validateQueryParams(authRequestParams,setResponseUri,networkManager)
         
-        var  authorizationRequestObj = createAuthorizationRequest(from: params)
+        let authorizationRequestObj = createAuthorizationRequest(from: params)
         
-        if(shouldValidateClient){
+        if(validateClient!){
             try validateVerifier(verifierList: trustedVerifierJSON, authorizationRequest: authorizationRequestObj)
         }
+        
         return authorizationRequestObj
         
     }
     
     static func fetchAuthRequestData(params: [String: String], networkManager: NetworkManaging) async throws -> [String: String] {
-       guard let requestUri = params["request_uri"] else {
-           return params
-       }
-       do {
-           if !isNeitherNullNorEmpty(field: requestUri) && !(requestUri != "null") {
-               throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
-           }
-           let requestUriMethod = params["request_uri_method"] ?? "get HTTP/1.1"
-           let httpMethod = try determineHttpMethod(method: requestUriMethod)
-           
-           guard let url = URL(string: params["request_uri"]!) else {
-               throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
-           }
-           
-           let authorizationRequestParams = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil) ?? ""
-           
-           return try await processResponseAndFetchAuthRequestParams(authorizationRequest: authorizationRequestParams, networkManager: networkManager)
-       } catch {
-           throw error
-       }
+        guard let requestUri = params["request_uri"] else {
+            return params
+        }
+        do {
+            if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
+            }
+            let requestUriMethod = params["request_uri_method"] ?? "get HTTP/1.1"
+            let httpMethod = try determineHttpMethod(method: requestUriMethod)
+            
+            guard let url = URL(string: params["request_uri"]!) else {
+                throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
+            }
+            
+            let authorizationRequestParams = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil) ?? ""
+            
+            let resquestUriParams =  try await processResponseAndFetchAuthRequestParams(authorizationRequest: authorizationRequestParams, networkManager: networkManager)
+            
+            guard params["client_id"] == resquestUriParams["client_id"] else {
+                throw Logger.handleException(exceptionType: "InvalidVerifierClientID", className: AuthorizationRequest.className)
+            }
+            
+            return resquestUriParams
+        } catch {
+            throw error
+        }
     }
     
     static func processResponseAndFetchAuthRequestParams(authorizationRequest: String, networkManager: NetworkManaging) async throws -> [String: String] {
         if authorizationRequest.components(separatedBy: ".").count == 3 {
             let authRequestParamaeters =  try extractPayloadJsonFromJwt(jwtToken: authorizationRequest)
             
-            let proofJwtManager = ProofJwtManager(networkManager: networkManager)
-            try await proofJwtManager.verifyJWT(jwtToken: authorizationRequest, clientId: authRequestParamaeters["client_id"]!, clienIdScheme: authRequestParamaeters["client_id_scheme"]!)
-        
+            if(validateClient!){
+                let proofJwtManager = ProofJwtManager(networkManager: networkManager)
+                try await proofJwtManager.verifyJWT(jwtToken: authorizationRequest, clientId: authRequestParamaeters["client_id"]!, clienIdScheme: authRequestParamaeters["client_id_scheme"]!)
+            }
             return authRequestParamaeters
             
         }
@@ -139,16 +151,16 @@ public struct AuthorizationRequest: Encodable {
             return try decodeBase64ToJSON(str)
         }
     }
-
+    
     static func determineHttpMethod(method: String) throws -> HTTP_METHOD {
-       if method.contains("get") {
-           return HTTP_METHOD.GET
-       } else if method.contains("post") {
-           return HTTP_METHOD.POST
-       } else {
-           throw NSError(domain: "UnsupportedMethod", code: 2,
-                        userInfo: ["description": "Unsupported HTTP method: \(method)"])
-       }
+        if method.contains("get") {
+            return HTTP_METHOD.GET
+        } else if method.contains("post") {
+            return HTTP_METHOD.POST
+        } else {
+            throw NSError(domain: "UnsupportedMethod", code: 2,
+                          userInfo: ["description": "Unsupported HTTP method: \(method)"])
+        }
     }
     
     private static func extractQueryParams(from queryItems: [URLQueryItem]) throws -> [String: String] {
@@ -160,6 +172,58 @@ public struct AuthorizationRequest: Encodable {
         
         return extractedValues
     }
+    
+    private static func validateQueryParams(
+        _ paramsToValidate: [String: String],
+        _ setResponseUri: (String) -> Void,
+        _ networkManager: NetworkManaging
+    ) async throws -> [String: String] {
+        var values = paramsToValidate
+        var requiredKeys = baseRequiredKeys(params: values)
+        
+        try validateUriCombinations(
+            redirectUri: values["redirect_uri"],
+            responseUri: values["response_uri"],
+            responseMode: values["response_mode"]
+        )
+        
+        updateRequiredKeys(
+            &requiredKeys,
+            redirectUri: values["redirect_uri"],
+            responseUri: values["response_uri"],
+            responseMode: values["response_mode"]
+        )
+        
+        for key in requiredKeys {
+            try await validateKey(key, values: &values, networkManager: networkManager, setResponseUri: setResponseUri)
+        }
+        
+        return values
+    }
+    
+    private static func validateKey(
+        _ key: String,
+        values: inout [String: String],
+        networkManager: NetworkManaging,
+        setResponseUri: (String) -> Void
+    ) async throws {
+        if key == "presentation_definition" {
+            values[key] = try await fetchPresentationDefinition(params: values, networkManager: networkManager)
+        }
+        
+        guard let value = values[key], isNeitherNullNorEmpty(field: value), value != "null" else {
+            throw Logger.handleException(
+                exceptionType: values[key] == nil ? "MissingInput" : "InvalidInput",
+                fieldPath: [key],
+                className: AuthorizationRequest.className
+            )
+        }
+        
+        if key == "response_uri" {
+            setResponseUri(value)
+        }
+    }
+    
     
     private static func fetchPresentationDefinition(params: [String: String], networkManager: NetworkManaging) async throws -> String{
         let hasPresentationDefinition = params.keys.contains("presentation_definition")
@@ -196,112 +260,4 @@ public struct AuthorizationRequest: Encodable {
         }
         return presentationDefinition
     }
-    
-    
-    private static func validateQueryParams(
-        _ paramsToValidate: [String: String],
-        _ setResponseUri: (String) -> Void,
-        _ networkManager: NetworkManaging
-    ) async throws -> [String: String] {
-        var values = paramsToValidate
-        var requiredKeys = baseRequiredKeys(params: values)
-        
-        try validateUriCombinations(
-            redirectUri: values["redirect_uri"],
-            responseUri: values["response_uri"],
-            responseMode: values["response_mode"]
-        )
-        
-        updateRequiredKeys(
-            &requiredKeys,
-            redirectUri: values["redirect_uri"],
-            responseUri: values["response_uri"],
-            responseMode: values["response_mode"]
-        )
-        
-        for key in requiredKeys {
-            try await validateKey(key, values: &values, networkManager: networkManager, setResponseUri: setResponseUri)
-        }
-        
-        return values
-    }
-    
-    private static func baseRequiredKeys(params: [String: String]) -> [String] {
-        var keys = [
-            "presentation_definition",
-            "client_id",
-            "client_id_scheme",
-            "response_type",
-            "nonce",
-            "state"
-        ]
-        
-        if params["client_metadata"] != nil {
-            keys.append("client_metadata")
-        }
-        
-        return keys
-    }
-    
-    private static func validateUriCombinations(
-        redirectUri: String?,
-        responseUri: String?,
-        responseMode: String?
-    ) throws {
-        let allNil = redirectUri == nil && responseUri == nil && responseMode == nil
-        let allPresent = redirectUri != nil && responseUri != nil && responseMode != nil
-        
-        if allNil {
-            throw Logger.handleException(
-                exceptionType: "MissingInput",
-                fieldPath: ["response_uri", "response_mode", "redirect_uri"],
-                className: AuthorizationRequest.className
-            )
-        }
-        if allPresent {
-            throw Logger.handleException(
-                exceptionType: "InvalidInput",
-                fieldPath: ["response_uri", "response_mode", "redirect_uri"],
-                className: AuthorizationRequest.className
-            )
-        }
-    }
-    
-    private static func updateRequiredKeys(
-        _ requiredKeys: inout [String],
-        redirectUri: String?,
-        responseUri: String?,
-        responseMode: String?
-    ) {
-        if redirectUri != nil, responseUri == nil, responseMode == nil {
-            requiredKeys.append("redirect_uri")
-        }
-        if responseUri != nil, responseMode != nil, redirectUri == nil {
-            requiredKeys.append(contentsOf: ["response_uri", "response_mode"])
-        }
-    }
-    
-    private static func validateKey(
-        _ key: String,
-        values: inout [String: String],
-        networkManager: NetworkManaging,
-        setResponseUri: (String) -> Void
-    ) async throws {
-        if key == "presentation_definition" {
-            values[key] = try await fetchPresentationDefinition(params: values, networkManager: networkManager)
-        }
-        
-        guard let value = values[key], isNeitherNullNorEmpty(field: value), value != "null" else {
-            throw Logger.handleException(
-                exceptionType: values[key] == nil ? "MissingInput" : "InvalidInput",
-                fieldPath: [key],
-                className: AuthorizationRequest.className
-            )
-        }
-        
-        if key == "response_uri" {
-            setResponseUri(value)
-        }
-    }
-    
 }

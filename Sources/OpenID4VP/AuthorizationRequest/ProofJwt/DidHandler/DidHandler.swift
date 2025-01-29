@@ -25,7 +25,7 @@ struct DidHandler: JwtProofTypeHandler {
         try verifyJWT(jwt: jwtToken, publicKey: extractPublicKeyMultibase(for: kid, from: response)!)
     }
     
-    func verifyJWT(jwt: String, publicKey: String) throws {
+    private func verifyJWT(jwt: String, publicKey: String) throws {
         do {
             
             let base64PublicKey = makeBase64Standard(publicKey)
