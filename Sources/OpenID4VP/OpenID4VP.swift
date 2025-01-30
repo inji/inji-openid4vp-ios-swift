@@ -56,7 +56,7 @@ public class OpenID4VP {
     }
 
     public func sendErrorToVerifier(error: Error) async {
-        guard let url = URL(string: responseUri!) else { return }
+        guard let url = URL(string: responseUri ?? "") else { return }
         let logTag = Logger.getLogTag(String(describing: OpenID4VP.self))
         
         let errorInfo = """

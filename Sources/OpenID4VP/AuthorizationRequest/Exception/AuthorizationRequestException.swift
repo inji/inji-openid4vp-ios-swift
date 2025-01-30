@@ -48,7 +48,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
         case .emptyVerifierList:
             return "Verifiers Validation failed: Trusted Verifiers list is empty"
         case .invalidVerifierRedirectUri:
-            return "VP sharing failed: Verifier authentication was unsuccessful"
+            return "Client Id and Redirect uri value should be equal"
         case .invalidInputPattern:
             return "Invalid Input Pattern: $fieldName pattern is not matching with OpenId4VP specification"
         case .unexpectedError(let message):

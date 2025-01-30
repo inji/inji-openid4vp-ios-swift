@@ -71,6 +71,40 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
     
+    // base64 -> client_id_scheme = redirect_uri, with response uri and response mode
+    func testInvalidBase64EncodedVpRequestWithRedirectUriAndResponseUriResponseMode() async {
+
+        let verifiers = createVerifiers(from: testVerifierList)
+
+        let error = await Task {
+        try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testVpRequestWithRedirectUriAndResponseUriResponseMode, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        }.result
+       
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Response Uri and Response mode should not be present, when client id scheme is Redirect Uri"
+            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    // base64 -> client_id_scheme = redirect_uri, client id not equal to redirect uri
+    func testVpRequestWithRedirectUriAndClientIdNotEqualtoRedirectUri() async {
+
+        let verifiers = createVerifiers(from: testVerifierList)
+
+        let error = await Task {
+        try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testVpRequestWithRedirectUriAndClientIdNotEqual, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        }.result
+       
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Client Id and Redirect uri value should be equal"
+            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
     // base64 -> client_id_scheme = response_uri
     func testReturnDataForValidRequestWithResponseUri() async {
 

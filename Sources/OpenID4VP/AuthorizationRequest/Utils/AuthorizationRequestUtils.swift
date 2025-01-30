@@ -94,6 +94,11 @@ func validateVerifier(verifierList: [Verifier], authorizationRequest: Authorizat
     }
     
     if clientIdScheme == ClientIdScheme.redirectUri.rawValue {
+        
+        guard authorizationRequest.responseUri == nil, authorizationRequest.responseMode == nil else {
+            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Response Uri and Response mode should not be present, when client id scheme is Redirect Uri", className: AuthorizationRequest.className)
+        }
+        
         if (redirectUri != nil) {
             guard redirectUri == clientId else {
                 throw Logger.handleException(exceptionType: "InvalidVerifierRedirectUri", className: AuthorizationRequest.className)
