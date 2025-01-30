@@ -42,6 +42,10 @@ class Logger {
             exception = AuthorizationRequestException.decodingException(fieldPath: fieldPathAsString)
         case "InvalidVerifierClientID":
             exception = AuthorizationRequestException.invalidVerifierClientID
+        case "MismatchingClientIDInRequest":
+            exception = AuthorizationRequestException.mismatchingClientIDInRequest
+        case "MismatchingClientIdSchemeInRequest":
+            exception = AuthorizationRequestException.mismatchingClientIdSchemeInRequest
         case "EmptyVerifierList":
             exception = AuthorizationRequestException.emptyVerifierList
         case "InvalidVerifierRedirectUri":

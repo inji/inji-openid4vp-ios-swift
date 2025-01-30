@@ -74,7 +74,7 @@ func updateRequiredKeys(
     }
 }
 
-func validateVerifier(verifierList: [Verifier], authorizationRequest: AuthorizationRequest) throws {
+func validateVerifier(verifierList: [Verifier], authorizationRequest: AuthorizationRequest,shouldValidateClient: Bool) throws {
     
     let clientIdScheme = authorizationRequest.clientIdScheme
     let clientId = authorizationRequest.clientId
@@ -82,13 +82,15 @@ func validateVerifier(verifierList: [Verifier], authorizationRequest: Authorizat
     
     if clientIdScheme == ClientIdScheme.preRegistered.rawValue {
         
-        guard !verifierList.isEmpty else {
+        if shouldValidateClient {
+            guard !verifierList.isEmpty else {
                 throw Logger.handleException(exceptionType: "EmptyVerifierList", className: AuthorizationRequest.className)
             }
-        
-        guard verifierList.contains(where: { $0.clientId == clientId && $0.responseUris.contains(authorizationRequest.responseUri!) }) else {
-                    throw Logger.handleException(exceptionType: "InvalidVerifierClientID", className: AuthorizationRequest.className)
-                }
+            
+            guard verifierList.contains(where: { $0.clientId == clientId && $0.responseUris.contains(authorizationRequest.responseUri!) }) else {
+                throw Logger.handleException(exceptionType: "InvalidVerifierClientID", className: AuthorizationRequest.className)
+            }
+        }
     }
     
     if clientIdScheme == ClientIdScheme.redirectUri.rawValue {
@@ -97,6 +99,16 @@ func validateVerifier(verifierList: [Verifier], authorizationRequest: Authorizat
                 throw Logger.handleException(exceptionType: "InvalidVerifierRedirectUri", className: AuthorizationRequest.className)
             }
         }
+    }
+}
+
+func validateQRRequestParamsAndRetrievedRequestParams(params: [String: String], requestUriParams: [String: String]) throws {
+    guard params["client_id"] == requestUriParams["client_id"] else {
+        throw Logger.handleException(exceptionType: "MismatchingClientIDInRequest", className: AuthorizationRequest.className)
+    }
+    
+    guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] else {
+        throw Logger.handleException(exceptionType: "MismatchingClientIdSchemeInRequest", className: AuthorizationRequest.className)
     }
 }
 

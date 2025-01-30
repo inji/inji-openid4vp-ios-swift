@@ -6,7 +6,8 @@ func extractKid(from jwtToken: String) -> String? {
           let headerData = Data(base64Encoded: makeBase64Standard(String(parts[0]))),
           let headerJson = try? JSONSerialization.jsonObject(with: headerData, options: []),
           let headerDict = headerJson as? [String: Any],
-          let kid = headerDict["kid"] as? String else {
+          let kid = headerDict["kid"] as? String,
+          isNeitherNullNorEmpty(field: kid) else {
         return nil
     }
     return kid
@@ -25,7 +26,7 @@ func extractPublicKeyMultibase(for kid: String, from json: String) throws -> Str
             
             for method in verificationMethod {
                 if let id = method["id"] as? String, id.hasSuffix(kid),
-                   let publicKeyMultibase = method["publicKeyMultibase"] as? String {
+                   let publicKeyMultibase = method["publicKey"] as? String {
                     return publicKeyMultibase
                 }
             }

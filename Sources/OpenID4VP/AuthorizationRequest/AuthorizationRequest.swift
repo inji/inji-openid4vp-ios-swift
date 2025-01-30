@@ -22,7 +22,6 @@ public struct AuthorizationRequest: Encodable {
     var clientMetadata: Any?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
-    static var validateClient: Bool?
     
     enum CodingKeys: String, CodingKey {
         case client_id
@@ -73,8 +72,6 @@ public struct AuthorizationRequest: Encodable {
             throw Logger.handleException(exceptionType: "Decoding", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
         }
         
-        validateClient = shouldValidateClient
-        
         let decodedRequest = "\(baseUrl)?\(decodedQuery)"
         
         return try await parseAuthorizationRequest(decodedAuthorizationRequest: decodedRequest, setResponseUri: setResponseUri, networkManager: networkManager, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON)
@@ -92,15 +89,13 @@ public struct AuthorizationRequest: Encodable {
         
         var params = try extractQueryParams(from: queryItems)
         
-        var authRequestParams = try await fetchAuthRequestData(params: params, networkManager: networkManager)
+        let authRequestParams = try await fetchAuthRequestData(params: params, networkManager: networkManager)
         
         params = try await validateQueryParams(authRequestParams,setResponseUri,networkManager)
         
         let authorizationRequestObj = createAuthorizationRequest(from: params)
         
-        if(validateClient!){
-            try validateVerifier(verifierList: trustedVerifierJSON, authorizationRequest: authorizationRequestObj)
-        }
+        try validateVerifier(verifierList: trustedVerifierJSON, authorizationRequest: authorizationRequestObj, shouldValidateClient: shouldValidateClient)
         
         return authorizationRequestObj
         
@@ -125,9 +120,7 @@ public struct AuthorizationRequest: Encodable {
             
             let resquestUriParams =  try await processResponseAndFetchAuthRequestParams(authorizationRequest: authorizationRequestParams, networkManager: networkManager)
             
-            guard params["client_id"] == resquestUriParams["client_id"] else {
-                throw Logger.handleException(exceptionType: "InvalidVerifierClientID", className: AuthorizationRequest.className)
-            }
+            try validateQRRequestParamsAndRetrievedRequestParams(params: params, requestUriParams: resquestUriParams)
             
             return resquestUriParams
         } catch {
@@ -139,12 +132,10 @@ public struct AuthorizationRequest: Encodable {
         if authorizationRequest.components(separatedBy: ".").count == 3 {
             let authRequestParamaeters =  try extractPayloadJsonFromJwt(jwtToken: authorizationRequest)
             
-            if(validateClient!){
-                let proofJwtManager = ProofJwtManager(networkManager: networkManager)
-                try await proofJwtManager.verifyJWT(jwtToken: authorizationRequest, clientId: authRequestParamaeters["client_id"]!, clienIdScheme: authRequestParamaeters["client_id_scheme"]!)
-            }
-            return authRequestParamaeters
+            let proofJwtManager = ProofJwtManager(networkManager: networkManager)
+            try await proofJwtManager.verifyJWT(jwtToken: authorizationRequest, clientId: authRequestParamaeters["client_id"]!, clienIdScheme: authRequestParamaeters["client_id_scheme"]!)
             
+            return authRequestParamaeters
         }
         else{
             let str = makeBase64Standard(authorizationRequest)
