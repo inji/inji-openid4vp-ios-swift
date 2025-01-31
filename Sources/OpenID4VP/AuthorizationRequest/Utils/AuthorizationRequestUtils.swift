@@ -5,19 +5,74 @@ func isJWT(_ encodedString: String) -> Bool{
     return encodedString.contains(".") ? true : false
 }
 
-func createAuthorizationRequest(from params: [String: String]) -> AuthorizationRequest {
-    return AuthorizationRequest(
-        clientId: params["client_id"]!,
-        clientIdScheme: params["client_id_scheme"]!,
-        presentationDefinition: params["presentation_definition"]!,
-        responseType: params["response_type"]!,
-        responseMode: params["response_mode"],
-        nonce: params["nonce"]!,
-        state: params["state"]!,
-        redirectUri: params["redirect_uri"],
-        responseUri: params["response_uri"],
-        clientMetadata: params["client_metadata"]
-    )
+func determineHttpMethod(method: String) throws -> HTTP_METHOD {
+    if method.contains("get") {
+        return HTTP_METHOD.GET
+    } else if method.contains("post") {
+        return HTTP_METHOD.POST
+    } else {
+        throw NSError(domain: "UnsupportedMethod", code: 2,
+                      userInfo: ["description": "Unsupported HTTP method: \(method)"])
+    }
+}
+
+func fetchPresentationDefinition(params: [String: String], networkManager: NetworkManaging) async throws -> String{
+    let hasPresentationDefinition = params.keys.contains("presentation_definition")
+    let hasPresentationDefinitionUri = params.keys.contains("presentation_definition_uri")
+    let presentationDefinition: String
+    
+    if hasPresentationDefinition && hasPresentationDefinitionUri {
+        throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param can be provided but not both", className: AuthorizationRequest.className)
+        
+    } else if(hasPresentationDefinition){
+        
+        let value = params["presentation_definition"]!
+        if !isNeitherNullNorEmpty(field: value) && !(value != "null") {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition"], className: AuthorizationRequest.className)
+        }
+        presentationDefinition = params["presentation_definition"]!
+        
+    }else if(hasPresentationDefinitionUri){
+        
+        let value = params["presentation_definition_uri"]!
+        
+        if !isNeitherNullNorEmpty(field: value) && !(value != "null") {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
+        }
+        
+        guard let url = URL(string: params["presentation_definition_uri"]!) else {
+            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["presentation_definition_uri"], className: AuthorizationRequest.className)
+        }
+        
+        presentationDefinition = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil) ?? ""
+        
+    }else {
+        throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Either presentation_definition or presentation_definition_uri request param must be present", className: AuthorizationRequest.className)
+    }
+    return presentationDefinition
+}
+
+func validateKey(
+    _ key: String,
+    values: inout [String: String],
+    networkManager: NetworkManaging,
+    setResponseUri: (String) -> Void
+) async throws {
+    if key == "presentation_definition" {
+        values[key] = try await fetchPresentationDefinition(params: values, networkManager: networkManager)
+    }
+    
+    guard let value = values[key], isNeitherNullNorEmpty(field: value), value != "null" else {
+        throw Logger.handleException(
+            exceptionType: values[key] == nil ? "MissingInput" : "InvalidInput",
+            fieldPath: [key],
+            className: AuthorizationRequest.className
+        )
+    }
+    
+    if key == "response_uri" {
+        setResponseUri(value)
+    }
 }
 
 func baseRequiredKeys(params: [String: String]) -> [String] {
