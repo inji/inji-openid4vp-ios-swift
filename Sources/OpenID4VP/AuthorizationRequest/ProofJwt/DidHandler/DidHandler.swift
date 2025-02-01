@@ -15,7 +15,7 @@ struct DidHandler: JwtProofTypeHandler {
         
         let response = (try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil))!
         
-        guard let kid = extractKid(from: jwtToken) else {
+        guard let kid = try extractKid(from: jwtToken) else {
             throw Logger.handleException(
                 exceptionType: "KidExtractionFailed",
                 message: "Kid extraction from did document failed",

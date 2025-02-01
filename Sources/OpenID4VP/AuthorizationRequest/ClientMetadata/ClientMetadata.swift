@@ -6,7 +6,6 @@ public struct ClientMetadata: Codable {
     let authorization_encrypted_response_alg: String?
     let authorization_encrypted_response_enc: String?
     let vp_formats: [String: [String: [String]]]
-    let require_signed_request_object: Bool?
     static let className = String(describing: PresentationDefinitionValidator.self)
     
     enum CodingKeys: String, CodingKey {
@@ -15,7 +14,6 @@ public struct ClientMetadata: Codable {
         case authorization_encrypted_response_alg
         case authorization_encrypted_response_enc
         case vp_formats
-        case require_signed_request_object
     }
     
     public init(from decoder: any Decoder) throws {
@@ -60,17 +58,9 @@ public struct ClientMetadata: Codable {
             className: ClientMetadata.className,
             isMandatory: true
         )!
-        
-        self .require_signed_request_object = try container.decodeRequired(
-            Bool.self,
-            forKey: .require_signed_request_object,
-            fieldPath: ["client_metadata", "require_signed_request_object"],
-            className: ClientMetadata.className,
-            isMandatory: false
-        )
     }
     
-    static func decodeAndValidateClientMetadata(clientMetadata: String) throws -> ClientMetadata {
+    static func deserializeAndValidate(clientMetadata: String) throws -> ClientMetadata {
         
         guard let encodedData = clientMetadata.data(using: .utf8) else {
             throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: ["client_metadata"], className: ClientMetadata.className)

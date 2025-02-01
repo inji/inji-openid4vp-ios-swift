@@ -1,25 +1,27 @@
 import Foundation
 
+enum JwtPart: Int {
+    case header = 0, payload, signature
+}
+
 func makeBase64Standard(_ base64String: String) -> String {
-    var base64 = base64String
+    var validBase64String = base64String
         .replacingOccurrences(of: "-", with: "+")
         .replacingOccurrences(of: "_", with: "/")
     
-    while base64.count % 4 != 0 {
-        base64.append("=")
+    while validBase64String.count % 4 != 0 {
+        validBase64String.append("=")
     }
-    return base64
+    return validBase64String
 }
 
-func extractDataJsonFromJwt(_ jwtToken: String, part: JwtPart) -> [String: Any]? {
-    let parts = jwtToken.split(separator: ".")
-    guard parts.indices.contains(part.rawValue),
-          let data = Data(base64Encoded: makeBase64Standard(String(parts[part.rawValue]))),
-          let json = try? JSONSerialization.jsonObject(with: data, options: []),
-          let jsonDict = json as? [String: Any] else {
-        return nil
-    }
-    return jsonDict
+func getStringValue(_ value: Any?) -> String? {
+    return value as? String
+}
+
+func decodeBase64ToString(_ encodedAuthorizationRequest: String) -> String? {
+    return Data(base64Encoded: encodedAuthorizationRequest)
+        .flatMap { String(data: $0, encoding: .utf8) }
 }
 
 func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
@@ -40,9 +42,8 @@ func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
     }
 }
 
-func extractPayloadJsonFromJwt(jwtToken: String) throws -> [String:String] {
-        let components = jwtToken.split(separator: ".")
-        let payload = String(components[1])
-        let str = makeBase64Standard(payload)
-        return try decodeBase64ToJSON(str)
+func extractPayloadJsonFromJwt(jwtToken: String, jwtPart: JwtPart) throws -> [String:String] {
+    let components = jwtToken.split(separator: ".")
+    let payload = String(components[jwtPart.rawValue])
+    return try decodeBase64ToJSON(makeBase64Standard(payload))
 }

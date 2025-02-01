@@ -1,10 +1,8 @@
 import Foundation
 
-func extractKid(from jwtToken: String) -> String? {
-    guard let jwtHeader = extractDataJsonFromJwt(jwtToken, part: .header) else {
-        return nil
-    }
-    return jwtHeader["kid"] as? String
+func extractKid(from jwtToken: String) throws -> String? {
+        let jwtHeader = try extractPayloadJsonFromJwt(jwtToken: jwtToken, jwtPart: .header)
+        return jwtHeader["kid"]
 }
 
 func extractPublicKeyMultibase(for kid: String, from json: String) throws -> String? {

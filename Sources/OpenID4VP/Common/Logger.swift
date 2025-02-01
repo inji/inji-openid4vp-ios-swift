@@ -66,6 +66,8 @@ class Logger {
             exception = ProofVerificationException.invalidSignature(message: message ?? "")
         case "ProofVerificationFailed":
             exception = ProofVerificationException.proofVerificationFailed(message: message ?? "")
+        case "UnsupportedHttpMethod" :
+            exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
         default:
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }

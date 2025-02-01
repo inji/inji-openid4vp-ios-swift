@@ -4,8 +4,8 @@ import XCTest
 class OpenID4VPTests: XCTestCase {
     var openID4VP: OpenID4VP!
     var mockNetworkManager: MockNetworkManager!
-
-    let authorizationRequest = AuthorizationRequest(
+    
+    var authorizationRequest = AuthorizationRequest(
         clientId: "client_id",
         clientIdScheme: "123",
         presentationDefinition: "presentationDefinition" as String,
@@ -17,7 +17,7 @@ class OpenID4VPTests: XCTestCase {
         responseUri: "https://example.com",
         clientMetadata: "clientMetaData" as String
     )
-
+    
     let jws = "wemcn3234ns"
     let signatureAlgoType = "RsaSignature2018"
     let publicKey = "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n"
@@ -53,7 +53,6 @@ class OpenID4VPTests: XCTestCase {
         mockNetworkManager = nil
         super.tearDown()
     }
-
 
     // base64 -> client_id_scheme = redirect_uri
     func testReturnDataForValidRequestWithRedirectUri() async {
@@ -240,21 +239,13 @@ class OpenID4VPTests: XCTestCase {
         }
     }
     
-    //
+    
     func testValidateVerifierForAGivenVerifierListAndRequestObject() async {
 
         let verifiers = createVerifiers(from: testVerifierList)
-
-        let decoded: AuthorizationRequest?
-
-        do {
-            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidBase64EncodedVpRequestWithRedirectUri, trustedVerifierJSON: verifiers, shouldValidateClient: true)
-        } catch {
-            decoded = nil
-        }
         
         let error = await Task {
-            try validateVerifier(verifierList: verifiers, authorizationRequest: decoded!, shouldValidateClient: true)
+            try validateVerifier(verifierList: verifiers, params: resquestUriResponseData, shouldValidateClient: true)
         }.result
 
         switch error {
@@ -300,11 +291,7 @@ class OpenID4VPTests: XCTestCase {
     // NetworkManager Tests Success
     func testSendVpSuccess() async throws {
         mockNetworkManager.setMockResponse(for: URL(string: "https://example.com")!, response: "Success: Request completed successfully.")
-        do{ let presentationDefinition: PresentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: decodedPresentationDefinition)
-            
-            openID4VP.updateAuthorizationRequest(presentationDefinition, nil)
-        }catch{}
-        
+    
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
         
         let response = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: vcResponseMetaData)
@@ -314,11 +301,6 @@ class OpenID4VPTests: XCTestCase {
 
     // NetworkManager Tests Failure
     func testSendVpFailure() async {
-
-        do{ let presentationDefinition: PresentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: decodedPresentationDefinition)
-            
-            openID4VP.updateAuthorizationRequest(presentationDefinition, nil)
-        }catch{}
         
         let errorMessage = "Network Request failed with error response: response"
         mockNetworkManager.setMockResponse(for: URL(string: "https://example.com")!, error: NetworkRequestException.networkRequestFailed(message: errorMessage))

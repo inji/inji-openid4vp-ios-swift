@@ -11,14 +11,6 @@ public class OpenID4VP {
         self.networkManager = networkManager ?? NetworkManager.shared
     }
 
-    public func updateAuthorizationRequest(_ presentationDefinition: PresentationDefinition, _ clientMetadata: ClientMetadata?) {
-        self.authorizationRequest?.presentationDefinition = presentationDefinition as PresentationDefinition
-       
-        if let clientMetadata = clientMetadata {
-            self.authorizationRequest?.clientMetadata = clientMetadata
-        }
-    }
-
     public func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
     }
@@ -29,8 +21,6 @@ public class OpenID4VP {
 
         do {
             authorizationRequest =  try await AuthorizationRequest.validateAndGetAuthorizationRequest(encodedAuthorizationRequest: encodedAuthorizationRequest,setResponseUri: setResponseUri, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON, networkManager: networkManager as NetworkManaging)
-            
-            try AuthenticationResponse.validateAuthorizationRequestPartially(authorizationRequest!, updateAuthorizationRequest: updateAuthorizationRequest)
             
             return authorizationRequest!
 
@@ -48,7 +38,7 @@ public class OpenID4VP {
     public func shareVerifiablePresentation(vpResponseMetadata: VPResponseMetadata) async throws -> String? {
 
         do {
-            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, state: authorizationRequest!.state, responseUri: authorizationRequest!.responseUri!,presentationDefinitionId: (authorizationRequest?.presentationDefinition as! PresentationDefinition).id, networkManager: networkManager)
+            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, state: authorizationRequest!.state, responseUri: authorizationRequest!.responseUri!,presentationDefinitionId: authorizationRequest!.clientId, networkManager: networkManager)
         } catch(let exception) {
             await sendErrorToVerifier(error: exception)
             throw exception
