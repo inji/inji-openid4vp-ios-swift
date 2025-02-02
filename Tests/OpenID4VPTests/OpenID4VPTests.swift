@@ -4,18 +4,20 @@ import XCTest
 class OpenID4VPTests: XCTestCase {
     var openID4VP: OpenID4VP!
     var mockNetworkManager: MockNetworkManager!
-
-    let authorizationRequest = AuthorizationRequest(
+    
+    var authorizationRequest = AuthorizationRequest(
         clientId: "client_id",
+        clientIdScheme: "123",
         presentationDefinition: "presentationDefinition" as String,
         responseType: "responseType",
         responseMode: "responseMode",
         nonce: "nonce",
-        state: "state",
+        state: "state", 
+        redirectUri: "1234",
         responseUri: "https://example.com",
         clientMetadata: "clientMetaData" as String
     )
-
+    
     let jws = "wemcn3234ns"
     let signatureAlgoType = "RsaSignature2018"
     let publicKey = "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n"
@@ -31,6 +33,8 @@ class OpenID4VPTests: XCTestCase {
         "{\"name\":\"dummyClient\"}"
 
     let vpToken = VpTokenForSigning(verifiableCredential: ["VC1", "VC2"],holder: "")
+    
+    let didResponse = "{\"@context\":\"https://w3id.org/did-resolution/v1\",\"didDocument\":{\"assertionMethod\":[\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0\"],\"service\":[],\"id\":\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"verificationMethod\":[{\"publicKey\":\"IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=\",\"controller\":\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"id\":\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0\",\"type\":\"Ed25519VerificationKey2020\",\"@context\":\"https://w3id.org/security/suites/ed25519-2020/v1\"}],\"@context\":[\"https://www.w3.org/ns/did/v1\"],\"alsoKnownAs\":[],\"authentication\":[\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0\"]},\"didResolutionMetadata\":{\"driverDuration\":19,\"contentType\":\"application/did+ld+json\",\"pattern\":\"^(did:web:.+)$\",\"driverUrl\":\"http://uni-resolver-driver-did-uport:8081/1.0/identifiers/\",\"duration\":19,\"did\":{\"didString\":\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"},\"didUrl\":{\"path\":null,\"fragment\":null,\"query\":null,\"didUrlString\":\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"parameters\":null,\"did\":{\"didString\":\"did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"}}},\"didDocumentMetadata\":{}}"
 
     override func setUp() {
         super.setUp()
@@ -50,40 +54,15 @@ class OpenID4VPTests: XCTestCase {
         super.tearDown()
     }
 
-    let testVerifierList:  [[String: Any]]  = [
-        [
-            "client_id": "https://injiverify.dev2.mosip.net",
-            "response_uris": [
-                "https://injiverify.qa-inji.mosip.net/redirect",
-                "https://injiverify.dev2.mosip.net/redirect"
-            ]
-        ],
-        [
-            "client_id": "https://injiverify.dev1.mosip.net",
-            "response_uris": [
-                "https://injiverify.qa-inji.mosip.net/redirect",
-                "https://injiverify.dev1.mosip.net/redirect"
-            ]
-        ]
-    ]
-    
-    let testValidEncodedVpRequest = "OPENID4VP://authorize?Y2xpZW50X2lkPWh0dHBzOi8vaW5qaXZlcmlmeS5kZXYyLm1vc2lwLm5ldCZwcmVzZW50YXRpb25fZGVmaW5pdGlvbj17ImlkIjoiMTIzIiwiaW5wdXRfZGVzY3JpcHRvcnMiOlt7ImlkIjoiYmFua2luZ19pbnB1dF8xIiwiZm9ybWF0IjogeyJsZHBfdmMiOiB7InByb29mX3R5cGUiOiBbIkVkMjU1MTlTaWduYXR1cmUyMDE4Il19fSwibmFtZSI6IkJhbmsgQWNjb3VudCBJbmZvcm1hdGlvbiIsInB1cnBvc2UiOiJoaWlpaSIsImNvbnN0cmFpbnRzIjp7ImZpZWxkcyI6W3sicGF0aCI6WyIkLmNyZWRlIl0sInB1cnBvc2UiOiJXZSBjYW4gdXNlIGZvciAgIyB2ZXJpZmljYXRpb24gcHVycG9zZSAjIGZvciBhbnl0aGluZyIsImZpbHRlciI6eyJ0eXBlIjoic3RyaW5nIiwicGF0dGVybiI6Il5bMC05XXs5fXxeKFthLXpBLVpdKXs0fShbYS16QS1aXSl7Mn0oWzAtOWEtekEtWl0pezJ9KFswLTlhLXpBLVpdezN9KT8kIn19LHsicGF0aCI6WyIkLnZjLmNyZWRlbnRpYWwiLCIkLnZjLmNyZWRlbnRpYWxTdWJqZWN0LmFjY291bnRbKl0ucm91dGUiLCIkLmFjY291bnRbKl0ucm91dGUiXSwicHVycG9zZSI6IldlIGNhbiB1c2UgZm9yIHZlcmlmaWNhdGlvbiBwdXJwb3NlIiwiZmlsdGVyIjp7InR5cGUiOiJzdHJpbmciLCJwYXR0ZXJuIjoiXlswLTldezl9fF4oW2EtekEtWl0pezR9KFthLXpBLVpdKXsyfShbMC05YS16QS1aXSl7Mn0oWzAtOWEtekEtWl17M30pPyQifX1dfX1dfSZyZXNwb25zZV90eXBlPXZwX3Rva2VuJnJlc3BvbnNlX21vZGU9ZGlyZWN0X3Bvc3Qmbm9uY2U9VmJSUkIvTFR4TGlYbVZOWnV5TU84QT09JnN0YXRlPSttUlFlMWQ2cEJvSnFGNkFiMjhrbGc9PSZyZXNwb25zZV91cmk9aHR0cHM6Ly9pbmppdmVyaWZ5LmRldjIubW9zaXAubmV0L3JlZGlyZWN0JmNsaWVudF9tZXRhZGF0YT17ImNsaWVudF9uYW1lIjoiSW5qaSBWZXJpZnkifQ=="
-
-    let testInvalidPresentationDefinitionVpRequest = "OPENID4VP://authorize?Y2xpZW50X2lkPWh0dHBzOi8vaW5qaXZlcmlmeS5kZXYyLm1vc2lwLm5ldCZwcmVzZW50YXRpb25fZGVmaW5pdGlvbj17ImlucHV0X2Rlc2NyaXB0b3JzIjpbXX0mcmVzcG9uc2VfdHlwZT12cF90b2tlbiZyZXNwb25zZV9tb2RlPWRpcmVjdF9wb3N0Jm5vbmNlPVZiUlJCL0xUeExpWG1WTlp1eU1POEE9PSZzdGF0ZT0rbVJRZTFkNnBCb0pxRjZBYjI4a2xnPT0mcmVzcG9uc2VfdXJpPWh0dHBzOi8vaW5qaXZlcmlmeS5kZXYyLm1vc2lwLm5ldC9yZWRpcmVjdA=="
-
-    let invalidVpRequest = "OPENID4VP://authorize?Y2xpZW50X2lkPWh0dHBzOi8vaW5qaXZlcmlmeS5kZXYyLm1vc2lwLm5ldCZwcmVzZW50YXRpb25fZGVmaW5pdGlvbj17ImlucHV0X2Rlc2NyaXB0b3JzIjpbXX0mcmVzcG9uc2VfdHlwZT12cF90b2tlbiZyZXNwb25zZV9tb2RlPWRpcmVjdF9wb3N0Jm5vbmNlPVZiUlJCL0xUeExpWG1WTlp1eU1POEE9PSZzdGF0ZT0rbVJRZTFkNnBCb0pxRjZBYjI4a2xnPT0mcmVzcG9uc2VfdXJpPWh0dHBzOi8vaW5qaXZlcmlmeS5kZXYyLm1vc2lwLm5ldC9yZWRpcmVjdA=="
-    
-    let invalidClientMetadata =
-    "OPENID4VP://authorize?Y2xpZW50X2lkPWh0dHBzOi8vaW5qaXZlcmlmeS5kZXYyLm1vc2lwLm5ldCZwcmVzZW50YXRpb25fZGVmaW5pdGlvbj17ImlkIjoiIzIzNDUzMzMiLCJpbnB1dF9kZXNjcmlwdG9ycyI6W3siaWQiOiJiYW5raW5nX2lucHV0XzEiLCJmb3JtYXQiOiB7ImxkcF92YyI6IHsicHJvb2ZfdHlwZSI6IFsiRWQyNTUxOVNpZ25hdHVyZTIwMTgiXX19LCJuYW1lIjoiQmFuayBBY2NvdW50IEluZm9ybWF0aW9uIiwicHVycG9zZSI6IldlIGNhbiBvbmx5IHJlbWl0IHBheW1lbnQgdG8gYSBjdXJyZW50bHktdmFsaWQgYmFuayBhY2NvdW50IGluIHRoZSBVUywgRnJhbmNlLCBvciBHZXJtYW55LCBzdWJtaXR0ZWQgYXMgYW4gQUJBIEFjY3Qgb3IgSUJBTi4iLCJjb25zdHJhaW50cyI6eyJmaWVsZHMiOlt7InBhdGgiOlsiJC5jcmVkZSJdLCJwdXJwb3NlIjoiV2UgY2FuIHVzZSBmb3IgICMgdmVyaWZpY2F0aW9uIHB1cnBvc2UgIyBmb3IgYW55dGhpbmciLCJmaWx0ZXIiOnsidHlwZSI6InN0cmluZyIsInBhdHRlcm4iOiJeWzAtOV17OX18XihbYS16QS1aXSl7NH0oW2EtekEtWl0pezJ9KFswLTlhLXpBLVpdKXsyfShbMC05YS16QS1aXXszfSk/JCJ9fSx7InBhdGgiOlsiJC52Yy5jcmVkZW50aWFsIiwiJC52Yy5jcmVkZW50aWFsU3ViamVjdC5hY2NvdW50WypdLnJvdXRlIiwiJC5hY2NvdW50WypdLnJvdXRlIl0sInB1cnBvc2UiOiJXZSBjYW4gdXNlIGZvciB2ZXJpZmljYXRpb24gcHVycG9zZSIsImZpbHRlciI6eyJ0eXBlIjoic3RyaW5nIiwicGF0dGVybiI6Il5bMC05XXs5fXxeKFthLXpBLVpdKXs0fShbYS16QS1aXSl7Mn0oWzAtOWEtekEtWl0pezJ9KFswLTlhLXpBLVpdezN9KT8kIn19XX19XX0mcmVzcG9uc2VfdHlwZT12cF90b2tlbiZyZXNwb25zZV9tb2RlPWRpcmVjdF9wb3N0Jm5vbmNlPVZiUlJCL0xUeExpWG1WTlp1eU1POEE9PSZzdGF0ZT0rbVJRZTFkNnBCb0pxRjZBYjI4a2xnPT0mcmVzcG9uc2VfdXJpPWh0dHBzOi8vaW5qaXZlcmlmeS5kZXYyLm1vc2lwLm5ldC9yZWRpcmVjdCZjbGllbnRfbWV0YWRhdGE9e30="
-
-    func testReturnDataForValidRequest() async {
+    // base64 -> client_id_scheme = redirect_uri
+    func testReturnDataForValidRequestWithRedirectUri() async {
 
         let verifiers = createVerifiers(from: testVerifierList)
 
         let decoded: Any?
 
         do {
-            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidEncodedVpRequest, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidBase64EncodedVpRequestWithRedirectUri, trustedVerifierJSON: verifiers, shouldValidateClient: true)
         } catch {
             decoded = nil
         }
@@ -91,6 +70,128 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
     
+    // base64 -> client_id_scheme = redirect_uri, with response uri and response mode
+    func testInvalidBase64EncodedVpRequestWithRedirectUriAndResponseUriResponseMode() async {
+
+        let verifiers = createVerifiers(from: testVerifierList)
+
+        let error = await Task {
+        try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testVpRequestWithRedirectUriAndResponseUriResponseMode, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        }.result
+       
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Response Uri and Response mode should not be present, when client id scheme is Redirect Uri"
+            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    // base64 -> client_id_scheme = redirect_uri, client id not equal to redirect uri
+    func testVpRequestWithRedirectUriAndClientIdNotEqualtoRedirectUri() async {
+
+        let verifiers = createVerifiers(from: testVerifierList)
+
+        let error = await Task {
+        try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testVpRequestWithRedirectUriAndClientIdNotEqual, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        }.result
+       
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Client Id and Redirect uri value should be equal"
+            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    // base64 -> client_id_scheme = response_uri
+    func testReturnDataForValidRequestWithResponseUri() async {
+
+        let verifiers = createVerifiers(from: testVerifierList)
+
+        let decoded: Any?
+
+        do {
+            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidBase64EncodedVpRequestWithResponseUri, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        } catch {
+            decoded = nil
+        }
+        XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+        XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
+    }
+    
+    // jwt -> client_id_scheme = did
+    func testReturnDataForValidRequestWithDid() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://7af8-2401-4900-71c2-f74a-8d88-aa5b-2f16-294b.ngrok-free.app/verifier/get-auth-request-obj")!,response: validJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs")!,response: didResponse)
+        let verifiers = createVerifiers(from: testVerifierList)
+        
+        let decodedAuthorizationRequest: Any?
+        do {
+            decodedAuthorizationRequest = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        } catch {
+            decodedAuthorizationRequest = nil
+        }
+        
+        XCTAssertTrue(decodedAuthorizationRequest is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+        XCTAssertTrue(decodedAuthorizationRequest != nil, "decodedResponse should not be null")
+    }
+    
+    // jwt -> client_id_scheme = did, Invalid did
+    func testThrowErrorForInValidSignatureInRequest() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://7af8-2401-4900-71c2-f74a-8d88-aa5b-2f16-294b.ngrok-free.app/verifier/get-auth-request-obj")!,response: invalidJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs")!,response: didResponse)
+        let verifiers = createVerifiers(from: testVerifierList)
+        
+        let error = await Task {
+        try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        }.result
+       
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Jwt proof verification failed"
+            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
+    func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://7af8-2401-4900-71c2-f74a-8d88-aa5b-2f16-294b.ngrok-free.app/verifier/get-auth-request-obj")!,response: validJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs")!,response: didResponse)
+        let verifiers = createVerifiers(from: testVerifierList)
+        
+        let error = await Task {
+        try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testInValidSignedVpRequestWithDidAndClientIdDifferent, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        }.result
+       
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Client Id is mismatching in QR data and Request Uri response"
+            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    // jwt -> client_id_scheme = did, Kid is empty in the JWT header
+    func testThrowErrorIfKidExtractionFailedFromJwt() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://7af8-2401-4900-71c2-f74a-8d88-aa5b-2f16-294b.ngrok-free.app/verifier/get-auth-request-obj")!,response: invalidJwtResponseWithoutKid)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs")!,response: didResponse)
+        let verifiers = createVerifiers(from: testVerifierList)
+        
+        let error = await Task {
+        try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+        }.result
+       
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Kid extraction from did document failed"
+            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    // base64 -> client_id_scheme = redirect_uri, Client id validation is false
     func testReturnDataForValidRequestWhenClientValidationIsFalse() async {
 
         let verifiers = createVerifiers(from: testVerifierList)
@@ -98,7 +199,7 @@ class OpenID4VPTests: XCTestCase {
         let decoded: Any?
 
         do {
-            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidEncodedVpRequest, trustedVerifierJSON: verifiers, shouldValidateClient: false)
+            decoded = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidBase64EncodedVpRequestWithRedirectUri, trustedVerifierJSON: verifiers, shouldValidateClient: false)
         } catch {
             decoded = nil
         }
@@ -121,6 +222,7 @@ class OpenID4VPTests: XCTestCase {
         }
     }
 
+    // base64 -> client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
 
         let verifiers = createVerifiers(from: testVerifierList)
@@ -131,12 +233,30 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Missing Input: client_metadata-> client_name param is required"
+            let expectedErrorMessage = "Invalid Input: client_metadata value cannot be empty or null"
+            XCTAssertEqual(thrownError.localizedDescription, expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    
+    func testValidateVerifierForAGivenVerifierListAndRequestObject() async {
+
+        let verifiers = createVerifiers(from: testVerifierList)
+        
+        let error = await Task {
+            try validateVerifier(verifierList: verifiers, params: resquestUriResponseData, shouldValidateClient: true)
+        }.result
+
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Invalid Input: client_metadata value cannot be empty or null"
             XCTAssertEqual(thrownError.localizedDescription, expectedErrorMessage)
         case .success: break
         }
     }
 
+    // UUID Generation
     func testUUIDGeneration() {
 
         let vpToken = UUIDGenerator.generateUUID()
@@ -145,8 +265,17 @@ class OpenID4VPTests: XCTestCase {
 
         XCTAssertNotNil(vpToken,presentationSubmissionId)
         XCTAssertNotNil(presentationSubmission.id)
+    } 
+    
+    // isJWT Check
+    func testJwtCheck() {
+        let invalidJwt = isJWT("eeeee")
+        let validJwt = isJWT("ec.exx.ef")
+        XCTAssertFalse(invalidJwt)
+        XCTAssertTrue(validJwt)
     }
 
+    // Construct and return VP token for signing
     func testShareVerifiablePresentation() async{
         let credentialsMap: [String: [String]] = ["bank_input":["VC1","VC2"]]
         let received: String?
@@ -158,14 +287,11 @@ class OpenID4VPTests: XCTestCase {
         }
         XCTAssertNotNil(received,  "The response should not be nil for valid credentials map")
     }
-
+    
+    // NetworkManager Tests Success
     func testSendVpSuccess() async throws {
-        
-        do{ let presentationDefinition: PresentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: decodedPresentationDefinition)
-            
-            openID4VP.updateAuthorizationRequest(presentationDefinition, nil)
-        }catch{}
-
+        mockNetworkManager.setMockResponse(for: URL(string: "https://example.com")!, response: "Success: Request completed successfully.")
+    
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
         
         let response = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: vcResponseMetaData)
@@ -173,15 +299,11 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertEqual(response, "Success: Request completed successfully.")
     }
 
+    // NetworkManager Tests Failure
     func testSendVpFailure() async {
-
-        do{ let presentationDefinition: PresentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: decodedPresentationDefinition)
-            
-            openID4VP.updateAuthorizationRequest(presentationDefinition, nil)
-        }catch{}
         
         let errorMessage = "Network Request failed with error response: response"
-        mockNetworkManager.error = NetworkRequestException.networkRequestFailed(message: errorMessage)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://example.com")!, error: NetworkRequestException.networkRequestFailed(message: errorMessage))
 
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
 
@@ -196,6 +318,7 @@ class OpenID4VPTests: XCTestCase {
                 XCTFail("Expected NetworkRequestException.networkRequestFailed but got \(error)")
             }
         } catch {
+            XCTFail("Expected NetworkRequestException.networkRequestFailed but got \(error)")
         }
     }
 }
