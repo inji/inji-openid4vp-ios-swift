@@ -53,19 +53,19 @@ class Logger {
         case "InvalidLimitDisclosure":
             exception = AuthorizationRequestException.invalidLimitDisclosure
         case "InvalidClientIdScheme":
-            exception = ProofVerificationException.invalidClientIdScheme(message: message ?? "")
+            exception = JwtVerificationException.invalidClientIdScheme(message: message ?? "")
         case "UrlCreationFailed":
-            exception = ProofVerificationException.urlCreationFailed(message: message ?? "")
+            exception = JwtVerificationException.urlCreationFailed(message: message ?? "")
         case "PublicKeyNotFound":
-            exception = ProofVerificationException.publicKeyNotFound
+            exception = JwtVerificationException.publicKeyNotFound
         case "PublicKeyExtractionFailed":
-            exception = ProofVerificationException.publicKeyExtractionFailed
+            exception = JwtVerificationException.publicKeyExtractionFailed
         case "KidExtractionFailed":
-            exception = ProofVerificationException.kidExtractionFailed(message: message ?? "")
+            exception = JwtVerificationException.kidExtractionFailed(message: message ?? "")
         case "InvalidSignature":
-            exception = ProofVerificationException.invalidSignature(message: message ?? "")
+            exception = JwtVerificationException.invalidSignature(message: message ?? "")
         case "ProofVerificationFailed":
-            exception = ProofVerificationException.proofVerificationFailed(message: message ?? "")
+            exception = JwtVerificationException.proofVerificationFailed(message: message ?? "")
         case "UnsupportedHttpMethod" :
             exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
         default:
