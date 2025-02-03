@@ -1,5 +1,24 @@
-# INJI-OpenID4Vp-ios-swift
-- Implementation of OpenID4VP protocols in Swift.
+# INJI-OpenID4VP-ios-swift
+
+Description: Implementation of OpenID for Verifiable Presentations - draft 21 specifications in Swift
+
+## Specifications supported
+- The implementation follows OpenID for Verifiable Presentations - draft 21. [Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html).
+- Below are the fields we expect in the authorization request,
+   * client_id
+   * presentation_definition
+   * response_type
+   * response_mode
+   * nonce
+   * state
+   * response_uri
+   * client_metadata (Optional)
+- Request Uri is not supported as of now.
+- client_id_scheme is not mandatory. By default, we are validating the client based on pre-registered client id scheme, if passed as part of the authorization request it is ignored.
+- Same device flow is not supported, Hence redirect_uri is not supported in the authorization request. If passed as part of the authorization request it is ignored.
+- VC format supported is Ldp Vc as of now.
+
+**Note** : The pre-registered client id scheme validation can be toggled on/off based on the optional boolean which you can pass to the authenticateVerifier methods shouldValidateClient parameter. This is false by default.
 
 ## Functionalities
 - Decode and parse the Verifier's encoded Authorization Request received from the Wallet.
@@ -9,7 +28,7 @@
 - Receives the signed Verifiable presentation and sends a POST request with generated vp_token and presentation_submission to the Verifier response_uri endpoint.
 
 
-  **Note** : Fetching Verifiable Credentials by passing [Scope](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#name-using-scope-parameter-to-re) param in Authorization Request is not supported by this library.
+**Note** : Fetching Verifiable Credentials by passing [Scope](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#name-using-scope-parameter-to-re) param in Authorization Request is not supported by this library.
 
 ## Installation
 - In your swift application go to file > add package dependency > add the  https://github.com/mosip/inji-openid4vp-ios-swift.git in git search bar> add package
@@ -18,9 +37,10 @@
 ## APIs
 
 ### authenticateVerifier
- - Receives a list of trusted verifiers & Verifier's encoded Authorization request from consumer app(mobile wallet).
- - Decodes and parse the request, extracts the clientId and verifies it against trusted verifier's list clientId.
- - Returns the Authentication response which contains validated Presentation Definition of the request.
+- Receives a list of trusted verifiers & Verifier's encoded Authorization request from consumer app(mobile wallet).
+- Takes an optional boolean to toggle the client validation.
+- Decodes and parse the request, extracts the clientId and verifies it against trusted verifier's list clientId.
+- Returns the Authentication response which contains validated Presentation Definition of the request.
 
 
 
@@ -30,20 +50,21 @@
 
 ###### Parameters
 
-| Name                         | Type       | Description                                                 | Sample                                              |
-|------------------------------|------------|-------------------------------------------------------------|-----------------------------------------------------|
-| encodedAuthorizationRequest | String     | Base64 Encoded authorization request.                       | `"T1BFTklENFZQOi8vYXV0"`                            |
-| trustedVerifierJSON          | [Verifier] | Array of verifiers to verify the client id of the verifier. | `Verifier(clientId: String, responseUris: [String])` |
+| Name                          | Type         | Description                                                                      | Sample                                              |
+|-------------------------------|--------------|----------------------------------------------------------------------------------|-----------------------------------------------------|
+| encodedAuthorizationRequest   | String       | Base64 Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                            |
+| trustedVerifierJSON           | [Verifier]   | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])`|
+| shouldValidateClient          | Bool?        | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                              |
 
 
 ###### Exceptions
 
 1. DecodingException is thrown when there is and issue while decoding the Authorization Request
 2. InvalidQueryParams exception is thrown if
-    - query params are not present in the Request
-    - there is a issue while extracting the params
-    - both presentation_definition and presentation_definition_uri are present in Request
-    - both presentation_definition and presentation_definition_uri are not present in Request
+   - query params are not present in the Request
+   - there is a issue while extracting the params
+   - both presentation_definition and presentation_definition_uri are present in Request
+   - both presentation_definition and presentation_definition_uri are not present in Request
 3. MissingInput exception is thrown if any of required params are not present in Request
 4. InvalidInput exception is thrown if any of required params value is empty
 5. InvalidVerifierClientID exception is thrown if the received request client_id & response_uri are not matching with any of the trusted verifiers
