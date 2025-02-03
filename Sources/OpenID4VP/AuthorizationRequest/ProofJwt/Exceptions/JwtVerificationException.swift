@@ -1,6 +1,6 @@
 import Foundation
 
-enum ProofVerificationException: Error, Equatable, LocalizedError {
+enum JwtVerificationException: Error, Equatable, LocalizedError {
     case invalidClientIdScheme(message: String)
     case urlCreationFailed(message: String)
     case kidExtractionFailed(message: String)
