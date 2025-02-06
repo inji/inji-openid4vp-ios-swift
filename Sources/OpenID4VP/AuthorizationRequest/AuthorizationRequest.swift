@@ -51,7 +51,7 @@ public struct AuthorizationRequest: Encodable {
         }
     }
     
-    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging) async throws -> AuthorizationRequest {
+    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging, walletMetadata: String?) async throws -> AuthorizationRequest {
         
         guard let queryStart = encodedAuthorizationRequest.firstIndex(of: "?") else {
             throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
@@ -61,7 +61,7 @@ public struct AuthorizationRequest: Encodable {
         guard let decodedQuery = decodeBase64ToString(encodedString) else {
             throw Logger.handleException(exceptionType: "Decoding", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
         }
-        var authorizationRequestParams = try await parseAuthorizationRequest(queryString: decodedQuery, setResponseUri: setResponseUri, networkManager: networkManager, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON)
+        var authorizationRequestParams = try await parseAuthorizationRequest(queryString: decodedQuery, setResponseUri: setResponseUri, networkManager: networkManager, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON, walletMetadata:walletMetadata)
         
         try validateVerifier(verifierList: trustedVerifierJSON, params: authorizationRequestParams, shouldValidateClient: shouldValidateClient)
         
@@ -70,7 +70,7 @@ public struct AuthorizationRequest: Encodable {
         return createAuthorizationRequest(from: authorizationRequestParams)
     }
     
-    private static func parseAuthorizationRequest(queryString: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier]) async throws -> [String: Any] {
+    private static func parseAuthorizationRequest(queryString: String, setResponseUri: (String) -> Void, networkManager: NetworkManaging, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], walletMetadata: String?) async throws -> [String: Any] {
         
         guard let encodedQuery = urlEncodedRequest(queryString) else {
             throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
@@ -85,17 +85,18 @@ public struct AuthorizationRequest: Encodable {
         
         let params = try extractQueryParams(from: query)
         
-        return try await fetchAuthorizationRequestMap(params: params, networkManager: networkManager)
+        return try await fetchAuthorizationRequestMap(params: params, networkManager: networkManager, walletMetaData:walletMetadata)
     }
     
-    private static func fetchAuthorizationRequestMap(params: [String: String], networkManager: NetworkManaging) async throws -> [String: Any] {
+    private static func fetchAuthorizationRequestMap(params: [String: String], networkManager: NetworkManaging, walletMetaData: String?) async throws -> [String: Any] {
         
         
         var authorizationRequestMap = (params["request_uri"] != nil) ?
         try await fetchAuthRequestObjectByReference(
             params: params,
             requestUri: params["request_uri"]!,
-            networkManager: networkManager
+            networkManager: networkManager,
+            walletMetadata: walletMetaData
         ) : params
         
         authorizationRequestMap = try parseAndValidateClientMetadataInAuthorizationRequest(authorizationRequestMap)
@@ -104,7 +105,7 @@ public struct AuthorizationRequest: Encodable {
         return authorizationRequestMap
     }
     
-    private static func fetchAuthRequestObjectByReference(params: [String: String], requestUri: String, networkManager: NetworkManaging) async throws -> [String: Any] {
+    private static func fetchAuthRequestObjectByReference(params: [String: String], requestUri: String, networkManager: NetworkManaging, walletMetadata: String? = nil) async throws -> [String: Any] {
         do {
             if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
@@ -115,8 +116,19 @@ public struct AuthorizationRequest: Encodable {
             guard let url = URL(string: params["request_uri"]!) else {
                 throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
             }
+            if let walletMetadata = walletMetadata {
+                        do {
+                            try WalletMetadata.validate(from: walletMetadata)
+                        } catch {
+                            throw Logger.handleException(
+                                exceptionType: "InvalidWalletMetadata",
+                                fieldPath: ["walletMetadata"],
+                                className: AuthorizationRequest.className
+                            )
+                        }
+                    }
             
-            let response = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil) ?? ""
+            let response = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: walletMetadata, headers: nil) ?? ""
             
             return try await extractAuthorizationRequestData(response: response, params: params, networkManager: networkManager)
         }
