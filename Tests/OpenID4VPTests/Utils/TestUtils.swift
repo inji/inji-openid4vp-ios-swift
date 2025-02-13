@@ -39,7 +39,7 @@ func createEncodedAuthorizationRequest(
 }
 
 func createAuthorizationRequest(requestParams: [String: String],
-                                verifierSentAuthRequestByReference: Bool,
+                                verifierSentAuthRequestByReference: Bool = false,
                                 clientIdScheme: ClientIdScheme,
                                 applicableFields: [String]?) -> [String:String]{
     var queryParams = requestParams
@@ -54,6 +54,23 @@ func createAuthorizationRequest(requestParams: [String: String],
         }
     }
     return authorizationRequestParam
+}
+
+func createAuthorizationRequestObject(
+    clientIdScheme: ClientIdScheme,
+    authorizationRequestParams: [String: String],
+    jwtHeaderData: [String: Any]? = nil,
+    applicableFields: [String]? = nil,
+    addValidSignature: Bool = true
+) -> String {
+    let requestObject = createAuthorizationRequest(requestParams: authorizationRequestParams,  clientIdScheme: .did, applicableFields: applicableFields)
+    switch clientIdScheme {
+    case .did:
+        return JWTUtil.create(header: jwtHeaderData, payload: requestObject, addValidSignature: addValidSignature)
+        
+    default:
+        return (try! JSONSerialization.data(withJSONObject: requestObject).base64EncodedString())
+    }
 }
 
 

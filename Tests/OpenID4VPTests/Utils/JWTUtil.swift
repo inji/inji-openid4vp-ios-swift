@@ -41,11 +41,12 @@ struct JWTUtil {
         return base64UrlEncode(signature)
     }
     
-    static func create(jwtHeader: [String:Any] = jwtHeader,jwtPayload: [String:Any],addValidSignature: Bool = true) -> String{
+    static func create(header: [String:Any]?,payload: [String:Any],addValidSignature: Bool) -> String{
         let privateKeyData = Data(base64Encoded: ed25519PrivateKey)
+        let jwtHeader = header == nil ? self.jwtHeader : header
         let headerData = try? JSONSerialization.data(withJSONObject: jwtHeader as Any)
         let header64 = base64UrlEncode(headerData!)
-        let payloadData = try? JSONSerialization.data(withJSONObject: jwtPayload)
+        let payloadData = try? JSONSerialization.data(withJSONObject: payload)
         let payload64 = base64UrlEncode(payloadData!)
         let message = "\(header64).\(payload64)".data(using: .utf8)!
         
@@ -57,46 +58,5 @@ struct JWTUtil {
         }
         return "\(header64).\(payload64).\(signature64)"
     }
-    
-    static func createAuthorizationRequestObject(
-        clientIdScheme: ClientIdScheme,
-        authorizationRequestParams: [String: Any],
-        jwtHeaderData: [String: Any]? = jwtHeader,
-        applicableFields: [String]? = nil,
-        addValidSignature: Bool = true
-    ) -> String {
-        var queryParams = authorizationRequestParams
-        
-        var authorizationRequestParam = [String: String]()
-        
-        
-        let listOfApplicableFieldsOfClientIdScheme = (applicableFields==nil) ? authRequestClientIdSchemeMap[clientIdScheme]!: applicableFields
-        for fieldName in listOfApplicableFieldsOfClientIdScheme! {
-            if let value = queryParams[fieldName] {
-                authorizationRequestParam[fieldName] = value as? String
-            }
-        }
-        
-        
-        if clientIdScheme == .did {
-            let privateKeyData = Data(base64Encoded: ed25519PrivateKey)
-            let headerData = try? JSONSerialization.data(withJSONObject: jwtHeaderData as Any)
-            let header64 = base64UrlEncode(headerData!)
-            let payloadData = try? JSONSerialization.data(withJSONObject: authorizationRequestParam)
-            let payload64 = base64UrlEncode(payloadData!)
-            let message = "\(header64).\(payload64)".data(using: .utf8)!
-            
-            let signature64: String
-            if addValidSignature, let validSignature = signEd25519(privateKey: privateKeyData!, message: message) {
-                signature64 = validSignature
-            } else {
-                signature64 = "aW52YWxpZC1zaWdu"
-            }
-            return "\(header64).\(payload64).\(signature64)"
-        } else {
-            return encodeB64(try! JSONSerialization.data(withJSONObject: authorizationRequestParam).base64EncodedString())
-        }
-    }
-
 }
 
