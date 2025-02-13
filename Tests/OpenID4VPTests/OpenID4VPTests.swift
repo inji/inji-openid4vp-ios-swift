@@ -217,6 +217,26 @@ class OpenID4VPTests: XCTestCase {
         }
     }
     
+    // jwt -> client_id_scheme = did
+    func testSendingWalletMetadataToVerifierUsingPostCall() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: validJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,response: didResponse)
+        let walletMetadata = "{\"presentation_definition_uri_supported\":true,\"vp_formats_supported\":{\"jwt_vc_json\":{\"alg_values_supported\":[\"ES256K\",\"ES256\"]},\"jwt_vp_json\":{\"alg_values_supported\":[\"RSA\",\"Ed25519\"]}},\"client_id_schemes_supported\":[\"redirect_uri\",\"https\",\"did\"]}"
+        
+        let decodedAuthorizationRequest: Any?
+        do {
+            decodedAuthorizationRequest = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true, walletMetadata: walletMetadata)
+        } catch {
+            decodedAuthorizationRequest = nil
+            XCTFail("Should not get error but got error - \(error)")
+        }
+        
+        XCTAssertTrue(decodedAuthorizationRequest is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+        XCTAssertTrue(decodedAuthorizationRequest != nil, "decodedResponse should not be null")
+    }
+    
+    
+    
     
     func testValidateVerifierForAGivenVerifierListAndRequestObject() async {
         let error = await Task {
