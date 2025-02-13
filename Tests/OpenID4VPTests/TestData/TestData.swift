@@ -97,6 +97,32 @@ let authRequestClientIdSchemeMap : [ClientIdScheme: [String]] = [
     ClientIdScheme.did : authRequestWithPreRegisteredByValue
 ]
 
+let walletMetadata: [String: Any] = [
+    "presentation_definition_uri_supported": true,
+    "vp_formats_supported": [
+        "jwt_vc_json": [
+            "alg_values_supported": [
+                "ES256K",
+                "ES256"
+            ]
+        ],
+        "jwt_vp_json": [
+            "alg_values_supported": [
+                "RSA",
+                "Ed25519"
+            ]
+        ]
+    ],
+    "client_id_schemes_supported": [
+        "redirect_uri",
+        "https",
+        "did"
+    ],
+    "request_object_signing_alg_values_supported": ["EdDSA"],
+    "authorization_encryption_alg_values_supported": ["ECDH-ES"],
+    "authorization_encryption_enc_values_supported": ["A256GCM"]
+]
+
 let presentationDefinition: [String: Any] = [
     "id": "vp_presentation_definition",
     "input_descriptors": [
@@ -144,18 +170,6 @@ let clientMetadata: [String: Any] = [
             ]
         ]
     ]
-]
-
-// base64 -> client_id_scheme = redirect_uri
-let authorizationRequestParamsWithRedirectUri: [String: Any] = [
-    "client_id": "redirect_uri:https://mock-verifier.com",
-    "redirect_uri":"https://mock-verifier.com",
-    "presentation_definition": presentationDefinition,
-    "response_type": "vp_token",
-    "response_mode": "direct_post",
-    "nonce":"VbRRB/LTxLiXmVNZuyMO8A==",
-    "state":"+mRQe1d6pBoJqF6Ab28klg==",
-    "client_metadata": clientMetadata
 ]
 
 // base64 -> client_id_scheme = redirect_uri

@@ -5,12 +5,18 @@ public struct WalletMetadata: Decodable {
     var presentationDefinitionURISupported: Bool? = true
     var vpFormatsSupported: [String: VPFormatSupported]
     var clientIDSchemesSupported: [String]? = [ClientIdScheme.preRegistered.rawValue]
+    var requestObjectSigningAlgValuesSupported: [String]? = nil
+    var authorizationEncryptionAlgValuesSupported: [String]? = nil
+    var authorizationEncryptionEncValuesSupported: [String]? = nil
     static let className = String(describing: WalletMetadata.self)
     
     enum CodingKeys: String, CodingKey {
         case presentation_definition_uri_supported
         case vp_formats_supported
         case client_id_schemes_supported
+        case request_object_signing_alg_values_supported
+        case authorization_encryption_alg_values_supported
+        case authorization_encryption_enc_values_supported
        
     }
     
@@ -25,6 +31,13 @@ public struct WalletMetadata: Decodable {
             isMandatory: false
         )!
         
+        self.vpFormatsSupported = try container.decodeRequired(
+            [String: VPFormatSupported].self,
+            forKey: .vp_formats_supported,
+            fieldPath: ["wallet_metadata", "vp_formats_supported"],
+            className: WalletMetadata.className,
+            isMandatory: true)!
+        
         self.clientIDSchemesSupported = try container.decodeRequired(
             [String].self,
             forKey: .client_id_schemes_supported,
@@ -33,12 +46,31 @@ public struct WalletMetadata: Decodable {
             isMandatory: false
         )!
         
-        self.vpFormatsSupported = try container.decodeRequired(
-            [String: VPFormatSupported].self,
-            forKey: .vp_formats_supported,
-            fieldPath: ["wallet_metadata", "vp_formats_supported"],
+        self.requestObjectSigningAlgValuesSupported = try container.decodeRequired(
+            [String].self,
+            forKey: .request_object_signing_alg_values_supported,
+            fieldPath: [" wallet_metadata", "request_object_signing_alg_values_supported"],
             className: WalletMetadata.className,
-            isMandatory: true)!
+            isMandatory: false
+        )!
+        
+        self.authorizationEncryptionAlgValuesSupported = try container.decodeRequired(
+            [String].self,
+            forKey: .authorization_encryption_alg_values_supported,
+            fieldPath: [" wallet_metadata", "authorization_encryption_alg_values_supported"],
+            className: WalletMetadata.className,
+            isMandatory: false
+        )!
+        
+        self.authorizationEncryptionEncValuesSupported = try container.decodeRequired(
+            [String].self,
+            forKey: .authorization_encryption_enc_values_supported,
+            fieldPath: [" wallet_metadata", "authorization_encryption_enc_values_supported"],
+            className: WalletMetadata.className,
+            isMandatory: false
+        )!
+        
+        
 
     }
 }
@@ -63,25 +95,3 @@ public struct VPFormatSupported: Decodable {
     }
 }
 
-
-//public struct WalletMetadata: Codable {
-//    let presentationDefinitionURISupported: Bool?
-//    let vpFormatsSupported: [String: VPFormatSupported]
-//    let clientIdSchemesSupported: [String]?
-//    
-//    enum CodingKeys: String, CodingKey {
-//        case presentation_definition_uri_supported
-//        case vp_formats_supported
-//        case client_id_schemes_supported
-//    }
-//
-//    init(presentationDefinitionURISupported: Bool? = true, vpFormatsSupported: [String: VPFormatSupported], clientIdSchemesSupported: [String]? = [ClientIdScheme.preRegistered.rawValue]) {
-//        self.presentationDefinitionURISupported = presentationDefinitionURISupported
-//        self.vpFormatsSupported = vpFormatsSupported
-//        self.clientIdSchemesSupported = clientIdSchemesSupported
-//    }
-//}
-//
-//struct VPFormatSupported: Codable {
-//    let algValuesSupported: [String]?
-//}
