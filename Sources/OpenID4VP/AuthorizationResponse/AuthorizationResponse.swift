@@ -67,7 +67,7 @@ struct AuthorizationResponse{
         networkManager: NetworkManaging = NetworkManager.shared
     ) async throws -> String? {
         
-        guard let clientMetadata = authorizationRequest.clientMetadata as? ClientMetadata, let jwkFromMetadata = clientMetadata.jwks.keys.first else {
+        guard let clientMetadata = authorizationRequest.clientMetadata as? ClientMetadata, let jwkFromMetadata = clientMetadata.jwks!.keys.first else {
             throw Logger.handleException(exceptionType: "JWKSExtractionFailed", className: AuthorizationResponse.className)
         }
         

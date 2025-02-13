@@ -21,6 +21,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case unsupportedHttpMethod(message: String)
     case invalidInputPattern(fieldPath: String)
     case unexpectedError(message: String)
+    case missingInputsInClientMetadataForResponseModeDirectPostJwt
     
     public var errorDescription: String? {
         switch self {
@@ -58,6 +59,8 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
             return message
         case .urlCreationFailed(let message):
             return message
+        case .missingInputsInClientMetadataForResponseModeDirectPostJwt:
+            return "JWKS is required in client metadata for response mode direct post jwt type"
         default:
             return "An error occurred."
         }

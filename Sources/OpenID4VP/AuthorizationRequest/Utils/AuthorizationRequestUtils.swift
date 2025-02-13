@@ -227,10 +227,25 @@ func getQueryItems(_ encodedUrl: URL) -> [URLQueryItem]? {
 func parseAndValidateClientMetadataInAuthorizationRequest(_ params: [String: Any]) throws -> [String: Any] {
     var mutableParams = params
     
-    if let clientMetaString = params["client_metadata"] as? String {
-        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetaString)
-        mutableParams["client_metadata"] = clientMetadata
+    guard let clientMetaString = params["client_metadata"] as? String else {
+        return mutableParams
     }
+    
+    let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetaString)
+    
+    if let responseMode = params["response_mode"] as? String,
+       responseMode == ResponseMode.directPostJwt.rawValue {
+        guard clientMetadata.jwks != nil,
+              clientMetadata.authorization_encrypted_response_alg != nil,
+              clientMetadata.authorization_encrypted_response_enc != nil else {
+            throw Logger.handleException(
+                exceptionType: "MissingInputsInClientMetadataForResponseModeDirectPostJwt",
+                className: AuthorizationRequest.className
+            )
+        }
+    }
+    
+    mutableParams["client_metadata"] = clientMetadata
     return mutableParams
 }
 

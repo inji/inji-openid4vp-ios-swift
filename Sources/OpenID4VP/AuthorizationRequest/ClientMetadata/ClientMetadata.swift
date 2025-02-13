@@ -6,7 +6,7 @@ public struct ClientMetadata: Codable {
     let authorization_encrypted_response_alg: String?
     let authorization_encrypted_response_enc: String?
     let vp_formats: [String: [String: [String]]]
-    let jwks: JWKS
+    let jwks: JWKS?
     
     static let className = String(describing: PresentationDefinitionValidator.self)
     
@@ -67,10 +67,8 @@ public struct ClientMetadata: Codable {
             forKey: .jwks,
             fieldPath: ["client_metadata", "jwks"],
             className: ClientMetadata.className,
-            isMandatory: true
-        )!
-        
-        try jwks.validate()
+            isMandatory: false
+        )
     }
     
     static func deserializeAndValidate(clientMetadata: String) throws -> ClientMetadata {
@@ -124,6 +122,10 @@ public struct ClientMetadata: Codable {
                     throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata", "vp_formats", key, subKey], className: ClientMetadata.className)
                 }
             }
+        }
+        
+        if decodedClientMetadata.jwks != nil {
+            try decodedClientMetadata.jwks!.validate()
         }
         
         return decodedClientMetadata

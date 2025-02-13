@@ -29,8 +29,7 @@ struct JWEEncryptionService {
         
         var header = algorithm.getJWEHeader(config: config, jwk: jwk)
         
-        if var epk = header["epk"] as? [String: Any] {
-            epk["x"] = algorithm.getEphemeralPublicKey()
+        if let epk = algorithm.getEphemeralPublicKey() {
             header["epk"] = epk
         }
         

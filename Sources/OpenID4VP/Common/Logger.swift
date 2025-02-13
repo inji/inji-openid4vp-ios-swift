@@ -82,6 +82,8 @@ class Logger {
             exception = JWEException.unsupportedEncryptionAlgorithm
         case "InvalidJwksInput" :
             exception = JWEException.invalidJwksInput(fieldPath: fieldPathAsString)
+        case "MissingInputsInClientMetadataForResponseModeDirectPostJwt":
+            exception = AuthorizationRequestException.missingInputsInClientMetadataForResponseModeDirectPostJwt
         default:
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }

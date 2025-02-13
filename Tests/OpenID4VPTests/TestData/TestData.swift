@@ -134,9 +134,9 @@ let clientMetadata: [String: Any] = [
             [
                 "kty": "OKP",
                 "use": "enc",
-                "crv": "Ed25519",
+                "crv": "X25519",
                 "x": "IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=",
-                "alg": "EdDSA",
+                "alg": "ECDH-ES",
                 "kid": "ed-key1",
                 "y": "null"
             ]
@@ -158,6 +158,20 @@ let clientMetadata: [String: Any] = [
         ]
     ]
 ]
+
+let clientMetadataWithEmptyPublicKey = clientMetadata.merging(["jwks": [
+    "keys": [
+        [
+            "kty": "OKP",
+            "use": "enc",
+            "crv": "Ed25519",
+            "x": "",
+            "alg": "EdDSA",
+            "kid": "ed-key1",
+            "y": "null"
+        ]
+    ]
+]]) { (_, new) in new }
 
 // base64 -> client_id_scheme = redirect_uri
 let authorizationRequestParamsWithRedirectUri: [String: Any] = [
@@ -205,3 +219,16 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
 ])
 
 let resquestUriResponseData: [String: Any] = createAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri), verifierSentAuthRequestByReference: false, clientIdScheme: .redirectUri, applicableFields: nil)
+
+let testInValidBase64EncodedVpRequestWithResponseModeDirectPostJwtAndInvalidJWKS = createEncodedAuthorizationRequest(
+    requestParams: mergeMaps(
+        clientIdAndSchemeOfPreRegistered,
+        authorizationRequestParamsWithValue,
+        [
+            "response_mode": "direct_post.jwt",
+            "client_metadata": convertToJson(clientMetadataWithEmptyPublicKey)
+        ]
+    ),
+    clientIdScheme: .preRegistered,
+    applicableFields: authRequestClientIdSchemeMap[.did]! + ["response_uri", "response_mode"]
+)

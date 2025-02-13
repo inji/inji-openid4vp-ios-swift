@@ -203,7 +203,7 @@ class OpenID4VPTests: XCTestCase {
 
     // base64 -> client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
-        let data = authorizationRequestParamsWithValue
+        let _ = authorizationRequestParamsWithValue
         
         let error = await Task {
             try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: encodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -310,5 +310,28 @@ class OpenID4VPTests: XCTestCase {
             XCTAssertEqual(response, "Success: Request completed successfully.")
             
         } catch {}
+    }
+    
+    func testCredentialsMapEmptyValues() async {
+        
+        do {
+            
+            let credentialsMap: [String: [String]] = ["bank_input":[]]
+            
+            let _ = try await openID4VP.constructVerifiablePresentationToken(credentialsMap: credentialsMap)
+        } catch {
+            XCTAssertEqual(error.localizedDescription, "Value of credentials inside credentials map is empty.")
+        }
+    }
+    
+    func testEmptyPublicKeyInClientMetadataJwks() async {
+        
+        do {
+            authorizationRequest = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testInValidBase64EncodedVpRequestWithResponseModeDirectPostJwtAndInvalidJWKS, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            
+        } catch {
+            print(error.localizedDescription)
+            XCTAssertEqual(error.localizedDescription, "Invalid Input: jwks->keys->0 param is empty.")
+        }
     }
 }
