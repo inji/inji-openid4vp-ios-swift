@@ -6,6 +6,8 @@ public struct ClientMetadata: Codable {
     let authorization_encrypted_response_alg: String?
     let authorization_encrypted_response_enc: String?
     let vp_formats: [String: [String: [String]]]
+    let jwks: JWKS
+    
     static let className = String(describing: PresentationDefinitionValidator.self)
     
     enum CodingKeys: String, CodingKey {
@@ -14,6 +16,7 @@ public struct ClientMetadata: Codable {
         case authorization_encrypted_response_alg
         case authorization_encrypted_response_enc
         case vp_formats
+        case jwks
     }
     
     public init(from decoder: any Decoder) throws {
@@ -58,6 +61,16 @@ public struct ClientMetadata: Codable {
             className: ClientMetadata.className,
             isMandatory: true
         )!
+        
+        self .jwks = try container.decodeRequired(
+            JWKS.self,
+            forKey: .jwks,
+            fieldPath: ["client_metadata", "jwks"],
+            className: ClientMetadata.className,
+            isMandatory: true
+        )!
+        
+        try jwks.validate()
     }
     
     static func deserializeAndValidate(clientMetadata: String) throws -> ClientMetadata {

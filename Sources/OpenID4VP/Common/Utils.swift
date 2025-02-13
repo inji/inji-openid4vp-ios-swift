@@ -15,6 +15,13 @@ func makeBase64Standard(_ base64String: String) -> String {
     return validBase64String
 }
 
+func base64URLEscaped(_ base64String: String) -> String {
+    return base64String
+        .replacingOccurrences(of: "+", with: "-")
+        .replacingOccurrences(of: "/", with: "_")
+        .replacingOccurrences(of: "=", with: "")
+}
+
 func getStringValue(_ value: Any?) -> String? {
     return value as? String
 }

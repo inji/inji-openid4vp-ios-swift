@@ -5,7 +5,7 @@ class OpenID4VPTests: XCTestCase {
     var openID4VP: OpenID4VP!
     var mockNetworkManager: MockNetworkManager!
     
-    let authorizationRequest = AuthorizationRequest(
+    var authorizationRequest = AuthorizationRequest(
         clientId: "client_id",
         clientIdScheme: "123",
         presentationDefinition: "presentationDefinition" as String,
@@ -294,5 +294,21 @@ class OpenID4VPTests: XCTestCase {
         } catch {
             XCTFail("Expected NetworkRequestException.networkRequestFailed but got \(error)")
         }
+    }
+    
+    func testReturnDataForValidRequestWithResponseUriAndResponseModeJWT() async {
+        
+        do {
+            authorizationRequest = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidBase64EncodedVpRequestWithResponseModeDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            
+            mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, response: "Success: Request completed successfully.")
+            
+            let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
+            
+            let response = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: vcResponseMetaData)
+            
+            XCTAssertEqual(response, "Success: Request completed successfully.")
+            
+        } catch {}
     }
 }

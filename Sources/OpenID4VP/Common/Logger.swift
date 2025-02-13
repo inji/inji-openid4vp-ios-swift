@@ -68,6 +68,20 @@ class Logger {
             exception = JwtVerificationException.proofVerificationFailed(message: message ?? "")
         case "UnsupportedHttpMethod" :
             exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
+        case "credentialsMapIsEmpty" :
+            exception = AuthorizationResponseException.credentialsMapIsEmpty
+        case "credentialsMapValueIsEmpty" :
+            exception = AuthorizationResponseException.credentialsMapValueIsEmpty
+        case "PublicKeyConversionFailed" :
+            exception = JWEException.publicKeyConversionFailed
+        case "PayloadConversionFailed" :
+            exception = JWEException.payloadConversionFailed
+        case "UnsupportedKeyExchangeAlgorithm":
+            exception = JWEException.unsupportedKeyExchangeAlgorithm
+        case "UnsupportedEncryptionAlgorithm":
+            exception = JWEException.unsupportedEncryptionAlgorithm
+        case "InvalidJwksInput" :
+            exception = JWEException.invalidJwksInput(fieldPath: fieldPathAsString)
         default:
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }

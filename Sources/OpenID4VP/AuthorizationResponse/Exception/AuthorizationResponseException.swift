@@ -3,13 +3,13 @@ import Foundation
 enum AuthorizationResponseException: Error, LocalizedError {
     case credentialsMapIsEmpty
     case credentialsMapValueIsEmpty
-    case jsonEncodingException(fieldName: String)
-    case invalidURL
     
     public var errorDescription: String? {
         switch self {
-        case .jsonEncodingException(let fieldName):
-            return "Error occurred while serializing \(fieldName)"
+        case .credentialsMapIsEmpty:
+            return "Credentials map received is empty."
+        case .credentialsMapValueIsEmpty:
+            return "Value of credentials inside credentials map is empty."
         default:
             return "An error occurred."
         }

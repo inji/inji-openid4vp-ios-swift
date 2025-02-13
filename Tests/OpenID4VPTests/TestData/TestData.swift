@@ -129,6 +129,19 @@ let clientMetadata: [String: Any] = [
     "logo_uri": "https://mock-verifier.com/logo",
     "authorization_encrypted_response_alg": "ECDH-ES",
     "authorization_encrypted_response_enc": "A256GCM",
+    "jwks": [
+        "keys": [
+            [
+                "kty": "OKP",
+                "use": "enc",
+                "crv": "Ed25519",
+                "x": "IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=",
+                "alg": "EdDSA",
+                "kid": "ed-key1",
+                "y": "null"
+            ]
+        ]
+    ],
     "vp_formats": [
         "mso_mdoc": [
             "alg": [
@@ -170,6 +183,9 @@ let testVpRequestWithRedirectUriAndClientIdNotEqual = createEncodedAuthorization
 // base64 -> client_id_scheme = pre-registered
 let testValidBase64EncodedVpRequestWithResponseUri = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered), clientIdScheme: .preRegistered)
 
+// base64 -> client_id_scheme = pre-registered, responseMode = direct_post.jwt
+let testValidBase64EncodedVpRequestWithResponseModeDirectPostJwt = createEncodedAuthorizationRequest(requestParams: mergeMaps(clientIdAndSchemeOfPreRegistered, authorizationRequestParamsWithValue, ["response_mode": "direct_post.jwt"]),clientIdScheme: .preRegistered,applicableFields: authRequestClientIdSchemeMap[.did]! + ["response_uri", "response_mode"])
+
 // jwt -> client_id_scheme = did
 let testValidSignedVpRequestWithDid = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
@@ -189,4 +205,3 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
 ])
 
 let resquestUriResponseData: [String: Any] = createAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri), verifierSentAuthRequestByReference: false, clientIdScheme: .redirectUri, applicableFields: nil)
-
