@@ -1,7 +1,6 @@
 import Foundation
 @testable import OpenID4VP
 
-// TODO: Create data instaead of function call everytime
 func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     var verifiers: [Verifier] = []
     
@@ -74,7 +73,7 @@ func createAuthorizationRequestObject(
 }
 
 
-func covertToJson(_ data: [String: Any]) -> String {
+func convertToJson(_ data: [String: Any]) -> String {
     let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [])
     let jsonString = String(data: jsonData!, encoding: .utf8)
     return jsonString!
