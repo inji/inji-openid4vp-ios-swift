@@ -120,28 +120,30 @@ public struct AuthorizationRequest: Encodable {
 
             var bodyParams: String? = nil
             var headerParams: [String: String]? = nil
-            if let walletMetadata = walletMetadata {
-                do {
-                    let walletMetadatObj = try JSONDecoder().decode(WalletMetadata.self, from: walletMetadata.data(using: .utf8)!)
-                    var bodyComponents = [URLQueryItem]()
-                    bodyComponents.append(URLQueryItem(name: "wallet_metadata", value: encodeQueryValue(walletMetadata)))
-                   
-                    var urlComponents = URLComponents()
-                    urlComponents.queryItems = bodyComponents
-
-                    let requestBody = urlComponents.query
-                    bodyParams = requestBody
-                    
-                    headerParams = [
-                        "content-type": "application/x-www-form-urlencoded",
-                        "accept": "application/oauth-authz-req+jwt"
-                    ]
-                } catch {
-                    throw Logger.handleException(
-                        exceptionType: "InvalidWalletMetadata",
-                        fieldPath: ["walletMetadata"],
-                        className: AuthorizationRequest.className
-                    )
+            if httpMethod == HTTP_METHOD.POST {
+                if let walletMetadata = walletMetadata {
+                    do {
+                        let walletMetadatObj = try JSONDecoder().decode(WalletMetadata.self, from: walletMetadata.data(using: .utf8)!)
+                        var bodyComponents = [URLQueryItem]()
+                        bodyComponents.append(URLQueryItem(name: "wallet_metadata", value: encodeQueryValue(walletMetadata)))
+                        
+                        var urlComponents = URLComponents()
+                        urlComponents.queryItems = bodyComponents
+                        
+                        let requestBody = urlComponents.query
+                        bodyParams = requestBody
+                        
+                        headerParams = [
+                            "content-type": "application/x-www-form-urlencoded",
+                            "accept": "application/oauth-authz-req+jwt"
+                        ]
+                    } catch {
+                        throw Logger.handleException(
+                            exceptionType: "InvalidWalletMetadata",
+                            fieldPath: ["walletMetadata"],
+                            className: AuthorizationRequest.className
+                        )
+                    }
                 }
                 
                 

@@ -225,7 +225,7 @@ class OpenID4VPTests: XCTestCase {
         
         let decodedAuthorizationRequest: Any?
         do {
-            decodedAuthorizationRequest = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true, walletMetadata: walletMetadata)
+            decodedAuthorizationRequest = try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testValidSignedRequestWithPostMethod, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true, walletMetadata: walletMetadata)
         } catch {
             decodedAuthorizationRequest = nil
             XCTFail("Should not get error but got error - \(error)")

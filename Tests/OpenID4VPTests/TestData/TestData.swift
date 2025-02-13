@@ -173,6 +173,8 @@ let testValidBase64EncodedVpRequestWithResponseUri = createEncodedAuthorizationR
 // jwt -> client_id_scheme = did
 let testValidSignedVpRequestWithDid = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
+let testValidSignedRequestWithPostMethod = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "did:example:123#1","client_id_scheme": "did", "request_uri_method": "post"]), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
+
 let testInValidSignedVpRequestWithDidAndClientIdDifferent = "openid4vp://authorize?Y2xpZW50X2lkPWRpZDp3ZWI6bW9zaXAuZ2l0aHViLmlvOmluamktbW9jay1zZXJ2aWNlczpvcGVuaWQ0dnAtc2VydmljZTpkb2NzJmNsaWVudF9pZF9zY2hlbWU9ZGlkJnJlcXVlc3RfdXJpPWh0dHBzOi8vN2FmOC0yNDAxLTQ5MDAtNzFjMi1mNzRhLThkODgtYWE1Yi0yZjE2LTI5NGIubmdyb2stZnJlZS5hcHAvdmVyaWZpZXIvZ2V0LWF1dGgtcmVxdWVzdC1vYmomcmVxdWVzdF91cmlfbWV0aG9kPWdldCBIVFRQLzEuMQ=="
 
 let testInvalidPresentationDefinitionVpRequest = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["presentation_definition": convertToJson(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
