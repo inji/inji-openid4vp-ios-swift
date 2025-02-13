@@ -18,21 +18,21 @@ let testVerifierList:  [[String: Any]]  = [
 
 let didResponse = "{\"@context\":\"https://w3id.org/did-resolution/v1\",\"didDocument\":{\"assertionMethod\":[\"did:example:123#1\"],\"service\":[],\"id\":\"did:example:123\",\"verificationMethod\":[{\"publicKey\":\"IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=\",\"controller\":\"did:example:123\",\"id\":\"did:example:123#1\",\"type\":\"Ed25519VerificationKey2020\",\"@context\":\"https://w3id.org/security/suites/ed25519-2020/v1\"}],\"@context\":[\"https://www.w3.org/ns/did/v1\"],\"alsoKnownAs\":[],\"authentication\":[\"did:example:123#1\"]},\"didResolutionMetadata\":{\"driverDuration\":19,\"contentType\":\"application/did+ld+json\",\"pattern\":\"^(did:web:.+)$\",\"driverUrl\":\"http://uni-resolver-driver-did-uport:8081/1.0/identifiers/\",\"duration\":19,\"did\":{\"didString\":\"did:example:123\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"},\"didUrl\":{\"path\":null,\"fragment\":null,\"query\":null,\"didUrlString\":\"did:example:123\",\"parameters\":null,\"did\":{\"didString\":\"did:example:123\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"}}},\"didDocumentMetadata\":{}}"
 
-let authorizationRequestParamsWithValue: [String: Any] = [
+let authorizationRequestParamsWithValue: [String: String] = [
     "redirect_uri": "https://mock-verifier.com",
     "response_uri": "https://mock-verifier.com",
     "request_uri": "https://mock-verifier.com/verifier/get-auth-request-obj",
     "request_uri_method": "get",
-    "presentation_definition": presentationDefinition,
+    "presentation_definition": covertToJson(presentationDefinition),
     "response_type": "vp_token",
     "response_mode": "direct_post",
     "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
     "state": "+mRQe1d6pBoJqF6Ab28klg==",
-    "client_metadata": clientMetadata,
+    "client_metadata": covertToJson(clientMetadata),
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition"
 ]
 
-let clientIdAndSchemeOfRedirectUri: [String: Any] = [
+let clientIdAndSchemeOfRedirectUri: [String: String] = [
     "client_id": "https://mock-verifier.com",
     "client_id_scheme": ClientIdScheme.redirectUri.rawValue,
 ]
@@ -174,9 +174,9 @@ let testValidSignedVpRequestWithDid = createEncodedAuthorizationRequest(requestP
 
 let testInValidSignedVpRequestWithDidAndClientIdDifferent = "openid4vp://authorize?Y2xpZW50X2lkPWRpZDp3ZWI6bW9zaXAuZ2l0aHViLmlvOmluamktbW9jay1zZXJ2aWNlczpvcGVuaWQ0dnAtc2VydmljZTpkb2NzJmNsaWVudF9pZF9zY2hlbWU9ZGlkJnJlcXVlc3RfdXJpPWh0dHBzOi8vN2FmOC0yNDAxLTQ5MDAtNzFjMi1mNzRhLThkODgtYWE1Yi0yZjE2LTI5NGIubmdyb2stZnJlZS5hcHAvdmVyaWZpZXIvZ2V0LWF1dGgtcmVxdWVzdC1vYmomcmVxdWVzdF91cmlfbWV0aG9kPWdldCBIVFRQLzEuMQ=="
 
-let testInvalidPresentationDefinitionVpRequest = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["presentation_definition": ["input_descriptor":[]]]), clientIdScheme: .preRegistered)
+let testInvalidPresentationDefinitionVpRequest = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["presentation_definition": covertToJson(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
 
-let invalidClientMetadata = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["client_metadata": []]),clientIdScheme: .preRegistered)
+let encodedAuthorizationRequestWithInvalidClientMetadata = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["client_metadata": "{}"]),clientIdScheme: .preRegistered)
 
 let validJwtResponse = JWTUtil.createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid))
 

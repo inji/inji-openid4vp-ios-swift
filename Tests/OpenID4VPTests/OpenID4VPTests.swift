@@ -224,10 +224,11 @@ class OpenID4VPTests: XCTestCase {
     // base64 -> client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
 
+        let data = authorizationRequestParamsWithValue
         let verifiers = createVerifiers(from: testVerifierList)
         
         let error = await Task {
-            try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: invalidClientMetadata, trustedVerifierJSON: verifiers, shouldValidateClient: true)
+            try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: encodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: verifiers, shouldValidateClient: true)
         }.result
 
         switch error {

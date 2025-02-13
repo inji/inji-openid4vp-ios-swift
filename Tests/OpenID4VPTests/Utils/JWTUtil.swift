@@ -41,6 +41,23 @@ struct JWTUtil {
         return base64UrlEncode(signature)
     }
     
+    static func create(jwtHeader: [String:Any] = jwtHeader,jwtPayload: [String:Any],addValidSignature: Bool = true) -> String{
+        let privateKeyData = Data(base64Encoded: ed25519PrivateKey)
+        let headerData = try? JSONSerialization.data(withJSONObject: jwtHeader as Any)
+        let header64 = base64UrlEncode(headerData!)
+        let payloadData = try? JSONSerialization.data(withJSONObject: jwtPayload)
+        let payload64 = base64UrlEncode(payloadData!)
+        let message = "\(header64).\(payload64)".data(using: .utf8)!
+        
+        let signature64: String
+        if addValidSignature, let validSignature = signEd25519(privateKey: privateKeyData!, message: message) {
+            signature64 = validSignature
+        } else {
+            signature64 = "aW52YWxpZC1zaWdu"
+        }
+        return "\(header64).\(payload64).\(signature64)"
+    }
+    
     static func createAuthorizationRequestObject(
         clientIdScheme: ClientIdScheme,
         authorizationRequestParams: [String: Any],
@@ -50,17 +67,6 @@ struct JWTUtil {
     ) -> String {
         var queryParams = authorizationRequestParams
         
-        func addAsJSONParam(_ paramName: String) {
-            if let data = queryParams[paramName],
-               let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []),
-               let jsonString = String(data: jsonData, encoding: .utf8) {
-                queryParams[paramName] = jsonString
-            }
-            
-        }
-        // Convert presentation_definition & client_metadata to JSON string if provided
-        addAsJSONParam("presentation_definition")
-        addAsJSONParam("client_metadata")
         var authorizationRequestParam = [String: String]()
         
         
@@ -91,5 +97,6 @@ struct JWTUtil {
             return encodeB64(try! JSONSerialization.data(withJSONObject: authorizationRequestParam).base64EncodedString())
         }
     }
+
 }
 

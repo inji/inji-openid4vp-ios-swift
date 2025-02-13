@@ -1,6 +1,7 @@
 import Foundation
 @testable import OpenID4VP
 
+// TODO: Create data instaead of function call everytime
 func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     var verifiers: [Verifier] = []
     
@@ -16,7 +17,7 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
 }
 
 func createEncodedAuthorizationRequest(
-    requestParams: [String: Any],
+    requestParams: [String: String],
     verifierSentAuthRequestByReference: Bool = false,
     clientIdScheme: ClientIdScheme,
     applicableFields: [String]? = nil
@@ -37,33 +38,29 @@ func createEncodedAuthorizationRequest(
     return "OPENID4VP://authorize?\(base64Encoded)"
 }
 
-func createAuthorizationRequest(requestParams: [String: Any],
+func createAuthorizationRequest(requestParams: [String: String],
                                 verifierSentAuthRequestByReference: Bool,
                                 clientIdScheme: ClientIdScheme,
                                 applicableFields: [String]?) -> [String:String]{
     var queryParams = requestParams
     
-    func addAsJSONParam(_ paramName: String) {
-        if let data = queryParams[paramName],
-           let jsonData = try? JSONSerialization.data(withJSONObject: data, options: []),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            queryParams[paramName] = jsonString
-        }
-        
-    }
-    // Convert presentation_definition & client_metadata to JSON string if provided
-    addAsJSONParam("presentation_definition")
-    addAsJSONParam("client_metadata")
     var authorizationRequestParam = [String: String]()
     
     
     let listOfApplicableFieldsOfClientIdScheme = (applicableFields==nil) ? authRequestClientIdSchemeMap[clientIdScheme]!: applicableFields
     for fieldName in listOfApplicableFieldsOfClientIdScheme! {
-        if let value = queryParams[fieldName] {
-            authorizationRequestParam[fieldName] = (value as! String)
+        if (queryParams.contains{ $0.key == fieldName }){
+            authorizationRequestParam[fieldName] = (queryParams[fieldName])
         }
     }
     return authorizationRequestParam
+}
+
+
+func covertToJson(_ data: [String: Any]) -> String {
+    let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [])
+    let jsonString = String(data: jsonData!, encoding: .utf8)
+    return jsonString!
 }
 
 func addingPercentEncoding(_ value: String) -> String {
