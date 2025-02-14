@@ -188,5 +188,5 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
     "alg": "EdDSA"
 ])
 
-let resquestUriResponseData: [String: Any] = createAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri), verifierSentAuthRequestByReference: false, clientIdScheme: .redirectUri, applicableFields: nil)
+let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
 

@@ -16,40 +16,34 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
 }
 
 func createEncodedAuthorizationRequest(
-    requestParams: [String: String],
-    verifierSentAuthRequestByReference: Bool = false,
+    requestParams: [String: String?],
+    verifierSentAuthRequestByReference: Bool? = false,
     clientIdScheme: ClientIdScheme,
     applicableFields: [String]? = nil
 ) -> String {
-    
-    let authorizationRequestParam = createAuthorizationRequest(requestParams: requestParams, verifierSentAuthRequestByReference: verifierSentAuthRequestByReference, clientIdScheme: clientIdScheme, applicableFields: applicableFields)
-    
-    let queryString = authorizationRequestParam.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
-    
-    
-    var finalQueryString = queryString
+    let paramList: [String]
     if verifierSentAuthRequestByReference == true {
-        finalQueryString += "&request_uri=https://mock-verifier.com/verifier/get-auth-request-obj"
+        paramList = authRequestParamsByReference
+    } else {
+        paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     }
     
-    let base64Encoded = Data(finalQueryString.utf8).base64EncodedString()
+    let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams)
+    let queryString = authorizationRequestParam.map { "\($0.key)=\($0.value ?? "")" }.joined(separator: "&")
+    let encodedData = queryString.data(using: .utf8)!
+    let base64String = encodedData.base64EncodedString()
     
-    return "OPENID4VP://authorize?\(base64Encoded)"
+    return "OPENID4VP://authorize?\(base64String)"
 }
 
-func createAuthorizationRequest(requestParams: [String: String],
-                                verifierSentAuthRequestByReference: Bool = false,
-                                clientIdScheme: ClientIdScheme,
-                                applicableFields: [String]?) -> [String:String]{
-    var queryParams = requestParams
-    
-    var authorizationRequestParam = [String: String]()
-    
-    
-    let listOfApplicableFieldsOfClientIdScheme = (applicableFields==nil) ? authRequestClientIdSchemeMap[clientIdScheme]!: applicableFields
-    for fieldName in listOfApplicableFieldsOfClientIdScheme! {
-        if (queryParams.contains{ $0.key == fieldName }){
-            authorizationRequestParam[fieldName] = (queryParams[fieldName])
+func createAuthorizationRequest(
+    paramList: [String],
+    requestParams: [String: String?]
+) -> [String: String?] {
+    var authorizationRequestParam: [String: String?] = [:]
+    for param in paramList {
+        if let value = requestParams[param] {
+            authorizationRequestParam[param] = value
         }
     }
     return authorizationRequestParam
@@ -62,13 +56,15 @@ func createAuthorizationRequestObject(
     applicableFields: [String]? = nil,
     addValidSignature: Bool = true
 ) -> String {
-    let requestObject = createAuthorizationRequest(requestParams: authorizationRequestParams,  clientIdScheme: .did, applicableFields: applicableFields)
+    
+    let paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+    let authRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: authorizationRequestParams)
+    
     switch clientIdScheme {
     case .did:
-        return JWTUtil.create(header: jwtHeaderData, payload: requestObject, addValidSignature: addValidSignature)
-        
+        return JWTUtil.create(header: jwtHeaderData, payload: authRequestParam, addValidSignature: addValidSignature)
     default:
-        return (try! JSONSerialization.data(withJSONObject: requestObject).base64EncodedString())
+        return (try! JSONSerialization.data(withJSONObject: authRequestParam).base64EncodedString())
     }
 }
 
