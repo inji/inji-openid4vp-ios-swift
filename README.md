@@ -34,6 +34,14 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
      * request_uri_method
    
   - The request uri can return either a jwt token/encoded if it is a jwt the signature is verified as mentioned in the specification.
+  - When the request_uri_method value is 'post', the wallet can share its metadata with the verifier by making a post call and passing the wallet_metadata in the body.
+  - Wallet Metadata can contain the following information:
+    * presentation_definition_uri_supported (Optional)
+    * vp_formats_supported
+    * client_id_schemes_supported (Optional)
+    * request_object_signing_alg_values_supported (Optional)
+    * authorization_encryption_alg_values_supported (Optional)
+    * authorization_encryption_enc_values_supported (Optional)
   - The client id and client id scheme from the authorization request and the client id and client id scheme received from the response of the request uri should be same.
 - VC format supported is Ldp Vc as of now.
 
