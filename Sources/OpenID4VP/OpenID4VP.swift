@@ -58,7 +58,6 @@ public class OpenID4VP {
 
         do {
             let response =  try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.POST, bodyParams: errorInfo, headers: ["Content_Type" : "application/x-www-form-urlencoded"])
-            print("\(String(describing: response))")
         } catch {
             Logger.error(logTag, NetworkRequestException.invalidResponse(message: "Unexpected error occurred while sending the error to verifier: \(error)"))
         }
