@@ -68,6 +68,10 @@ class Logger {
             exception = JwtVerificationException.proofVerificationFailed(message: message ?? "")
         case "UnsupportedHttpMethod" :
             exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
+        case "InvalidData":
+            exception = AuthorizationRequestException.invalidData(message: message ?? "")
+        case "InvalidResponseMode":
+            exception = AuthorizationRequestException.invalidResponseMode(message: message ?? "")
         default:
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }

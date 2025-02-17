@@ -21,6 +21,8 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case unsupportedHttpMethod(message: String)
     case invalidInputPattern(fieldPath: String)
     case unexpectedError(message: String)
+    case invalidResponseMode(message: String)
+    case invalidData(message: String)
     
     public var errorDescription: String? {
         switch self {
@@ -57,6 +59,10 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
         case .unexpectedError(let message):
             return message
         case .urlCreationFailed(let message):
+            return message
+        case .invalidResponseMode(let message):
+            return message
+        case .invalidData(let message):
             return message
         default:
             return "An error occurred."

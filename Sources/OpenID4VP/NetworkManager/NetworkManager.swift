@@ -7,7 +7,7 @@ public protocol NetworkManaging {
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
-    
+
     public func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> String? {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue

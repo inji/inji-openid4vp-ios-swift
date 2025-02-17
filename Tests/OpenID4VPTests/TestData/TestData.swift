@@ -61,6 +61,7 @@ let authRequestWithRedirectUriByValue : [String] = [
     "redirect_uri",
     "presentation_definition",
     "response_type",
+    "response_mode",
     "nonce",
     "state",
     "client_metadata"
@@ -159,13 +160,17 @@ let authorizationRequestParamsWithRedirectUri: [String: Any] = [
 ]
 
 // base64 -> client_id_scheme = redirect_uri
-let testValidBase64EncodedVpRequestWithRedirectUri = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri), clientIdScheme: .redirectUri)
+let testValidBase64EncodedVpRequestWithRedirectUri = createEncodedAuthorizationRequest(
+    requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri),
+    clientIdScheme: .redirectUri,
+    applicableFields: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 }
+)
 
 // base64 -> client_id_scheme = redirect_uri, with response uri and response mode
-let testVpRequestWithRedirectUriAndResponseUriResponseMode = createEncodedAuthorizationRequest(requestParams: mergeMaps( clientIdAndSchemeOfRedirectUri,  authorizationRequestParamsWithValue), clientIdScheme: .redirectUri, applicableFields: authRequestClientIdSchemeMap[.did]! + ["response_uri","response_mode"])
+let testVpRequestWithRedirectUriAndResponseUriResponseMode = createEncodedAuthorizationRequest(requestParams: mergeMaps( clientIdAndSchemeOfRedirectUri,  authorizationRequestParamsWithValue), clientIdScheme: .redirectUri, applicableFields: authRequestClientIdSchemeMap[.redirectUri]! + ["response_uri","response_mode"])
 
 // base64 -> client_id_scheme = redirect_uri, and not equal to client id
-let testVpRequestWithRedirectUriAndClientIdNotEqual = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "https://mock-verifier-party.com","client_id_scheme": "redirect_uri", "redirect_uri": "https://mock-verifier.com"]), clientIdScheme: .redirectUri)
+let testVpRequestWithRedirectUriAndClientIdNotEqual = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "https://mock-verifier-party.com","client_id_scheme": "redirect_uri", "redirect_uri": "https://mock-verifier.com", "response_mode": "fragment"]), clientIdScheme: .redirectUri)
 
 // base64 -> client_id_scheme = pre-registered
 let testValidBase64EncodedVpRequestWithResponseUri = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered), clientIdScheme: .preRegistered)
@@ -173,7 +178,11 @@ let testValidBase64EncodedVpRequestWithResponseUri = createEncodedAuthorizationR
 // jwt -> client_id_scheme = did
 let testValidSignedVpRequestWithDid = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
-let testInValidSignedVpRequestWithDidAndClientIdDifferent = "openid4vp://authorize?Y2xpZW50X2lkPWRpZDp3ZWI6bW9zaXAuZ2l0aHViLmlvOmluamktbW9jay1zZXJ2aWNlczpvcGVuaWQ0dnAtc2VydmljZTpkb2NzJmNsaWVudF9pZF9zY2hlbWU9ZGlkJnJlcXVlc3RfdXJpPWh0dHBzOi8vN2FmOC0yNDAxLTQ5MDAtNzFjMi1mNzRhLThkODgtYWE1Yi0yZjE2LTI5NGIubmdyb2stZnJlZS5hcHAvdmVyaWZpZXIvZ2V0LWF1dGgtcmVxdWVzdC1vYmomcmVxdWVzdF91cmlfbWV0aG9kPWdldCBIVFRQLzEuMQ=="
+let testInValidSignedVpRequestWithDidAndClientIdDifferent = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+    "client_id": "did:other:123#1",
+    "client_id_scheme": ClientIdScheme.did.rawValue,
+]), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
+
 
 let testInvalidPresentationDefinitionVpRequest = createEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["presentation_definition": convertToJson(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
 

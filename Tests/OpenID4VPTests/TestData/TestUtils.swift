@@ -1,5 +1,6 @@
 import Foundation
 @testable import OpenID4VP
+import XCTest
 
 func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     var verifiers: [Verifier] = []
@@ -42,7 +43,7 @@ func createAuthorizationRequest(
 ) -> [String: String?] {
     var authorizationRequestParam: [String: String?] = [:]
     for param in paramList {
-        if let value = requestParams[param] {
+        if let value = requestParams[param], value != nil {
             authorizationRequestParam[param] = value
         }
     }
@@ -83,4 +84,63 @@ func mergeMaps<K, V>(_ maps: [K: V]...) -> [K: V] {
     return maps.reduce(into: [:]) { result, map in
         result.merge(map) { (_, new) in new }
     }
+}
+
+
+// Assert equality of errors
+public func == (lhs: Error, rhs: Error) -> Bool {
+    guard type(of: lhs) == type(of: rhs) else { return false }
+    let error1 = lhs as NSError
+    let error2 = rhs as NSError
+    return error1.domain == error2.domain && error1.code == error2.code && "\(lhs)" == "\(rhs)"
+}
+
+extension Equatable where Self : Error {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs as Error == rhs as Error
+    }
+}
+
+// Assert two dictionary values with values of JSON string or usual data types
+func assertDictionaryValues(actual: [String: Any], expected: [String: Any?]) {
+    for (key, expectedValue) in expected {
+        guard let actualValue = actual[key] else {
+            XCTFail("Missing key: \(key)")
+            continue
+        }
+        
+        if let expectedValue = expectedValue {
+            if isValidJson(expectedValue as! String), let actualString = actualValue as? String, isValidJson(actualString) {
+                XCTAssertTrue(compareJsonStrings(expectedValue as! String, actualString), "Mismatch in JSON for key: \(key)")
+            } else {
+                XCTAssertEqual(actualValue as? String, expectedValue as! String, "Mismatch for key: \(key)")
+            }
+        } else {
+            XCTAssertNil(actualValue as? String, "Expected nil for key: \(key), but got \(actualValue)")
+        }
+    }
+    
+    // Ensure there are no extra keys in actual
+    let extraKeys = Set(actual.keys).subtracting(expected.keys)
+    XCTAssertTrue(extraKeys.isEmpty, "Unexpected extra keys in actual: \(extraKeys)")
+}
+
+/// Function to compare two JSON strings after normalizing them
+private func compareJsonStrings(_ jsonString1: String, _ jsonString2: String) -> Bool {
+    guard let jsonData1 = jsonString1.data(using: .utf8),
+          let jsonData2 = jsonString2.data(using: .utf8),
+          let jsonObject1 = try? JSONSerialization.jsonObject(with: jsonData1, options: []),
+          let jsonObject2 = try? JSONSerialization.jsonObject(with: jsonData2, options: [])
+    else {
+        return false
+    }
+    
+    return NSDictionary(dictionary: jsonObject1 as! [String: Any])
+        .isEqual(to: jsonObject2 as! [String: Any])
+}
+
+/// Check if a string is a valid JSON
+private func isValidJson(_ string: String) -> Bool {
+    guard let jsonData = string.data(using: .utf8) else { return false }
+    return (try? JSONSerialization.jsonObject(with: jsonData, options: [])) != nil
 }

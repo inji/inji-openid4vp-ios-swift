@@ -15,15 +15,6 @@ func determineHttpMethod(method: String) throws -> HTTP_METHOD {
     }
 }
 
-func extractQueryParams(from queryItems: [URLQueryItem]) throws -> [String: String] {
-    var extractedValues: [String: String] = [:]
-    
-    for queryItem in queryItems {
-        extractedValues[queryItem.name] = queryItem.value
-    }
-    return extractedValues
-}
-
 func parseAndValidatePresentationDefinitionInAuthorizationRequest(
     params: [String: Any],
     networkManager: NetworkManaging
@@ -84,17 +75,15 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
     let presentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: presentationDefinitionString)
     
     var mutableParams = params
-    mutableParams["presentation_definition"] = presentationDefinition
+    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition.rawValue] = presentationDefinition
     
     return mutableParams
 }
 
 func validateKey(
     _ key: String,
-    values: [String: Any],
-    setResponseUri: (String) -> Void
+    values: [String: Any]
 ) throws {
-    
     guard let value = values[key] else {
         throw Logger.handleException(
             exceptionType: "MissingInput",
@@ -114,95 +103,23 @@ func validateKey(
             )
         }
     }
-    
-    if key == "response_uri", let responseUri = value as? String {
-        setResponseUri(responseUri)
-    }
 }
 
-func commonRequiredKeys(params: [String: Any]) -> [String] {
-    var keys = [
-        "presentation_definition",
-        "client_id",
-        "client_id_scheme",
-        "response_type",
-        "nonce",
-        "state"
-    ]
-    
-    if params["client_metadata"] != nil {
-        keys.append("client_metadata")
-    }
-    return keys
-}
-
-func validateUriCombinations(
-    redirectUri: Any?,
-    responseUri: Any?,
-    responseMode: Any?
-) throws {
-    let allNil = redirectUri == nil && responseUri == nil && responseMode == nil
-    let allPresent = redirectUri != nil && responseUri != nil && responseMode != nil
-    
-    if allNil {
-        throw Logger.handleException(
-            exceptionType: "MissingInput",
-            fieldPath: ["response_uri", "response_mode", "redirect_uri"],
-            className: AuthorizationRequest.className
-        )
-    }
-    if allPresent {
-        throw Logger.handleException(
-            exceptionType: "InvalidInput",
-            fieldPath: ["response_uri", "response_mode", "redirect_uri"],
-            className: AuthorizationRequest.className
-        )
-    }
-}
-
-func updateRequiredKeys(
-    _ requiredKeys: inout [String],
-    redirectUri: Any?,
-    responseUri: Any?,
-    responseMode: Any?
-) {
-    if redirectUri != nil, responseUri == nil, responseMode == nil {
-        requiredKeys.append("redirect_uri")
-    }
-    if responseUri != nil, responseMode != nil, redirectUri == nil {
-        requiredKeys.append(contentsOf: ["response_uri", "response_mode"])
-    }
-}
-
-func validateVerifier(verifierList: [Verifier], params: [String: Any],shouldValidateClient: Bool) throws {
-    
-    let clientIdScheme = getStringValue(params["client_id_scheme"] ?? "")
-    let clientId = getStringValue(params["client_id"] ?? "")
-    
-    if clientIdScheme == ClientIdScheme.preRegistered.rawValue {
-        
-        if shouldValidateClient {
-            guard !verifierList.isEmpty else {
-                throw Logger.handleException(exceptionType: "EmptyVerifierList", className: AuthorizationRequest.className)
-            }
-            
-            guard verifierList.contains(where: { $0.clientId == clientId && $0.responseUris.contains(getStringValue(params["response_uri"])!) }) else {
-                throw Logger.handleException(exceptionType: "InvalidVerifierClientID", className: AuthorizationRequest.className)
-            }
+func fetchAuthRequestObjectByReference(params: [String: String], requestUri: String, networkManager: NetworkManaging) async throws -> Any {
+    do {
+        if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
         }
-    }
-    
-    if clientIdScheme == ClientIdScheme.redirectUri.rawValue {
+        let requestUriMethod = params["request_uri_method"] ?? "get"
+        let httpMethod = try determineHttpMethod(method: requestUriMethod)
         
-        guard params["response_uri"] == nil, params["response_mode"] == nil else {
-            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Response Uri and Response mode should not be present, when client id scheme is Redirect Uri", className: AuthorizationRequest.className)
+        guard let url = URL(string: params["request_uri"]!) else {
+            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
         }
         
-        if params["redirect_uri"] != nil {
-            guard getStringValue(params["redirect_uri"] ?? "") == clientId else {
-                throw Logger.handleException(exceptionType: "InvalidVerifierRedirectUri", className: AuthorizationRequest.className)
-            }
-        }
+        let response = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil) ?? ""
+        
+        return response
     }
 }
 
@@ -270,5 +187,23 @@ extension KeyedDecodingContainer {
             return rawValue!
         }
         return nil
+    }
+}
+
+
+func getAuthRequestHandler(trustedVerifiers : [Verifier], authRequestParams params: [String:Any], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) throws -> ClientIdSchemeBasedAuthRequestHandler {
+    var authRequestParams = params
+    let clientIdScheme = getStringValue(authRequestParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue]) ?? ClientIdScheme.preRegistered.rawValue
+    authRequestParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] = clientIdScheme
+    
+    switch clientIdScheme {
+    case ClientIdScheme.preRegistered.rawValue:
+        return PreRegisteredSchemeAuthRequestHandler(trustedVerifiers: trustedVerifiers, authRequestParam: authRequestParams, networkManager: networkManager, shouldValidateClient: shouldValidateClient, setResponseUri: setResponseUri)
+    case ClientIdScheme.did.rawValue:
+        return DidSchemeAuthRequestHandler(authRequestParam: authRequestParams, networkManager: networkManager, setResponseUri: setResponseUri)
+    case ClientIdScheme.redirectUri.rawValue:
+        return RedirectUriSchemeAuthRequestHandler(authRequestParam: authRequestParams, networkManager: networkManager, setResponseUri: setResponseUri)
+    default:
+        throw Logger.handleException(exceptionType: "InvalidClientIdScheme",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
     }
 }
