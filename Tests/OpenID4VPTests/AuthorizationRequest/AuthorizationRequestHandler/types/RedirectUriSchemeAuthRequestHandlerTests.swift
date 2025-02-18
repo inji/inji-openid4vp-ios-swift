@@ -26,7 +26,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
-            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierRedirectUri", error.localizedDescription)
+            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierClientID", error.localizedDescription)
         }
     }
     
@@ -37,7 +37,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
-            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierRedirectUri", error.localizedDescription)
+            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierClientID", error.localizedDescription)
         }
     }
     
@@ -48,7 +48,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
-            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierRedirectUri", error.localizedDescription)
+            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierClientID", error.localizedDescription)
         }
     }
 }

@@ -61,7 +61,7 @@ class RedirectUriSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthRequestHandle
         
         if let validValue = authRequestParam[validKey], let clientIdValue = authRequestParam[AuthorizationRequestFieldConstants.clientId.rawValue] as? String, validValue as? String != clientIdValue {
             throw Logger.handleException(
-                exceptionType: "invalidVerifierRedirectUri",
+                exceptionType: "invalidVerifierClientID",
                 message: "\(validKey) should be equal to client_id for given client_id_scheme", className: className
             )
         }
