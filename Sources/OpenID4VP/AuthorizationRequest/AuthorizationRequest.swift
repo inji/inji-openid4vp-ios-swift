@@ -51,76 +51,28 @@ public struct AuthorizationRequest: Encodable {
         }
     }
     
-    static func validateAndGetAuthorizationRequest(encodedAuthorizationRequest: String, setResponseUri: @escaping (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging) async throws -> AuthorizationRequest {
-        let authorizationRequestParams: [String: Any]
-        do {
-            guard let queryStart = encodedAuthorizationRequest.firstIndex(of: "?") else {
-                throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
-            }
-            let encodedString = String(encodedAuthorizationRequest[encodedAuthorizationRequest.index(after: queryStart)...])
-            
-            guard let decodedQuery = decodeBase64ToString(encodedString) else {
-                throw Logger.handleException(exceptionType: "Decoding", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
-            }
-            var extractedQueryParameters = try extractTheQueryParams(decodedQuery)
-            
-            authorizationRequestParams = try await getAuthorizationRequestObjectMap(authRequestParams: extractedQueryParameters, trustedVerifiers: trustedVerifierJSON, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
-
-        } catch {
-            throw error
+    static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String, setResponseUri: @escaping (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging) async throws -> AuthorizationRequest {
+        guard let queryStart = urlEncodedAuthorizationRequest.firstIndex(of: "?") else {
+            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
         }
+      
+        let extractedQueryParameters = extractQueryParameters(urlEncodedAuthorizationRequest)
         
-        return createAuthorizationRequest(from: authorizationRequestParams)
+        return try await getAuthorizationRequestObject(authorizationRequestParameters: extractedQueryParameters, trustedVerifiers: trustedVerifierJSON, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
     }
     
-    private static func getAuthorizationRequestObjectMap(authRequestParams : [String:Any],trustedVerifiers : [Verifier], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) async throws -> [String: Any]{
-        let authorizationRequestHandler = try getAuthRequestHandler(trustedVerifiers: trustedVerifiers, authRequestParams: authRequestParams, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
+    private static func getAuthorizationRequestObject(authorizationRequestParameters : [String:Any],trustedVerifiers : [Verifier], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) async throws -> AuthorizationRequest{
+        let authorizationRequestHandler = try getAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
         
         try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler)
         
-        return authorizationRequestHandler.authRequestParam
+        return authorizationRequestHandler.createAuthorizationRequest()
     }
     
-    private static func processAndValidateAuthorizationRequestParameter(_ authRequestHandler: ClientIdSchemeBasedAuthRequestHandler)async throws {
-        try authRequestHandler.validateClientId()
-        try await authRequestHandler.gatherAuthRequest()
-        try authRequestHandler.gatherInfoForSendingResponseToVerifier()
-        try await authRequestHandler.validateAndParseRequestFields()
-    }
-    
-    private static func extractTheQueryParams(_ query: String) throws  -> [String: String]{
-        guard let encodedQuery = urlEncodedRequest(query) else {
-            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["Authorization Request"], className: AuthorizationRequest.className)
-        }
-        
-        let uriString = "?\(encodedQuery)"
-        let uri = URL(string: uriString)
-        
-        guard let queryItems = getQueryItems(uri!) else {
-            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Exception occurred when extracting the query params from Authorization Request", className: AuthorizationRequest.className)
-        }
-        
-        var extractedValues: [String: String] = [:]
-        
-        for queryItem in queryItems {
-            extractedValues[queryItem.name] = queryItem.value
-        }
-        return extractedValues
-    }
-    
-    private static func createAuthorizationRequest(from params: [String: Any]) -> AuthorizationRequest {
-        
-        return AuthorizationRequest(
-            clientId: getStringValue(params["client_id"])!,
-            clientIdScheme: getStringValue(params["client_id_scheme"])!,
-            presentationDefinition: params["presentation_definition"]! as! PresentationDefinition,
-            responseType: getStringValue(params["response_type"])!,
-            responseMode: getStringValue(params["response_mode"]),
-            nonce: getStringValue(params["nonce"])!,
-            state: getStringValue(params["state"])!,
-            redirectUri: getStringValue(params["redirect_uri"]),
-            responseUri: getStringValue(params["response_uri"]),
-            clientMetadata: params["client_metadata"] as? ClientMetadata
-        )
+    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler)async throws {
+        try authorizationRequestHandler.validateClientId()
+        try await authorizationRequestHandler.fetchAuthRequest()
+        try authorizationRequestHandler.setResponseUrlForSendingResponseToVerifier()
+        try await authorizationRequestHandler.validateAndParseRequestFields()
     }
 }

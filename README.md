@@ -64,16 +64,16 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 
 
 ```
-    let response = try authenticateVerifier(encodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier])
+    let response = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier])
 ```
 
 ###### Parameters
 
-| Name                          | Type         | Description                                                                      | Sample                                              |
-|-------------------------------|--------------|----------------------------------------------------------------------------------|-----------------------------------------------------|
-| encodedAuthorizationRequest   | String       | Base64 Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                            |
-| trustedVerifierJSON           | [Verifier]   | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])`|
-| shouldValidateClient          | Bool?        | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                              |
+| Name                           | Type       | Description                                                                      | Sample                                               |
+|--------------------------------|------------|----------------------------------------------------------------------------------|------------------------------------------------------|
+| urlEncodedAuthorizationRequest | String     | Base64 Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                             |
+| trustedVerifierJSON            | [Verifier] | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])` |
+| shouldValidateClient           | Bool?      | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                               |
 
 
 ###### Exceptions
@@ -86,7 +86,7 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
     - both presentation_definition and presentation_definition_uri are not present in Request
 3. MissingInput exception is thrown if any of required params are not present in Request
 4. InvalidInput exception is thrown if any of required params value is empty
-5. InvalidVerifierClientID exception is thrown if the received request client_id & response_uri are not matching with any of the trusted verifiers
+5. InvalidVerifier exception is thrown if the received request client_id & response_uri are not matching with any of the trusted verifiers
 6. JWTVerification exception is thrown if there is any error in extracting public key, kid or signature verification failure.
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
@@ -146,9 +146,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name  | Type   | Description                   | Sample                                                                                |
-|-------|--------|-------------------------------|---------------------------------------------------------------------------------------|
-| error | Error  | Contains the exception object | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
+| Name  | Type  | Description                   | Sample                                                                            |
+|-------|-------|-------------------------------|-----------------------------------------------------------------------------------|
+| error | Error | Contains the exception object | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
 
 
 ###### Exceptions

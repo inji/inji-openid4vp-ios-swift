@@ -15,7 +15,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case parameterValuesAreEmpty
     case mismatchingClientIDInRequest
     case mismatchingClientIdSchemeInRequest
-    case invalidVerifierClientID
+    case invalidVerifier
     case invalidVerifierRedirectUri
     case emptyVerifierList
     case unsupportedHttpMethod(message: String)
@@ -42,7 +42,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
             return "Json Decoding failed for \(fieldPath) due to this error: \(message)."
         case .jsonEncodingFailed(let fieldPath, let message):
             return "Json Encoding failed for \(fieldPath) due to this error: \(message)."
-        case .invalidVerifierClientID:
+        case .invalidVerifier:
             return "VP sharing failed: Verifier authentication was unsuccessful"
         case .mismatchingClientIDInRequest:
             return "Client Id is mismatching in QR data and Request Uri response"

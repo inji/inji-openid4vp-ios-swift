@@ -30,7 +30,7 @@ struct JWTUtil {
         return base64UrlEncode(signature)
     }
     
-    static func create(header: [String:Any]?,payload: [String:Any],addValidSignature: Bool) -> String{
+    static func create(header: [String:Any]? = nil,payload: [String:Any],addValidSignature: Bool = true) -> String{
         let privateKeyData = Data(base64Encoded: ed25519PrivateKey)
         let jwtHeader = header == nil ? self.jwtHeader : header
         let headerData = try? JSONSerialization.data(withJSONObject: jwtHeader as Any)

@@ -1,20 +1,6 @@
 import Foundation
 import CryptoKit
 
-func isJWT(_ authorizationRequest: String) -> Bool {
-    return authorizationRequest.split(separator: ".").count == 3
-}
-
-func determineHttpMethod(method: String) throws -> HTTP_METHOD {
-    if method.contains("get") {
-        return HTTP_METHOD.GET
-    } else if method.contains("post") {
-        return HTTP_METHOD.POST
-    } else {
-        throw Logger.handleException(exceptionType: "UnsupportedHttpMethod", message: method, className: AuthorizationRequest.className)
-    }
-}
-
 func parseAndValidatePresentationDefinitionInAuthorizationRequest(
     params: [String: Any],
     networkManager: NetworkManaging
@@ -43,11 +29,19 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
         }
         presentationDefinitionString = valueStr
         
-    } else if hasPresentationDefinitionUri, let value = params["presentation_definition_uri"] {
+    } else if hasPresentationDefinitionUri, let value = params[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+        guard isValidUri(value as! String)
+        else {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "presentation_defintion_uri data is not valid",
+                className: AuthorizationRequest.className
+            )
+        }
         guard let valueStr = getStringValue(value), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
             throw Logger.handleException(
                 exceptionType: "InvalidInput",
-                fieldPath: ["presentation_definition_uri"],
+                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue],
                 className: AuthorizationRequest.className
             )
         }
@@ -191,19 +185,32 @@ extension KeyedDecodingContainer {
 }
 
 
-func getAuthRequestHandler(trustedVerifiers : [Verifier], authRequestParams params: [String:Any], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) throws -> ClientIdSchemeBasedAuthRequestHandler {
-    var authRequestParams = params
-    let clientIdScheme = getStringValue(authRequestParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue]) ?? ClientIdScheme.preRegistered.rawValue
-    authRequestParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] = clientIdScheme
+func getAuthorizationRequestHandler(trustedVerifiers : [Verifier], authorizationRequestParameters: [String:Any], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
+    let clientIdScheme = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue]) ?? ClientIdScheme.preRegistered.rawValue
     
     switch clientIdScheme {
     case ClientIdScheme.preRegistered.rawValue:
-        return PreRegisteredSchemeAuthRequestHandler(trustedVerifiers: trustedVerifiers, authRequestParam: authRequestParams, networkManager: networkManager, shouldValidateClient: shouldValidateClient, setResponseUri: setResponseUri)
+        return PreRegisteredSchemeAuthRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, shouldValidateClient: shouldValidateClient, setResponseUri: setResponseUri)
     case ClientIdScheme.did.rawValue:
-        return DidSchemeAuthRequestHandler(authRequestParam: authRequestParams, networkManager: networkManager, setResponseUri: setResponseUri)
+        return DidSchemeAuthRequestHandler(authorizationRequestParam: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
     case ClientIdScheme.redirectUri.rawValue:
-        return RedirectUriSchemeAuthRequestHandler(authRequestParam: authRequestParams, networkManager: networkManager, setResponseUri: setResponseUri)
+        return RedirectUriSchemeAuthRequestHandler(authorizationRequestParam: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
     default:
         throw Logger.handleException(exceptionType: "InvalidClientIdScheme",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
     }
+}
+
+func extractQueryParameters(_ input: String) -> [String: String] {
+    let urlComponents = URLComponents(string: input)
+    var decodedParams = [String: String]()
+    
+    if let queryItems = urlComponents?.queryItems {
+        for item in queryItems {
+            if let decodedValue = item.value?.removingPercentEncoding {
+                decodedParams[item.name] = decodedValue
+            }
+        }
+    }
+    
+    return decodedParams
 }

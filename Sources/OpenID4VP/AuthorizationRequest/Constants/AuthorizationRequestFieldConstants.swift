@@ -8,7 +8,7 @@ public enum AuthorizationRequestFieldConstants: String {
     case responseUri = "response_uri"
     case redirectUri = "redirect_uri"
     case requestUri = "request_uri"
-    case requestUriMode = "request_uri_mode"
+    case requestUriMethod = "request_uri_method"
     case nonce = "nonce"
     case state = "state"
     case clientMetadata = "client_metadata"

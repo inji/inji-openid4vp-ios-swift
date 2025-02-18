@@ -4,6 +4,26 @@ enum JwtPart: Int {
     case header = 0, payload, signature
 }
 
+func isJWT(_ authorizationRequest: String) -> Bool {
+    return authorizationRequest.split(separator: ".").count == 3
+}
+
+func determineHttpMethod(method: String) throws -> HTTP_METHOD {
+    if method.contains("get") {
+        return HTTP_METHOD.GET
+    } else if method.contains("post") {
+        return HTTP_METHOD.POST
+    } else {
+        throw Logger.handleException(exceptionType: "UnsupportedHttpMethod", message: method, className: AuthorizationRequest.className)
+    }
+}
+
+func extractDataJsonFromJwt(jwtToken: String, jwtPart: JwtPart) throws -> [String:String] {
+    let components = jwtToken.split(separator: ".")
+    let payload = String(components[jwtPart.rawValue])
+    return try decodeBase64ToJSON(makeBase64Standard(payload))
+}
+
 func makeBase64Standard(_ base64String: String) -> String {
     var validBase64String = base64String
         .replacingOccurrences(of: "-", with: "+")
@@ -13,10 +33,6 @@ func makeBase64Standard(_ base64String: String) -> String {
         validBase64String.append("=")
     }
     return validBase64String
-}
-
-func getStringValue(_ value: Any?) -> String? {
-    return value as? String
 }
 
 func decodeBase64ToString(_ encodedAuthorizationRequest: String) -> String? {
@@ -42,8 +58,12 @@ func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
     }
 }
 
-func extractDataJsonFromJwt(jwtToken: String, jwtPart: JwtPart) throws -> [String:String] {
-    let components = jwtToken.split(separator: ".")
-    let payload = String(components[jwtPart.rawValue])
-    return try decodeBase64ToJSON(makeBase64Standard(payload))
+func getStringValue(_ value: Any?) -> String? {
+    return value as? String
+}
+
+public func isValidUri(_ urlString: String) -> Bool {
+    let urlRegex = #"^https:\/\/(?:[\w-]+\.)+[\w-]+(?:\/[\w\-.~!$&'()*+,;=:@%]+)*\/?(?:\?[^#\s]*)?(?:#.*)?$"#
+    
+    return urlString.range(of: urlRegex, options: .regularExpression) != nil
 }

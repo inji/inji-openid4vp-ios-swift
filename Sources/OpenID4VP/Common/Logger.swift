@@ -40,8 +40,8 @@ class Logger {
             exception = AuthorizationRequestException.jsonEncodingFailed(fieldPath: fieldPathAsString, message: message ?? "")
         case "Decoding":
             exception = AuthorizationRequestException.decodingException(fieldPath: fieldPathAsString)
-        case "InvalidVerifierClientID":
-            exception = AuthorizationRequestException.invalidVerifierClientID
+        case "InvalidVerifier":
+            exception = AuthorizationRequestException.invalidVerifier
         case "MismatchingClientIDInRequest":
             exception = AuthorizationRequestException.mismatchingClientIDInRequest
         case "MismatchingClientIdSchemeInRequest":
@@ -55,7 +55,7 @@ class Logger {
         case "InvalidClientIdScheme":
             exception = JwtVerificationException.invalidClientIdScheme(message: message ?? "")
         case "UrlCreationFailed":
-            exception = JwtVerificationException.urlCreationFailed(message: message ?? "")
+            exception = NetworkRequestException.urlCreationFailed(message: message ?? "")
         case "PublicKeyNotFound":
             exception = JwtVerificationException.publicKeyNotFound(message: message)
         case "PublicKeyExtractionFailed":

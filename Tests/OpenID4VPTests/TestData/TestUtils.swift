@@ -16,7 +16,7 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     return verifiers
 }
 
-func createEncodedAuthorizationRequest(
+func createUrlEncodedAuthorizationRequest(
     requestParams: [String: String?],
     verifierSentAuthRequestByReference: Bool? = false,
     clientIdScheme: ClientIdScheme,
@@ -30,11 +30,20 @@ func createEncodedAuthorizationRequest(
     }
     
     let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams)
-    let queryString = authorizationRequestParam.map { "\($0.key)=\($0.value ?? "")" }.joined(separator: "&")
-    let encodedData = queryString.data(using: .utf8)!
-    let base64String = encodedData.base64EncodedString()
+    let queryString = encodeToQueryParameters(authorizationRequestParam)
     
-    return "OPENID4VP://authorize?\(base64String)"
+    return "OPENID4VP://authorize?\(queryString)"
+}
+
+private func encodeToQueryParameters(_ parameters: [String: String?]) -> String {
+    let queryString = parameters.compactMap { (key, value) -> String? in
+        guard let value = value else { return nil } // Ignore nil values
+        let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return "\(encodedKey)=\(encodedValue)"
+    }.joined(separator: "&")
+    
+    return queryString
 }
 
 func createAuthorizationRequest(

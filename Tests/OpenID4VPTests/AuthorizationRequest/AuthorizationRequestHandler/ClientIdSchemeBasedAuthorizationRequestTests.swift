@@ -23,7 +23,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+            let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             XCTAssertThrowsError(try preRegistered.validateClientId()){ error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
@@ -31,39 +31,39 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
-    //Gather info for sending response (error or authorization response) to verifier
-    func testGatherInfoForSendingResponseToVerifierForFragmentResponseModeThrowInvalidResponseModeError()throws{
+    //Fetch info for sending response (error or authorization response) to verifier
+    func testFetchInfoForSendingResponseToVerifierForFragmentResponseModeThrowInvalidResponseModeError()throws{
         let authorizationRequestParameters: [String : String?] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["response_mode": "fragment"]))
-        let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
-        XCTAssertThrowsError(try preRegistered.gatherInfoForSendingResponseToVerifier()){ error in
-            XCTAssertEqual("Missing Input: redirect_uri param is required", error.localizedDescription)
+        XCTAssertThrowsError(try preRegistered.setResponseUrlForSendingResponseToVerifier()){ error in
+            XCTAssertEqual("An unexpected exception occurred: exception type: invalidResponseMode", error.localizedDescription)
         }
     }
     
-    func testGatherInfoForSendingResponseToVerifierInvalidResponseModeErrorWhenResponseModeIsNotAvailable()throws{
+    func testFetchInfoForSendingResponseToVerifierInvalidResponseModeErrorWhenResponseModeIsNotAvailable()throws{
         let authorizationRequestParameters: [String : String?] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.responseMode.rawValue ? AuthorizationRequestFieldConstants.redirectUri.rawValue : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
-        let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
-        XCTAssertThrowsError(try preRegistered.gatherInfoForSendingResponseToVerifier()){ error in
+        XCTAssertThrowsError(try preRegistered.setResponseUrlForSendingResponseToVerifier()){ error in
             XCTAssertEqual("An unexpected exception occurred: exception type: invalidResponseMode", error.localizedDescription)
         }
     }
     
-    func testGatherInfoForSendingResponseToVerifierInvalidResponseModeErrorWhenResponseModeIsNullValue()throws{
+    func testFetchInfoForSendingResponseToVerifierInvalidResponseModeErrorWhenResponseModeIsNullValue()throws{
         let authorizationRequestParameters: [String : String?] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["response_mode": "null"]))
-        let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
-        XCTAssertThrowsError(try preRegistered.gatherInfoForSendingResponseToVerifier()){ error in
+        XCTAssertThrowsError(try preRegistered.setResponseUrlForSendingResponseToVerifier()){ error in
             XCTAssertEqual("An unexpected exception occurred: exception type: invalidResponseMode", error.localizedDescription)
         }
     }
     
-    func testGatherInfoForSendingResponseToVerifierInvalidResponseModeErrorWhenResponseModeIsEmptyValue()throws{
+    func testFetchInfoForSendingResponseToVerifierInvalidResponseModeErrorWhenResponseModeIsEmptyValue()throws{
         let authorizationRequestParameters: [String : String?] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["response_mode": ""]))
-        let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
-        XCTAssertThrowsError(try preRegistered.gatherInfoForSendingResponseToVerifier()){ error in
+        XCTAssertThrowsError(try preRegistered.setResponseUrlForSendingResponseToVerifier()){ error in
             XCTAssertEqual("An unexpected exception occurred: exception type: invalidResponseMode", error.localizedDescription)
         }
     }
@@ -78,7 +78,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+            let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do{
                 try await preRegistered.validateAndParseRequestFields()
@@ -98,7 +98,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+            let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do{
                 try await preRegistered.validateAndParseRequestFields()
@@ -118,7 +118,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+            let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do{
                 try await preRegistered.validateAndParseRequestFields()
@@ -130,7 +130,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenInvalidClientMetadataIsProvided() async{
-        let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: mergeMaps(resquestUriResponseData,["client_metadata": "{}"]), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: mergeMaps(resquestUriResponseData,["client_metadata": "{}"]), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
         do{
             try await preRegistered.validateAndParseRequestFields()
@@ -141,7 +141,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenBothPresenentationDefinitionAndPresenentationDefinitionUriArePresent() async{
-        let preRegistered = try! getAuthRequestHandler( trustedVerifiers: preRegisteredVerifiers, authRequestParams: mergeMaps(resquestUriResponseData,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition"]), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: mergeMaps(resquestUriResponseData,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition"]), shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
         do{
             try await preRegistered.validateAndParseRequestFields()
@@ -152,8 +152,37 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenClientIdSchemeIsNotSupported() async{
-        XCTAssertThrowsError(try getAuthRequestHandler( trustedVerifiers: [], authRequestParams: ["client_id_scheme":"x509_san_dns"], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)) { error in
+        XCTAssertThrowsError(try getAuthorizationRequestHandler( trustedVerifiers: [], authorizationRequestParameters: ["client_id_scheme":"x509_san_dns"], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)) { error in
             XCTAssertEqual("Client id scheme in request is not supported", error.localizedDescription)
+        }
+    }
+    
+    //Validation of authRequest params obtained via request_uri by matching with url encoded query param data
+    func testShouldThrowErrorWhenClientIdSchemeIsAvailableInOnlyAuthorizationRequestObject() async{
+        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,["client_id":"mock-client"]), applicableFields: authRequestWithPreRegisteredByValue)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        
+        do {
+            try await preRegistered.fetchAuthRequest()
+            XCTFail("error should have been thrown but it failed")
+        } catch {
+            XCTAssertEqual("Client Id Scheme is mismatching in QR data and Request Uri response",error.localizedDescription)
+        }
+    }
+    
+    func testShouldThrowErrorWhenClientIdSchemeIsAvailableInOnlyUrlEncodedAuthorizationRequestObject() async{
+        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered), applicableFields: authRequestWithPreRegisteredByValue)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id":"mock-client"]))
+        
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        do {
+            try await preRegistered.fetchAuthRequest()
+            XCTFail("error should have been thrown but it failed")
+        } catch {
+            XCTAssertEqual("Client Id Scheme is mismatching in QR data and Request Uri response",error.localizedDescription)
         }
     }
 }

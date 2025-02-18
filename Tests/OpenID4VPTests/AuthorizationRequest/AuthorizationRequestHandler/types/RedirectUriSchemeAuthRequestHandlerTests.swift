@@ -9,46 +9,35 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     
     func testShouldThrowErrorWhenAuthRequestObtainedByReferenceIsSigned() async {
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
-        let redirectUriSchemeAuthRequestHandler = try! getAuthRequestHandler( trustedVerifiers: [], authRequestParams: createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)), shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let redirectUriSchemeAuthRequestHandler = try! getAuthorizationRequestHandler( trustedVerifiers: [], authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String:Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
         do{
-            try await redirectUriSchemeAuthRequestHandler.gatherAuthRequest()
+            try await redirectUriSchemeAuthRequestHandler.fetchAuthRequest()
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
             XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
         }
     }
     
+    func testShouldThrowErrorWhenRequestUriIsInvalid() async {
+        let redirectUriSchemeAuthRequestHandler = try! getAuthorizationRequestHandler( trustedVerifiers: [], authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri, ["request_uri": "http://invalid-mock-verifier.com"])) as [String : Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        
+        do{
+            try await redirectUriSchemeAuthRequestHandler.fetchAuthRequest()
+            XCTFail("Expected error to be thrown but it did not happen")
+        } catch {
+            XCTAssertEqual("request_uri data is not valid", error.localizedDescription)
+        }
+    }
+    
     func testThrowErrorWhenAuthRequestWhenClientIdIsNotEqualToResponseUriWithDirectPostResponseMode() async{
-        let redirectUriSchemeAuthRequestHandler = try! getAuthRequestHandler( trustedVerifiers: [], authRequestParams: createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri, ["response_mode":"direct_post", "response_uri": "https://some-other.com"])), shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let redirectUriSchemeAuthRequestHandler = try! getAuthorizationRequestHandler( trustedVerifiers: [], authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri, ["response_mode":"direct_post", "response_uri": "https://some-other.com"])) as [String : Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
         do{
             try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
-            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierClientID", error.localizedDescription)
-        }
-    }
-    
-    func testThrowErrorWhenAuthRequestWhenClientIdIsNotEqualToResponseUriWithDirectPostJwtResponseMode() async{
-        let redirectUriSchemeAuthRequestHandler = try! getAuthRequestHandler( trustedVerifiers: [], authRequestParams: createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri, ["response_mode":"direct_post.jwt", "response_uri": "https://some-other.com"])), shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
-            XCTFail("Expected error to be thrown but it did not happen")
-        } catch {
-            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierClientID", error.localizedDescription)
-        }
-    }
-    
-    func testThrowErrorWhenAuthRequestWhenClientIdIsNotEqualToRedirectUriWithFragmentResponseMode() async{
-        let redirectUriSchemeAuthRequestHandler = try! getAuthRequestHandler( trustedVerifiers: [], authRequestParams: createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri, ["response_mode":"fragment", "redirect_uri": "https://some-other.com"])), shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
-            XCTFail("Expected error to be thrown but it did not happen")
-        } catch {
-            XCTAssertEqual("An unexpected exception occurred: exception type: invalidVerifierClientID", error.localizedDescription)
+            XCTAssertEqual("VP sharing failed: Verifier authentication was unsuccessful", error.localizedDescription)
         }
     }
 }
