@@ -13,10 +13,14 @@ class DidSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthRequestHandler {
         }
         let response = try await fetchAuthRequestObjectByReference(params: authRequestParam as! [String:String], requestUri: requestUri, networkManager: networkManager)
         if (isJWT(response as! String)) {
-            let proofJwtManager = ProofJwtManager(networkManager: networkManager)
-            try await proofJwtManager.verifyJWT(jwtToken: response as! String, clientId: authRequestParam["client_id"] as! String, clienIdScheme: ClientIdScheme.did.rawValue)
+            let clienId: String = authRequestParam["client_id"] as! String
             
-            let authorizationRequestObject =  try extractPayloadJsonFromJwt(jwtToken: response as! String, jwtPart: .payload)
+            let keyResolver: KeyResolver = DidKeyResolver(didUrl: clienId, networkManager: networkManager)
+            let jwtHandler = JWTHandler(jwt: response as! String, keyResolver: keyResolver)
+            
+            try await jwtHandler.verify()
+            
+            let authorizationRequestObject =  try extractDataJsonFromJwt(jwtToken: response as! String, jwtPart: .payload)
             
             try validateMatchOfAuthRequestObjectAndParams(params: authRequestParam as! [String:String], requestUriParams: authorizationRequestObject)
             

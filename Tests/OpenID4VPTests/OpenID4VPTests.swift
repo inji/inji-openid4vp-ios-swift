@@ -127,10 +127,10 @@ class OpenID4VPTests: XCTestCase {
     }
     
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
-    //TODO: Skipping this - fix required on JWT verification mock
-    func skipped_testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
+    func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
+        //"did:other:123#1" clienId is used in QR code
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: validJwtResponse)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,response: didResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:other:123#1")!,response: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(encodedAuthorizationRequest: testInValidSignedVpRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)

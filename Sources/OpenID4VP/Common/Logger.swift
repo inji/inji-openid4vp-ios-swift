@@ -57,7 +57,7 @@ class Logger {
         case "UrlCreationFailed":
             exception = JwtVerificationException.urlCreationFailed(message: message ?? "")
         case "PublicKeyNotFound":
-            exception = JwtVerificationException.publicKeyNotFound
+            exception = JwtVerificationException.publicKeyNotFound(message: message)
         case "PublicKeyExtractionFailed":
             exception = JwtVerificationException.publicKeyExtractionFailed
         case "KidExtractionFailed":

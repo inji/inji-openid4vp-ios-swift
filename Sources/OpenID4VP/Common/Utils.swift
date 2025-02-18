@@ -26,7 +26,7 @@ func decodeBase64ToString(_ encodedAuthorizationRequest: String) -> String? {
 
 func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
     guard let decodedData = Data(base64Encoded: base64String) else {
-        throw Logger.handleException(exceptionType: "Decoding", message: "JWT payload decoding failed" ,className: DidHandler.className)
+        throw Logger.handleException(exceptionType: "Decoding", message: "JWT payload decoding failed" ,className: JWTHandler.className)
     }
     
     do {
@@ -37,12 +37,12 @@ func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
             }
             return stringifiedDict
         } else {
-            throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "JWT payload decoding to json failed", className: DidHandler.className)
+            throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "JWT payload decoding to json failed", className: JWTHandler.className)
         }
     }
 }
 
-func extractPayloadJsonFromJwt(jwtToken: String, jwtPart: JwtPart) throws -> [String:String] {
+func extractDataJsonFromJwt(jwtToken: String, jwtPart: JwtPart) throws -> [String:String] {
     let components = jwtToken.split(separator: ".")
     let payload = String(components[jwtPart.rawValue])
     return try decodeBase64ToJSON(makeBase64Standard(payload))
