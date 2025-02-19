@@ -19,8 +19,10 @@ class DidSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandl
                 className: AuthorizationRequest.className
             )
         }
-        let (response, _) = try await fetchAuthRequestObjectByReference(params: authorizationRequestParameters as! [String:String], requestUri: requestUri, networkManager: networkManager)
-        if (isJWT(response)) {
+        let (response, httpUrlResponse) = try await fetchAuthRequestObjectByReference(params: authorizationRequestParameters as! [String:String], requestUri: requestUri, networkManager: networkManager)
+        
+        let isContentTypeJWT = httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
+        if (isContentTypeJWT && isJWT(response)) {
             let clienId: String = authorizationRequestParameters["client_id"] as! String
             
             let keyResolver: KeyResolver = DidKeyResolver(didUrl: clienId, networkManager: networkManager)
@@ -34,6 +36,8 @@ class DidSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandl
             
             return authorizationRequestObject
         }
-        throw Logger.handleException(exceptionType: "InvalidData", message: "Authorization Request must be signed and contain JWT for given client_id_scheme", className: self.className)
+        else {
+            throw Logger.handleException(exceptionType: "InvalidData", message: "Authorization Request must be signed and contain JWT for given client_id_scheme", className: self.className)
+        }
     }
 }

@@ -7,6 +7,12 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     let mockSetResponseUri: (String) -> Void = { value in
     }
     
+    let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,[
+        "client_id": "mock-client",
+        "client_id_scheme": ClientIdScheme.did.rawValue,
+    ]), applicableFields: authRequestWithPreRegisteredByValue)
+    let requestUri: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
+    
     // Validate client tests
     
     func testThrowExceptionWhenClientIdIsNotAvailableAsTrustedVerifier(){
@@ -35,7 +41,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    // TODO: Should we have this test case, instead shouldn't it be same case as client ID is not in trusted verifiers list?
     func testThrowExceptionWhenTrustedVerifiersListIsEmpty(){
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: [], authorizationRequestParameters: ["client_id": "other-mock-client","response_uri": "https://mock-verifier.com"], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
@@ -123,10 +128,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     func testFetchAuthorizationRequestThrowExceptionForValidationOfMatchingClientIdSchemeOnAuthRequestSentByReference() async{
-        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,[
-            "client_id": "mock-client",
-            "client_id_scheme": ClientIdScheme.did.rawValue,
-        ]), applicableFields: authRequestWithPreRegisteredByValue)
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
@@ -141,12 +142,38 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     
-    func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectIsSigned() async{
+    func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsJWT() async{
         let requestUriResponse: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
+        do{
+            _ = try await preRegistered.fetchAuthRequest()
+            XCTFail("Error needs to be thrown")
+        } catch {
+            XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
+        }
+    }
+    
+    func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsNotJsonContentType() async {
+        mockNetworkManager.setMockResponse(for: requestUri,response: (responseBody: requestUriResponse, HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!))
+        let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
+        
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        do{
+            _ = try await preRegistered.fetchAuthRequest()
+            XCTFail("Error needs to be thrown")
+        } catch {
+            XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
+        }
+    }
+
+    func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedDoesNotContainContentTypeFieldInHeader() async {
+        mockNetworkManager.setMockResponse(for: requestUri,response: (responseBody: requestUriResponse, HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!))
+        let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
+        
+        let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{
             _ = try await preRegistered.fetchAuthRequest()
             XCTFail("Error needs to be thrown")

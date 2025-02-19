@@ -2,6 +2,19 @@
 
 Description: Implementation of OpenID for Verifiable Presentations - draft 21 specifications in Swift
 
+## Supported features
+
+| Feature                                                    | Supported values                                                                                                                                            |
+|------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Device flow                                                | cross device flow                                                                                                                                           |
+| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                     |
+| Response mode                                              | `direct_post`                                                                                                                                               |
+| Response type                                              | `vp_token`                                                                                                                                                  |
+| Signed authorization request verification algorithms       | ed25519                                                                                                                                                     |
+| Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: For `did` client id scheme only obtaining authorization request by reference is supported]_ |
+| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                  |
+
+
 ## Specifications supported
 - The implementation follows OpenID for Verifiable Presentations - draft 21. [Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html).
 - Below are the fields we expect in the authorization request based on the client id scheme,
@@ -38,7 +51,6 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 - VC format supported is Ldp Vc as of now.
 
 **Note** : The pre-registered client id scheme validation can be toggled on/off based on the optional boolean which you can pass to the authenticateVerifier methods shouldValidateClient parameter. This is false by default.
-
 ## Functionalities
 - Decode and parse the Verifier's encoded Authorization Request received from the Wallet.
 - Authenticates the Verifier using the received clientId and returns the valid Presentation Definition to the Wallet.
@@ -71,7 +83,7 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 
 | Name                           | Type       | Description                                                                      | Sample                                               |
 |--------------------------------|------------|----------------------------------------------------------------------------------|------------------------------------------------------|
-| urlEncodedAuthorizationRequest | String     | Base64 Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                             |
+| urlEncodedAuthorizationRequest | String     | URL Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                             |
 | trustedVerifierJSON            | [Verifier] | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])` |
 | shouldValidateClient           | Bool?      | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                               |
 

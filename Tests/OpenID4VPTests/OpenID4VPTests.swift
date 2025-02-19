@@ -52,17 +52,17 @@ class OpenID4VPTests: XCTestCase {
         super.tearDown()
     }
 
-    // base64 -> client_id_scheme = redirect_uri
+    //client_id_scheme = redirect_uri
     func testReturnDataForValidRequestWithRedirectUri() async {
         do {
-            let decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidBase64EncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            let decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
         } catch {
             XCTFail("Should not get error but got error - \(error)")
         }
     }
     
-    // base64 -> client_id_scheme = redirect_uri, client id not equal to redirect uri
+    // client_id_scheme = redirect_uri, client id not equal to redirect uri
     func testVpRequestWithRedirectUriAndClientIdNotEqualtoRedirectUri() async {
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testVpRequestWithRedirectUriAndClientIdNotEqual, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -77,12 +77,12 @@ class OpenID4VPTests: XCTestCase {
         }
     }
     
-    // base64 -> client_id_scheme = response_uri
+    // client_id_scheme = response_uri
     func testReturnDataForValidRequestWithResponseUri() async {
         let decoded: Any?
 
         do {
-            decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidBase64EncodedVpRequestWithResponseUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithResponseUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         } catch {
             decoded = nil
             XCTFail("Should not get error but got error - \(error)")
@@ -93,8 +93,8 @@ class OpenID4VPTests: XCTestCase {
     
     // jwt -> client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: validJwtResponse)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,responseBody: didResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWT))
+        mockNetworkManager.setMockResponse(for: didUrl,responseBody: didResponse)
         
         let decodedAuthorizationRequest: Any?
         do {
@@ -110,8 +110,8 @@ class OpenID4VPTests: XCTestCase {
     
     // jwt -> client_id_scheme = did, Invalid did
     func testThrowErrorForInValidSignatureInRequest() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: invalidJwtResponse)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,responseBody: didResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponse, httpUrlResponseForJWT))
+        mockNetworkManager.setMockResponse(for: didUrl,responseBody: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -129,7 +129,7 @@ class OpenID4VPTests: XCTestCase {
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
         //"did:other:123#1" clienId is used in QR code
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: validJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWT))
         mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:other:123#1")!,responseBody: didResponse)
         
         let error = await Task {
@@ -146,7 +146,7 @@ class OpenID4VPTests: XCTestCase {
     
     // jwt -> client_id_scheme = did, Kid is empty in the JWT header
     func testThrowErrorIfKidExtractionFailedFromJwt() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: invalidJwtResponseWithoutKid)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWT))
         mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,responseBody: didResponse)
         
         let error = await Task {
@@ -161,12 +161,12 @@ class OpenID4VPTests: XCTestCase {
         }
     }
     
-    // base64 -> client_id_scheme = redirect_uri, Client id validation is false
+    //client_id_scheme = redirect_uri, Client id validation is false
     func testReturnDataForValidRequestWhenClientValidationIsFalse() async {
         let decoded: Any?
 
         do {
-            decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidBase64EncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: false)
+            decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: false)
         } catch {
             decoded = nil
             XCTFail("should not get error but got error \(error)")
@@ -188,7 +188,7 @@ class OpenID4VPTests: XCTestCase {
         }
     }
 
-    // base64 -> client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
+    //client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
         let error = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)

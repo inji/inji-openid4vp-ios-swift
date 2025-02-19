@@ -5,7 +5,7 @@ class MockNetworkManager: NetworkManaging {
     private var mockResponses: [URL: (response: (responseBody: String, httpUrlResponse: HTTPURLResponse)?, error: Error?)] = [:]
     
     func setMockResponse(for url: URL, response: (responseBody: String, httpUrlResponse: HTTPURLResponse?)? = nil, responseBody: String? = nil, error: Error? = nil) {
-        let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "text/plain"])!
+        let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/json"])!
         
         var finalResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)?
         

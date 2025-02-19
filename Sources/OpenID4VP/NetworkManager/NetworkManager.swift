@@ -25,7 +25,6 @@ public struct NetworkManager: NetworkManaging {
         do {
             let (data, httpUrlResponse) = try await self.request(url: url, method: method, bodyParams: bodyParams, headers: headers)
             let body = try processResponseBody(body: data, response: httpUrlResponse)
-            
             return (responseBody: body, httpUrlResponse: httpUrlResponse)
         } catch let error as URLError where error.code == .timedOut {
             exception = NetworkRequestException.networkRequestTimeout
@@ -85,4 +84,9 @@ public struct NetworkManager: NetworkManaging {
 public enum HTTP_METHOD: String, Codable {
     case POST
     case GET
+}
+
+public enum ContentTypes : String {
+    case applicationJson = "application/json"
+    case applicationJwt = "application/oauth-authz-req+jwt"
 }
