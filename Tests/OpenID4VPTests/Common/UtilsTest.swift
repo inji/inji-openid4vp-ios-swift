@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Kiruthika Jeyashankar on 18/02/25.
-//
-
 import Foundation
 import XCTest
 @testable import OpenID4VP

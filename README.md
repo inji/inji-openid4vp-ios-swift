@@ -8,11 +8,11 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 |------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Device flow                                                | cross device flow                                                                                                                                           |
 | Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                     |
-| Response mode                                              | `direct_post`                                                                                                                                               |
-| Response type                                              | `vp_token`                                                                                                                                                  |
 | Signed authorization request verification algorithms       | ed25519                                                                                                                                                     |
 | Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: For `did` client id scheme only obtaining authorization request by reference is supported]_ |
 | Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                  |
+| Authorization Response mode                                | `direct_post`                                                                                                                                               |
+| Authorization Response type                                | `vp_token`                                                                                                                                                  |
 
 
 ## Specifications supported

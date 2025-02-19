@@ -48,23 +48,4 @@ struct Constraints: Codable {
             }
         }
     }
-    
-    private static func validateField<T: Decodable>(
-        container: KeyedDecodingContainer<CodingKeys>,
-        key: CodingKeys,
-        fieldPath: [String]
-    ) throws -> T? {
-        if container.contains(key) {
-            let rawValue = try container.decodeIfPresent(T?.self, forKey: key)
-            if rawValue == nil {
-                throw Logger.handleException(
-                    exceptionType: "InvalidInput",
-                    fieldPath: fieldPath,
-                    className: Constraints.className
-                )
-            }
-            return rawValue!
-        }
-        return nil
-    }
 }

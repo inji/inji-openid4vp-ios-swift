@@ -55,7 +55,7 @@ fileprivate func parseJson(_ data: Data) throws -> [String: String] {
             }
             return stringifiedDict
         } else {
-            throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "JWT payload decoding to json failed", className: JWTHandler.className)
+            throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "Decoding to json failed", className: "Utils")
         }
     }
 }
@@ -64,8 +64,11 @@ func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
     guard let decodedData = Data(base64Encoded: base64String) else {
         throw Logger.handleException(exceptionType: "Decoding", message: "JWT payload decoding failed" ,className: JWTHandler.className)
     }
-    
-    return try parseJson(decodedData)
+    do{
+        return try parseJson(decodedData)
+    } catch {
+        throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "JWT Decoding to json failed", className: JWTHandler.className)
+    }
 }
 
 func getStringValue(_ value: Any?) -> String? {

@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Kiruthika Jeyashankar on 19/02/25.
-//
-
 import Foundation
 import UniformTypeIdentifiers
 

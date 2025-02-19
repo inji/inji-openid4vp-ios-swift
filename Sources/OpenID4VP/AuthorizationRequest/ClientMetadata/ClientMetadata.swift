@@ -6,7 +6,7 @@ public struct ClientMetadata: Codable {
     let authorization_encrypted_response_alg: String?
     let authorization_encrypted_response_enc: String?
     let vp_formats: [String: [String: [String]]]
-    static let className = String(describing: PresentationDefinitionValidator.self)
+    static let className = String(describing: ClientMetadata.self)
     
     enum CodingKeys: String, CodingKey {
         case client_name
