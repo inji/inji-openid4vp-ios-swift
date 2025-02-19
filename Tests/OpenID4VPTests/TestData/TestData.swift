@@ -24,12 +24,12 @@ let authorizationRequestParamsWithValue: [String: String] = [
     "response_uri": "https://mock-verifier.com",
     "request_uri": "https://mock-verifier.com/verifier/get-auth-request-obj",
     "request_uri_method": "get",
-    "presentation_definition": convertToJson(presentationDefinition),
+    "presentation_definition": convertToJsonString(presentationDefinition),
     "response_type": "vp_token",
     "response_mode": "direct_post",
     "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
     "state": "+mRQe1d6pBoJqF6Ab28klg==",
-    "client_metadata": convertToJson(clientMetadata),
+    "client_metadata": convertToJsonString(clientMetadata),
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition"
 ]
 
@@ -159,6 +159,14 @@ let authorizationRequestParamsWithRedirectUri: [String: Any] = [
     "client_metadata": clientMetadata
 ]
 
+let urlEncodedAuthRequestWithPresentationDefinitionUri = createUrlEncodedAuthorizationRequest(
+    requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered),
+    clientIdScheme: .preRegistered,
+    applicableFields: authRequestWithPreRegisteredByValue.map {
+        $0 == AuthorizationRequestFieldConstants.presentationDefinition.rawValue ? AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue : $0
+    }
+)
+
 // base64 -> client_id_scheme = redirect_uri
 let testValidBase64EncodedVpRequestWithRedirectUri = createUrlEncodedAuthorizationRequest(
     requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri),
@@ -184,7 +192,7 @@ let testInValidSignedVpRequestWithDidAndClientIdDifferent = createUrlEncodedAuth
 ]), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
 
-let testInvalidPresentationDefinitionVpRequest = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["presentation_definition": convertToJson(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
+let testInvalidPresentationDefinitionVpRequest = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["presentation_definition": convertToJsonString(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
 
 let urlEncodedAuthorizationRequestWithInvalidClientMetadata = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, ["client_metadata": "{}"]),clientIdScheme: .preRegistered)
 

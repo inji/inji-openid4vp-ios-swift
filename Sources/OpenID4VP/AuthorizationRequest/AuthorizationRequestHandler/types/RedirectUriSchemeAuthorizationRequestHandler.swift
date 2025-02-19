@@ -14,15 +14,15 @@ class RedirectUriSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRequ
                     className: AuthorizationRequest.className
                 )
             }
-            let response = try await fetchAuthRequestObjectByReference(params: authorizationRequestParameters as! [String:String], requestUri: requestUri as! String, networkManager: networkManager)
-            if (isJWT(response as! String)) {
+            let (response, _) = try await fetchAuthRequestObjectByReference(params: authorizationRequestParameters as! [String:String], requestUri: requestUri as! String, networkManager: networkManager)
+            if (isJWT(response)) {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Authorization Request must not be signed for given client_id_scheme",
                     className: self.className
                 )
             }
-            let authorizationRequestObject = try decodeBase64ToJSON(makeBase64Standard(response as! String))
+            let authorizationRequestObject = try decodeBase64ToJSON(makeBase64Standard(response ))
             try validateMatchOfAuthRequestObjectAndParams(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
             
             return authorizationRequestObject

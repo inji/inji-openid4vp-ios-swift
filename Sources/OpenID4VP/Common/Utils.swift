@@ -40,13 +40,15 @@ func decodeBase64ToString(_ encodedAuthorizationRequest: String) -> String? {
         .flatMap { String(data: $0, encoding: .utf8) }
 }
 
-func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
-    guard let decodedData = Data(base64Encoded: base64String) else {
-        throw Logger.handleException(exceptionType: "Decoding", message: "JWT payload decoding failed" ,className: JWTHandler.className)
-    }
-    
+func parseJson(_ data: String) throws -> [String: String] {
     do {
-        if let jsonObject = try JSONSerialization.jsonObject(with: decodedData, options: []) as? [String: Any] {
+        return try parseJson(data.data(using: .utf8)!)
+    }
+}
+
+fileprivate func parseJson(_ data: Data) throws -> [String: String] {
+    do {
+        if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
             let stringifiedDict = jsonObject.reduce(into: [String: String]()) { dict, pair in
                 let (key, value) = pair
                 dict[key] = "\(value)"
@@ -56,6 +58,14 @@ func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
             throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "JWT payload decoding to json failed", className: JWTHandler.className)
         }
     }
+}
+
+func decodeBase64ToJSON(_ base64String: String) throws -> [String: String] {
+    guard let decodedData = Data(base64Encoded: base64String) else {
+        throw Logger.handleException(exceptionType: "Decoding", message: "JWT payload decoding failed" ,className: JWTHandler.className)
+    }
+    
+    return try parseJson(decodedData)
 }
 
 func getStringValue(_ value: Any?) -> String? {

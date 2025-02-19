@@ -19,16 +19,16 @@ class DidSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandl
                 className: AuthorizationRequest.className
             )
         }
-        let response = try await fetchAuthRequestObjectByReference(params: authorizationRequestParameters as! [String:String], requestUri: requestUri, networkManager: networkManager)
-        if (isJWT(response as! String)) {
+        let (response, _) = try await fetchAuthRequestObjectByReference(params: authorizationRequestParameters as! [String:String], requestUri: requestUri, networkManager: networkManager)
+        if (isJWT(response)) {
             let clienId: String = authorizationRequestParameters["client_id"] as! String
             
             let keyResolver: KeyResolver = DidKeyResolver(didUrl: clienId, networkManager: networkManager)
-            let jwtHandler = JWTHandler(jwt: response as! String, keyResolver: keyResolver)
+            let jwtHandler = JWTHandler(jwt: response , keyResolver: keyResolver)
             
             try await jwtHandler.verify()
             
-            let authorizationRequestObject =  try extractDataJsonFromJwt(jwtToken: response as! String, jwtPart: .payload)
+            let authorizationRequestObject =  try extractDataJsonFromJwt(jwtToken: response , jwtPart: .payload)
             
             try validateMatchOfAuthRequestObjectAndParams(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
             

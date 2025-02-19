@@ -93,8 +93,8 @@ class OpenID4VPTests: XCTestCase {
     
     // jwt -> client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: validJwtResponse)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,response: didResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: validJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,responseBody: didResponse)
         
         let decodedAuthorizationRequest: Any?
         do {
@@ -110,8 +110,8 @@ class OpenID4VPTests: XCTestCase {
     
     // jwt -> client_id_scheme = did, Invalid did
     func testThrowErrorForInValidSignatureInRequest() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: invalidJwtResponse)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,response: didResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: invalidJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,responseBody: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -129,8 +129,8 @@ class OpenID4VPTests: XCTestCase {
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
         //"did:other:123#1" clienId is used in QR code
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: validJwtResponse)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:other:123#1")!,response: didResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: validJwtResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:other:123#1")!,responseBody: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInValidSignedVpRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -146,8 +146,8 @@ class OpenID4VPTests: XCTestCase {
     
     // jwt -> client_id_scheme = did, Kid is empty in the JWT header
     func testThrowErrorIfKidExtractionFailedFromJwt() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: invalidJwtResponseWithoutKid)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,response: didResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: invalidJwtResponseWithoutKid)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,responseBody: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -190,8 +190,6 @@ class OpenID4VPTests: XCTestCase {
 
     // base64 -> client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
-        let data = authorizationRequestParamsWithValue
-        
         let error = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
@@ -201,6 +199,17 @@ class OpenID4VPTests: XCTestCase {
             let expectedErrorMessage = "Invalid Input: client_metadata value cannot be empty or null"
             XCTAssertEqual(thrownError.localizedDescription, expectedErrorMessage)
         case .success: break
+        }
+    }
+    
+    func testShouldConstructAuthorizationRequestSuccessfullyWhenPresentationDefinitionIsSentByReference() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/presentation-definition")!, responseBody: convertToJsonString(presentationDefinition))
+        do {
+            let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthRequestWithPresentationDefinitionUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: false)
+            XCTAssertNotNil(authorizationRequest)
+            XCTAssertEqual("mock-client", authorizationRequest.clientId)
+        } catch {
+            XCTFail("should not get error but got error \(error)")
         }
     }
 
@@ -238,7 +247,7 @@ class OpenID4VPTests: XCTestCase {
     
     // NetworkManager Tests Success
     func testSendVpSuccess() async throws {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, response: "Success: Request completed successfully.")
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, responseBody: "Success: Request completed successfully.")
     
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
         

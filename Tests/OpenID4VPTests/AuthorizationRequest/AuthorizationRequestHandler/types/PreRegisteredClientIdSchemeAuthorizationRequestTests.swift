@@ -72,7 +72,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     
     func testFetchAuthorizationRequestOnValidPreRegisteredSchemeAuthRequestSentByReference() async{
         let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,clientIdAndSchemeOfPreRegistered), applicableFields: authRequestWithPreRegisteredByValue)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
@@ -109,7 +109,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id": "some-mock-client",
             "client_id_scheme": ClientIdScheme.preRegistered.rawValue,
         ]), applicableFields: authRequestWithPreRegisteredByValue)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
@@ -127,7 +127,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id": "mock-client",
             "client_id_scheme": ClientIdScheme.did.rawValue,
         ]), applicableFields: authRequestWithPreRegisteredByValue)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
@@ -143,7 +143,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectIsSigned() async{
         let requestUriResponse: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         

@@ -67,19 +67,19 @@ func createAuthorizationRequestObject(
     addValidSignature: Bool = true
 ) -> String {
     
-    let paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
-    let authRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: authorizationRequestParams)
+    let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
     
     switch clientIdScheme {
     case .did:
-        return JWTUtil.create(header: jwtHeaderData, payload: authRequestParam, addValidSignature: addValidSignature)
+        return JWTUtil.create(header: jwtHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
     default:
-        return (try! JSONSerialization.data(withJSONObject: authRequestParam).base64EncodedString())
+        return convertToJsonString(authorizaitonRequestParameters as [String : Any])
     }
 }
 
 
-func convertToJson(_ data: [String: Any]) -> String {
+func convertToJsonString(_ data: [String: Any]) -> String {
     let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [])
     let jsonString = String(data: jsonData!, encoding: .utf8)
     return jsonString!

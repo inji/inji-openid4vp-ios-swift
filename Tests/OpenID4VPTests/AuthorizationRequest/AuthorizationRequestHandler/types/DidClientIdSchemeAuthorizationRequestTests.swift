@@ -31,7 +31,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenAuthRequestObtainedByReferenceIsNotSigned() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: "non-jwt")
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: "non-jwt")
         let didSchemeAuthRequestHandler = try! getAuthorizationRequestHandler(trustedVerifiers: [], authorizationRequestParameters: createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid)) as [String : Any], shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
         do{

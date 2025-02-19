@@ -18,7 +18,7 @@ class DidKeyResolver : KeyResolver {
             throw Logger.handleException(exceptionType: "UrlCreationFailed",message: "Url creation for did resolution failed" ,className: DidKeyResolver.className)
         }
         
-        let response = (try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil))!
+        let (responseBody, _) = (try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil))
         
         guard let kid = header["kid"] else {
             throw Logger.handleException(
@@ -27,7 +27,7 @@ class DidKeyResolver : KeyResolver {
                 className: DidKeyResolver.className
             )
         }
-        return try self.extractPublicKeyMultibase(for: kid as! String, from: response)!
+        return try self.extractPublicKeyMultibase(for: kid as! String, from: responseBody)!
     }
     
     private func extractPublicKeyMultibase(for kid: String, from json: String) throws -> String? {

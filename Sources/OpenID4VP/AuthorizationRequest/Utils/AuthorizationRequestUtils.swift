@@ -54,9 +54,10 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
             )
         }
         
-        presentationDefinitionString = try await networkManager.sendHTTPRequest(
+        let response = try await networkManager.sendHTTPRequest(
             url: url, method: .GET, bodyParams: nil, headers: nil
-        ) ?? ""
+        )
+        presentationDefinitionString = response.responseBody
         
     } else {
         throw Logger.handleException(
@@ -99,7 +100,7 @@ func validateKey(
     }
 }
 
-func fetchAuthRequestObjectByReference(params: [String: String], requestUri: String, networkManager: NetworkManaging) async throws -> Any {
+func fetchAuthRequestObjectByReference(params: [String: String], requestUri: String, networkManager: NetworkManaging) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
     do {
         if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
@@ -111,9 +112,7 @@ func fetchAuthRequestObjectByReference(params: [String: String], requestUri: Str
             throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
         }
         
-        let response = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil) ?? ""
-        
-        return response
+        return try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil)
     }
 }
 

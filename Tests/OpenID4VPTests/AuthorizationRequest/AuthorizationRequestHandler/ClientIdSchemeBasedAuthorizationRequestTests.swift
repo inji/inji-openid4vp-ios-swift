@@ -160,10 +160,9 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     //Validation of authRequest params obtained via request_uri by matching with url encoded query param data
     func testShouldThrowErrorWhenClientIdSchemeIsAvailableInOnlyAuthorizationRequestObject() async{
         let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,["client_id":"mock-client"]), applicableFields: authRequestWithPreRegisteredByValue)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        
         do {
             try await preRegistered.fetchAuthRequest()
             XCTFail("error should have been thrown but it failed")
@@ -174,7 +173,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorWhenClientIdSchemeIsAvailableInOnlyUrlEncodedAuthorizationRequestObject() async{
         let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered), applicableFields: authRequestWithPreRegisteredByValue)
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: requestUriResponse)
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody:  requestUriResponse)
         let authorizationRequestParametersByReference: [String : String?] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id":"mock-client"]))
         
         let preRegistered = try! getAuthorizationRequestHandler( trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference as [String : Any], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
