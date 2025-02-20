@@ -1,13 +1,14 @@
 import Foundation
 import CryptoKit
 
-func parseAndValidatePresentationDefinitionInAuthorizationRequest(
-    params: [String: Any],
+func parseAndValidatePresentationDefinition(
+    authorizationRequest: [String: Any],
     networkManager: NetworkManaging
 ) async throws -> [String: Any] {
     
-    let hasPresentationDefinition = params.keys.contains("presentation_definition")
-    let hasPresentationDefinitionUri = params.keys.contains("presentation_definition_uri")
+    let hasPresentationDefinition = authorizationRequest.keys.contains("presentation_definition")
+    let hasPresentationDefinitionUri = authorizationRequest.keys.contains("presentation_definition_uri")
+    var finalPresentationDefinition: PresentationDefinition
     
     guard hasPresentationDefinition != hasPresentationDefinitionUri else {
         throw Logger.handleException(
@@ -17,19 +18,37 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
         )
     }
     
-    var presentationDefinitionString: String
     
-    if hasPresentationDefinition, let value = params["presentation_definition"] {
-        guard let valueStr = getStringValue(value), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
-            throw Logger.handleException(
-                exceptionType: "InvalidInput",
-                fieldPath: ["presentation_definition"],
-                className: AuthorizationRequest.className
-            )
+    if hasPresentationDefinition, let value = authorizationRequest["presentation_definition"] {
+        if let presentationDefinitionString = value as? String {
+            //Presentation Definition is of type String when auth request obtained by value
+            guard let valueStr = getStringValue(presentationDefinitionString), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
+                throw Logger.handleException(
+                    exceptionType: "InvalidInput",
+                    fieldPath: ["presentation_definition"],
+                    className: AuthorizationRequest.className
+                )
+            }
+            guard let jsonData = valueStr.data(using: .utf8) else {
+                throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: ["presentation_definition"], className: PresentationDefinition.className)
+            }
+            
+            
+            finalPresentationDefinition = try jsonData.toInstance(as: PresentationDefinition.self)
+        } else {
+            //Presentation Definition is of type Dictionary when auth request obtained by reference
+            do {
+                let valueData = try JSONSerialization.data(withJSONObject: value, options: [])
+                finalPresentationDefinition = try valueData.toInstance(as: PresentationDefinition.self)
+            } catch {
+                throw Logger.handleException(
+                    exceptionType: "InvalidData",
+                    message: "presentation_defintion_uri data is not valid",
+                    className: AuthorizationRequest.className
+                )
+            }
         }
-        presentationDefinitionString = valueStr
-        
-    } else if hasPresentationDefinitionUri, let value = params[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+    } else if hasPresentationDefinitionUri, let value = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
         guard isValidUri(value as! String)
         else {
             throw Logger.handleException(
@@ -57,7 +76,15 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
         let response = try await networkManager.sendHTTPRequest(
             url: url, method: .GET, bodyParams: nil, headers: nil
         )
-        presentationDefinitionString = response.responseBody
+        guard let data = response.responseBody.data(using: .utf8) else {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "presentation_defintion_uri data is not valid",
+                className: AuthorizationRequest.className
+            )
+        }
+        
+        finalPresentationDefinition = try data.toInstance(as: PresentationDefinition.self)
         
     } else {
         throw Logger.handleException(
@@ -67,11 +94,29 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
         )
     }
     
-    let presentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: presentationDefinitionString)
+    var mutableParams = authorizationRequest
+    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition.rawValue] = finalPresentationDefinition
     
-    var mutableParams = params
-    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition.rawValue] = presentationDefinition
+    return mutableParams
+}
+
+func parseAndValidateClientMetadata(authorizationRequest: [String: Any]) throws -> [String: Any] {
+    var mutableParams = authorizationRequest
     
+    if let clientMetadataObject = authorizationRequest["client_metadata"] as? NSDictionary{
+        let data = try JSONSerialization.data(withJSONObject: clientMetadataObject, options: [])
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: data)
+        mutableParams["client_metadata"] = clientMetadata
+    } else if let clientMetaString = authorizationRequest["client_metadata"] as? String {
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetaString)
+        mutableParams["client_metadata"] = clientMetadata
+    } else {
+        throw Logger.handleException(
+                    exceptionType: "InvalidData",
+                    message: "client_metadata data is not valid",
+                    className: AuthorizationRequest.className
+                )
+    }
     return mutableParams
 }
 
@@ -100,28 +145,12 @@ func validateKey(
     }
 }
 
-func fetchAuthRequestObjectByReference(params: [String: String], requestUri: String, networkManager: NetworkManaging) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
-    do {
-        if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
-        }
-        let requestUriMethod = params["request_uri_method"] ?? "get"
-        let httpMethod = try determineHttpMethod(method: requestUriMethod)
-        
-        guard let url = URL(string: params["request_uri"]!) else {
-            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
-        }
-        
-        return try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil)
-    }
-}
-
-func validateMatchOfAuthRequestObjectAndParams(params: [String: String], requestUriParams: [String: String]) throws {
-    guard params["client_id"] == requestUriParams["client_id"] else {
+func validateMatchOfAuthRequestObjectAndParams(params: [String: String], requestUriParams: [String: Any]) throws {
+    guard params["client_id"] == requestUriParams["client_id"] as? String else {
         throw Logger.handleException(exceptionType: "MismatchingClientIDInRequest", className: AuthorizationRequest.className)
     }
     
-    guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] else {
+    guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] as? String else {
         throw Logger.handleException(exceptionType: "MismatchingClientIdSchemeInRequest", className: AuthorizationRequest.className)
     }
 }
@@ -132,16 +161,6 @@ func urlEncodedRequest(_ decodedRequest: String) -> String? {
 
 func getQueryItems(_ encodedUrl: URL) -> [URLQueryItem]? {
     return URLComponents(url: encodedUrl, resolvingAgainstBaseURL: false)?.queryItems
-}
-
-func parseAndValidateClientMetadataInAuthorizationRequest(_ params: [String: Any]) throws -> [String: Any] {
-    var mutableParams = params
-    
-    if let clientMetaString = params["client_metadata"] as? String {
-        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetaString)
-        mutableParams["client_metadata"] = clientMetadata
-    }
-    return mutableParams
 }
 
 extension Dictionary where Key == String, Value == String {
@@ -199,7 +218,10 @@ func getAuthorizationRequestHandler(trustedVerifiers : [Verifier], authorization
     }
 }
 
-func extractQueryParameters(_ input: String) -> [String: String] {
+func extractQueryParameters(_ input: String) throws -> [String: String] {
+    guard input.firstIndex(of: "?") != nil else {
+        throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
+    }
     let urlComponents = URLComponents(string: input)
     var decodedParams = [String: String]()
     

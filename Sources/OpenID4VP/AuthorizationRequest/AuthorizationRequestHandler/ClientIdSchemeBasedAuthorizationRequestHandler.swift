@@ -2,7 +2,7 @@ import Foundation
 
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
-    func fetchAuthRequestImpl() async throws  -> [String: Any]
+    func validateRequestUriResponse() async throws
 }
 
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
@@ -10,6 +10,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     var authorizationRequestParameters: [String: Any]
     let networkManager: NetworkManaging
     let setResponseUri: (String) -> Void
+    var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
     let className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass.self)
     
     init(authorizationRequestParam: [String: Any], networkManager: NetworkManaging, setResponseUri: @escaping (String) -> Void) {
@@ -23,8 +24,31 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func fetchAuthRequest() async throws{
-        let authorizationRequestParameters = try await delegate.fetchAuthRequestImpl()
-        self.authorizationRequestParameters = authorizationRequestParameters
+        if let requestUri = authorizationRequestParameters["request_uri"] as? String {
+            guard isValidUri(requestUri)
+            else {
+                throw Logger.handleException(
+                    exceptionType: "InvalidData",
+                    message: "request_uri data is not valid",
+                    className: AuthorizationRequest.className
+                )
+            }
+            
+            if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: AuthorizationRequest.className)
+            }
+            let requestUriMethod = authorizationRequestParameters["request_uri_method"] as? String ?? "get"
+            let httpMethod = try determineHttpMethod(method: requestUriMethod)
+            
+            guard let url = URL(string: requestUri) else {
+                throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["request_uri_method"], className: AuthorizationRequest.className)
+            }
+            
+            let response = try await networkManager.sendHTTPRequest(url: url, method: httpMethod, bodyParams: nil, headers: nil)
+            
+            self.requestUriResponse = (response.responseBody, response.httpUrlResponse)
+        }
+        try await delegate.validateRequestUriResponse()
     }
     
     func setResponseUrlForSendingResponseToVerifier() throws {
@@ -54,8 +78,8 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         for field in mandatoryFields {
             try validateKey(field, values: authorizationRequestParameters)
         }
-        authorizationRequestParameters = try parseAndValidateClientMetadataInAuthorizationRequest(authorizationRequestParameters)
-        authorizationRequestParameters = try await parseAndValidatePresentationDefinitionInAuthorizationRequest(params: authorizationRequestParameters, networkManager: networkManager)
+        authorizationRequestParameters = try parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters)
+        authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequest: authorizationRequestParameters, networkManager: networkManager)
     }
     
     func createAuthorizationRequest() -> AuthorizationRequest {

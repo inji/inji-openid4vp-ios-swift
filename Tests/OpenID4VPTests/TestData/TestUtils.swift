@@ -122,7 +122,7 @@ func assertDictionaryValues(actual: [String: Any], expected: [String: Any?]) {
             if isValidJson(expectedValue as! String), let actualString = actualValue as? String, isValidJson(actualString) {
                 XCTAssertTrue(compareJsonStrings(expectedValue as! String, actualString), "Mismatch in JSON for key: \(key)")
             } else {
-                XCTAssertEqual(actualValue as? String, expectedValue as! String, "Mismatch for key: \(key)")
+                XCTAssertEqual(actualValue as? String, expectedValue as? String, "Mismatch for key: \(key)")
             }
         } else {
             XCTAssertNil(actualValue as? String, "Expected nil for key: \(key), but got \(actualValue)")

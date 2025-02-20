@@ -3,7 +3,7 @@ import Foundation
 struct Filter: Codable {
     let type: String
     let pattern: String
-    static let className = String(describing: PresentationDefinitionValidator.self)
+    static let className = String(describing: PresentationDefinition.self)
     
     enum CodingKeys: String, CodingKey {
         case type

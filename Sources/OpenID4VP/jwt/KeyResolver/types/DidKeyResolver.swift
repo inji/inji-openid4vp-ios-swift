@@ -20,14 +20,14 @@ class DidKeyResolver : KeyResolver {
         
         let (responseBody, _) = (try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil))
         
-        guard let kid = header["kid"] else {
+        guard let kid = header["kid"] as? String else {
             throw Logger.handleException(
                 exceptionType: "KidExtractionFailed",
                 message: "Kid extraction from did document failed",
                 className: DidKeyResolver.className
             )
         }
-        return try self.extractPublicKeyMultibase(for: kid as! String, from: responseBody)!
+        return try self.extractPublicKeyMultibase(for: kid, from: responseBody)!
     }
     
     private func extractPublicKeyMultibase(for kid: String, from json: String) throws -> String? {

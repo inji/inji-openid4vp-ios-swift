@@ -6,7 +6,7 @@ public struct PresentationDefinition: Codable {
     let purpose: String?
     let input_descriptors: [InputDescriptor]
     let format: Format?
-    static let className = String(describing: PresentationDefinitionValidator.self)
+    static let className = String(describing: PresentationDefinition.self)
     
     enum CodingKeys: String, CodingKey {
         case id

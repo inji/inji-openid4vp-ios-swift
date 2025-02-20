@@ -30,4 +30,8 @@ class MockNetworkManager: NetworkManaging {
         }
         return (responseBody: "Success: Request completed successfully.", httpUrlResponse: defaultHttpUrlResponse)
     }
+    
+    func sendHTTP1Request(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> (responseBody: Data, httpUrlResponse: HTTPURLResponse){
+        throw NSError(domain: "Not implemented", code: 1, userInfo: nil)
+    }
 }

@@ -52,11 +52,7 @@ public struct AuthorizationRequest: Encodable {
     }
     
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String, setResponseUri: @escaping (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging) async throws -> AuthorizationRequest {
-        guard let queryStart = urlEncodedAuthorizationRequest.firstIndex(of: "?") else {
-            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
-        }
-      
-        let extractedQueryParameters = extractQueryParameters(urlEncodedAuthorizationRequest)
+        let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
         
         return try await getAuthorizationRequestObject(authorizationRequestParameters: extractedQueryParameters, trustedVerifiers: trustedVerifierJSON, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
     }

@@ -23,33 +23,38 @@ class PreRegisteredSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRe
         }
     }
     
-    func fetchAuthRequestImpl()async throws -> [String : Any] {
-        if let requestUri = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] {
-            guard isValidUri(requestUri as! String)
-            else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
-                    message: "request_uri data is not valid",
-                    className: AuthorizationRequest.className
-                )
-            }
-            let (response, httpUrlResponse) = try await fetchAuthRequestObjectByReference(params: authorizationRequestParameters as! [String:String], requestUri: requestUri as! String, networkManager: networkManager)
-            let isContentTypeNotJson = !httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
-            if (isContentTypeNotJson || isJWT(response)) {
+    func validateRequestUriResponse() async throws {
+        if let requestUriResponse = self.requestUriResponse {
+            let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
+
+            if (isContentTypeNotJson || isJWT(requestUriResponse.body)) {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Authorization Request must not be signed for given client_id_scheme",
                     className: self.className
                 )
             }
-            let authorizationRequestObject = try parseJson(response)
+            
+            guard let responseBody = requestUriResponse.body.data(using: .utf8) else {
+                throw Logger.handleException(
+                    exceptionType: "InvalidData",
+                    message: "Conversion failed",
+                    className: self.className
+                )
+            }
+            guard let authorizationRequestObject = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
+                throw Logger.handleException(
+                    exceptionType: "InvalidData",
+                    message: "Conversion failed",
+                    className: self.className
+                )
+            }
+
             try validateMatchOfAuthRequestObjectAndParams(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
             
-            return authorizationRequestObject
+            authorizationRequestParameters = authorizationRequestObject
         }
-        return authorizationRequestParameters
     }
-    
     
     override func validateAndParseRequestFields()async throws {
         try await super.validateAndParseRequestFields()

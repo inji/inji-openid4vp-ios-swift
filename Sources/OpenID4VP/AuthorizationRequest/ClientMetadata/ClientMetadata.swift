@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ClientMetadata: Codable {
+public struct ClientMetadata: Codable, Equatable {
     let client_name: String?
     let logo_uri:String?
     let authorization_encrypted_response_alg: String?
@@ -58,22 +58,31 @@ public struct ClientMetadata: Codable {
             className: ClientMetadata.className,
             isMandatory: true
         )!
+        try validate(self)
     }
     
-    static func deserializeAndValidate(clientMetadata: String) throws -> ClientMetadata {
-        
-        guard let encodedData = clientMetadata.data(using: .utf8) else {
-            throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: ["client_metadata"], className: ClientMetadata.className)
+    static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadata {
+        if let encodedData = clientMetadata as? Data {
+            return try toClientMetadata(encodedData)
+        } else if let data = clientMetadata as? String {
+            guard let encodedData = data.data(using: .utf8) else {
+                throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: ["client_metadata"], className: ClientMetadata.className)
+            }
+            return try toClientMetadata(encodedData)
+        } else {
+            throw Logger.handleException(exceptionType: "InvalidInput", message: "parsing of client_metadata failed", fieldPath: ["client_metadata"], className: ClientMetadata.className)
         }
-        
-        let decodedClientMetadata: ClientMetadata
+    }
+    
+    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadata {
         do {
-            decodedClientMetadata = try JSONDecoder().decode(ClientMetadata.self, from: encodedData)
+            return try encodedData.toInstance(as: ClientMetadata.self)
         } catch {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata"], className: ClientMetadata.className)
         }
-        
-        
+    }
+    
+    private func validate(_ decodedClientMetadata: ClientMetadata) throws{
         if decodedClientMetadata.client_name != nil {
             guard isNeitherNullNorEmpty(field: decodedClientMetadata.client_name!) else {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata","client_name"], className: ClientMetadata.className)
@@ -112,7 +121,12 @@ public struct ClientMetadata: Codable {
                 }
             }
         }
-        
-        return decodedClientMetadata
     }
+    
+    public static func == (lhs: ClientMetadata, rhs: ClientMetadata) -> Bool {
+            return
+        lhs.client_name == rhs.client_name && lhs.logo_uri == rhs.logo_uri &&
+        lhs.authorization_encrypted_response_alg == rhs.authorization_encrypted_response_alg && lhs.authorization_encrypted_response_enc == rhs.authorization_encrypted_response_enc &&
+        lhs.vp_formats == rhs.vp_formats
+        }
 }

@@ -7,7 +7,7 @@ struct Fields: Codable {
     let purpose: String?
     let filter: Filter?
     let optional: Bool?
-    static let className = String(describing: PresentationDefinitionValidator.self)
+    static let className = String(describing: PresentationDefinition.self)
     
     enum CodingKeys: String, CodingKey {
         case path
