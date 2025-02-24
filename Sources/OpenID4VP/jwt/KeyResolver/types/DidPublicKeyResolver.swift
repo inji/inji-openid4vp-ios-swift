@@ -1,9 +1,9 @@
 import Foundation
 
-class DidKeyResolver : KeyResolver {
+class DidPublicKeyResolver : PublicKeyResolver {
     private let didUrl: String
     private let networkManager: NetworkManaging
-    static let className = String(describing: DidKeyResolver.self)
+    static let className = String(describing: DidPublicKeyResolver.self)
     let DID_RESOLVER = "https://resolver.identity.foundation/1.0/identifiers/"
     
     init(didUrl: String, networkManager: NetworkManaging) {
@@ -15,7 +15,7 @@ class DidKeyResolver : KeyResolver {
         let host = "\(DID_RESOLVER)\(didUrl)"
         
         guard let url = URL(string: host ) else {
-            throw Logger.handleException(exceptionType: "UrlCreationFailed",message: "Url creation for did resolution failed" ,className: DidKeyResolver.className)
+            throw Logger.handleException(exceptionType: "UrlCreationFailed",message: "Url creation for did resolution failed" ,className: DidPublicKeyResolver.className)
         }
         
         let (responseBody, _) = (try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil))
@@ -24,7 +24,7 @@ class DidKeyResolver : KeyResolver {
             throw Logger.handleException(
                 exceptionType: "KidExtractionFailed",
                 message: "Kid extraction from did document failed",
-                className: DidKeyResolver.className
+                className: DidPublicKeyResolver.className
             )
         }
         return try self.extractPublicKeyMultibase(for: kid, from: responseBody)!
@@ -33,7 +33,7 @@ class DidKeyResolver : KeyResolver {
     private func extractPublicKeyMultibase(for kid: String, from json: String) throws -> String? {
         
         guard let data = json.data(using: .utf8) else {
-            throw Logger.handleException(exceptionType: "UTF8Encoding", className: DidKeyResolver.className)
+            throw Logger.handleException(exceptionType: "UTF8Encoding", className: DidPublicKeyResolver.className)
         }
         
         do {
@@ -48,10 +48,10 @@ class DidKeyResolver : KeyResolver {
                     }
                 }
             } else {
-                throw Logger.handleException(exceptionType: "PublicKeyNotFound", className: DidKeyResolver.className)
+                throw Logger.handleException(exceptionType: "PublicKeyNotFound", className: DidPublicKeyResolver.className)
             }
         }
-        throw Logger.handleException(exceptionType: "PublicKeyNotFound", message: "No matching public key found in did resolver with the provided key id", className: DidKeyResolver.className)
+        throw Logger.handleException(exceptionType: "PublicKeyNotFound", message: "No matching public key found in did resolver with the provided key id", className: DidPublicKeyResolver.className)
     }
     
 }

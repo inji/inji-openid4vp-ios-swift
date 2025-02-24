@@ -41,13 +41,11 @@ class Logger {
         case "Decoding":
             exception = AuthorizationRequestException.decodingException(fieldPath: fieldPathAsString)
         case "InvalidVerifier":
-            exception = AuthorizationRequestException.invalidVerifier
+            exception = AuthorizationRequestException.invalidVerifier(message: message)
         case "MismatchingClientIDInRequest":
             exception = AuthorizationRequestException.mismatchingClientIDInRequest
         case "MismatchingClientIdSchemeInRequest":
             exception = AuthorizationRequestException.mismatchingClientIdSchemeInRequest
-        case "EmptyVerifierList":
-            exception = AuthorizationRequestException.emptyVerifierList
         case "InvalidVerifierRedirectUri":
             exception = AuthorizationRequestException.invalidVerifierRedirectUri
         case "InvalidLimitDisclosure":

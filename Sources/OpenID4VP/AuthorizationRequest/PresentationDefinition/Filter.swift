@@ -1,6 +1,6 @@
 import Foundation
 
-struct Filter: Codable {
+struct Filter: Codable, Equatable {
     let type: String
     let pattern: String
     static let className = String(describing: PresentationDefinition.self)
@@ -40,5 +40,9 @@ struct Filter: Codable {
         guard isNeitherNullNorEmpty(field: pattern) else {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["filter","pattern"], className: Filter.className)
         }
+    }
+    
+    static func == (lhs: Filter, rhs: Filter) -> Bool {
+        return lhs.type == rhs.type && lhs.pattern == rhs.pattern
     }
 }

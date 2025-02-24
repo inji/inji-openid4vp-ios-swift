@@ -6,19 +6,19 @@ struct JWTHandler {
     static let className = String(describing: JWTHandler.self)
     
     private let jwt : String
-    private let keyResolver: KeyResolver
+    private let publicKeyResolver: PublicKeyResolver
     
-    init(jwt: String, keyResolver: KeyResolver) {
+    init(jwt: String, publicKeyResolver: PublicKeyResolver) {
         self.jwt = jwt
-        self.keyResolver = keyResolver
+        self.publicKeyResolver = publicKeyResolver
     }
     
     func verify() async throws {
         do {
             // TODO: keyResolver.resolveKey should return publicKey instead of String once multiple signature support is added
-            let publicKey = try await keyResolver.resolveKey(header: try extractDataJsonFromJwt(jwtToken: jwt, jwtPart: .header))
+            let publicKey = try await publicKeyResolver.resolveKey(header: try extractDataJsonFromJwt(jwtToken: jwt, jwtPart: .header))
             
-            let base64PublicKey = makeBase64Standard(publicKey)
+            let base64PublicKey = Base64Decoder.makeBase64Standard(publicKey)
             
             guard let publicKeyData = Data(base64Encoded: base64PublicKey) else {
                 throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "Did public key decoding failed", className: JWTHandler.className)

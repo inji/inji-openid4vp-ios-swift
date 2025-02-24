@@ -1,7 +1,7 @@
 import Foundation
-class RedirectUriSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
-    override init(authorizationRequestParam authorizationRequestParameters: [String: Any], networkManager: NetworkManaging, setResponseUri: @escaping (String) -> Void) {
-        super.init(authorizationRequestParam: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
+    override init(authorizationRequestParameters: [String: Any], networkManager: NetworkManaging, setResponseUri: @escaping (String) -> Void) {
+        super.init(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
         delegate = self
     }
     
@@ -12,25 +12,25 @@ class RedirectUriSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRequ
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Authorization Request must not be signed for given client_id_scheme",
-                    className: self.className
+                    className: RedirectUriSchemeAuthorizationRequestHandler.className
                 )
             }
             guard let responseBody = requestUriResponse.body.data(using: .utf8) else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Conversion failed",
-                    className: self.className
+                    className: RedirectUriSchemeAuthorizationRequestHandler.className
                 )
             }
             guard let authorizationRequestObject = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Conversion failed",
-                    className: self.className
+                    className: RedirectUriSchemeAuthorizationRequestHandler.className
                 )
             }
 
-            try validateMatchOfAuthRequestObjectAndParams(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
+            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)    
             
             self.authorizationRequestParameters = authorizationRequestObject
         }
@@ -41,30 +41,30 @@ class RedirectUriSchemeAuthRequestHandler:  ClientIdSchemeBasedAuthorizationRequ
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
         switch responseMode {
         case ResponseMode.directPost.rawValue:
-            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validKey: AuthorizationRequestFieldConstants.responseUri.rawValue, inValidKey: AuthorizationRequestFieldConstants.redirectUri.rawValue)
+            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri.rawValue, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri.rawValue)
         default:
             throw Logger.handleException(
                 exceptionType : "InvalidResponseMode",
-                message : "Given response_mode \(String(describing: responseMode)) is not supported", className: self.className
+                message : "Given response_mode \(String(describing: responseMode)) is not supported", className: RedirectUriSchemeAuthorizationRequestHandler.className
             )
         }
         
     }
     
-    private func validateUriCombinations(authorizationRequestParameters: [String: Any], validKey: String, inValidKey: String) throws {
-        if authorizationRequestParameters.keys.contains(inValidKey) {
+    private func validateUriCombinations(authorizationRequestParameters: [String: Any], validAttribute: String, inValidAttribute: String) throws {
+        if authorizationRequestParameters.keys.contains(inValidAttribute) {
             throw Logger.handleException(
                 exceptionType: "invalidInput",
-                message: "\(inValidKey) should not be present for given response_mode", className: className
+                message: "\(inValidAttribute) should not be present for given response_mode", className: RedirectUriSchemeAuthorizationRequestHandler.className
             )
         } else {
-            try validateKey(validKey, values: self.authorizationRequestParameters)
+            try validateAttribute(validAttribute, values: self.authorizationRequestParameters)
         }
         
-        if let validValue = authorizationRequestParameters[validKey], let clientIdValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String, validValue as? String != clientIdValue {
+        if let validValue = authorizationRequestParameters[validAttribute], let clientIdValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String, validValue as? String != clientIdValue {
             throw Logger.handleException(
                 exceptionType: "InvalidVerifier",
-                message: "\(validKey) should be equal to client_id for given client_id_scheme", className: className
+                message: "\(validAttribute) should be equal to client_id for given client_id_scheme", className: RedirectUriSchemeAuthorizationRequestHandler.className
             )
         }
     }

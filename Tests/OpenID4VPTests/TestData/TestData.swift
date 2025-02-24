@@ -22,17 +22,17 @@ let didUrl =  URL(string: "https://resolver.identity.foundation/1.0/identifiers/
 let httpUrlResponseForJWT: HTTPURLResponse = HTTPURLResponse(url: didUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
 let didResponse = "{\"@context\":\"https://w3id.org/did-resolution/v1\",\"didDocument\":{\"assertionMethod\":[\"did:example:123#1\"],\"service\":[],\"id\":\"did:example:123\",\"verificationMethod\":[{\"publicKey\":\"IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=\",\"controller\":\"did:example:123\",\"id\":\"did:example:123#1\",\"type\":\"Ed25519VerificationKey2020\",\"@context\":\"https://w3id.org/security/suites/ed25519-2020/v1\"}],\"@context\":[\"https://www.w3.org/ns/did/v1\"],\"alsoKnownAs\":[],\"authentication\":[\"did:example:123#1\"]},\"didResolutionMetadata\":{\"driverDuration\":19,\"contentType\":\"application/did+ld+json\",\"pattern\":\"^(did:web:.+)$\",\"driverUrl\":\"http://uni-resolver-driver-did-uport:8081/1.0/identifiers/\",\"duration\":19,\"did\":{\"didString\":\"did:example:123\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"},\"didUrl\":{\"path\":null,\"fragment\":null,\"query\":null,\"didUrlString\":\"did:example:123\",\"parameters\":null,\"did\":{\"didString\":\"did:example:123\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"}}},\"didDocumentMetadata\":{}}"
 
-let authorizationRequestParamsWithValue: [String: String] = [
+let authorizationRequestParamsWithValue: [String: Any] = [
     "redirect_uri": "https://mock-verifier.com",
     "response_uri": "https://mock-verifier.com",
     "request_uri": "https://mock-verifier.com/verifier/get-auth-request-obj",
     "request_uri_method": "get",
-    "presentation_definition": convertToJsonString(presentationDefinition),
+    "presentation_definition": (presentationDefinition),
     "response_type": "vp_token",
     "response_mode": "direct_post",
     "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
     "state": "+mRQe1d6pBoJqF6Ab28klg==",
-    "client_metadata": convertToJsonString(clientMetadata),
+    "client_metadata": (clientMetadata),
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition"
 ]
 
@@ -61,7 +61,7 @@ let authRequestParamsByReference : [String] = [
 let authRequestWithRedirectUriByValue : [String] = [
     "client_id",
     "client_id_scheme",
-    "redirect_uri",
+    "response_uri",
     "presentation_definition",
     "response_type",
     "response_mode",

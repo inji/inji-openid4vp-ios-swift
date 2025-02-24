@@ -17,7 +17,7 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
 }
 
 func createUrlEncodedAuthorizationRequest(
-    requestParams: [String: String?],
+    requestParams: [String: Any?],
     verifierSentAuthRequestByReference: Bool? = false,
     clientIdScheme: ClientIdScheme,
     applicableFields: [String]? = nil
@@ -26,6 +26,7 @@ func createUrlEncodedAuthorizationRequest(
     if verifierSentAuthRequestByReference == true {
         paramList = authRequestParamsByReference
     } else {
+//       stringify client_metdata and presentation defintiion
         paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     }
     
@@ -35,22 +36,40 @@ func createUrlEncodedAuthorizationRequest(
     return "OPENID4VP://authorize?\(queryString)"
 }
 
-private func encodeToQueryParameters(_ parameters: [String: String?]) -> String {
+private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
     let queryString = parameters.compactMap { (key, value) -> String? in
-        guard let value = value else { return nil } // Ignore nil values
-        let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return "\(encodedKey)=\(encodedValue)"
-    }.joined(separator: "&")
-    
-    return queryString
+            guard let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+            
+            let encodedValue: String
+            if let stringValue = value as? String {
+                encodedValue = stringValue
+            } else if let jsonData = try? JSONSerialization.data(withJSONObject: value as Any, options: []),
+                      let jsonString = String(data: jsonData, encoding: .utf8) {
+                encodedValue = jsonString
+            } else {
+                return nil // Skip values that can't be converted
+            }
+            
+            guard let finalEncodedValue = encodedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+            return "\(encodedKey)=\(finalEncodedValue)"
+        }.joined(separator: "&")
+        
+        return queryString
+//    let queryString = parameters.compactMap { (key, value) -> String? in
+//        guard let value = value else { return nil } // Ignore nil values
+//        let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+//        let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+//        return "\(encodedKey)=\(encodedValue)"
+//    }.joined(separator: "&")
+//    
+//    return queryString
 }
 
 func createAuthorizationRequest(
     paramList: [String],
-    requestParams: [String: String?]
-) -> [String: String?] {
-    var authorizationRequestParam: [String: String?] = [:]
+    requestParams: [String: Any?]
+) -> [String: Any?] {
+    var authorizationRequestParam: [String: Any?] = [:]
     for param in paramList {
         if let value = requestParams[param], value != nil {
             authorizationRequestParam[param] = value
@@ -61,7 +80,7 @@ func createAuthorizationRequest(
 
 func createAuthorizationRequestObject(
     clientIdScheme: ClientIdScheme,
-    authorizationRequestParams: [String: String],
+    authorizationRequestParams: [String: Any],
     jwtHeaderData: [String: Any]? = nil,
     applicableFields: [String]? = nil,
     addValidSignature: Bool = true
@@ -110,28 +129,46 @@ extension Equatable where Self : Error {
     }
 }
 
-// Assert two dictionary values with values of JSON string or usual data types
-func assertDictionaryValues(actual: [String: Any], expected: [String: Any?]) {
+//Assert two dictionaries
+func assertDictionariesEqual(expected: [String: Any], actual: [String: Any], file: StaticString = #file, line: UInt = #line) {
+    
+    func isEqual(_ lhs: Any, _ rhs: Any) -> Bool {
+        switch (lhs, rhs) {
+        case let (lhs as String, rhs as String): return lhs == rhs
+        case let (lhs as Int, rhs as Int): return lhs == rhs
+        case let (lhs as Double, rhs as Double): return lhs == rhs
+        case let (lhs as Bool, rhs as Bool): return lhs == rhs
+        case let (lhs as [String: Any], rhs as [String: Any]): return dictionariesEqual(lhs, rhs)
+        case let (lhs as [Any], rhs as [Any]): return arraysEqual(lhs, rhs)
+        case let (lhs as ClientMetadata, rhs as ClientMetadata): return lhs == rhs
+        case let (lhs as PresentationDefinition, rhs as PresentationDefinition): return lhs == rhs
+        default: return false
+        }
+    }
+
+    func dictionariesEqual(_ lhs: [String: Any], _ rhs: [String: Any]) -> Bool {
+        guard lhs.count == rhs.count else { return false }
+        return lhs.allSatisfy { key, value in
+            guard let rhsValue = rhs[key] else { return false }
+            return isEqual(value, rhsValue)
+        }
+    }
+
+    func arraysEqual(_ lhs: [Any], _ rhs: [Any]) -> Bool {
+        guard lhs.count == rhs.count else { return false }
+        return zip(lhs, rhs).allSatisfy { isEqual($0, $1) }
+    }
+
+    XCTAssertEqual(expected.count, actual.count, "Dictionary sizes are different", file: file, line: line)
+
     for (key, expectedValue) in expected {
         guard let actualValue = actual[key] else {
-            XCTFail("Missing key: \(key)")
+            XCTFail("Missing key '\(key)' in actual dictionary", file: file, line: line)
             continue
         }
         
-        if let expectedValue = expectedValue {
-            if isValidJson(expectedValue as! String), let actualString = actualValue as? String, isValidJson(actualString) {
-                XCTAssertTrue(compareJsonStrings(expectedValue as! String, actualString), "Mismatch in JSON for key: \(key)")
-            } else {
-                XCTAssertEqual(actualValue as? String, expectedValue as? String, "Mismatch for key: \(key)")
-            }
-        } else {
-            XCTAssertNil(actualValue as? String, "Expected nil for key: \(key), but got \(actualValue)")
-        }
+        XCTAssertTrue(isEqual(expectedValue, actualValue), "Mismatch for key '\(key)'. Expected: \(expectedValue), but got: \(actualValue)", file: file, line: line)
     }
-    
-    // Ensure there are no extra keys in actual
-    let extraKeys = Set(actual.keys).subtracting(expected.keys)
-    XCTAssertTrue(extraKeys.isEmpty, "Unexpected extra keys in actual: \(extraKeys)")
 }
 
 /// Function to compare two JSON strings after normalizing them
@@ -152,4 +189,18 @@ private func compareJsonStrings(_ jsonString1: String, _ jsonString2: String) ->
 private func isValidJson(_ string: String) -> Bool {
     guard let jsonData = string.data(using: .utf8) else { return false }
     return (try? JSONSerialization.jsonObject(with: jsonData, options: [])) != nil
+}
+
+func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
+    let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
+    let decoder = JSONDecoder()
+    return (try? decoder.decode(T.self, from: jsonData!))!
+}
+
+func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {
+    let url = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
+    let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/json"])!
+    let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
+    
+    return (body: body, httpUrlResponse: modifiedResponse)
 }

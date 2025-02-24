@@ -2,14 +2,14 @@ import Foundation
 import JSONWebSignature
 import CryptoKit
 
-public struct AuthorizationRequest: Encodable {
+public struct AuthorizationRequest : Encodable {
     let clientId: String
     let clientIdScheme: String
     var presentationDefinition: Any
     let responseType: String
-    let responseMode: String?
+    let responseMode: String
     let nonce: String
-    let state: String
+    let state: String?
     let redirectUri: String?
     let responseUri: String?
     var clientMetadata: Any?
@@ -54,10 +54,10 @@ public struct AuthorizationRequest: Encodable {
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String, setResponseUri: @escaping (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging) async throws -> AuthorizationRequest {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
         
-        return try await getAuthorizationRequestObject(authorizationRequestParameters: extractedQueryParameters, trustedVerifiers: trustedVerifierJSON, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
+        return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters, trustedVerifiers: trustedVerifierJSON, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
     }
     
-    private static func getAuthorizationRequestObject(authorizationRequestParameters : [String:Any],trustedVerifiers : [Verifier], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) async throws -> AuthorizationRequest{
+    private static func getAuthorizationRequest(authorizationRequestParameters : [String:Any],trustedVerifiers : [Verifier], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) async throws -> AuthorizationRequest{
         let authorizationRequestHandler = try getAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
         
         try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler)
@@ -67,8 +67,8 @@ public struct AuthorizationRequest: Encodable {
     
     private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler)async throws {
         try authorizationRequestHandler.validateClientId()
-        try await authorizationRequestHandler.fetchAuthRequest()
-        try authorizationRequestHandler.setResponseUrlForSendingResponseToVerifier()
+        try await authorizationRequestHandler.fetchAuthorizationRequest()
+        try authorizationRequestHandler.setResponseUrl()
         try await authorizationRequestHandler.validateAndParseRequestFields()
     }
 }

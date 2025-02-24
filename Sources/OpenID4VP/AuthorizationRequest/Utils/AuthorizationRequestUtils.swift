@@ -29,38 +29,39 @@ func parseAndValidatePresentationDefinition(
                     className: AuthorizationRequest.className
                 )
             }
-            guard let jsonData = valueStr.data(using: .utf8) else {
-                throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: ["presentation_definition"], className: PresentationDefinition.className)
-            }
-            
-            
-            finalPresentationDefinition = try jsonData.toInstance(as: PresentationDefinition.self)
-        } else {
+
+            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition.rawValue], className: PresentationDefinition.className)
+        } else if let presentationDefinitionJson = value as? [String: Any] {
             //Presentation Definition is of type Dictionary when auth request obtained by reference
             do {
-                let valueData = try JSONSerialization.data(withJSONObject: value, options: [])
-                finalPresentationDefinition = try valueData.toInstance(as: PresentationDefinition.self)
+                finalPresentationDefinition = try convertToInstance(presentationDefinitionJson, as: PresentationDefinition.self)
             } catch {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
-                    message: "presentation_defintion_uri data is not valid",
+                    message: "presentation_defintion data is not valid",
                     className: AuthorizationRequest.className
                 )
             }
+        } else {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "presentation_defintion data is not valid",
+                className: AuthorizationRequest.className
+            )
         }
-    } else if hasPresentationDefinitionUri, let value = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
-        guard isValidUri(value as! String)
+    } else if hasPresentationDefinitionUri, let presentationDefintionUri = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+        guard let valueStr = getStringValue(presentationDefintionUri), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
+            throw Logger.handleException(
+                exceptionType: "InvalidInput",
+                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue],
+                className: AuthorizationRequest.className
+            )
+        }
+        guard isValidUri(presentationDefintionUri as! String)
         else {
             throw Logger.handleException(
                 exceptionType: "InvalidData",
                 message: "presentation_defintion_uri data is not valid",
-                className: AuthorizationRequest.className
-            )
-        }
-        guard let valueStr = getStringValue(value), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
-            throw Logger.handleException(
-                exceptionType: "InvalidInput",
-                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue],
                 className: AuthorizationRequest.className
             )
         }
@@ -102,7 +103,6 @@ func parseAndValidatePresentationDefinition(
 
 func parseAndValidateClientMetadata(authorizationRequest: [String: Any]) throws -> [String: Any] {
     var mutableParams = authorizationRequest
-    
     if let clientMetadataObject = authorizationRequest["client_metadata"] as? NSDictionary{
         let data = try JSONSerialization.data(withJSONObject: clientMetadataObject, options: [])
         let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: data)
@@ -110,24 +110,18 @@ func parseAndValidateClientMetadata(authorizationRequest: [String: Any]) throws 
     } else if let clientMetaString = authorizationRequest["client_metadata"] as? String {
         let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetaString)
         mutableParams["client_metadata"] = clientMetadata
-    } else {
-        throw Logger.handleException(
-                    exceptionType: "InvalidData",
-                    message: "client_metadata data is not valid",
-                    className: AuthorizationRequest.className
-                )
-    }
+    } 
     return mutableParams
 }
 
-func validateKey(
-    _ key: String,
+func validateAttribute(
+    _ attribute: String,
     values: [String: Any]
 ) throws {
-    guard let value = values[key] else {
+    guard let value = values[attribute] else {
         throw Logger.handleException(
             exceptionType: "MissingInput",
-            fieldPath: [key],
+            fieldPath: [attribute],
             className: AuthorizationRequest.className
         )
     }
@@ -138,14 +132,14 @@ func validateKey(
             stringValue.lowercased() == "null" {
             throw Logger.handleException(
                 exceptionType: "InvalidInput",
-                fieldPath: [key],
+                fieldPath: [attribute],
                 className: AuthorizationRequest.className
             )
         }
     }
 }
 
-func validateMatchOfAuthRequestObjectAndParams(params: [String: String], requestUriParams: [String: Any]) throws {
+func validateAuthorizationRequestObjectAndParameters(params: [String: String], requestUriParams: [String: Any]) throws {
     guard params["client_id"] == requestUriParams["client_id"] as? String else {
         throw Logger.handleException(exceptionType: "MismatchingClientIDInRequest", className: AuthorizationRequest.className)
     }
@@ -208,11 +202,11 @@ func getAuthorizationRequestHandler(trustedVerifiers : [Verifier], authorization
     
     switch clientIdScheme {
     case ClientIdScheme.preRegistered.rawValue:
-        return PreRegisteredSchemeAuthRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, shouldValidateClient: shouldValidateClient, setResponseUri: setResponseUri)
+        return PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, shouldValidateClient: shouldValidateClient, setResponseUri: setResponseUri)
     case ClientIdScheme.did.rawValue:
-        return DidSchemeAuthRequestHandler(authorizationRequestParam: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+        return DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
     case ClientIdScheme.redirectUri.rawValue:
-        return RedirectUriSchemeAuthRequestHandler(authorizationRequestParam: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+        return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
     default:
         throw Logger.handleException(exceptionType: "InvalidClientIdScheme",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
     }

@@ -124,9 +124,8 @@ public struct ClientMetadata: Codable, Equatable {
     }
     
     public static func == (lhs: ClientMetadata, rhs: ClientMetadata) -> Bool {
-            return
-        lhs.client_name == rhs.client_name && lhs.logo_uri == rhs.logo_uri &&
+        return lhs.client_name == rhs.client_name && lhs.logo_uri == rhs.logo_uri &&
         lhs.authorization_encrypted_response_alg == rhs.authorization_encrypted_response_alg && lhs.authorization_encrypted_response_enc == rhs.authorization_encrypted_response_enc &&
         lhs.vp_formats == rhs.vp_formats
-        }
+    }
 }

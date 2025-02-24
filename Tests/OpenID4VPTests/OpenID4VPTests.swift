@@ -62,8 +62,8 @@ class OpenID4VPTests: XCTestCase {
         }
     }
     
-    // client_id_scheme = redirect_uri, client id not equal to redirect uri
-    func testVpRequestWithRedirectUriAndClientIdNotEqualtoRedirectUri() async {
+    // client_id_scheme = redirect_uri, response_mode = fragment
+    func testInvalidResponseModeWithRedirectUriScheme() async {
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testVpRequestWithRedirectUriAndClientIdNotEqual, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
@@ -77,7 +77,7 @@ class OpenID4VPTests: XCTestCase {
         }
     }
     
-    // client_id_scheme = response_uri
+    // client_id_scheme = pre-registered
     func testReturnDataForValidRequestWithResponseUri() async {
         let decoded: Any?
 
@@ -91,7 +91,32 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
     
-    // jwt -> client_id_scheme = did
+    //client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
+    func testMissingClientMetadataRequiredFieldsInRequest() async {
+        let error = await Task {
+            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        }.result
+
+        switch error {
+        case .failure(let thrownError):
+            let expectedErrorMessage = "Invalid Input: client_metadata value cannot be empty or null"
+            XCTAssertEqual(thrownError.localizedDescription, expectedErrorMessage)
+        case .success: break
+        }
+    }
+    
+    func testShouldConstructAuthorizationRequestSuccessfullyWhenPresentationDefinitionIsSentByReference() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/presentation-definition")!, responseBody: convertToJsonString(presentationDefinition))
+        do {
+            let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthRequestWithPresentationDefinitionUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: false)
+            XCTAssertNotNil(authorizationRequest)
+            XCTAssertEqual("mock-client", authorizationRequest.clientId)
+        } catch {
+            XCTFail("should not get error but got error \(error)")
+        }
+    }
+    
+    // client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWT))
         mockNetworkManager.setMockResponse(for: didUrl,responseBody: didResponse)
@@ -188,34 +213,8 @@ class OpenID4VPTests: XCTestCase {
         }
     }
 
-    //client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
-    func testMissingClientMetadataRequiredFieldsInRequest() async {
-        let error = await Task {
-            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        }.result
-
-        switch error {
-        case .failure(let thrownError):
-            let expectedErrorMessage = "Invalid Input: client_metadata value cannot be empty or null"
-            XCTAssertEqual(thrownError.localizedDescription, expectedErrorMessage)
-        case .success: break
-        }
-    }
-    
-    func testShouldConstructAuthorizationRequestSuccessfullyWhenPresentationDefinitionIsSentByReference() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/presentation-definition")!, responseBody: convertToJsonString(presentationDefinition))
-        do {
-            let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthRequestWithPresentationDefinitionUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: false)
-            XCTAssertNotNil(authorizationRequest)
-            XCTAssertEqual("mock-client", authorizationRequest.clientId)
-        } catch {
-            XCTFail("should not get error but got error \(error)")
-        }
-    }
-
     // UUID Generation
     func testUUIDGeneration() {
-
         let vpToken = UUIDGenerator.generateUUID()
         let presentationSubmissionId = UUIDGenerator.generateUUID()
         let presentationSubmission = PresentationSubmission(definition_id: "", descriptor_map: AuthorizationResponse.descriptorMap!)
@@ -223,14 +222,7 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertNotNil(vpToken,presentationSubmissionId)
         XCTAssertNotNil(presentationSubmission.id)
     } 
-    
-    // isJWT Check
-    func testJwtCheck() {
-        let invalidJwt = isJWT("eeeee")
-        let validJwt = isJWT("ec.exx.ef")
-        XCTAssertFalse(invalidJwt)
-        XCTAssertTrue(validJwt)
-    }
+
 
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async{

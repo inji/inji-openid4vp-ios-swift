@@ -28,7 +28,7 @@ struct AuthorizationResponse{
         }
     }
     
-    static func shareVp(vpResponseMetadata: VPResponseMetadata, nonce: String, state: String, responseUri: String, presentationDefinitionId: String, networkManager: NetworkManaging) async throws -> String? {
+    static func shareVp(vpResponseMetadata: VPResponseMetadata, nonce: String, state: String?, responseUri: String, presentationDefinitionId: String, networkManager: NetworkManaging) async throws -> String? {
         
         try vpResponseMetadata.validate()
         
@@ -41,7 +41,7 @@ struct AuthorizationResponse{
         return try await constructHttpRequestBody(vpToken: vpToken, presentationSubmission: presentationSubmission, responseUri: responseUri, state: state, networkManager: networkManager)
     }
     
-    private static func constructHttpRequestBody(vpToken: VpToken, presentationSubmission: PresentationSubmission, responseUri: String, state: String, networkManager: NetworkManaging = NetworkManager.shared) async throws -> String? {
+    private static func constructHttpRequestBody(vpToken: VpToken, presentationSubmission: PresentationSubmission, responseUri: String, state: String?, networkManager: NetworkManaging = NetworkManager.shared) async throws -> String? {
         let encodedVPTokenData: String, encodedPresentationSubmissionData: String
         do {
             encodedVPTokenData = try encodeToJsonString(vpToken)!
@@ -58,7 +58,9 @@ struct AuthorizationResponse{
         var bodyComponents = [URLQueryItem]()
         bodyComponents.append(URLQueryItem(name: "vp_token", value: encodeQueryValue(encodedVPTokenData)))
         bodyComponents.append(URLQueryItem(name: "presentation_submission", value: encodeQueryValue(encodedPresentationSubmissionData)))
-        bodyComponents.append(URLQueryItem(name: "state", value: encodeQueryValue(state)))
+        if state != nil{
+            bodyComponents.append(URLQueryItem(name: "state", value: encodeQueryValue(state!)))
+        }
 
         var urlComponents = URLComponents()
         urlComponents.queryItems = bodyComponents
