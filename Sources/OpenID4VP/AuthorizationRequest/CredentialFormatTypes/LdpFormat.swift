@@ -1,6 +1,6 @@
 import Foundation
 
-struct LdpFormat: Codable {
+struct LdpFormat: Codable, Equatable {
     let proofType: [String]
     static let className = String(describing: LdpFormat.self)
     
@@ -14,4 +14,7 @@ struct LdpFormat: Codable {
         }
     }
     
+    static func == (lhs: LdpFormat, rhs: LdpFormat) -> Bool {
+        return lhs.proofType == rhs.proofType
+    }
 }

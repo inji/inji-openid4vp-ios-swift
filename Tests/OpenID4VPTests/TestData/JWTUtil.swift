@@ -15,17 +15,6 @@ struct JWTUtil {
         "kid": publicKeyId
     ]
     
-    private static func replaceCharactersInB64(_ encodedB64: String) -> String {
-        return encodedB64.replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=+$", with: "", options: .regularExpression)
-    }
-    
-    private static func encodeB64(_ str: String) -> String {
-        let encoded = Data(str.utf8).base64EncodedString()
-        return replaceCharactersInB64(encoded)
-    }
-    
     private static func base64UrlEncode(_ data: Data) -> String {
         return data.base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
@@ -41,7 +30,7 @@ struct JWTUtil {
         return base64UrlEncode(signature)
     }
     
-    static func create(header: [String:Any]?,payload: [String:Any],addValidSignature: Bool) -> String{
+    static func create(header: [String:Any]? = nil,payload: [String:Any],addValidSignature: Bool = true) -> String{
         let privateKeyData = Data(base64Encoded: ed25519PrivateKey)
         let jwtHeader = header == nil ? self.jwtHeader : header
         let headerData = try? JSONSerialization.data(withJSONObject: jwtHeader as Any)

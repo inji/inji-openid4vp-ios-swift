@@ -15,12 +15,13 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case parameterValuesAreEmpty
     case mismatchingClientIDInRequest
     case mismatchingClientIdSchemeInRequest
-    case invalidVerifierClientID
+    case invalidVerifier(message: String?)
     case invalidVerifierRedirectUri
-    case emptyVerifierList
     case unsupportedHttpMethod(message: String)
     case invalidInputPattern(fieldPath: String)
     case unexpectedError(message: String)
+    case invalidResponseMode(message: String)
+    case invalidData(message: String)
     
     public var errorDescription: String? {
         switch self {
@@ -40,14 +41,12 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
             return "Json Decoding failed for \(fieldPath) due to this error: \(message)."
         case .jsonEncodingFailed(let fieldPath, let message):
             return "Json Encoding failed for \(fieldPath) due to this error: \(message)."
-        case .invalidVerifierClientID:
-            return "VP sharing failed: Verifier authentication was unsuccessful"
+        case .invalidVerifier(let message):
+            return "Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.\(message ?? "")"
         case .mismatchingClientIDInRequest:
             return "Client Id is mismatching in QR data and Request Uri response"
         case .mismatchingClientIdSchemeInRequest:
             return "Client Id Scheme is mismatching in QR data and Request Uri response"
-        case .emptyVerifierList:
-            return "Verifiers Validation failed: Trusted Verifiers list is empty"
         case .invalidVerifierRedirectUri:
             return "Client Id and Redirect uri value should be equal"
         case .invalidInputPattern:
@@ -57,6 +56,10 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
         case .unexpectedError(let message):
             return message
         case .urlCreationFailed(let message):
+            return message
+        case .invalidResponseMode(let message):
+            return message
+        case .invalidData(let message):
             return message
         default:
             return "An error occurred."
