@@ -249,6 +249,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             
             do{
                 try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
+                XCTFail("error should have been captured but not captured")
             }
             catch{
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
@@ -282,7 +283,6 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             TestCase(input: ["response_mode": "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null"),
             TestCase(input: ["response_mode": ""], expectedError: "Invalid Input: response_mode value cannot be empty or null"),
             TestCase(input: ["response_mode": "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null"),
-            TestCase(input: ["response_mode": nil], expectedError: "Missing Input: response_mode param is required")
         ]
         
         for testCase in testCases {
@@ -291,6 +291,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             
             do{
                 try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
+                XCTFail("error should have been captured but not captured")
             }
             catch{
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
@@ -312,6 +313,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             
             do{
                 try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
+                XCTFail("error should have been captured but not captured")
             }
             catch{
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
@@ -325,6 +327,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         do{
             try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
+            XCTFail("error should have been captured but not captured")
         }
         catch{
             XCTAssertEqual("Invalid Input: client_metadata value cannot be empty or null", error.localizedDescription)
@@ -337,6 +340,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         do{
             try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
+            XCTFail("error should have been captured but not captured")
         }
         catch {
             XCTAssertEqual("Either presentation_definition or presentation_definition_uri request param can be provided but not both", error.localizedDescription)

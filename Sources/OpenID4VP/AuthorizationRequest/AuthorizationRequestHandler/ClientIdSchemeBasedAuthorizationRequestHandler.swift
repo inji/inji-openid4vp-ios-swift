@@ -52,13 +52,13 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func validateAndParseRequestFields() async throws {
-        let mandatoryFields = [AuthorizationRequestFieldConstants.responseType.rawValue,AuthorizationRequestFieldConstants.nonce.rawValue, AuthorizationRequestFieldConstants.responseMode.rawValue]
+        let mandatoryFields = [AuthorizationRequestFieldConstants.responseType.rawValue,AuthorizationRequestFieldConstants.nonce.rawValue]
 
         for field in mandatoryFields {
             try validateAttribute(field, values: authorizationRequestParameters)
         }
         
-        let optionalFields = [AuthorizationRequestFieldConstants.state.rawValue]
+        let optionalFields = [AuthorizationRequestFieldConstants.state.rawValue, AuthorizationRequestFieldConstants.responseMode.rawValue]
         for field in optionalFields {
             if (authorizationRequestParameters[field] != nil){
                 try validateAttribute(field, values: authorizationRequestParameters)
@@ -95,7 +95,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             clientIdScheme: getStringValue(authorizationRequestParameters["client_id_scheme"]) ?? ClientIdScheme.preRegistered.rawValue,
             presentationDefinition: authorizationRequestParameters["presentation_definition"]! as! PresentationDefinition,
             responseType: getStringValue(authorizationRequestParameters["response_type"])!,
-            responseMode: getStringValue(authorizationRequestParameters["response_mode"])!,
+            responseMode: getStringValue(authorizationRequestParameters["response_mode"]),
             nonce: getStringValue(authorizationRequestParameters["nonce"])!,
             state: getStringValue(authorizationRequestParameters["state"]),
             redirectUri: getStringValue(authorizationRequestParameters["redirect_uri"]),

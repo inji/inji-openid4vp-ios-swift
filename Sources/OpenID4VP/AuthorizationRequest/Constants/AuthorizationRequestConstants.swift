@@ -8,6 +8,4 @@ public enum ClientIdScheme: String, Codable{
 
 public enum ResponseMode: String, Codable, Equatable{
     case directPost = "direct_post"
-    case fragment = "fragment"
-    case directPostJwt = "direct_post.jwt"
 }

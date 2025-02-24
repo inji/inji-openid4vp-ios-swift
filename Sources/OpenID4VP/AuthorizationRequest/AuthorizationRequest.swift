@@ -7,7 +7,7 @@ public struct AuthorizationRequest : Encodable {
     let clientIdScheme: String
     var presentationDefinition: Any
     let responseType: String
-    let responseMode: String
+    let responseMode: String?
     let nonce: String
     let state: String?
     let redirectUri: String?
