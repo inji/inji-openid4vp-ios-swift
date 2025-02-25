@@ -119,7 +119,7 @@ class OpenID4VPTests: XCTestCase {
     // client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWT))
-        mockNetworkManager.setMockResponse(for: didUrl,responseBody: didResponse)
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         
         let decodedAuthorizationRequest: Any?
         do {
@@ -136,7 +136,7 @@ class OpenID4VPTests: XCTestCase {
     // jwt -> client_id_scheme = did, Invalid did
     func testThrowErrorForInValidSignatureInRequest() async {
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponse, httpUrlResponseForJWT))
-        mockNetworkManager.setMockResponse(for: didUrl,responseBody: didResponse)
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -155,7 +155,7 @@ class OpenID4VPTests: XCTestCase {
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
         //"did:other:123#1" clienId is used in QR code
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWT))
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:other:123#1")!,responseBody: didResponse)
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInValidSignedVpRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -172,7 +172,7 @@ class OpenID4VPTests: XCTestCase {
     // jwt -> client_id_scheme = did, Kid is empty in the JWT header
     func testThrowErrorIfKidExtractionFailedFromJwt() async {
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWT))
-        mockNetworkManager.setMockResponse(for: URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!,responseBody: didResponse)
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         
         let error = await Task {
         try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVpRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)

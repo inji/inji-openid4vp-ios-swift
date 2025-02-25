@@ -70,6 +70,12 @@ class Logger {
             exception = AuthorizationRequestException.invalidData(message: message ?? "")
         case "InvalidResponseMode":
             exception = AuthorizationRequestException.invalidResponseMode(message: message ?? "")
+        case "UnsupportedDidUrl":
+            exception = DidResolverExceptions.unsupportedDidUrl(message: message)
+        case "DidResultionFailed":
+            exception = DidResolverExceptions.didResolutionFailed(message: message)
+        case "PublicKeyResolutionFailed":
+            exception = JwtVerificationException.publicKeyResolutionFailed(message: message ?? "Error occurred while resolve public key")
         default:
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }
