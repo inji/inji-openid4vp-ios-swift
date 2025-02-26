@@ -26,7 +26,6 @@ func createUrlEncodedAuthorizationRequest(
     if verifierSentAuthRequestByReference == true {
         paramList = authRequestParamsByReference
     } else {
-//       stringify client_metdata and presentation defintiion
         paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     }
     
@@ -44,6 +43,7 @@ private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
             if let stringValue = value as? String {
                 encodedValue = stringValue
             } else if let jsonData = try? JSONSerialization.data(withJSONObject: value as Any, options: []),
+                      //       stringify client_metdata and presentation defintiion
                       let jsonString = String(data: jsonData, encoding: .utf8) {
                 encodedValue = jsonString
             } else {
@@ -55,14 +55,6 @@ private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
         }.joined(separator: "&")
         
         return queryString
-//    let queryString = parameters.compactMap { (key, value) -> String? in
-//        guard let value = value else { return nil } // Ignore nil values
-//        let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-//        let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-//        return "\(encodedKey)=\(encodedValue)"
-//    }.joined(separator: "&")
-//    
-//    return queryString
 }
 
 func createAuthorizationRequest(
