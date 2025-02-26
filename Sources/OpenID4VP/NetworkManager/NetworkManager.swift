@@ -4,6 +4,12 @@ public protocol NetworkManaging {
     func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse)
 }
 
+extension NetworkManaging {
+    func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String? = nil, headers: [String : String]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
+        return try await sendHTTPRequest(url: url, method: method, bodyParams: bodyParams, headers: headers)
+    }
+}
+
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))

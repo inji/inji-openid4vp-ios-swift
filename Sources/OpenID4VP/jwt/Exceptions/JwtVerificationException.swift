@@ -6,6 +6,7 @@ enum JwtVerificationException: Error, Equatable, LocalizedError {
     case invalidSignature(message: String)
     case proofVerificationFailed(message: String)
     case publicKeyNotFound(message: String?)
+    case publicKeyResolutionFailed(message: String)
     case publicKeyExtractionFailed
     
     public var errorDescription: String? {
@@ -22,6 +23,8 @@ enum JwtVerificationException: Error, Equatable, LocalizedError {
             return message ?? "Public key not found in the did document."
         case .publicKeyExtractionFailed:
             return "Public key extraction failed."
+        case .publicKeyResolutionFailed(let message):
+            return message
         default:
             return "An error occurred."
         }

@@ -18,9 +18,31 @@ private let testVerifierList:  [[String: Any]]  = [
 
 let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
 
-let didUrl =  URL(string: "https://resolver.identity.foundation/1.0/identifiers/did:example:123#1")!
-let httpUrlResponseForJWT: HTTPURLResponse = HTTPURLResponse(url: didUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
-let didResponse = "{\"@context\":\"https://w3id.org/did-resolution/v1\",\"didDocument\":{\"assertionMethod\":[\"did:example:123#1\"],\"service\":[],\"id\":\"did:example:123\",\"verificationMethod\":[{\"publicKey\":\"IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=\",\"controller\":\"did:example:123\",\"id\":\"did:example:123#1\",\"type\":\"Ed25519VerificationKey2020\",\"@context\":\"https://w3id.org/security/suites/ed25519-2020/v1\"}],\"@context\":[\"https://www.w3.org/ns/did/v1\"],\"alsoKnownAs\":[],\"authentication\":[\"did:example:123#1\"]},\"didResolutionMetadata\":{\"driverDuration\":19,\"contentType\":\"application/did+ld+json\",\"pattern\":\"^(did:web:.+)$\",\"driverUrl\":\"http://uni-resolver-driver-did-uport:8081/1.0/identifiers/\",\"duration\":19,\"did\":{\"didString\":\"did:example:123\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"},\"didUrl\":{\"path\":null,\"fragment\":null,\"query\":null,\"didUrlString\":\"did:example:123\",\"parameters\":null,\"did\":{\"didString\":\"did:example:123\",\"methodSpecificId\":\"mosip.github.io:inji-mock-services:openid4vp-service:docs\",\"method\":\"web\"}}},\"didDocumentMetadata\":{}}"
+let didDocumentUrl = URL(string: "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json")!
+let httpUrlResponseForJWT: HTTPURLResponse = HTTPURLResponse(url: didDocumentUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
+let didResponse = convertToJsonString([
+    "assertionMethod": [
+        "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
+    ],
+    "service": [],
+    "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+    "verificationMethod": [
+        [
+            "publicKey": "IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=",
+            "controller": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+            "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
+            "type": "Ed25519VerificationKey2020",
+            "@context": "https://w3id.org/security/suites/ed25519-2020/v1"
+        ]
+    ],
+    "@context": [
+        "https://www.w3.org/ns/did/v1"
+    ],
+    "alsoKnownAs": [],
+    "authentication": [
+        "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
+    ]
+])
 
 let authorizationRequestParamsWithValue: [String: Any] = [
     "redirect_uri": "https://mock-verifier.com",
@@ -42,7 +64,7 @@ let clientIdAndSchemeOfRedirectUri: [String: String] = [
 ]
 
 let clientIdAndSchemeOfDid: [String: String] = [
-    "client_id": "did:example:123#1",
+    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
     "client_id_scheme": ClientIdScheme.did.rawValue,
 ]
 
@@ -190,7 +212,7 @@ let testValidUrlEncodedVpRequestWithResponseUri = createUrlEncodedAuthorizationR
 let testValidSignedVpRequestWithDid = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
 let testInValidSignedVpRequestWithDidAndClientIdDifferent = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-    "client_id": "did:other:123#1",
+    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-21",
     "client_id_scheme": ClientIdScheme.did.rawValue,
 ]), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 

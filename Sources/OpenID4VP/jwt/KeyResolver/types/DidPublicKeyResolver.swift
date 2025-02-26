@@ -12,13 +12,12 @@ class DidPublicKeyResolver : PublicKeyResolver {
     }
     
     func resolveKey(header: [String : Any]) async throws -> String {
-        let host = "\(DID_RESOLVER)\(didUrl)"
-        
-        guard let url = URL(string: host ) else {
-            throw Logger.handleException(exceptionType: "UrlCreationFailed",message: "Url creation for did resolution failed" ,className: DidPublicKeyResolver.className)
+        let responseBody: [String: Any]
+        do {
+            responseBody = try await DidWebResolver(didUrl: didUrl, networkManager: networkManager).resolve()
+        } catch {
+            throw Logger.handleException(exceptionType: "PublicKeyResolutionFailed", message: error.localizedDescription, className: DidPublicKeyResolver.className)
         }
-        
-        let (responseBody, _) = (try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.GET, bodyParams: nil, headers: nil))
         
         guard let kid = header["kid"] as? String else {
             throw Logger.handleException(
@@ -30,27 +29,16 @@ class DidPublicKeyResolver : PublicKeyResolver {
         return try self.extractPublicKeyMultibase(for: kid, from: responseBody)!
     }
     
-    private func extractPublicKeyMultibase(for kid: String, from json: String) throws -> String? {
-        
-        guard let data = json.data(using: .utf8) else {
-            throw Logger.handleException(exceptionType: "UTF8Encoding", className: DidPublicKeyResolver.className)
-        }
-        
-        do {
-            if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-               let didDocument = json["didDocument"] as? [String: Any],
-               let verificationMethod = didDocument["verificationMethod"] as? [[String: Any]] {
-                
-                for method in verificationMethod {
-                    if let id = method["id"] as? String, id.hasSuffix(kid),
-                       let publicKeyMultibase = method["publicKey"] as? String {
-                        return publicKeyMultibase
-                    }
+    private func extractPublicKeyMultibase(for kid: String, from didDoc: [String: Any]) throws -> String? {
+        if let verificationMethod = didDoc["verificationMethod"] as? [[String: Any]] {
+            for method in verificationMethod {
+                if let id = method["id"] as? String, id.hasSuffix(kid),
+                   let publicKeyMultibase = method["publicKey"] as? String {
+                    return publicKeyMultibase
                 }
-            } else {
-                throw Logger.handleException(exceptionType: "PublicKeyNotFound", className: DidPublicKeyResolver.className)
             }
         }
+        
         throw Logger.handleException(exceptionType: "PublicKeyNotFound", message: "No matching public key found in did resolver with the provided key id", className: DidPublicKeyResolver.className)
     }
     

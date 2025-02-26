@@ -23,7 +23,7 @@ class MockNetworkManager: NetworkManaging {
         mockResponses = [:]
     }
     
-    func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String : String]?) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
+    public func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String? = nil, headers: [String : String]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
         let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "text/json"])!
         if let (response, error) = mockResponses[url] {
             if let error = error {

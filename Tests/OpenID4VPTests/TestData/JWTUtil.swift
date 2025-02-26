@@ -7,7 +7,7 @@ struct JWTUtil {
     private static let ed25519PrivateKey = "vlo/0lVUn4oCEFo/PiPi3FyqSBSdZ2JDSBJJcvbf6o0="
     private static let baseUrl = "https://mock-verifier.com"
     private static let responseUri = "\(baseUrl)/verifier/vp-response"
-    private static let publicKeyId = "did:example:123#1"
+    private static let publicKeyId = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
     
     private static let jwtHeader: [String: Any] = [
         "typ": "oauth-authz-req+jwt",
