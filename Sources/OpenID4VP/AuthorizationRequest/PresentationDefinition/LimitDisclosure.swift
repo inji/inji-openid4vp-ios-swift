@@ -1,4 +1,4 @@
-enum LimitDisclosure: String, Codable {
+enum LimitDisclosure: String, Codable, Equatable {
     case required
     case preferred
 }

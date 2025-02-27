@@ -2,6 +2,19 @@
 
 Description: Implementation of OpenID for Verifiable Presentations - draft 21 specifications in Swift
 
+## Supported features
+
+| Feature                                                    | Supported values                                                                                                                                                                                                                                                                                                                                                   |
+|------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Device flow                                                | cross device flow                                                                                                                                                                                                                                                                                                                                                  |
+| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                                                                                                                                                                                            |
+| Signed authorization request verification algorithms       | ed25519                                                                                                                                                                                                                                                                                                                                                            |
+| Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html#section-3.2))]_ |
+| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                                                                                                                                                                                         |
+| Authorization Response mode                                | `direct_post`                                                                                                                                                                                                                                                                                                                                                      |
+| Authorization Response type                                | `vp_token`                                                                                                                                                                                                                                                                                                                                                         |
+
+
 ## Specifications supported
 - The implementation follows OpenID for Verifiable Presentations - draft 21. [Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html).
 - Below are the fields we expect in the authorization request based on the client id scheme,
@@ -38,7 +51,6 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 - VC format supported is Ldp Vc as of now.
 
 **Note** : The pre-registered client id scheme validation can be toggled on/off based on the optional boolean which you can pass to the authenticateVerifier methods shouldValidateClient parameter. This is false by default.
-
 ## Functionalities
 - Decode and parse the Verifier's encoded Authorization Request received from the Wallet.
 - Authenticates the Verifier using the received clientId and returns the valid Presentation Definition to the Wallet.
@@ -64,16 +76,16 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 
 
 ```
-    let response = try authenticateVerifier(encodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier])
+    let response = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier])
 ```
 
 ###### Parameters
 
-| Name                          | Type         | Description                                                                      | Sample                                              |
-|-------------------------------|--------------|----------------------------------------------------------------------------------|-----------------------------------------------------|
-| encodedAuthorizationRequest   | String       | Base64 Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                            |
-| trustedVerifierJSON           | [Verifier]   | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])`|
-| shouldValidateClient          | Bool?        | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                              |
+| Name                           | Type       | Description                                                                      | Sample                                               |
+|--------------------------------|------------|----------------------------------------------------------------------------------|------------------------------------------------------|
+| urlEncodedAuthorizationRequest | String     | URL Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                             |
+| trustedVerifierJSON            | [Verifier] | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])` |
+| shouldValidateClient           | Bool?      | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                               |
 
 
 ###### Exceptions
@@ -86,7 +98,7 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
     - both presentation_definition and presentation_definition_uri are not present in Request
 3. MissingInput exception is thrown if any of required params are not present in Request
 4. InvalidInput exception is thrown if any of required params value is empty
-5. InvalidVerifierClientID exception is thrown if the received request client_id & response_uri are not matching with any of the trusted verifiers
+5. InvalidVerifier exception is thrown if the received request client_id & response_uri are not matching with any of the trusted verifiers
 6. JWTVerification exception is thrown if there is any error in extracting public key, kid or signature verification failure.
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
@@ -146,9 +158,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name  | Type   | Description                   | Sample                                                                                |
-|-------|--------|-------------------------------|---------------------------------------------------------------------------------------|
-| error | Error  | Contains the exception object | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
+| Name  | Type  | Description                   | Sample                                                                            |
+|-------|-------|-------------------------------|-----------------------------------------------------------------------------------|
+| error | Error | Contains the exception object | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
 
 
 ###### Exceptions

@@ -4,6 +4,7 @@ enum NetworkRequestException: Error, LocalizedError {
     case invalidResponse(message: String)
     case networkRequestFailed(message: String)
     case networkRequestTimeout
+    case urlCreationFailed(message: String)
     
     public var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum NetworkRequestException: Error, LocalizedError {
             return message
         case .networkRequestTimeout:
             return "VP sharing failed due to connection timeout"
+        case .urlCreationFailed(let message):
+            return message
         default:
             return "An error occurred."
         }
