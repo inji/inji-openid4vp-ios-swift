@@ -40,14 +40,12 @@ class Logger {
             exception = AuthorizationRequestException.jsonEncodingFailed(fieldPath: fieldPathAsString, message: message ?? "")
         case "Decoding":
             exception = AuthorizationRequestException.decodingException(fieldPath: fieldPathAsString)
-        case "InvalidVerifierClientID":
-            exception = AuthorizationRequestException.invalidVerifierClientID
+        case "InvalidVerifier":
+            exception = AuthorizationRequestException.invalidVerifier(message: message)
         case "MismatchingClientIDInRequest":
             exception = AuthorizationRequestException.mismatchingClientIDInRequest
         case "MismatchingClientIdSchemeInRequest":
             exception = AuthorizationRequestException.mismatchingClientIdSchemeInRequest
-        case "EmptyVerifierList":
-            exception = AuthorizationRequestException.emptyVerifierList
         case "InvalidVerifierRedirectUri":
             exception = AuthorizationRequestException.invalidVerifierRedirectUri
         case "InvalidLimitDisclosure":
@@ -55,9 +53,9 @@ class Logger {
         case "InvalidClientIdScheme":
             exception = JwtVerificationException.invalidClientIdScheme(message: message ?? "")
         case "UrlCreationFailed":
-            exception = JwtVerificationException.urlCreationFailed(message: message ?? "")
+            exception = NetworkRequestException.urlCreationFailed(message: message ?? "")
         case "PublicKeyNotFound":
-            exception = JwtVerificationException.publicKeyNotFound
+            exception = JwtVerificationException.publicKeyNotFound(message: message)
         case "PublicKeyExtractionFailed":
             exception = JwtVerificationException.publicKeyExtractionFailed
         case "KidExtractionFailed":
@@ -68,6 +66,16 @@ class Logger {
             exception = JwtVerificationException.proofVerificationFailed(message: message ?? "")
         case "UnsupportedHttpMethod" :
             exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
+        case "InvalidData":
+            exception = AuthorizationRequestException.invalidData(message: message ?? "")
+        case "InvalidResponseMode":
+            exception = AuthorizationRequestException.invalidResponseMode(message: message ?? "")
+        case "UnsupportedDidUrl":
+            exception = DidResolverExceptions.unsupportedDidUrl(message: message)
+        case "DidResultionFailed":
+            exception = DidResolverExceptions.didResolutionFailed(message: message)
+        case "PublicKeyResolutionFailed":
+            exception = JwtVerificationException.publicKeyResolutionFailed(message: message ?? "Error occurred while resolve public key")
         default:
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }

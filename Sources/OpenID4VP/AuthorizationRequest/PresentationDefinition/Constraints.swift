@@ -1,6 +1,6 @@
 import Foundation
 
-struct Constraints: Codable {
+struct Constraints: Codable, Equatable {
     let fields: [Fields]?
     let limitDisclosure: LimitDisclosure?
     static let className = String(describing: Constraints.self)
@@ -49,22 +49,7 @@ struct Constraints: Codable {
         }
     }
     
-    private static func validateField<T: Decodable>(
-        container: KeyedDecodingContainer<CodingKeys>,
-        key: CodingKeys,
-        fieldPath: [String]
-    ) throws -> T? {
-        if container.contains(key) {
-            let rawValue = try container.decodeIfPresent(T?.self, forKey: key)
-            if rawValue == nil {
-                throw Logger.handleException(
-                    exceptionType: "InvalidInput",
-                    fieldPath: fieldPath,
-                    className: Constraints.className
-                )
-            }
-            return rawValue!
-        }
-        return nil
+    static func == (lhs: Constraints, rhs: Constraints) -> Bool {
+        return lhs.fields == rhs.fields && lhs.limitDisclosure == rhs.limitDisclosure
     }
 }

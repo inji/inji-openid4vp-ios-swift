@@ -1,12 +1,12 @@
 import Foundation
 
-public struct PresentationDefinition: Codable {
+public struct PresentationDefinition: Codable, Equatable {
     let id: String
     let name: String?
     let purpose: String?
     let input_descriptors: [InputDescriptor]
     let format: Format?
-    static let className = String(describing: PresentationDefinitionValidator.self)
+    static let className = String(describing: PresentationDefinition.self)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -86,5 +86,11 @@ public struct PresentationDefinition: Codable {
         for descriptor in input_descriptors {
             try descriptor.validate()
         }
+    }
+    
+    public static func == (lhs: PresentationDefinition, rhs: PresentationDefinition) -> Bool {
+        return lhs.id == rhs.id && lhs.name == rhs.name &&
+        lhs.purpose == rhs.purpose && lhs.input_descriptors == rhs.input_descriptors &&
+        lhs.format == rhs.format
     }
 }

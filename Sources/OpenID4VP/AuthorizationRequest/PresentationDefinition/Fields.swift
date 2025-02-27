@@ -1,13 +1,13 @@
 import Foundation
 
-struct Fields: Codable {
+struct Fields: Codable, Equatable {
     let path: [String]
     let id: String?
     let name: String?
     let purpose: String?
     let filter: Filter?
     let optional: Bool?
-    static let className = String(describing: PresentationDefinitionValidator.self)
+    static let className = String(describing: PresentationDefinition.self)
     
     enum CodingKeys: String, CodingKey {
         case path
@@ -100,22 +100,9 @@ struct Fields: Codable {
         }
     }
     
-    private static func validateField<T: Decodable>(
-            container: KeyedDecodingContainer<CodingKeys>,
-            key: CodingKeys,
-            fieldPath: [String]
-        ) throws -> T? {
-            if container.contains(key) {
-                let rawValue = try container.decodeIfPresent(T?.self, forKey: key)
-                if rawValue == nil {
-                    throw Logger.handleException(
-                        exceptionType: "InvalidInput",
-                        fieldPath: fieldPath,
-                        className: Fields.className
-                    )
-                }
-                return rawValue!
-            }
-            return nil
-        }
+    static func == (lhs: Fields, rhs: Fields) -> Bool {
+        return lhs.path == rhs.path && lhs.id == rhs.id &&
+        lhs.name == rhs.name && lhs.purpose == rhs.purpose &&
+        lhs.filter == rhs.filter && lhs.optional == rhs.optional
+    }
 }

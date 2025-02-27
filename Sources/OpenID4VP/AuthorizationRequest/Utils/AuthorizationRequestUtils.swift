@@ -1,36 +1,14 @@
 import Foundation
 import CryptoKit
 
-func isJWT(_ authorizationRequest: String) -> Bool {
-    return authorizationRequest.split(separator: ".").count == 3
-}
-
-func determineHttpMethod(method: String) throws -> HTTP_METHOD {
-    if method.contains("get") {
-        return HTTP_METHOD.GET
-    } else if method.contains("post") {
-        return HTTP_METHOD.POST
-    } else {
-        throw Logger.handleException(exceptionType: "UnsupportedHttpMethod", message: method, className: AuthorizationRequest.className)
-    }
-}
-
-func extractQueryParams(from queryItems: [URLQueryItem]) throws -> [String: String] {
-    var extractedValues: [String: String] = [:]
-    
-    for queryItem in queryItems {
-        extractedValues[queryItem.name] = queryItem.value
-    }
-    return extractedValues
-}
-
-func parseAndValidatePresentationDefinitionInAuthorizationRequest(
-    params: [String: Any],
+func parseAndValidatePresentationDefinition(
+    authorizationRequest: [String: Any],
     networkManager: NetworkManaging
 ) async throws -> [String: Any] {
     
-    let hasPresentationDefinition = params.keys.contains("presentation_definition")
-    let hasPresentationDefinitionUri = params.keys.contains("presentation_definition_uri")
+    let hasPresentationDefinition = authorizationRequest.keys.contains("presentation_definition")
+    let hasPresentationDefinitionUri = authorizationRequest.keys.contains("presentation_definition_uri")
+    var finalPresentationDefinition: PresentationDefinition
     
     guard hasPresentationDefinition != hasPresentationDefinitionUri else {
         throw Logger.handleException(
@@ -40,23 +18,50 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
         )
     }
     
-    var presentationDefinitionString: String
     
-    if hasPresentationDefinition, let value = params["presentation_definition"] {
-        guard let valueStr = getStringValue(value), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
+    if hasPresentationDefinition, let value = authorizationRequest["presentation_definition"] {
+        if let presentationDefinitionString = value as? String {
+            //Presentation Definition is of type String when auth request obtained by value
+            guard let valueStr = getStringValue(presentationDefinitionString), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
+                throw Logger.handleException(
+                    exceptionType: "InvalidInput",
+                    fieldPath: ["presentation_definition"],
+                    className: AuthorizationRequest.className
+                )
+            }
+
+            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition.rawValue], className: PresentationDefinition.className)
+        } else if let presentationDefinitionJson = value as? [String: Any] {
+            //Presentation Definition is of type Dictionary when auth request obtained by reference
+            do {
+                finalPresentationDefinition = try convertToInstance(presentationDefinitionJson, as: PresentationDefinition.self)
+            } catch {
+                throw Logger.handleException(
+                    exceptionType: "InvalidData",
+                    message: "presentation_defintion data is not valid",
+                    className: AuthorizationRequest.className
+                )
+            }
+        } else {
             throw Logger.handleException(
-                exceptionType: "InvalidInput",
-                fieldPath: ["presentation_definition"],
+                exceptionType: "InvalidData",
+                message: "presentation_defintion data is not valid",
                 className: AuthorizationRequest.className
             )
         }
-        presentationDefinitionString = valueStr
-        
-    } else if hasPresentationDefinitionUri, let value = params["presentation_definition_uri"] {
-        guard let valueStr = getStringValue(value), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
+    } else if hasPresentationDefinitionUri, let presentationDefintionUri = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+        guard let valueStr = getStringValue(presentationDefintionUri), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
             throw Logger.handleException(
                 exceptionType: "InvalidInput",
-                fieldPath: ["presentation_definition_uri"],
+                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue],
+                className: AuthorizationRequest.className
+            )
+        }
+        guard isValidUri(presentationDefintionUri as! String)
+        else {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "presentation_defintion_uri data is not valid",
                 className: AuthorizationRequest.className
             )
         }
@@ -69,9 +74,18 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
             )
         }
         
-        presentationDefinitionString = try await networkManager.sendHTTPRequest(
+        let response = try await networkManager.sendHTTPRequest(
             url: url, method: .GET, bodyParams: nil, headers: nil
-        ) ?? ""
+        )
+        guard let data = response.responseBody.data(using: .utf8) else {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "presentation_defintion_uri data is not valid",
+                className: AuthorizationRequest.className
+            )
+        }
+        
+        finalPresentationDefinition = try data.toInstance(as: PresentationDefinition.self)
         
     } else {
         throw Logger.handleException(
@@ -81,24 +95,33 @@ func parseAndValidatePresentationDefinitionInAuthorizationRequest(
         )
     }
     
-    let presentationDefinition = try PresentationDefinitionValidator.validate(presentatioDefinition: presentationDefinitionString)
-    
-    var mutableParams = params
-    mutableParams["presentation_definition"] = presentationDefinition
+    var mutableParams = authorizationRequest
+    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition.rawValue] = finalPresentationDefinition
     
     return mutableParams
 }
 
-func validateKey(
-    _ key: String,
-    values: [String: Any],
-    setResponseUri: (String) -> Void
+func parseAndValidateClientMetadata(authorizationRequest: [String: Any]) throws -> [String: Any] {
+    var mutableParams = authorizationRequest
+    if let clientMetadataObject = authorizationRequest["client_metadata"] as? NSDictionary{
+        let data = try JSONSerialization.data(withJSONObject: clientMetadataObject, options: [])
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: data)
+        mutableParams["client_metadata"] = clientMetadata
+    } else if let clientMetaString = authorizationRequest["client_metadata"] as? String {
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetaString)
+        mutableParams["client_metadata"] = clientMetadata
+    } 
+    return mutableParams
+}
+
+func validateAttribute(
+    _ attribute: String,
+    values: [String: Any]
 ) throws {
-    
-    guard let value = values[key] else {
+    guard let value = values[attribute] else {
         throw Logger.handleException(
             exceptionType: "MissingInput",
-            fieldPath: [key],
+            fieldPath: [attribute],
             className: AuthorizationRequest.className
         )
     }
@@ -109,109 +132,19 @@ func validateKey(
             stringValue.lowercased() == "null" {
             throw Logger.handleException(
                 exceptionType: "InvalidInput",
-                fieldPath: [key],
+                fieldPath: [attribute],
                 className: AuthorizationRequest.className
             )
         }
     }
-    
-    if key == "response_uri", let responseUri = value as? String {
-        setResponseUri(responseUri)
-    }
 }
 
-func commonRequiredKeys(params: [String: Any]) -> [String] {
-    var keys = [
-        "presentation_definition",
-        "client_id",
-        "client_id_scheme",
-        "response_type",
-        "nonce",
-        "state"
-    ]
-    
-    if params["client_metadata"] != nil {
-        keys.append("client_metadata")
-    }
-    return keys
-}
-
-func validateUriCombinations(
-    redirectUri: Any?,
-    responseUri: Any?,
-    responseMode: Any?
-) throws {
-    let allNil = redirectUri == nil && responseUri == nil && responseMode == nil
-    let allPresent = redirectUri != nil && responseUri != nil && responseMode != nil
-    
-    if allNil {
-        throw Logger.handleException(
-            exceptionType: "MissingInput",
-            fieldPath: ["response_uri", "response_mode", "redirect_uri"],
-            className: AuthorizationRequest.className
-        )
-    }
-    if allPresent {
-        throw Logger.handleException(
-            exceptionType: "InvalidInput",
-            fieldPath: ["response_uri", "response_mode", "redirect_uri"],
-            className: AuthorizationRequest.className
-        )
-    }
-}
-
-func updateRequiredKeys(
-    _ requiredKeys: inout [String],
-    redirectUri: Any?,
-    responseUri: Any?,
-    responseMode: Any?
-) {
-    if redirectUri != nil, responseUri == nil, responseMode == nil {
-        requiredKeys.append("redirect_uri")
-    }
-    if responseUri != nil, responseMode != nil, redirectUri == nil {
-        requiredKeys.append(contentsOf: ["response_uri", "response_mode"])
-    }
-}
-
-func validateVerifier(verifierList: [Verifier], params: [String: Any],shouldValidateClient: Bool) throws {
-    
-    let clientIdScheme = getStringValue(params["client_id_scheme"] ?? "")
-    let clientId = getStringValue(params["client_id"] ?? "")
-    
-    if clientIdScheme == ClientIdScheme.preRegistered.rawValue {
-        
-        if shouldValidateClient {
-            guard !verifierList.isEmpty else {
-                throw Logger.handleException(exceptionType: "EmptyVerifierList", className: AuthorizationRequest.className)
-            }
-            
-            guard verifierList.contains(where: { $0.clientId == clientId && $0.responseUris.contains(getStringValue(params["response_uri"])!) }) else {
-                throw Logger.handleException(exceptionType: "InvalidVerifierClientID", className: AuthorizationRequest.className)
-            }
-        }
-    }
-    
-    if clientIdScheme == ClientIdScheme.redirectUri.rawValue {
-        
-        guard params["response_uri"] == nil, params["response_mode"] == nil else {
-            throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Response Uri and Response mode should not be present, when client id scheme is Redirect Uri", className: AuthorizationRequest.className)
-        }
-        
-        if params["redirect_uri"] != nil {
-            guard getStringValue(params["redirect_uri"] ?? "") == clientId else {
-                throw Logger.handleException(exceptionType: "InvalidVerifierRedirectUri", className: AuthorizationRequest.className)
-            }
-        }
-    }
-}
-
-func validateMatchOfAuthRequestObjectAndParams(params: [String: String], requestUriParams: [String: String]) throws {
-    guard params["client_id"] == requestUriParams["client_id"] else {
+func validateAuthorizationRequestObjectAndParameters(params: [String: String], requestUriParams: [String: Any]) throws {
+    guard params["client_id"] == requestUriParams["client_id"] as? String else {
         throw Logger.handleException(exceptionType: "MismatchingClientIDInRequest", className: AuthorizationRequest.className)
     }
     
-    guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] else {
+    guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] as? String else {
         throw Logger.handleException(exceptionType: "MismatchingClientIdSchemeInRequest", className: AuthorizationRequest.className)
     }
 }
@@ -222,16 +155,6 @@ func urlEncodedRequest(_ decodedRequest: String) -> String? {
 
 func getQueryItems(_ encodedUrl: URL) -> [URLQueryItem]? {
     return URLComponents(url: encodedUrl, resolvingAgainstBaseURL: false)?.queryItems
-}
-
-func parseAndValidateClientMetadataInAuthorizationRequest(_ params: [String: Any]) throws -> [String: Any] {
-    var mutableParams = params
-    
-    if let clientMetaString = params["client_metadata"] as? String {
-        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetaString)
-        mutableParams["client_metadata"] = clientMetadata
-    }
-    return mutableParams
 }
 
 extension Dictionary where Key == String, Value == String {
@@ -271,4 +194,38 @@ extension KeyedDecodingContainer {
         }
         return nil
     }
+}
+
+
+func getAuthorizationRequestHandler(trustedVerifiers : [Verifier], authorizationRequestParameters: [String:Any], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
+    let clientIdScheme = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue]) ?? ClientIdScheme.preRegistered.rawValue
+    
+    switch clientIdScheme {
+    case ClientIdScheme.preRegistered.rawValue:
+        return PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, shouldValidateClient: shouldValidateClient, setResponseUri: setResponseUri)
+    case ClientIdScheme.did.rawValue:
+        return DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+    case ClientIdScheme.redirectUri.rawValue:
+        return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+    default:
+        throw Logger.handleException(exceptionType: "InvalidClientIdScheme",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
+    }
+}
+
+func extractQueryParameters(_ input: String) throws -> [String: String] {
+    guard input.firstIndex(of: "?") != nil else {
+        throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
+    }
+    let urlComponents = URLComponents(string: input)
+    var decodedParams = [String: String]()
+    
+    if let queryItems = urlComponents?.queryItems {
+        for item in queryItems {
+            if let decodedValue = item.value?.removingPercentEncoding {
+                decodedParams[item.name] = decodedValue
+            }
+        }
+    }
+    
+    return decodedParams
 }
