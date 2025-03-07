@@ -76,6 +76,20 @@ class Logger {
             exception = DidResolverExceptions.didResolutionFailed(message: message)
         case "PublicKeyResolutionFailed":
             exception = JwtVerificationException.publicKeyResolutionFailed(message: message ?? "Error occurred while resolve public key")
+        case "CredentialsMapIsEmpty":
+            exception = AuthorizationResponseException.credentialsMapIsEmpty
+        case "CredentialsMapValueIsEmpty":
+            exception = AuthorizationResponseException.credentialsMapValueIsEmpty
+        case "UnsupportedEncryptionAlgorithm":
+            exception = JWEException.unsupportedEncryptionAlgorithm
+        case "UnsupportedKeyAgreementAlgorithm":
+            exception = JWEException.unsupportedKeyAgreementAlgorithm
+        case "PublicKeyConversionFailed":
+            exception = JWEException.publicKeyConversionFailed
+        case "PayloadConversionFailed":
+            exception = JWEException.payloadConversionFailed
+        case "InvalidEncryptionKeySize":
+            exception = JWEException.invalidEncryptionKeySize
         default:
             exception = AuthorizationRequestException.unexpectedError(message: "An unexpected exception occurred: exception type: \(exceptionType)")
         }

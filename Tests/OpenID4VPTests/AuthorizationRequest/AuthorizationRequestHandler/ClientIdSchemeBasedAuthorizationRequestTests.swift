@@ -60,7 +60,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         do{
             try await mockAuthHandler.fetchAuthorizationRequest()
             
-            assertJSONStringEqual(expected: "{\"client_id\":\"https:\\/\\/mock-verifier.com\",\"response_type\":\"vp_token\",\"presentation_definition\":{\"input_descriptors\":[{\"id\":\"input_1\",\"name\":\"Verifiable Credential\",\"purpose\":\"To verify identity using Linked Data Proofs\",\"constraints\":{\"fields\":[{\"filter\":{\"type\":\"string\",\"pattern\":\"@gmail.com\"},\"path\":[\"$.credentialSubject.email\"]}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}}}],\"id\":\"vp_presentation_definition\"},\"response_mode\":\"direct_post\",\"client_metadata\":{\"client_name\":\"Requester name\",\"vp_formats\":{\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]},\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]}},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\"},\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"client_id_scheme\":\"redirect_uri\"}", actual: mockAuthHandler.requestUriResponse!.body)
+            assertJSONStringEqual(expected: "{\"client_metadata\":{\"client_name\":\"Requester name\",\"jwks\":{\"keys\":[{\"use\":\"enc\",\"kty\":\"OKP\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"crv\":\"X25519\",\"alg\":\"ECDH-ES\",\"kid\":\"ed-key1\"}]},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]},\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]}}},\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_type\":\"vp_token\",\"response_mode\":\"direct_post\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id_scheme\":\"redirect_uri\",\"client_id\":\"https:\\/\\/mock-verifier.com\",\"presentation_definition\":{\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"},\"path\":[\"$.credentialSubject.email\"]}]},\"purpose\":\"To verify identity using Linked Data Proofs\",\"name\":\"Verifiable Credential\",\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\"}],\"id\":\"vp_presentation_definition\"}}", actual: mockAuthHandler.requestUriResponse!.body)        
             XCTAssertTrue(mockAuthHandler.wasMethodCalled)
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
@@ -88,6 +88,16 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                     "client_name": "Requester name",
                     "authorization_encrypted_response_enc": "A256GCM",
                     "authorization_encrypted_response_alg": "ECDH-ES",
+                    "jwks": [
+                        "keys": [[
+                            "kty": "OKP",
+                            "crv": "X25519",
+                            "use": "enc",
+                            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                            "alg": "ECDH-ES",
+                            "kid": "ed-key1"
+                        ]]
+                    ],
                     "vp_formats": [
                         "mso_mdoc": [
                             "alg": ["ES256", "EdDSA"]

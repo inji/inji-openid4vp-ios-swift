@@ -1,6 +1,11 @@
 import OpenID4VP
 import Foundation
 
+public struct MockEncodable: Codable, Equatable {
+    let name: String
+    let age: Int
+}
+
 private let testVerifierList:  [[String: Any]]  = [
     [
         "client_id": "https://mock-verifier.com",
@@ -17,6 +22,8 @@ private let testVerifierList:  [[String: Any]]  = [
 ]
 
 let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
+
+let verifiableCredentialsList = ["vc":["vc1"]]
 
 let didDocumentUrl = URL(string: "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json")!
 let httpUrlResponseForJWT: HTTPURLResponse = HTTPURLResponse(url: didDocumentUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
@@ -155,6 +162,16 @@ let clientMetadata: [String: Any] = [
     "logo_uri": "https://mock-verifier.com/logo",
     "authorization_encrypted_response_alg": "ECDH-ES",
     "authorization_encrypted_response_enc": "A256GCM",
+    "jwks": [
+        "keys": [[
+            "kty": "OKP",
+            "crv": "X25519",
+            "use": "enc",
+            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+            "alg": "ECDH-ES",
+            "kid": "ed-key1"
+        ]]
+    ],
     "vp_formats": [
         "mso_mdoc": [
             "alg": [
@@ -171,6 +188,13 @@ let clientMetadata: [String: Any] = [
         ]
     ]
 ]
+
+var vpResponseMetadata = VPResponseMetadata(
+    jws: "validJWS",
+    signatureAlgorithm: "RSA",
+    publicKey: "validPublicKey",
+    domain: "validDomain"
+)
 
 //  client_id_scheme = redirect_uri
 let authorizationRequestParamsWithRedirectUri: [String: Any] = [
@@ -231,3 +255,8 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
 ])
 
 let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
+
+let testValidUrlEncodedVpRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
+    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },clientIdAndSchemeOfPreRegistered),clientIdScheme: .preRegistered
+)
+

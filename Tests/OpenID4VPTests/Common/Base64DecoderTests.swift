@@ -1,6 +1,12 @@
 import XCTest
 @testable import OpenID4VP
 
+struct MockFailingEncodable: Encodable {
+    func encode(to encoder: Encoder) throws {
+        throw NSError(domain: "EncodingError", code: 0, userInfo: nil)
+    }
+}
+
 class
 rTests: XCTestCase {
     //Decode base64 string to JSON
@@ -60,5 +66,45 @@ rTests: XCTestCase {
         let output = Base64Decoder.makeBase64Standard(input)
         
         XCTAssertEqual(output, expected, "URL-safe characters should be converted and padding should be added")
+    }
+    
+    func testEncodeSuccess() throws {
+        
+        let testObject = MockEncodable(name: "John Doe", age: 30)
+        
+        let encodedString = try encode(testObject, fieldName: "testObject")
+        
+        let jsonData = Data(encodedString.utf8)
+        let decodedObject = try JSONDecoder().decode(MockEncodable.self, from: jsonData)
+        
+        XCTAssertEqual(decodedObject, testObject)
+    }
+
+    
+    func testEncodeFailure() {
+        
+        let failingObject = MockFailingEncodable()
+        
+        XCTAssertThrowsError(try encode(failingObject, fieldName: "failingObject")) {error in
+            XCTAssertEqual(error.localizedDescription, "Json Encoding failed for failingObject due to this error: The operation couldn’t be completed. (EncodingError error 0.).")
+        }
+    }
+    
+    func testEncodeQueryValueWithSpecialCharacters() {
+        let originalValue = "hello world!+test"
+        let encodedValue = encodeQueryValue(originalValue)
+        XCTAssertEqual(encodedValue, "hello%20world!%2Btest")
+    }
+    
+    func testEncodeQueryValueAlreadyEncoded() {
+        let originalValue = "hello%20world"
+        let encodedValue = encodeQueryValue(originalValue)
+        XCTAssertEqual(encodedValue, "hello%20world")
+    }
+    
+    func testEncodeQueryValuePlusSymbolRemoved() {
+        let originalValue = "a+b=c"
+        let encodedValue = encodeQueryValue(originalValue)
+        XCTAssertEqual(encodedValue, "a%2Bb=c")
     }
 }

@@ -10,6 +10,10 @@ enum AuthorizationResponseException: Error, LocalizedError {
         switch self {
         case .jsonEncodingException(let fieldName):
             return "Error occurred while serializing \(fieldName)"
+        case .credentialsMapIsEmpty:
+            return "Verifiable credentials map is empty."
+        case .credentialsMapValueIsEmpty:
+            return "Verifiable credentials map value is empty."
         default:
             return "An error occurred."
         }

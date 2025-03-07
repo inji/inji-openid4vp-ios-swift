@@ -33,15 +33,10 @@ struct Filter: Codable, Equatable {
     }
     
     func validate() throws {
-        guard isNeitherNullNorEmpty(field: type) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["filter","type"], className: Filter.className)
-        }
-        
-        guard isNeitherNullNorEmpty(field: pattern) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["filter","pattern"], className: Filter.className)
-        }
+        try validateField(type, ["filter","type"])
+        try validateField(pattern, ["filter","pattern"])
     }
-    
+    // TODO check with K
     static func == (lhs: Filter, rhs: Filter) -> Bool {
         return lhs.type == rhs.type && lhs.pattern == rhs.pattern
     }

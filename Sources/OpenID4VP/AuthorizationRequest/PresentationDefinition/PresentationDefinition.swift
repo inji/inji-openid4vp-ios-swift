@@ -69,17 +69,8 @@ public struct PresentationDefinition: Codable, Equatable {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: PresentationDefinition.className)
         }
         
-       if let name = name {
-           guard isNeitherNullNorEmpty(field: name) else {
-               throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","name"], className: PresentationDefinition.className)
-           }
-        }
-        
-        if let purpose = purpose {
-            guard isNeitherNullNorEmpty(field: purpose) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","purpose"], className: PresentationDefinition.className)
-            }
-        }
+        try validateField(name, ["presentation_definition","name"])
+        try validateField(purpose, ["presentation_definition","purpose"])
         
         try format?.validate()
         
@@ -87,7 +78,8 @@ public struct PresentationDefinition: Codable, Equatable {
             try descriptor.validate()
         }
     }
-    
+   
+    // TODO check with kriuthika
     public static func == (lhs: PresentationDefinition, rhs: PresentationDefinition) -> Bool {
         return lhs.id == rhs.id && lhs.name == rhs.name &&
         lhs.purpose == rhs.purpose && lhs.input_descriptors == rhs.input_descriptors &&

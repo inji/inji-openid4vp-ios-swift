@@ -37,7 +37,7 @@ public class OpenID4VP {
 
     public func shareVerifiablePresentation(vpResponseMetadata: VPResponseMetadata) async throws -> String? {
         do {
-            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata,nonce: authorizationRequest!.nonce, state: authorizationRequest?.state, responseUri: authorizationRequest!.responseUri!,presentationDefinitionId: authorizationRequest!.clientId, networkManager: networkManager)
+            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata, authorizationRequest: authorizationRequest!, responseUri: responseUri!, networkManager: networkManager)
         } catch(let exception) {
             await sendErrorToVerifier(error: exception)
             throw exception
@@ -45,18 +45,15 @@ public class OpenID4VP {
     }
 
     public func sendErrorToVerifier(error: Error) async {
-        guard let url = URL(string: responseUri ?? "") else { return }
         let logTag = Logger.getLogTag(String(describing: OpenID4VP.self))
-
-        let errorInfo = """
-        {
-            "error": \(error),
-            "traceabilityId": \(traceabilityId)
-        }
-        """
-
+        
+        let errorInfo =
+        [
+            "error": "\(error)",
+            "traceabilityId": "\(traceabilityId)"
+        ]
         do {
-            _ =  try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.POST, bodyParams: errorInfo, headers: ["Content_Type" : "application/x-www-form-urlencoded"])
+            _ =  try await networkManager.sendHTTPRequest(url: responseUri ?? "", method: HTTP_METHOD.POST, bodyParams: errorInfo, headers: ["Content_Type" : ContentTypes.applicationFormUrlEncoded])
         } catch {
             Logger.error(logTag, NetworkRequestException.invalidResponse(message: "Unexpected error occurred while sending the error to verifier: \(error)"))
         }

@@ -64,23 +64,15 @@ struct InputDescriptor: Codable, Equatable {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
         }
         
-        if let name = name {
-            guard isNeitherNullNorEmpty(field: name) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","name"], className: InputDescriptor.className)
-            }
-        }
-        
-        if let purpose = purpose {
-            guard isNeitherNullNorEmpty(field: purpose) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","purpose"], className: InputDescriptor.className)
-            }
-        }
+        try validateField(name, ["input_descriptor","name"])
+        try validateField(purpose, ["input_descriptor","purpose"])
     
         try constraints.validate()
         
         try format?.validate()
     }
     
+    // check with kiruthika
     static func == (lhs: InputDescriptor, rhs: InputDescriptor) -> Bool {
         return lhs.id == rhs.id && lhs.name == rhs.name &&
         lhs.purpose == rhs.purpose && lhs.constraints == rhs.constraints &&

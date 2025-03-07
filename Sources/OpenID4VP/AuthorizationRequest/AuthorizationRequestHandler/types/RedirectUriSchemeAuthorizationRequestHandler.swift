@@ -40,7 +40,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         try await super.validateAndParseRequestFields()
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
         switch responseMode {
-        case ResponseMode.directPost.rawValue:
+        case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
             try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri.rawValue, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri.rawValue)
         default:
             throw Logger.handleException(

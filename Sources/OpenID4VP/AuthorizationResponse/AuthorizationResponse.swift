@@ -1,77 +1,51 @@
 import Foundation
+import JSONWebEncryption
 
 struct AuthorizationResponse{
     static var vpTokenForSigning: VpTokenForSigning?
-    static var descriptorMap: [DescriptorMap]?
+    static var verifiableCredentials: [String: [String]]?
     static let className = String(describing: AuthorizationResponse.self)
     
-    static func constructVpForSigning(_ credentialsMap: [String: [String]]) throws -> String {
-        var credentialsArray: [String] = []
-        var descriptorsMap: [DescriptorMap] = []
-        var path: Int = 0
+    static func constructVpForSigning(_ verifiableCredentials: [String: [String]]) throws -> String {
         
-        for (key,values) in credentialsMap {
+        guard !verifiableCredentials.isEmpty else {
+                throw Logger.handleException(exceptionType: "CredentialsMapIsEmpty", fieldPath: ["credentials_map"], className: AuthorizationResponse.className)
+            }
+
+            for (key, values) in verifiableCredentials {
+                guard !values.isEmpty else {
+                    throw Logger.handleException(exceptionType: "CredentialsMapValueIsEmpty", fieldPath: ["credentials_map", key], className: AuthorizationResponse.className)
+                }
+            }
+        
+        self.verifiableCredentials = verifiableCredentials
+        
+        var credentialsArray: [String] = []
+        for (_, values) in verifiableCredentials {
             for vc in values {
                 credentialsArray.append(vc)
-                descriptorsMap.append(DescriptorMap(id: key, format: .ldp_vc, path: "$.verifiableCredential[\(path)]"))
-                path += 1
             }
         }
         
-        self.descriptorMap = descriptorsMap
-        self.vpTokenForSigning = VpTokenForSigning(verifiableCredential: credentialsArray, holder: "")
+        self.vpTokenForSigning = VpTokenForSigning(verifiableCredential: credentialsArray,id: UUIDGenerator.generateUUID(), holder: "")
         
-        do {
-           return try encodeToJsonString(self.vpTokenForSigning)!
-        } catch let error{
-            throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["vp_token_for_signing"], className: AuthorizationResponse.className)
-        }
+        return try encode(self.vpTokenForSigning, fieldName: "vp_token_for_signing")
     }
     
-    static func shareVp(vpResponseMetadata: VPResponseMetadata, nonce: String, state: String?, responseUri: String, presentationDefinitionId: String, networkManager: NetworkManaging) async throws -> String? {
+    static func shareVp(vpResponseMetadata: VPResponseMetadata, authorizationRequest: AuthorizationRequest, responseUri: String, networkManager: NetworkManaging) async throws -> String? {
         
         try vpResponseMetadata.validate()
         
-        let proof = Proof.constructProof(from: vpResponseMetadata, challenge: nonce)
+        let proof = Proof.construct(from: vpResponseMetadata, challenge: authorizationRequest.nonce)
         
-        let presentationSubmission = PresentationSubmission(definition_id: presentationDefinitionId, descriptor_map: self.descriptorMap!)
+        let presentationSubmission = PresentationSubmission(definition_id: authorizationRequest.clientId, descriptor_map: createDescriptorMap(verifiableCredentials: verifiableCredentials!))
         
-        let vpToken = VpToken.constructVpToken(signingVPToken: vpTokenForSigning!, proof: proof)
+        let vpToken = VPToken.construct(signingVPToken: vpTokenForSigning!, proof: proof)
         
-        return try await constructHttpRequestBody(vpToken: vpToken, presentationSubmission: presentationSubmission, responseUri: responseUri, state: state, networkManager: networkManager)
-    }
-    
-    private static func constructHttpRequestBody(vpToken: VpToken, presentationSubmission: PresentationSubmission, responseUri: String, state: String?, networkManager: NetworkManaging = NetworkManager.shared) async throws -> String? {
-        let encodedVPTokenData: String, encodedPresentationSubmissionData: String
-        do {
-            encodedVPTokenData = try encodeToJsonString(vpToken)!
-        } catch let error {
-            throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["vp_token"], className: AuthorizationResponse.className)
-        }
-
-        do {
-            encodedPresentationSubmissionData = try encodeToJsonString(presentationSubmission)!
-        } catch let error {
-            throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: error.localizedDescription, fieldPath: ["presentation_submission"], className: AuthorizationResponse.className)
-        }
+        let requestBody = try createAuthorizationResponseBody(vpToken: vpToken, authorizationRequest: authorizationRequest, presentationSubmission: presentationSubmission, state: authorizationRequest.state)
         
-        var bodyComponents = [URLQueryItem]()
-        bodyComponents.append(URLQueryItem(name: "vp_token", value: encodeQueryValue(encodedVPTokenData)))
-        bodyComponents.append(URLQueryItem(name: "presentation_submission", value: encodeQueryValue(encodedPresentationSubmissionData)))
-        if state != nil{
-            bodyComponents.append(URLQueryItem(name: "state", value: encodeQueryValue(state!)))
-        }
-
-        var urlComponents = URLComponents()
-        urlComponents.queryItems = bodyComponents
-
-        let requestBody = urlComponents.query
+        let response = try await networkManager.sendHTTPRequest(url: responseUri, method: HTTP_METHOD.POST, bodyParams: requestBody, headers: ["Content-Type" : ContentTypes.applicationFormUrlEncoded])
         
-        guard let url = URL(string: responseUri) else {
-            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["response_uri"], className: AuthorizationResponse.className)
-        }
-
-        let response = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.POST, bodyParams: requestBody ?? "", headers: ["Content-Type" : "application/x-www-form-urlencoded"])
         return response.responseBody
     }
 

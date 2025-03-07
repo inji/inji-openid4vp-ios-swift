@@ -5,7 +5,8 @@ public struct ClientMetadata: Codable, Equatable {
     let logo_uri:String?
     let authorization_encrypted_response_alg: String?
     let authorization_encrypted_response_enc: String?
-    let vp_formats: [String: [String: [String]]]
+    let vp_formats: VpFormats
+    let jwks: JWKS?
     static let className = String(describing: ClientMetadata.self)
     
     enum CodingKeys: String, CodingKey {
@@ -14,6 +15,7 @@ public struct ClientMetadata: Codable, Equatable {
         case authorization_encrypted_response_alg
         case authorization_encrypted_response_enc
         case vp_formats
+        case jwks
     }
     
     public init(from decoder: any Decoder) throws {
@@ -52,12 +54,20 @@ public struct ClientMetadata: Codable, Equatable {
         )
         
         self .vp_formats = try container.decodeRequired(
-            [String: [String: [String]]].self,
+            VpFormats.self,
             forKey: .vp_formats,
             fieldPath: ["client_metadata", "vp_formats"],
             className: ClientMetadata.className,
             isMandatory: true
         )!
+        
+        self .jwks = try container.decodeRequired(
+            JWKS.self,
+            forKey: .jwks,
+            fieldPath: ["client_metadata", "jwks"],
+            className: ClientMetadata.className,
+            isMandatory: false
+        )
         try validate(self)
     }
     
@@ -121,6 +131,10 @@ public struct ClientMetadata: Codable, Equatable {
                 }
             }
         }
+        
+        if decodedClientMetadata.jwks != nil {
+            try decodedClientMetadata.jwks!.validate()
+        }
     }
     
     public static func == (lhs: ClientMetadata, rhs: ClientMetadata) -> Bool {
@@ -129,3 +143,5 @@ public struct ClientMetadata: Codable, Equatable {
         lhs.vp_formats == rhs.vp_formats
     }
 }
+
+typealias VpFormats = [String: [String: [String]]]
