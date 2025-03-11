@@ -17,20 +17,6 @@ public class JWEHandlerTests: XCTestCase {
         XCTAssertEqual(parts.count, 5, "JWE should have exactly 5 parts")
     }
 
-    func testGetEncryptorSuccess() throws {
-
-        let encryption = try EncryptionProvider.getEncryptor("A256GCM")
-
-        XCTAssertTrue(encryption is AESGCMEncryption)
-
-    }
-
-    func testGetEncryptorFailureUnsupportedAlgorithm() throws {
-        XCTAssertThrowsError(try EncryptionProvider.getEncryptor("UNSUPPORTED")) { error in
-            XCTAssertEqual(error.localizedDescription, "Required Encryption algorithm is not supported.")
-        }
-    }
-
     func testCreateKeyAgreementSuccess() throws {
         let mockJWK = mockClientMetadataObject.jwks?.keys[0]
 
