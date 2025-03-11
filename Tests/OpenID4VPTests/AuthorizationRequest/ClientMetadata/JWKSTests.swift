@@ -1,10 +1,3 @@
-//
-//  JWKTests.swift
-//  
-//
-//  Created by Kiruthika Jeyashankar on 11/03/25.
-//
-
 import XCTest
 @testable import OpenID4VP
 
@@ -14,6 +7,7 @@ final class JWKSTests: XCTestCase {
         
         XCTAssertThrowsError(try jwksWithInvalidJWK.validate()){ error in
             XCTAssertEqual("jwks.keys[0] is invalid", error.localizedDescription)
+            XCTAssertNotNil(error as? AuthorizationRequestException)
         }
         
     }

@@ -12,28 +12,3 @@ func constructBodyParams(vpToken: VPToken, presentationSubmission: PresentationS
     
     return bodyParams
 }
-
-
-func createDescriptorMap(verifiableCredentials: [String: [String]]) -> [DescriptorMap] {
-    var pathIndex = 0
-    var descriptorMap: [DescriptorMap] = []
-    
-    let sortedKeys = verifiableCredentials.keys.sorted()
-    
-    for key in sortedKeys {
-        if let vcs = verifiableCredentials[key] {
-            for _ in vcs {
-                descriptorMap.append(
-                    DescriptorMap(
-                        id: key,
-                        format: .ldp_vp,
-                        path: "$.verifiableCredential[\(pathIndex)]"
-                    )
-                )
-                pathIndex += 1
-            }
-        }
-    }
-    return descriptorMap
-}
-

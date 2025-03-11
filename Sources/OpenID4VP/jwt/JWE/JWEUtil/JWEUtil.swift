@@ -17,7 +17,7 @@ func toData(_ bodyParams: [String: Any]) throws -> Data {
     return try JSONSerialization.data(withJSONObject: processedParams, options: [])
 }
 
-
+//TODO: remove unused function
 func encodeJWEComponents(
         header: [String: Any],
         encryptedKey: String,

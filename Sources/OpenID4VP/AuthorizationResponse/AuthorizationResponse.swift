@@ -32,4 +32,26 @@ struct AuthorizationResponse{
         return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode).sendAuthorizationResponse(vpToken: vpToken, authorizationRequest: authorizationRequest, presentationSubmission: presentationSubmission, state: authorizationRequest.state, url: responseUri, networkManager: networkManager)
     }
 
+    private static func createDescriptorMap(verifiableCredentials: [String: [String]]) -> [DescriptorMap] {
+        var pathIndex = 0
+        var descriptorMap: [DescriptorMap] = []
+        
+        let sortedKeys = verifiableCredentials.keys.sorted()
+        
+        for key in sortedKeys {
+            if let vcs = verifiableCredentials[key] {
+                for _ in vcs {
+                    descriptorMap.append(
+                        DescriptorMap(
+                            id: key,
+                            format: .ldp_vp,
+                            path: "$.verifiableCredential[\(pathIndex)]"
+                        )
+                    )
+                    pathIndex += 1
+                }
+            }
+        }
+        return descriptorMap
+    }
 }

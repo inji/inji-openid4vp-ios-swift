@@ -122,7 +122,7 @@ extension Equatable where Self : Error {
 }
 
 //Assert two dictionaries
-func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, file: StaticString = #file, line: UInt = #line) {
+func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, file: StaticString = #file, line: UInt = #line, strict: Bool = true) {
     guard let actualDict = actual else {
         XCTFail("Actual is nil", file: file, line: line)
         return
@@ -156,7 +156,9 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
         return zip(lhs, rhs).allSatisfy { isEqual($0, $1) }
     }
     
-    XCTAssertEqual(expected.count, actualDict.count, "Dictionary sizes are different", file: file, line: line)
+    if strict {
+        XCTAssertEqual(expected.count, actualDict.count, "Dictionary sizes are different", file: file, line: line)
+    }
     
     for (key, expectedValue) in expected {
         guard let actualValue = actualDict[key] else {
@@ -168,24 +170,33 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
 }
 
-/// Function to compare two JSON strings after normalizing them
-private func compareJsonStrings(_ jsonString1: String, _ jsonString2: String) -> Bool {
-    guard let jsonData1 = jsonString1.data(using: .utf8),
-          let jsonData2 = jsonString2.data(using: .utf8),
-          let jsonObject1 = try? JSONSerialization.jsonObject(with: jsonData1, options: []),
-          let jsonObject2 = try? JSONSerialization.jsonObject(with: jsonData2, options: [])
-    else {
-        return false
+func decodeIfNeeded(_ value: Any) -> Any {
+    guard let stringValue = value as? String else {
+        return value
     }
     
-    return NSDictionary(dictionary: jsonObject1 as! [String: Any])
-        .isEqual(to: jsonObject2 as! [String: Any])
+    let queryDecoded = decodeQueryValue(stringValue)
+    if queryDecoded.hasPrefix("{") || queryDecoded.hasPrefix("[") {
+        if let jsonDecoded = try? decodeJson(queryDecoded) {
+            return jsonDecoded
+        }
+    }
+    
+    return queryDecoded
 }
 
-/// Check if a string is a valid JSON
-private func isValidJson(_ string: String) -> Bool {
-    guard let jsonData = string.data(using: .utf8) else { return false }
-    return (try? JSONSerialization.jsonObject(with: jsonData, options: [])) != nil
+func decodeQueryValue(_ value: String) -> String {
+    return value.removingPercentEncoding ?? value
+}
+
+func decodeJson(_ jsonString: String) throws -> [String: Any] {
+    guard let jsonData = jsonString.data(using: .utf8) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Invalid UTF-8 data"))
+    }
+    guard let jsonObject = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+        throw DecodingError.typeMismatch([String: Any].self, .init(codingPath: [], debugDescription: "Expected a dictionary"))
+    }
+    return jsonObject
 }
 
 func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
