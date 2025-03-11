@@ -1,6 +1,6 @@
 import Foundation
 
-func getPayloadData(_ bodyParams: [String: Any]) throws -> Data {
+func toData(_ bodyParams: [String: Any]) throws -> Data {
     var processedParams: [String: Any] = [:]
 
     for (key, value) in bodyParams {

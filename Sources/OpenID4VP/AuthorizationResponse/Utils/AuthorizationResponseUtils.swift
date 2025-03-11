@@ -21,7 +21,7 @@ func createAuthorizationResponseBody(
     case ResponseMode.directPostJwt.rawValue:
         let clientMetadata = (authorizationRequest.clientMetadata)!
         let verifierPublicKey = try getJwk(clientMetadata.jwks!, clientMetadata.authorization_encrypted_response_alg!)
-        let encryptedBody = try JWEHandler(keyEncryptionAlgorithm: clientMetadata.authorization_encrypted_response_alg!, contentEncryptionAlgorithm: clientMetadata.authorization_encrypted_response_enc!, publicKey: verifierPublicKey).createResponse(bodyParams: bodyParams)
+        let encryptedBody = try JWEHandler(keyEncryptionAlgorithm: clientMetadata.authorization_encrypted_response_alg!, contentEncryptionAlgorithm: clientMetadata.authorization_encrypted_response_enc!, publicKey: verifierPublicKey).createResponse(payload: bodyParams)
         return ["response": encryptedBody]
     default:
         throw Logger.handleException(

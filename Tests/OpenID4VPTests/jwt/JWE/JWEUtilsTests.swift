@@ -15,7 +15,7 @@ final class JWEUtilsTests: XCTestCase {
             "key3": mockEncodable
         ]
         
-        let payloadData = try getPayloadData(bodyParams)
+        let payloadData = try toData(bodyParams)
         
         let decoded = try JSONSerialization.jsonObject(with: payloadData, options: []) as? [String: Any]
         

@@ -13,11 +13,10 @@ public struct JWEHandler {
         self.publicKey = publicKey
     }
 
-    func createResponse(bodyParams: [String:Any]) throws -> String {
-
+    func createResponse(payload: [String:Any]) throws -> String {
         var payloadData: Data
         do {
-            payloadData = try getPayloadData(bodyParams)
+            payloadData = try toData(payload)
         } catch {
             throw Logger.handleException(exceptionType: "PayloadConversionFailed", className: JWEHandler.className)
         }

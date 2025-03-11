@@ -10,7 +10,7 @@ public class JWEHandlerTests: XCTestCase {
         let jweHandler = JWEHandler(keyEncryptionAlgorithm: jweKeyEncryptionAlgorithm, contentEncryptionAlgorithm: jweContentEncryptionAlgorithm, publicKey: verifierPublicKey)
         let bodyParams: [String: Any] = ["key": "value"]
 
-        let response = try jweHandler.createResponse(bodyParams: bodyParams)
+        let response = try jweHandler.createResponse(payload: bodyParams)
 
         XCTAssertNotNil(response)
         let parts = response.split(separator: ".", omittingEmptySubsequences: false)
