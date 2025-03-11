@@ -36,7 +36,7 @@ struct Filter: Codable, Equatable {
         try validateField(type, ["filter","type"])
         try validateField(pattern, ["filter","pattern"])
     }
-    // TODO check with K
+    // TODO remove equals check added for testing purpose
     static func == (lhs: Filter, rhs: Filter) -> Bool {
         return lhs.type == rhs.type && lhs.pattern == rhs.pattern
     }

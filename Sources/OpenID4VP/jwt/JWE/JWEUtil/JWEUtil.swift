@@ -27,11 +27,11 @@ func encodeJWEComponents(
     ) throws -> String {
       
         let headerJson = try JSONSerialization.data(withJSONObject: header)
-        let encodedHeader = base64URLEscaped(headerJson.base64EncodedString())
+        let encodedHeader = headerJson.toBase64UrlEncoded()
         let encodedEncryptedKey = encryptedKey
-        let encodedIV = base64URLEscaped(nonce.base64EncodedString())
-        let encodedCiphertext = base64URLEscaped(ciphertext.base64EncodedString())
-        let encodedAuthTag = base64URLEscaped(tag.base64EncodedString())
+        let encodedIV = nonce.toBase64UrlEncoded()
+        let encodedCiphertext = ciphertext.toBase64UrlEncoded()
+        let encodedAuthTag = tag.toBase64UrlEncoded()
         
         return [
             encodedHeader,

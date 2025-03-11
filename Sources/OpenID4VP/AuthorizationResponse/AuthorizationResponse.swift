@@ -24,18 +24,12 @@ struct AuthorizationResponse{
     static func shareVp(vpResponseMetadata: VPResponseMetadata, authorizationRequest: AuthorizationRequest, responseUri: String, networkManager: NetworkManaging) async throws -> String? {
         
         try vpResponseMetadata.validate()
-        
         let proof = Proof.construct(from: vpResponseMetadata, challenge: authorizationRequest.nonce)
         
         let presentationSubmission = PresentationSubmission(definition_id: authorizationRequest.clientId, descriptor_map: createDescriptorMap(verifiableCredentials: verifiableCredentials!))
-        
         let vpToken = VPToken.construct(signingVPToken: vpTokenForSigning!, proof: proof)
         
-        let requestBody = try createAuthorizationResponseBody(vpToken: vpToken, authorizationRequest: authorizationRequest, presentationSubmission: presentationSubmission, state: authorizationRequest.state)
-        
-        let response = try await networkManager.sendHTTPRequest(url: responseUri, method: HTTP_METHOD.POST, bodyParams: requestBody, headers: ["Content-Type" : ContentTypes.applicationFormUrlEncoded])
-        
-        return response.responseBody
+        return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode).sendAuthorizationResponse(vpToken: vpToken, authorizationRequest: authorizationRequest, presentationSubmission: presentationSubmission, state: authorizationRequest.state, url: responseUri, networkManager: networkManager)
     }
 
 }

@@ -75,7 +75,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
-            XCTAssertEqual("Given response_mode Optional(\"fragment\") is not supported", error.localizedDescription)
+            XCTAssertEqual("Given response_mode - fragment is not supported", error.localizedDescription)
         }
     }
 }

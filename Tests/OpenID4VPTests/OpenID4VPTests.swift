@@ -25,25 +25,6 @@ class OpenID4VPTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockNetworkManager = MockNetworkManager()
-        
-        do {
-            let authorizationRequest = AuthorizationRequest(
-                clientId: "client_id",
-                clientIdScheme: "123",
-                presentationDefinition: mockPresentationDefinitionObject,
-                responseType: "responseType",
-                responseMode: "direct_post.jwt",
-                nonce: "nonce",
-                state: "state",
-                redirectUri: "1234",
-                responseUri: "https://mock-verifier.com",
-                clientMetadata: mockClientMetadataObject
-            )
-        } catch {
-            XCTFail("Failed to initialize test data: \(error)")
-        }
-
-
         openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager)
         openID4VP.setResponseUri("https://mock-verifier.com")
         openID4VP.authorizationRequest = authorizationRequest

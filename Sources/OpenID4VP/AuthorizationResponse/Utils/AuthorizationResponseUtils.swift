@@ -1,44 +1,6 @@
 import Foundation
 
-func createAuthorizationResponseBody(
-    vpToken: VPToken,
-    authorizationRequest: AuthorizationRequest,
-    presentationSubmission: PresentationSubmission,
-    state: String?
-) throws -> [String: String] {
-    
-    let bodyParams = try constructBodyParams(
-           vpToken: vpToken,
-           presentationSubmission: presentationSubmission,
-           state: state,
-           responseMode: authorizationRequest.responseMode!
-       )
-    
-    switch authorizationRequest.responseMode {
-    case ResponseMode.directPost.rawValue:
-        return bodyParams as! [String: String]
-        
-    case ResponseMode.directPostJwt.rawValue:
-        let clientMetadata = (authorizationRequest.clientMetadata)!
-        let verifierPublicKey = try getJwk(clientMetadata.jwks!, clientMetadata.authorization_encrypted_response_alg!)
-        let encryptedBody = try JWEHandler(keyEncryptionAlgorithm: clientMetadata.authorization_encrypted_response_alg!, contentEncryptionAlgorithm: clientMetadata.authorization_encrypted_response_enc!, publicKey: verifierPublicKey).createResponse(payload: bodyParams)
-        return ["response": encryptedBody]
-    default:
-        throw Logger.handleException(
-            exceptionType: "InvalidResponseMode",
-            message: "Given response_mode is not supported",
-            className: AuthorizationResponse.className
-        )
-    }
-}
-
-private func getJwk(_ jwks: JWKS, _ alg: String) throws -> JWK {
-    return jwks.keys.first(where: { $0.alg == alg })!
-}
-
-func constructBodyParams(vpToken: VPToken, presentationSubmission: PresentationSubmission, state: String?, responseMode: String) throws -> [String: Any] {
-    let shouldEncode = (responseMode == ResponseMode.directPost.rawValue)
-
+func constructBodyParams(vpToken: VPToken, presentationSubmission: PresentationSubmission, state: String?, shouldEncode: Bool = true) throws -> [String: Any] {
     var bodyParams: [String: Any] = [
         "vp_token": shouldEncode ? encodeQueryValue(try encode(vpToken, fieldName: "vp_token")) : vpToken,
         "presentation_submission": shouldEncode ? encodeQueryValue(try encode(presentationSubmission, fieldName: "presentation_submission")) : presentationSubmission

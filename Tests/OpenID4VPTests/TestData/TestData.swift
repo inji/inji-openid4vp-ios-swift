@@ -159,7 +159,7 @@ let presentationDefinition: [String: Any] = [
 
 let mockPresentationDefinitionObject = getMockPresentationDefinition()
 
-let clientMetadata: [String: Any] = [
+public let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
     "authorization_encrypted_response_alg": "ECDH-ES",
@@ -264,3 +264,6 @@ let mockUrlEncodedVpRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequ
     requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },clientIdAndSchemeOfPreRegistered),clientIdScheme: .preRegistered
 )
 
+let mockAuthorizationRequestObjectWithDirectPostResponseMode = getMockAuthorizationRequest()
+
+let mockAuthorizationRequestObjectWithDirectPostJwtResponseMode = getMockAuthorizationRequest(responseMode: .directPostJwt)

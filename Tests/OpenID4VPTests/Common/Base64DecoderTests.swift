@@ -7,8 +7,7 @@ struct MockFailingEncodable: Encodable {
     }
 }
 
-class
-rTests: XCTestCase {
+class DecodrTests: XCTestCase {
     //Decode base64 string to JSON
     
     func testDecodeBase64ToJSONSuccessCase() throws {
@@ -56,6 +55,14 @@ rTests: XCTestCase {
             XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
         }
     }
+    
+    func testDecodeBase64ToJSONWithInvalidJSONShouldThrowDecodingFailedError() {
+            let invalidJsonBase64 = Data("[1,2,3]".utf8).base64EncodedString()
+
+            XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(invalidJsonBase64)) { error in
+                XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
+            }
+        }
     
     //Test convert base64 to bas64 url safe
     

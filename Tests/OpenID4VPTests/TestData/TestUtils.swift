@@ -122,7 +122,11 @@ extension Equatable where Self : Error {
 }
 
 //Assert two dictionaries
-func assertDictionariesEqual(expected: [String: Any], actual: [String: Any], file: StaticString = #file, line: UInt = #line) {
+func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, file: StaticString = #file, line: UInt = #line) {
+    guard let actualDict = actual else {
+        XCTFail("Actual is nil", file: file, line: line)
+        return
+    }
     
     func isEqual(_ lhs: Any, _ rhs: Any) -> Bool {
         switch (lhs, rhs) {
@@ -134,6 +138,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any], fil
         case let (lhs as [Any], rhs as [Any]): return arraysEqual(lhs, rhs)
         case let (lhs as ClientMetadata, rhs as ClientMetadata): return lhs == rhs
         case let (lhs as PresentationDefinition, rhs as PresentationDefinition): return lhs == rhs
+        case let (lhs as ContentTypes, rhs as ContentTypes): return lhs.rawValue == rhs.rawValue
         default: return false
         }
     }
@@ -151,10 +156,10 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any], fil
         return zip(lhs, rhs).allSatisfy { isEqual($0, $1) }
     }
     
-    XCTAssertEqual(expected.count, actual.count, "Dictionary sizes are different", file: file, line: line)
+    XCTAssertEqual(expected.count, actualDict.count, "Dictionary sizes are different", file: file, line: line)
     
     for (key, expectedValue) in expected {
-        guard let actualValue = actual[key] else {
+        guard let actualValue = actualDict[key] else {
             XCTFail("Missing key '\(key)' in actual dictionary", file: file, line: line)
             continue
         }
@@ -197,12 +202,26 @@ func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = n
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-public func getMockClientMetadata() -> ClientMetadata {
-    //TODO: convert to instance
+public func getMockClientMetadata(_ clientMetadata: [String: Any] = clientMetadata) -> ClientMetadata {
     let jsonData = try! JSONSerialization.data(withJSONObject: clientMetadata, options: .prettyPrinted)
     return try! ClientMetadata.deserializeAndValidate(clientMetadata: jsonData)
 }
 
 public func getMockPresentationDefinition() -> PresentationDefinition{
     return try! convertToInstance(presentationDefinition, as: PresentationDefinition.self)
+}
+
+public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost) -> AuthorizationRequest {
+    return AuthorizationRequest(
+        clientId: "client_id",
+        clientIdScheme: "123",
+        presentationDefinition: mockPresentationDefinitionObject,
+        responseType: "vp_token",
+        responseMode: responseMode.rawValue,
+        nonce: "nonce",
+        state: "state",
+        redirectUri: "1234",
+        responseUri: "https://mock-verifier.com",
+        clientMetadata: mockClientMetadataObject
+    )
 }
