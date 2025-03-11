@@ -163,7 +163,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
  /// Send authorization response tests
 
     func testSendAuthorizationResponseForDirectPostJwtResponseMode()  async throws {
-        mockNetworkManager.setMockResponse(for: URL(string: responseUri)!, responseBody: "Response has been shared successfully here.")
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
         
         do {
             let result = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(vpToken: mockVPToken, authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode, presentationSubmission: mockPresentationSubmission, state: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode.state, url: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode.responseUri!, networkManager: mockNetworkManager)

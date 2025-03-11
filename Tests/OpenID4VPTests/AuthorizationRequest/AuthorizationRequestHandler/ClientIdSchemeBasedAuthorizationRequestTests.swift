@@ -55,7 +55,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             applicableFields: authRequestWithRedirectUriByValue
         )
         let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: authorizationRequestObject)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{
             try await mockAuthHandler.fetchAuthorizationRequest()
@@ -191,7 +191,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
         let presentationDefinition = convertToJsonString(presentationDefinition)
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/presentation-definition")!,responseBody: presentationDefinition)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{
@@ -223,7 +223,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             applicableFields: authRequestWithRedirectUriByValue
         )
         let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: authorizationRequestObject)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{

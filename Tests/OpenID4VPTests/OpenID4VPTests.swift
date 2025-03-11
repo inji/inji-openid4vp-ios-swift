@@ -92,7 +92,7 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testShouldConstructAuthorizationRequestSuccessfullyWhenPresentationDefinitionIsSentByReference() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/presentation-definition")!, responseBody: convertToJsonString(presentationDefinition))
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition", responseBody: convertToJsonString(presentationDefinition))
         do {
             let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthRequestWithPresentationDefinitionUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: false)
             XCTAssertNotNil(authorizationRequest)
@@ -104,7 +104,7 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (validJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let decodedAuthorizationRequest: Any?
@@ -121,7 +121,7 @@ class OpenID4VPTests: XCTestCase {
 
     // jwt -> client_id_scheme = did, Invalid did
     func testThrowErrorForInValidSignatureInRequest() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponse, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (invalidJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let error = await Task {
@@ -140,7 +140,7 @@ class OpenID4VPTests: XCTestCase {
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
         //"did:other:123#1" clienId is used in QR code
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (validJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let error = await Task {
@@ -157,7 +157,7 @@ class OpenID4VPTests: XCTestCase {
 
     // jwt -> client_id_scheme = did, Kid is empty in the JWT header
     func testThrowErrorIfKidExtractionFailedFromJws() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let error = await Task {
@@ -214,7 +214,7 @@ class OpenID4VPTests: XCTestCase {
 
     // NetworkManager Tests Success
     func testSendVpSuccess() async throws {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, responseBody: "Success: Request completed successfully.")
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
         
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         
@@ -230,7 +230,7 @@ class OpenID4VPTests: XCTestCase {
     // NetworkManager Tests Failure
     func testSendVpFailure() async {
         let errorMessage = "Network Request failed with error response: response"
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, error: NetworkRequestException.networkRequestFailed(message: errorMessage))
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", error: NetworkRequestException.networkRequestFailed(message: errorMessage))
        
        AuthorizationResponse.verifiableCredentials = verifiableCredentialsList
         
@@ -253,7 +253,7 @@ class OpenID4VPTests: XCTestCase {
     }
     
     func testShareVPSuccessWhenResponseModeIsDirectPostJwt() async throws {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, responseBody: "Success: Request completed successfully.")
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
 
          authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         

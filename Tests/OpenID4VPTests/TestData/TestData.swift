@@ -25,8 +25,8 @@ let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
 
 let verifiableCredentialsList = ["vc":["vc1"]]
 
-let didDocumentUrl = URL(string: "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json")!
-let httpUrlResponseForJWS: HTTPURLResponse = HTTPURLResponse(url: didDocumentUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
+let didDocumentUrl = "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json"
+let httpUrlResponseForJWS: HTTPURLResponse = HTTPURLResponse(url: URL(string: didDocumentUrl)!, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
 let didResponse = convertToJsonString([
     "assertionMethod": [
         "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"

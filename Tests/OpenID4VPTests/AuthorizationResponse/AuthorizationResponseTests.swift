@@ -20,9 +20,9 @@ final class AuthorizationResponseTests: XCTestCase {
     }
     
     func testShareVPHasThePresentationDefinitionAsExpected() async throws {
-        try AuthorizationResponse.constructVpForSigning(verifiableCredentials)
+        _ = try AuthorizationResponse.constructVpForSigning(verifiableCredentials)
         let responseUri = "https://mock-verifier.com"
-        mockNetworkManager.setMockResponse(for: URL(string: responseUri)!, responseBody: "sending is success in AuthorizationResponseTests")
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         let mockVPResponseMetadata = VPResponseMetadata(
             jws: "testJWS",
             signatureAlgorithm: "ES256",
