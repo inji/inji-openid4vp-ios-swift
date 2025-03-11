@@ -235,7 +235,7 @@ class OpenID4VPTests: XCTestCase {
     func testSendVpSuccess() async throws {
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, responseBody: "Success: Request completed successfully.")
         
-        authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
         
@@ -256,7 +256,7 @@ class OpenID4VPTests: XCTestCase {
         let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
 
         do {
-            authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             
             let _ = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: vcResponseMetaData)
         } catch let error as NetworkRequestException {
@@ -271,10 +271,10 @@ class OpenID4VPTests: XCTestCase {
         }
     }
     
-    func testSendVpJWESuccess() async throws {
+    func testShareVPSuccessWhenResponseModeIsDirectPostJwt() async throws {
         mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com")!, responseBody: "Success: Request completed successfully.")
 
-         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         
         AuthorizationResponse.verifiableCredentials = verifiableCredentialsList
         

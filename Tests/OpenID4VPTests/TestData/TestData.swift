@@ -260,7 +260,7 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
 
 let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
 
-let testValidUrlEncodedVpRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
+let mockUrlEncodedVpRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
     requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },clientIdAndSchemeOfPreRegistered),clientIdScheme: .preRegistered
 )
 
