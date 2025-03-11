@@ -51,19 +51,19 @@ class Logger {
         case "InvalidLimitDisclosure":
             exception = AuthorizationRequestException.invalidLimitDisclosure
         case "InvalidClientIdScheme":
-            exception = JwtVerificationException.invalidClientIdScheme(message: message ?? "")
+            exception = JWSException.invalidClientIdScheme(message: message ?? "")
         case "UrlCreationFailed":
             exception = NetworkRequestException.urlCreationFailed(message: message ?? "")
         case "PublicKeyNotFound":
-            exception = JwtVerificationException.publicKeyNotFound(message: message)
+            exception = JWSException.publicKeyNotFound(message: message)
         case "PublicKeyExtractionFailed":
-            exception = JwtVerificationException.publicKeyExtractionFailed
+            exception = JWSException.publicKeyExtractionFailed
         case "KidExtractionFailed":
-            exception = JwtVerificationException.kidExtractionFailed(message: message ?? "")
+            exception = JWSException.kidExtractionFailed(message: message ?? "")
         case "InvalidSignature":
-            exception = JwtVerificationException.invalidSignature(message: message ?? "")
+            exception = JWSException.invalidSignature(message: message ?? "")
         case "ProofVerificationFailed":
-            exception = JwtVerificationException.proofVerificationFailed(message: message ?? "")
+            exception = JWSException.proofVerificationFailed(message: message ?? "")
         case "UnsupportedHttpMethod" :
             exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
         case "InvalidData":
@@ -75,11 +75,7 @@ class Logger {
         case "DidResultionFailed":
             exception = DidResolverExceptions.didResolutionFailed(message: message)
         case "PublicKeyResolutionFailed":
-            exception = JwtVerificationException.publicKeyResolutionFailed(message: message ?? "Error occurred while resolve public key")
-        case "CredentialsMapIsEmpty":
-            exception = AuthorizationResponseException.credentialsMapIsEmpty
-        case "CredentialsMapValueIsEmpty":
-            exception = AuthorizationResponseException.credentialsMapValueIsEmpty
+            exception = JWSException.publicKeyResolutionFailed(message: message ?? "Error occurred while resolve public key")
         case "UnsupportedEncryptionAlgorithm":
             exception = JWEException.unsupportedEncryptionAlgorithm
         case "UnsupportedKeyAgreementAlgorithm":

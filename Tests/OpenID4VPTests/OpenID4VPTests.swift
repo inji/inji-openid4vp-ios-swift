@@ -27,20 +27,17 @@ class OpenID4VPTests: XCTestCase {
         mockNetworkManager = MockNetworkManager()
         
         do {
-            let mockPresentationDefinition = try getMockPresentationDefinition()
-            let mockClientMetadata = try getMockClientMetadata()
-            
             let authorizationRequest = AuthorizationRequest(
                 clientId: "client_id",
                 clientIdScheme: "123",
-                presentationDefinition: mockPresentationDefinition,
+                presentationDefinition: mockPresentationDefinitionObject,
                 responseType: "responseType",
                 responseMode: "direct_post.jwt",
                 nonce: "nonce",
                 state: "state",
                 redirectUri: "1234",
                 responseUri: "https://mock-verifier.com",
-                clientMetadata: mockClientMetadata
+                clientMetadata: mockClientMetadataObject
             )
         } catch {
             XCTFail("Failed to initialize test data: \(error)")
@@ -126,7 +123,7 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWT))
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let decodedAuthorizationRequest: Any?
@@ -143,7 +140,7 @@ class OpenID4VPTests: XCTestCase {
 
     // jwt -> client_id_scheme = did, Invalid did
     func testThrowErrorForInValidSignatureInRequest() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponse, httpUrlResponseForJWT))
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let error = await Task {
@@ -152,7 +149,7 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Jwt proof verification failed"
+            let expectedErrorMessage = "JWS proof verification failed"
             XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
         case .success:
             XCTFail("Jwt proof verification failed error should have been captured instead it succeeded")
@@ -162,7 +159,7 @@ class OpenID4VPTests: XCTestCase {
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
         //"did:other:123#1" clienId is used in QR code
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWT))
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (validJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let error = await Task {
@@ -178,8 +175,8 @@ class OpenID4VPTests: XCTestCase {
     }
 
     // jwt -> client_id_scheme = did, Kid is empty in the JWT header
-    func testThrowErrorIfKidExtractionFailedFromJwt() async {
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWT))
+    func testThrowErrorIfKidExtractionFailedFromJws() async {
+        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let error = await Task {

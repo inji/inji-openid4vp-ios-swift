@@ -3,13 +3,13 @@ import Foundation
 import OpenID4VP
 import JSONWebSignature
 
-struct JWTUtil {
+struct JWSUtil {
     private static let ed25519PrivateKey = "vlo/0lVUn4oCEFo/PiPi3FyqSBSdZ2JDSBJJcvbf6o0="
     private static let baseUrl = "https://mock-verifier.com"
     private static let responseUri = "\(baseUrl)/verifier/vp-response"
     private static let publicKeyId = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
 
-    private static let jwtHeader: [String: Any] = [
+    private static let jwsHeader: [String: Any] = [
         "typ": "oauth-authz-req+jwt",
         "alg": "EdDSA",
         "kid": publicKeyId
@@ -32,8 +32,8 @@ struct JWTUtil {
 
     static func create(header: [String:Any]? = nil,payload: [String:Any],addValidSignature: Bool = true) -> String{
         let privateKeyData = Data(base64Encoded: ed25519PrivateKey)
-        let jwtHeader = header == nil ? self.jwtHeader : header
-        let headerData = try? JSONSerialization.data(withJSONObject: jwtHeader as Any)
+        let jwsHeader = header == nil ? self.jwsHeader : header
+        let headerData = try? JSONSerialization.data(withJSONObject: jwsHeader as Any)
         let header64 = base64UrlEncode(headerData!)
         let payloadData = try? JSONSerialization.data(withJSONObject: payload)
         let payload64 = base64UrlEncode(payloadData!)

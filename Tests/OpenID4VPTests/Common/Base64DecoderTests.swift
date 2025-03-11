@@ -35,7 +35,7 @@ rTests: XCTestCase {
         let emptyBase64 = ""
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(emptyBase64)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: JWT Decoding to json failed.", error.localizedDescription)
+            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
         }
     }
     
@@ -44,7 +44,7 @@ rTests: XCTestCase {
         let base64String = Data(nonJSONString.utf8).base64EncodedString()
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(base64String)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: JWT Decoding to json failed.", error.localizedDescription)
+            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
         }
     }
     
@@ -53,7 +53,7 @@ rTests: XCTestCase {
         let base64String = Data(corruptedJSON.utf8).base64EncodedString()
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(base64String)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: JWT Decoding to json failed.", error.localizedDescription)
+            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
         }
     }
     

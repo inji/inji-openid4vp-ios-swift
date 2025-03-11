@@ -22,8 +22,6 @@ enum JWEException: Error, LocalizedError {
             return "Invalid Input: \(fieldName) param is empty."
         case .invalidEncryptionKeySize:
             return "Invalid Key size provided for encryption."
-        default:
-            return "An error occurred."
         }
     }
 }

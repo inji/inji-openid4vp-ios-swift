@@ -6,7 +6,7 @@ class Base64Decoder {
     static func decodeBase64ToJSON(_ base64String: String) throws -> [String: Any] {
         let standardBase64String = makeBase64Standard(base64String)
         guard let decodedData = Data(base64Encoded: standardBase64String) else {
-            throw Logger.handleException(exceptionType: "Decoding", message: "JWT payload decoding failed" ,className: Base64Decoder.className)
+            throw Logger.handleException(exceptionType: "Decoding", message: "Base64 decoding failed" ,className: Base64Decoder.className)
         }
         do{
             guard let jsonObject = try JSONSerialization.jsonObject(with: decodedData, options: []) as? [String: Any]  else {
@@ -18,7 +18,7 @@ class Base64Decoder {
             }
             return jsonObject
         } catch {
-            throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "JWT Decoding to json failed", className: Base64Decoder.className)
+            throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "Decoding to json failed", className: Base64Decoder.className)
         }
     }
     

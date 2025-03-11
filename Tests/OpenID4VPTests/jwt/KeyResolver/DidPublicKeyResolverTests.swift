@@ -54,7 +54,7 @@ class DidPublicKeyResolverTests : XCTestCase {
             XCTFail("error should been thrown but its not thrown")
         }
         catch{
-            XCTAssertEqual(JwtVerificationException.publicKeyResolutionFailed(message: "Given did url is not supported"), error as? JwtVerificationException)
+            XCTAssertEqual(JWSException.publicKeyResolutionFailed(message: "Given did url is not supported"), error as? JWSException)
         }
     }
 }

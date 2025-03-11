@@ -37,24 +37,24 @@ func createUrlEncodedAuthorizationRequest(
 
 private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
     let queryString = parameters.compactMap { (key, value) -> String? in
-            guard let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-            
-            let encodedValue: String
-            if let stringValue = value as? String {
-                encodedValue = stringValue
-            } else if let jsonData = try? JSONSerialization.data(withJSONObject: value as Any, options: []),
-                      //       stringify client_metdata and presentation defintiion
-                      let jsonString = String(data: jsonData, encoding: .utf8) {
-                encodedValue = jsonString
-            } else {
-                return nil // Skip values that can't be converted
-            }
-            
-            guard let finalEncodedValue = encodedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-            return "\(encodedKey)=\(finalEncodedValue)"
-        }.joined(separator: "&")
+        guard let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
         
-        return queryString
+        let encodedValue: String
+        if let stringValue = value as? String {
+            encodedValue = stringValue
+        } else if let jsonData = try? JSONSerialization.data(withJSONObject: value as Any, options: []),
+                  //       stringify client_metdata and presentation defintiion
+                  let jsonString = String(data: jsonData, encoding: .utf8) {
+            encodedValue = jsonString
+        } else {
+            return nil // Skip values that can't be converted
+        }
+        
+        guard let finalEncodedValue = encodedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        return "\(encodedKey)=\(finalEncodedValue)"
+    }.joined(separator: "&")
+    
+    return queryString
 }
 
 func createAuthorizationRequest(
@@ -73,7 +73,7 @@ func createAuthorizationRequest(
 func createAuthorizationRequestObject(
     clientIdScheme: ClientIdScheme,
     authorizationRequestParams: [String: Any],
-    jwtHeaderData: [String: Any]? = nil,
+    jwsHeaderData: [String: Any]? = nil,
     applicableFields: [String]? = nil,
     addValidSignature: Bool = true
 ) -> String {
@@ -83,7 +83,7 @@ func createAuthorizationRequestObject(
     
     switch clientIdScheme {
     case .did:
-        return JWTUtil.create(header: jwtHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
+        return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
     default:
         return convertToJsonString(authorizaitonRequestParameters as [String : Any])
     }
@@ -137,7 +137,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any], fil
         default: return false
         }
     }
-
+    
     func dictionariesEqual(_ lhs: [String: Any], _ rhs: [String: Any]) -> Bool {
         guard lhs.count == rhs.count else { return false }
         return lhs.allSatisfy { key, value in
@@ -145,14 +145,14 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any], fil
             return isEqual(value, rhsValue)
         }
     }
-
+    
     func arraysEqual(_ lhs: [Any], _ rhs: [Any]) -> Bool {
         guard lhs.count == rhs.count else { return false }
         return zip(lhs, rhs).allSatisfy { isEqual($0, $1) }
     }
-
+    
     XCTAssertEqual(expected.count, actual.count, "Dictionary sizes are different", file: file, line: line)
-
+    
     for (key, expectedValue) in expected {
         guard let actualValue = actual[key] else {
             XCTFail("Missing key '\(key)' in actual dictionary", file: file, line: line)
@@ -195,4 +195,14 @@ func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = n
     let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
     
     return (body: body, httpUrlResponse: modifiedResponse)
+}
+
+public func getMockClientMetadata() -> ClientMetadata {
+    //TODO: convert to instance
+    let jsonData = try! JSONSerialization.data(withJSONObject: clientMetadata, options: .prettyPrinted)
+    return try! ClientMetadata.deserializeAndValidate(clientMetadata: jsonData)
+}
+
+public func getMockPresentationDefinition() -> PresentationDefinition{
+    return try! convertToInstance(presentationDefinition, as: PresentationDefinition.self)
 }

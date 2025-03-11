@@ -1,10 +1,10 @@
 import Foundation
 
-enum JwtPart: Int {
+enum JWSPart: Int {
     case header = 0, payload, signature
 }
 
-func isJWT(_ input: String) -> Bool {
+func isJWS(_ input: String) -> Bool {
     return input.split(separator: ".").count == 3
 }
 
@@ -37,9 +37,9 @@ func determineHttpMethod(method: String) throws -> HTTP_METHOD {
     }
 }
 
-func extractDataJsonFromJwt(jwtToken: String, jwtPart: JwtPart) throws -> [String:Any] {
-    let components = jwtToken.split(separator: ".")
-    let payload = String(components[jwtPart.rawValue])
+func extractDataJsonFromJws(jws: String, jwsPart: JWSPart) throws -> [String:Any] {
+    let components = jws.split(separator: ".")
+    let payload = String(components[jwsPart.rawValue])
     return try Base64Decoder.decodeBase64ToJSON(payload)
 }
 

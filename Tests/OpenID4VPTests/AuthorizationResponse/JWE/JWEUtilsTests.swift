@@ -30,8 +30,7 @@ final class JWEUtilsTests: XCTestCase {
     }
     
     func testGetJWEHeaderSuccess() throws {
-        
-        let mockJWK = try getMockClientMetadata().jwks?.keys[0]
+        let mockJWK = mockClientMetadataObject.jwks?.keys[0]
         
         let keyAgreement = X25519KeyAgreement()
         let header = keyAgreement.getJWEHeader(alg: "ECDH-ES", enc: "A256GCM", jwk: mockJWK!)

@@ -36,8 +36,8 @@ class UtilsTest : XCTestCase {
     // Check if input is JWT tests
     
     func testIsStringIsJWT() {
-        let invalidJwt = isJWT("eeeee")
-        let validJwt = isJWT("ec.exx.ef")
+        let invalidJwt = isJWS("eeeee")
+        let validJwt = isJWS("ec.exx.ef")
         
         XCTAssertFalse(invalidJwt)
         XCTAssertTrue(validJwt)

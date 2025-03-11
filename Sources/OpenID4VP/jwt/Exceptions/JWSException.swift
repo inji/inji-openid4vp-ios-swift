@@ -1,6 +1,6 @@
 import Foundation
 
-enum JwtVerificationException: Error, Equatable, LocalizedError {
+enum JWSException: Error, Equatable, LocalizedError {
     case invalidClientIdScheme(message: String)
     case kidExtractionFailed(message: String)
     case invalidSignature(message: String)
@@ -25,8 +25,6 @@ enum JwtVerificationException: Error, Equatable, LocalizedError {
             return "Public key extraction failed."
         case .publicKeyResolutionFailed(let message):
             return message
-        default:
-            return "An error occurred."
         }
     }
 }

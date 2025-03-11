@@ -19,15 +19,15 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     func validateRequestUriResponse() async throws {
         if let requestUriResponse = self.requestUriResponse {
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
-            if (isContentTypeJWT && isJWT(requestUriResponse.body)) {
+            if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
                 let clienId: String = authorizationRequestParameters["client_id"] as! String
                 
                 let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clienId, networkManager: networkManager)
-                let jwtHandler = JWTHandler(jwt: requestUriResponse.body , publicKeyResolver: keyResolver)
+                let jwsHandler = JWSHandler(jws: requestUriResponse.body , publicKeyResolver: keyResolver)
                 
-                try await jwtHandler.verify()
+                try await jwsHandler.verify()
                 
-                let authorizationRequestObject =  try extractDataJsonFromJwt(jwtToken: requestUriResponse.body , jwtPart: .payload)
+                let authorizationRequestObject =  try extractDataJsonFromJws(jws: requestUriResponse.body , jwsPart: .payload)
                 
                 try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
                 

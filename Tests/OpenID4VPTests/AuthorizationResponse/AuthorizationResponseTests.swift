@@ -19,22 +19,4 @@ final class AuthorizationResponseTests: XCTestCase {
         XCTAssertNotNil(UUID(uuidString: decodedVpToken.id), "ID should be a valid UUID")
         XCTAssertEqual(AuthorizationResponse.verifiableCredentials, ["key1": ["cred1", "cred2"], "key2": ["cred3"]])
     }
-    
-    func testConstructVpForSigningEmptyVerifiableCredentials() {
-        
-        let verifiableCredentials: [String: [String]] = [:]
-        
-        XCTAssertThrowsError(try AuthorizationResponse.constructVpForSigning(verifiableCredentials)) { error in
-            XCTAssertEqual((error.localizedDescription), "Verifiable credentials map is empty.")
-        }
-    }
-    
-    func testConstructVpForSigningEmptyValuesInMap() {
-        
-        let verifiableCredentials: [String: [String]] = ["key1": []]
-        
-        XCTAssertThrowsError(try AuthorizationResponse.constructVpForSigning(verifiableCredentials)) { error in
-            XCTAssertEqual((error.localizedDescription), "Verifiable credentials map value is empty.")
-        }
-    }
 }

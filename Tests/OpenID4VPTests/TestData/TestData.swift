@@ -26,7 +26,7 @@ let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
 let verifiableCredentialsList = ["vc":["vc1"]]
 
 let didDocumentUrl = URL(string: "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json")!
-let httpUrlResponseForJWT: HTTPURLResponse = HTTPURLResponse(url: didDocumentUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
+let httpUrlResponseForJWS: HTTPURLResponse = HTTPURLResponse(url: didDocumentUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
 let didResponse = convertToJsonString([
     "assertionMethod": [
         "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
@@ -157,6 +157,8 @@ let presentationDefinition: [String: Any] = [
     ]
 ]
 
+let mockPresentationDefinitionObject = getMockPresentationDefinition()
+
 let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
@@ -188,6 +190,8 @@ let clientMetadata: [String: Any] = [
         ]
     ]
 ]
+
+let mockClientMetadataObject = getMockClientMetadata()
 
 var vpResponseMetadata = VPResponseMetadata(
     jws: "validJWS",
@@ -249,7 +253,7 @@ let validJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, au
 
 let invalidJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), addValidSignature: false)
 
-let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), jwtHeaderData: [
+let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), jwsHeaderData: [
     "typ": "oauth-authz-req+jwt",
     "alg": "EdDSA"
 ])
