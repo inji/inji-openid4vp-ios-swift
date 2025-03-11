@@ -7,16 +7,15 @@ struct AuthorizationResponse{
     static let className = String(describing: AuthorizationResponse.self)
     
     static func constructVpForSigning(_ verifiableCredentials: [String: [String]]) throws -> String {
+        //TODO: check the error case with kotlin lib here
+        if verifiableCredentials.isEmpty {
+            throw Logger.handleException(exceptionType: "CredentialsMapIsEmpty", fieldPath: ["credentials_map"], className: AuthorizationResponse.className)
+        }
         
-        guard !verifiableCredentials.isEmpty else {
-                throw Logger.handleException(exceptionType: "CredentialsMapIsEmpty", fieldPath: ["credentials_map"], className: AuthorizationResponse.className)
-            }
-
-            for (key, values) in verifiableCredentials {
-                guard !values.isEmpty else {
-                    throw Logger.handleException(exceptionType: "CredentialsMapValueIsEmpty", fieldPath: ["credentials_map", key], className: AuthorizationResponse.className)
-                }
-            }
+        if let emptyKey = verifiableCredentials.first(where: { $0.value.isEmpty })?.key {
+            throw Logger.handleException(exceptionType: "CredentialsMapValueIsEmpty", fieldPath: ["credentials_map", emptyKey], className: AuthorizationResponse.className)
+        }
+        
         
         self.verifiableCredentials = verifiableCredentials
         
