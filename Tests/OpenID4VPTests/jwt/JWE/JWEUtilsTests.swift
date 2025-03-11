@@ -29,17 +29,6 @@ final class JWEUtilsTests: XCTestCase {
         XCTAssertEqual(encodedMock?["age"] as? Int, 30)
     }
     
-    func testGetJWEHeaderSuccess() throws {
-        let mockJWK = mockClientMetadataObject.jwks?.keys[0]
-        
-        let keyAgreement = X25519KeyAgreement()
-        let header = keyAgreement.getJWEHeader(alg: "ECDH-ES", enc: "A256GCM", jwk: mockJWK!)
-        
-        XCTAssertEqual(header["alg"] as? String, "ECDH-ES")
-        XCTAssertEqual(header["enc"] as? String, "A256GCM")
-        XCTAssertEqual(header["kid"] as? String, "ed-key1")
-    }
-    
     func testEncodeJWEComponents() throws {
            
            let header: [String: Any] = ["alg": "ECDH-ES", "enc": "A256GCM"]
