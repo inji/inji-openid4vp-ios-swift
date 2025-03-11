@@ -53,7 +53,7 @@ class Logger {
         case "InvalidClientIdScheme":
             exception = JWSException.invalidClientIdScheme(message: message ?? "")
         case "UrlCreationFailed":
-            exception = NetworkRequestException.urlCreationFailed(message: message ?? "")
+            exception = NetworkRequestException.urlCreationFailed(message: message ?? "Provided URL is invalid to proceed with making request")
         case "PublicKeyNotFound":
             exception = JWSException.publicKeyNotFound(message: message)
         case "PublicKeyExtractionFailed":

@@ -34,9 +34,7 @@ final class AESGCMEncryptionTests: XCTestCase {
     }
     
     func testEncryptionThrowErrorIfKeySizeInInitializerAndSymmetricKeysizeMismatches() throws {
-        let data = "Invalid Key Test".data(using: .utf8)!
-        
-        let invalidKeyData = Data(repeating: 0, count: 8)
+        let data = "Invalid Key Test".data(using: .utf8)!        
         let invalidKey = SymmetricKey(size: .bits128)
         
         XCTAssertThrowsError(try AESGCMEncryption(keySize: .bits256).encrypt(data, with: invalidKey)) { error in

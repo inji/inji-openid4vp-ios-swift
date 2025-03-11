@@ -6,7 +6,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     }
     
     func sendAuthorizationResponse(vpToken: VPToken, authorizationRequest: AuthorizationRequest, presentationSubmission: PresentationSubmission, state: String?, url: String, networkManager: NetworkManaging) async throws -> String {
-        var requestBody: [String: String] = try constructBodyParams(vpToken: vpToken, presentationSubmission: presentationSubmission, state: state) as! [String: String]
+        let requestBody: [String: String] = try constructBodyParams(vpToken: vpToken, presentationSubmission: presentationSubmission, state: state) as! [String: String]
         
         let response = try await networkManager.sendHTTPRequest(url: url, method: HTTP_METHOD.POST, bodyParams: requestBody, headers: ["Content-Type" : .applicationFormUrlEncoded])
         
