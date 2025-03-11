@@ -2,7 +2,7 @@ import Foundation
 
 public struct EncryptionProvider {
     
-    static func getEncryption(_ enc: String) throws -> JWEEncryption {
+    static func getEncryptor(_ enc: String) throws -> JWEEncryption {
         switch enc {
         case "A256GCM":
             return AESGCMEncryption(keySize: .bits256)

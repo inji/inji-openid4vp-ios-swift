@@ -21,13 +21,13 @@ public struct JWEHandler {
             throw Logger.handleException(exceptionType: "PayloadConversionFailed", className: JWEHandler.className)
         }
 
-        let encryption = try EncryptionProvider.getEncryption(contentEncryptionAlgorithm)
+        let encryptor = try EncryptionProvider.getEncryptor(contentEncryptionAlgorithm)
 
         let keyAgreement = try KeyAgreementFactory.createKeyAgreement(for: publicKey)
 
         let sharedKey = try keyAgreement.deriveKey(publicKey: publicKey.x)
 
-        let (ciphertext, nonce, tag) = try encryption.encrypt(payloadData, with: sharedKey)
+        let (ciphertext, nonce, tag) = try encryptor.encrypt(payloadData, with: sharedKey)
 
         var header = keyAgreement.getJWEHeader(alg: publicKey.alg, enc: contentEncryptionAlgorithm, jwk: publicKey)
 

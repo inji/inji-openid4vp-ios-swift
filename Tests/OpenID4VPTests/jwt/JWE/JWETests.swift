@@ -17,16 +17,16 @@ public class JWEHandlerTests: XCTestCase {
         XCTAssertEqual(parts.count, 5, "JWE should have exactly 5 parts")
     }
 
-    func testGetEncryptionSuccess() throws {
+    func testGetEncryptorSuccess() throws {
 
-        let encryption = try EncryptionProvider.getEncryption("A256GCM")
+        let encryption = try EncryptionProvider.getEncryptor("A256GCM")
 
         XCTAssertTrue(encryption is AESGCMEncryption)
 
     }
 
-    func testGetEncryptionFailureUnsupportedAlgorithm() throws {
-        XCTAssertThrowsError(try EncryptionProvider.getEncryption("UNSUPPORTED")) { error in
+    func testGetEncryptorFailureUnsupportedAlgorithm() throws {
+        XCTAssertThrowsError(try EncryptionProvider.getEncryptor("UNSUPPORTED")) { error in
             XCTAssertEqual(error.localizedDescription, "Required Encryption algorithm is not supported.")
         }
     }
