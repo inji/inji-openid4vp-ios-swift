@@ -7,7 +7,7 @@ public class JWEHandlerTests: XCTestCase {
 
 
     func testCreateResponseSuccess() throws {
-        let jweHandler = JWEHandler(keyEncryptionAlgorithm: jweKeyEncryptionAlgorithm, contentEncryptionAlgorithm: jweContentEncryptionAlgorithm, publicKey: verifierPublicKey)
+        let jweHandler = JWEHandler(contentEncryptionAlgorithm: jweContentEncryptionAlgorithm, keyEncryptionAlgorithm: jweKeyEncryptionAlgorithm, publicKey: verifierPublicKey)
         let bodyParams: [String: Any] = ["key": "value"]
 
         let response = try jweHandler.generateEncryptedResponse(payload: bodyParams)

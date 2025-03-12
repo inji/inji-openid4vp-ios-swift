@@ -16,28 +16,3 @@ func toData(_ bodyParams: [String: Any]) throws -> Data {
     }
     return try JSONSerialization.data(withJSONObject: processedParams, options: [])
 }
-
-//TODO: remove unused function
-func encodeJWEComponents(
-        header: [String: Any],
-        encryptedKey: String,
-        nonce: Data,
-        ciphertext: Data,
-        tag: Data
-    ) throws -> String {
-      
-        let headerJson = try JSONSerialization.data(withJSONObject: header)
-        let encodedHeader = headerJson.toBase64UrlEncoded()
-        let encodedEncryptedKey = encryptedKey
-        let encodedIV = nonce.toBase64UrlEncoded()
-        let encodedCiphertext = ciphertext.toBase64UrlEncoded()
-        let encodedAuthTag = tag.toBase64UrlEncoded()
-        
-        return [
-            encodedHeader,
-            encodedEncryptedKey,
-            encodedIV,
-            encodedCiphertext,
-            encodedAuthTag
-        ].joined(separator: ".")
-    }

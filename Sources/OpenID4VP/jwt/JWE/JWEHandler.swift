@@ -7,12 +7,6 @@ public struct JWEHandler {
     let publicKey: JWK
     static let className = String(describing: JWEHandler.self)
 
-    init(keyEncryptionAlgorithm: String, contentEncryptionAlgorithm: String, publicKey: JWK) {
-        self.keyEncryptionAlgorithm = keyEncryptionAlgorithm
-        self.contentEncryptionAlgorithm = contentEncryptionAlgorithm
-        self.publicKey = publicKey
-    }
-
     func generateEncryptedResponse(payload: [String:Any]) throws -> String {
         var payloadData: Data
         do {
@@ -21,6 +15,7 @@ public struct JWEHandler {
             throw Logger.handleException(exceptionType: "PayloadConversionFailed", className: JWEHandler.className)
         }
 
+        //TODO: Perform key agreement based on keyEncryptionAlgorithm
         let encrypter = try EncryptionProvider.getEncrypter(contentEncryptionAlgorithm)
         let keyAgreement = try KeyAgreementFactory.createKeyAgreement(for: publicKey)
         let sharedKey = try keyAgreement.deriveKey(publicKey: publicKey.x)
