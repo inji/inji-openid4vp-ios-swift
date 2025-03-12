@@ -72,7 +72,7 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "An unexpected exception occurred: exception type: invalidResponseMode"
+            let expectedErrorMessage = "Given response_mode - fragment is not supported"
             XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
         case .success:
             XCTFail("Expected error - An unexpected exception occurred: exception type: invalidResponseMode but not thrown")

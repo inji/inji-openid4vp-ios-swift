@@ -64,8 +64,8 @@ struct InputDescriptor: Codable {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
         }
         
-        try validateField(name, ["input_descriptor","name"])
-        try validateField(purpose, ["input_descriptor","purpose"])
+        try validateField(name, ["input_descriptor","name"], InputDescriptor.className)
+        try validateField(purpose, ["input_descriptor","purpose"], InputDescriptor.className)
     
         try constraints.validate()
         

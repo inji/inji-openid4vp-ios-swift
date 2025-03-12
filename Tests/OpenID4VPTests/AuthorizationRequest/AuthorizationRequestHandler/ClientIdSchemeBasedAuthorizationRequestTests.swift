@@ -167,11 +167,11 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
         let testCases: [TestCase] = [
-            TestCase(input: ["response_mode": "fragment"], expectedError: "response mode is unsupported"),
-            TestCase(input: ["response_mode": ""], expectedError: "response mode is empty"),
-            TestCase(input: ["response_mode": "nil"], expectedError: "response mode value cannot be empty or null"),
-            TestCase(input: ["response_mode": "null"], expectedError: "response mode value cannot be empty or null"),
-            TestCase(input: ["response_mode": nil], expectedError: "response mode property is missing in authorization request")
+            TestCase(input: ["response_mode": "fragment"], expectedError: "Given response_mode - fragment is not supported"),
+            TestCase(input: ["response_mode": ""], expectedError: "Given response_mode -  is not supported"),
+            TestCase(input: ["response_mode": "nil"], expectedError: "Given response_mode - nil is not supported"),
+            TestCase(input: ["response_mode": "null"], expectedError: "Given response_mode - null is not supported"),
+            TestCase(input: ["response_mode": nil], expectedError: "Given response_mode -  is not supported")
         ]
         
         for testCase in testCases {
@@ -179,7 +179,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             XCTAssertThrowsError(try clientIdSchemeBasedAuthorizationRequestHandler.setResponseUrl()){ error in
-                XCTAssertEqual("An unexpected exception occurred: exception type: invalidResponseMode", error.localizedDescription, testCase.expectedError)
+                XCTAssertEqual(error.localizedDescription, testCase.expectedError)
             }
         }
     }

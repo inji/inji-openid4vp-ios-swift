@@ -33,7 +33,7 @@ struct Filter: Codable {
     }
     
     func validate() throws {
-        try validateField(type, ["filter","type"])
-        try validateField(pattern, ["filter","pattern"])
+        try validateField(type, ["filter","type"], Filter.className)
+        try validateField(pattern, ["filter","pattern"], Filter.className)
     }
 }

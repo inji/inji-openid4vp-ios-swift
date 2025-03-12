@@ -102,14 +102,6 @@ func encodeQueryValue(_ value: String) -> String {
     return value.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? value
 }
 
-func validateField(_ field: String?, _ fieldPath: [String]) throws {
-    if let field = field {
-        guard isNeitherNullNorEmpty(field: field) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: Fields.className)
-        }
-    }
-}
-
 func toData(_ input: [String: Any]) throws -> Data {
     var processedInput: [String: Any] = [:]
 

@@ -68,21 +68,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     final func setResponseUrl() throws {
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
         
-        switch (responseMode) {
-        case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
-            try validateAttribute(AuthorizationRequestFieldConstants.responseUri.rawValue, values: authorizationRequestParameters)
-            guard isValidUri(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String)
-            else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
-                    message: "response_uri data is not valid",
-                    className: ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass.className
-                )
-            }
-            setResponseUri(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String)
-        default:
-            throw Logger.handleException(exceptionType: "invalidResponseMode", className: ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass.className)
-        }
+        try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
     }
     
     final func createAuthorizationRequest() -> AuthorizationRequest {

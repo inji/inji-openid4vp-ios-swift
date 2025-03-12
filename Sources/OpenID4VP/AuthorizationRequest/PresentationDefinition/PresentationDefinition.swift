@@ -69,8 +69,8 @@ public struct PresentationDefinition: Codable {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: PresentationDefinition.className)
         }
         
-        try validateField(name, ["presentation_definition","name"])
-        try validateField(purpose, ["presentation_definition","purpose"])
+        try validateField(name, ["presentation_definition","name"], PresentationDefinition.className)
+        try validateField(purpose, ["presentation_definition","purpose"], PresentationDefinition.className)
         
         try format?.validate()
         

@@ -21,11 +21,11 @@ public struct JWK: Codable {
         ]
 
         for (value, fieldName) in requiredFields {
-            try validateField(value, [fieldName])
+            try validateField(value, [fieldName], JWK.className)
         }
         
         if let y = y {
-            try validateField(y, ["y"])
+            try validateField(y, ["y"], JWK.className)
         }
     }
 }

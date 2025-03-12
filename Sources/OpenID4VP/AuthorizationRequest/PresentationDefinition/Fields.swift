@@ -77,9 +77,9 @@ struct Fields: Codable {
             throw Logger.handleException(exceptionType: "InvalidInputPattern", fieldPath: ["fields","path"], className: Fields.className)
         }
         
-        try validateField(id, ["fields","id"])
-        try validateField(name, ["fields","name"])
-        try validateField(purpose, ["fields","purpose"])
+        try validateField(id, ["fields","id"], Fields.className)
+        try validateField(name, ["fields","name"], Fields.className)
+        try validateField(purpose, ["fields","purpose"], Fields.className)
 
         if let filter = filter {
             try filter.validate()

@@ -116,3 +116,12 @@ func extractQueryParameters(_ input: String) throws -> [String: String] {
     
     return decodedParams
 }
+
+func validateField(_ field: String?, _ fieldPath: [String], _ className: String) throws {
+    if let field = field {
+        guard isNeitherNullNorEmpty(field: field) else {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
+        }
+    }
+}
+
