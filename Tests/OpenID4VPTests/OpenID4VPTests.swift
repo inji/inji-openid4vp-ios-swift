@@ -39,9 +39,25 @@ class OpenID4VPTests: XCTestCase {
     }
 
     //client_id_scheme = redirect_uri
-    func testReturnDataForValidRequestWithRedirectUri() async {
+    func testAuthorizationRequestJsonStringConversion() async {
         do {
             let decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            let jsonData = try JSONEncoder().encode(decoded)
+            let authorizationRequestJsonString = String(decoding: jsonData, as: UTF8.self)
+            
+            compareJsonStrings("{\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"client_id_scheme\":\"redirect_uri\",\"response_type\":\"vp_token\",\"redirect_uri\":null,\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"client_name\":\"Requester name\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]},\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]}},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"jwks\":{\"keys\":[{\"kty\":\"OKP\",\"use\":\"enc\",\"kid\":\"ed-key1\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\",\"crv\":\"X25519\"}]}},\"presentation_definition\":{\"input_descriptors\":[{\"purpose\":\"To verify identity using Linked Data Proofs\",\"id\":\"input_1\",\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"name\":\"Verifiable Credential\"}],\"id\":\"vp_presentation_definition\"},\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id\":\"https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\"}", authorizationRequestJsonString)
+        } catch {
+            XCTFail("Should not get error but got error - \(error)")
+        }
+    }
+    
+    func testReturnDataForValidRequestWithRedirectUri() async {
+        do {
+            
+            
+            let decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            let jsonStirng = try JSONEncoder().encode(decoded)
+            print("json string \(String(decoding: jsonStirng, as: UTF8.self))")
             XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
         } catch {
             XCTFail("Should not get error but got error - \(error)")

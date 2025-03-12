@@ -128,12 +128,14 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
         return
     }
     
-    func isEqual(_ lhs: Any, _ rhs: Any) -> Bool {
+    func isEqual(_ lhs: Any?, _ rhs: Any?) -> Bool {
         switch (lhs, rhs) {
         case let (lhs as String, rhs as String): return lhs == rhs
         case let (lhs as Int, rhs as Int): return lhs == rhs
         case let (lhs as Double, rhs as Double): return lhs == rhs
         case let (lhs as Bool, rhs as Bool): return lhs == rhs
+        case let (lhs as NSNull, rhs as NSNull):
+            return lhs == rhs
         case let (lhs as [String: Any], rhs as [String: Any]): return dictionariesEqual(lhs, rhs)
         case let (lhs as [Any], rhs as [Any]): return arraysEqual(lhs, rhs)
         case let (lhs as any RawRepresentable, rhs as any RawRepresentable):
@@ -156,8 +158,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
                 print("error - \(error) occurred during conversion")
                 return false
             }
-//        case let (lhs as PresentationDefinition, rhs as PresentationDefinition): return lhs == rhs
-        default: return false
+        default: return "\(String(describing: lhs))"  == "\(String(describing: rhs))"
         }
     }
     
@@ -254,4 +255,26 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
         responseUri: "https://mock-verifier.com",
         clientMetadata: mockClientMetadataObject
     )
+}
+
+func compareJsonStrings(_ jsonString1: String, _ jsonString2: String, file: StaticString = #file, line: UInt = #line) {
+    do {
+        guard let data1 = jsonString1.data(using: .utf8),
+              let data2 = jsonString2.data(using: .utf8) else {
+            XCTFail("Invalid JSON string encoding", file: file, line: line)
+            return
+        }
+        
+        let json1 = try JSONSerialization.jsonObject(with: data1, options: []) as? [String: Any]
+        let json2 = try JSONSerialization.jsonObject(with: data2, options: []) as? [String: Any]
+
+        XCTAssertNotNil(json1, "Failed to parse first JSON string", file: file, line: line)
+        XCTAssertNotNil(json2, "Failed to parse second JSON string", file: file, line: line)
+
+        if let json1 = json1, let json2 = json2 {
+            assertDictionariesEqual(expected: json1, actual: json2, file: file, line: line)
+        }
+    } catch {
+        XCTFail("JSON deserialization failed with error: \(error)", file: file, line: line)
+    }
 }
