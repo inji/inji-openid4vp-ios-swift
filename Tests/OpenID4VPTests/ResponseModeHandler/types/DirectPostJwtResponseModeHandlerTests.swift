@@ -48,7 +48,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: getMockClientMetadata(invalidClientMetadataForDirectPostJwt))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
             XCTAssertEqual("Missing Input: client_metadata->authorization_encrypted_response_alg param is required", error.localizedDescription)
         }
     }
@@ -85,7 +85,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: getMockClientMetadata(invalidClientMetadataForDirectPostJwt))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
             XCTAssertEqual("Missing Input: client_metadata->authorization_encrypted_response_enc param is required", error.localizedDescription)
         }
     }
@@ -113,7 +113,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: getMockClientMetadata(invalidClientMetadataForDirectPostJwt))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
             XCTAssertEqual("Missing Input: client_metadata->jwks param is required", error.localizedDescription)
         }
     }
@@ -151,7 +151,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: getMockClientMetadata(invalidClientMetadataForDirectPostJwt))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
             XCTAssertEqual("No jwk matching the specified algorithm found", error.localizedDescription)
         }
     }

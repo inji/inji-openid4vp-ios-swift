@@ -190,33 +190,8 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
 }
 
-func decodeIfNeeded(_ value: Any) -> Any {
-    guard let stringValue = value as? String else {
-        return value
-    }
-    
-    let queryDecoded = decodeQueryValue(stringValue)
-    if queryDecoded.hasPrefix("{") || queryDecoded.hasPrefix("[") {
-        if let jsonDecoded = try? decodeJson(queryDecoded) {
-            return jsonDecoded
-        }
-    }
-    
-    return queryDecoded
-}
-
 func decodeQueryValue(_ value: String) -> String {
     return value.removingPercentEncoding ?? value
-}
-
-func decodeJson(_ jsonString: String) throws -> [String: Any] {
-    guard let jsonData = jsonString.data(using: .utf8) else {
-        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Invalid UTF-8 data"))
-    }
-    guard let jsonObject = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
-        throw DecodingError.typeMismatch([String: Any].self, .init(codingPath: [], debugDescription: "Expected a dictionary"))
-    }
-    return jsonObject
 }
 
 func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
@@ -231,15 +206,6 @@ func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = n
     let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
     
     return (body: body, httpUrlResponse: modifiedResponse)
-}
-
-public func getMockClientMetadata(_ clientMetadata: [String: Any] = clientMetadata) -> ClientMetadata {
-    let jsonData = try! JSONSerialization.data(withJSONObject: clientMetadata, options: .prettyPrinted)
-    return try! ClientMetadata.deserializeAndValidate(clientMetadata: jsonData)
-}
-
-public func getMockPresentationDefinition() -> PresentationDefinition{
-    return try! convertToInstance(presentationDefinition, as: PresentationDefinition.self)
 }
 
 public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost) -> AuthorizationRequest {
@@ -257,7 +223,7 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
     )
 }
 
-func compareJsonStrings(_ jsonString1: String, _ jsonString2: String, file: StaticString = #file, line: UInt = #line) {
+func compareJsonStrings(_ jsonString1: String, _ jsonString2: String, strict: Bool = true, file: StaticString = #file, line: UInt = #line) {
     do {
         guard let data1 = jsonString1.data(using: .utf8),
               let data2 = jsonString2.data(using: .utf8) else {
@@ -272,7 +238,7 @@ func compareJsonStrings(_ jsonString1: String, _ jsonString2: String, file: Stat
         XCTAssertNotNil(json2, "Failed to parse second JSON string", file: file, line: line)
 
         if let json1 = json1, let json2 = json2 {
-            assertDictionariesEqual(expected: json1, actual: json2, file: file, line: line)
+            assertDictionariesEqual(expected: json1, actual: json2, file: file, line: line, strict: strict)
         }
     } catch {
         XCTFail("JSON deserialization failed with error: \(error)", file: file, line: line)

@@ -157,7 +157,7 @@ let presentationDefinition: [String: Any] = [
     ]
 ]
 
-let mockPresentationDefinitionObject = getMockPresentationDefinition()
+let mockPresentationDefinitionObject = createInstance(presentationDefinition, as: PresentationDefinition.self)
 
 public let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
@@ -191,7 +191,7 @@ public let clientMetadata: [String: Any] = [
     ]
 ]
 
-let mockClientMetadataObject = getMockClientMetadata()
+let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadata.self)
 
 var vpResponseMetadata = VPResponseMetadata(
     jws: "validJWS",

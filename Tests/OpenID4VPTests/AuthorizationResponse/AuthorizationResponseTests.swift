@@ -34,25 +34,7 @@ final class AuthorizationResponseTests: XCTestCase {
         
         XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
-        let decodedPresentationSubmission = decodeIfNeeded(recordedRequest.requestBody?["presentation_submission"] as Any)
-        assertDictionariesEqual(expected: [
-            "definition_id": "client_id",
-            "descriptor_map": [[
-                    "format" : "ldp_vp",
-                    "id" : "key1",
-                    "path" : "$.verifiableCredential[0]"
-                ],
-                [
-                    "format" : "ldp_vp",
-                    "id" : "key1",
-                    "path" : "$.verifiableCredential[1]"
-                ],
-                [
-                    "format" : "ldp_vp",
-                    "id" : "key2",
-                    "path" : "$.verifiableCredential[2]"
-                ]
-            ]
-        ], actual: decodedPresentationSubmission as? [String:Any], strict: false)
+        let decodedPresentationSubmission = decodeQueryValue((recordedRequest.requestBody?["presentation_submission"])!)
+        compareJsonStrings( "{\"definition_id\":\"client_id\",\"descriptor_map\":[{\"format\":\"ldp_vp\",\"id\":\"key1\",\"path\":\"$.verifiableCredential[0]\"},{\"id\":\"key1\",\"path\":\"$.verifiableCredential[1]\",\"format\":\"ldp_vp\"},{\"format\":\"ldp_vp\",\"path\":\"$.verifiableCredential[2]\",\"id\":\"key2\"}]}", decodedPresentationSubmission, strict: false)
     }
 }
