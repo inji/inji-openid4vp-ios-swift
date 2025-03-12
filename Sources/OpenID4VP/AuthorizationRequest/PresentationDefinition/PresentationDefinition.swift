@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PresentationDefinition: Codable, Equatable {
+public struct PresentationDefinition: Codable {
     let id: String
     let name: String?
     let purpose: String?
@@ -77,12 +77,5 @@ public struct PresentationDefinition: Codable, Equatable {
         for descriptor in input_descriptors {
             try descriptor.validate()
         }
-    }
-   
-    // TODO remove equals check added for testing purpose
-    public static func == (lhs: PresentationDefinition, rhs: PresentationDefinition) -> Bool {
-        return lhs.id == rhs.id && lhs.name == rhs.name &&
-        lhs.purpose == rhs.purpose && lhs.input_descriptors == rhs.input_descriptors &&
-        lhs.format == rhs.format
     }
 }

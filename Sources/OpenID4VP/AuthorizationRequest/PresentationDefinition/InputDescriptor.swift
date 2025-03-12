@@ -1,6 +1,6 @@
 import Foundation
 
-struct InputDescriptor: Codable, Equatable {
+struct InputDescriptor: Codable {
     let id: String
     let name: String?
     let purpose: String?
@@ -70,12 +70,5 @@ struct InputDescriptor: Codable, Equatable {
         try constraints.validate()
         
         try format?.validate()
-    }
-    
-    // check with kiruthika
-    static func == (lhs: InputDescriptor, rhs: InputDescriptor) -> Bool {
-        return lhs.id == rhs.id && lhs.name == rhs.name &&
-        lhs.purpose == rhs.purpose && lhs.constraints == rhs.constraints &&
-        lhs.format == rhs.format
     }
 }

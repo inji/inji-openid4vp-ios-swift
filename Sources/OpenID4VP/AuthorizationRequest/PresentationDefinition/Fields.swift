@@ -1,6 +1,6 @@
 import Foundation
 
-struct Fields: Codable, Equatable {
+struct Fields: Codable {
     let path: [String]
     let id: String?
     let name: String?
@@ -84,12 +84,5 @@ struct Fields: Codable, Equatable {
         if let filter = filter {
             try filter.validate()
         }
-    }
-    
-    // Check with k
-    static func == (lhs: Fields, rhs: Fields) -> Bool {
-        return lhs.path == rhs.path && lhs.id == rhs.id &&
-        lhs.name == rhs.name && lhs.purpose == rhs.purpose &&
-        lhs.filter == rhs.filter && lhs.optional == rhs.optional
     }
 }

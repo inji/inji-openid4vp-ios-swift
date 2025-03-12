@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ClientMetadata: Codable, Equatable {
+public struct ClientMetadata: Codable {
     let client_name: String?
     let logo_uri:String?
     let authorization_encrypted_response_alg: String?
@@ -135,12 +135,6 @@ public struct ClientMetadata: Codable, Equatable {
         if decodedClientMetadata.jwks != nil {
             try decodedClientMetadata.jwks!.validate()
         }
-    }
-    
-    public static func == (lhs: ClientMetadata, rhs: ClientMetadata) -> Bool {
-        return lhs.client_name == rhs.client_name && lhs.logo_uri == rhs.logo_uri &&
-        lhs.authorization_encrypted_response_alg == rhs.authorization_encrypted_response_alg && lhs.authorization_encrypted_response_enc == rhs.authorization_encrypted_response_enc &&
-        lhs.vp_formats == rhs.vp_formats
     }
 }
 

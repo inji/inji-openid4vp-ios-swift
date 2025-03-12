@@ -1,6 +1,6 @@
 import Foundation
 
-struct Filter: Codable, Equatable {
+struct Filter: Codable {
     let type: String
     let pattern: String
     static let className = String(describing: PresentationDefinition.self)
@@ -35,9 +35,5 @@ struct Filter: Codable, Equatable {
     func validate() throws {
         try validateField(type, ["filter","type"])
         try validateField(pattern, ["filter","pattern"])
-    }
-    // TODO remove equals check added for testing purpose
-    static func == (lhs: Filter, rhs: Filter) -> Bool {
-        return lhs.type == rhs.type && lhs.pattern == rhs.pattern
     }
 }

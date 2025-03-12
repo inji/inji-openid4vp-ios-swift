@@ -109,3 +109,23 @@ func validateField(_ field: String?, _ fieldPath: [String]) throws {
         }
     }
 }
+
+func toData(_ input: [String: Any]) throws -> Data {
+    var processedInput: [String: Any] = [:]
+
+    for (key, value) in input {
+        if let encodableValue = value as? Encodable {
+            if let converted = encodableValue.toDictionary() {
+                processedInput[key] = converted
+            } else {
+                processedInput[key] = value
+            }
+        } else {
+            processedInput[key] = value
+        }
+    }
+    guard JSONSerialization.isValidJSONObject(processedInput) else {
+        throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: "Invalid JSON object", className: "utils")
+    }
+    return try JSONSerialization.data(withJSONObject: processedInput, options: [])
+}

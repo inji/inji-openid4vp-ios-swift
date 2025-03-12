@@ -77,10 +77,11 @@ public struct NetworkManager: NetworkManaging {
 }
 
 
-public enum HTTP_METHOD: String, Codable {
+public enum HTTP_METHOD: String {
     case POST
     case GET
 }
+
 
 public enum ContentTypes : String {
     case applicationJson = "application/json"

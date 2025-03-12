@@ -136,9 +136,27 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
         case let (lhs as Bool, rhs as Bool): return lhs == rhs
         case let (lhs as [String: Any], rhs as [String: Any]): return dictionariesEqual(lhs, rhs)
         case let (lhs as [Any], rhs as [Any]): return arraysEqual(lhs, rhs)
-        case let (lhs as ClientMetadata, rhs as ClientMetadata): return lhs == rhs
-        case let (lhs as PresentationDefinition, rhs as PresentationDefinition): return lhs == rhs
-        case let (lhs as ContentTypes, rhs as ContentTypes): return lhs.rawValue == rhs.rawValue
+        case let (lhs as any RawRepresentable, rhs as any RawRepresentable):
+            return isEqual(lhs.rawValue, rhs.rawValue)
+        case let (lhs as Encodable, rhs as Encodable):
+            do {
+                let encoder = JSONEncoder()
+                let jsonData1 = try encoder.encode(lhs)
+                let jsonData2 = try encoder.encode(rhs)
+                
+                let dict1 = try JSONSerialization.jsonObject(with: jsonData1, options: []) as? [String: Any]
+                let dict2 = try JSONSerialization.jsonObject(with: jsonData2, options: []) as? [String: Any]
+                
+                XCTAssertNotNil(dict1, "Failed to convert instance1 to dictionary", file: file, line: line)
+                XCTAssertNotNil(dict2, "Failed to convert instance2 to dictionary", file: file, line: line)
+                
+                assertDictionariesEqual(expected: dict1 ?? [:], actual: dict2, file: file, line: line)
+                return true
+            } catch {
+                print("error - \(error) occurred during conversion")
+                return false
+            }
+//        case let (lhs as PresentationDefinition, rhs as PresentationDefinition): return lhs == rhs
         default: return false
         }
     }
@@ -157,6 +175,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
     
     if strict {
+        //TODO: add containsAll check to enhance assertion
         XCTAssertEqual(expected.count, actualDict.count, "Dictionary sizes are different", file: file, line: line)
     }
     
