@@ -8,10 +8,12 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 |------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Device flow                                                | cross device flow                                                                                                                                                                                                                                                                                                                                                  |
 | Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                                                                                                                                                                                            |
-| Signed authorization request verification algorithms       | ed25519                                                                                                                                                                                                                                                                                                                                                            |
+| Signed authorization request verification algorithms       | Ed25519 Signature 2020                                                                                                                                                                                                                                                                                                                                             |
 | Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html#section-3.2))]_ |
 | Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                                                                                                                                                                                         |
-| Authorization Response mode                                | `direct_post`                                                                                                                                                                                                                                                                                                                                                      |
+| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                                                                                                                                                                                             |
+| Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                                                                                                                                                                                          |
+| Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                                                                                                                                                                                                                                                                                          |
 | Authorization Response type                                | `vp_token`                                                                                                                                                                                                                                                                                                                                                         |
 
 
@@ -83,7 +85,7 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 
 | Name                           | Type       | Description                                                                      | Sample                                               |
 |--------------------------------|------------|----------------------------------------------------------------------------------|------------------------------------------------------|
-| urlEncodedAuthorizationRequest | String     | URL Encoded authorization request.                                            | `"T1BFTklENFZQOi8vYXV0"`                             |
+| urlEncodedAuthorizationRequest | String     | URL Encoded authorization request.                                               | `"T1BFTklENFZQOi8vYXV0"`                             |
 | trustedVerifierJSON            | [Verifier] | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])` |
 | shouldValidateClient           | Bool?      | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                               |
 
@@ -100,6 +102,11 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 4. InvalidInput exception is thrown if any of required params value is empty
 5. InvalidVerifier exception is thrown if the received request client_id & response_uri are not matching with any of the trusted verifiers
 6. JWTVerification exception is thrown if there is any error in extracting public key, kid or signature verification failure.
+7. InvalidData exception is thrown if 
+   - `response_mode` is not supported
+   - For `direct_post.jwt` response mode
+     - client_metadata is not available
+     - unable to find the public key JWK from the `jwks` of `client_metadata` as per the provided algorithm in `client_metadata`
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
@@ -114,9 +121,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name                | Type             | Description                                                                                              | Sample                                            |
-|---------------------|------------------|----------------------------------------------------------------------------------------------------------|---------------------------------------------------|
-| credentialsMap      | [String: [String]] | Contains the input descriptor id as key and corresponding matching Verifiable Credentials as array of string. | `["bank_input":["VC1","VC2"]]`                            |
+| Name           | Type               | Description                                                                                                   | Sample                         |
+|----------------|--------------------|---------------------------------------------------------------------------------------------------------------|--------------------------------|
+| credentialsMap | [String: [String]] | Contains the input descriptor id as key and corresponding matching Verifiable Credentials as array of string. | `["bank_input":["VC1","VC2"]]` |
 
 
 ###### Exceptions
@@ -135,9 +142,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name                | Type             | Description                                                                                               | Sample                                            |
-|---------------------|------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------|
-| vpResponseMetadata      | VPResponseMetadata | Contains a VPResponseMetadata which has proof details such as  jws, signatureAlgorithm, publicKey, domain | `VPResponseMetadata(jws: "jws", signatureAlgorithm: "signatureAlgoType", publicKey: "publicKey", domain: "domain")`                            |
+| Name               | Type               | Description                                                                                               | Sample                                                                                                              |
+|--------------------|--------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| vpResponseMetadata | VPResponseMetadata | Contains a VPResponseMetadata which has proof details such as  jws, signatureAlgorithm, publicKey, domain | `VPResponseMetadata(jws: "jws", signatureAlgorithm: "signatureAlgoType", publicKey: "publicKey", domain: "domain")` |
 
 
 ###### Exceptions
