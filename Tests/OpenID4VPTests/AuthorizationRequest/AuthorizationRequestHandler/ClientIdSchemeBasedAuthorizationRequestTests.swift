@@ -340,7 +340,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             XCTFail("error should have been captured but not captured")
         }
         catch{
-            XCTAssertEqual("Invalid Input: client_metadata value cannot be empty or null", error.localizedDescription)
+            XCTAssertEqual("Missing Input: client_metadata->vp_formats param is required", error.localizedDescription)
         }
     }
     

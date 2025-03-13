@@ -85,11 +85,7 @@ public struct ClientMetadata: Codable {
     }
     
     fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadata {
-        do {
             return try encodedData.toInstance(as: ClientMetadata.self)
-        } catch {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata"], className: ClientMetadata.className)
-        }
     }
     
     private func validate(_ decodedClientMetadata: ClientMetadata) throws{

@@ -101,7 +101,7 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Invalid Input: client_metadata value cannot be empty or null"
+            let expectedErrorMessage = "Missing Input: client_metadata->vp_formats param is required"
             XCTAssertEqual(thrownError.localizedDescription, expectedErrorMessage)
         case .success: break
         }

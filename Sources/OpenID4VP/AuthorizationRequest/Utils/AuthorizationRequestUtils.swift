@@ -95,7 +95,7 @@ func getAuthorizationRequestHandler(trustedVerifiers : [Verifier], authorization
     case ClientIdScheme.redirectUri.rawValue:
         return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
     default:
-        throw Logger.handleException(exceptionType: "InvalidClientIdScheme",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
+        throw Logger.handleException(exceptionType: "InvalidData",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
     }
 }
 
@@ -124,4 +124,3 @@ func validateField(_ field: String?, _ fieldPath: [String], _ className: String)
         }
     }
 }
-

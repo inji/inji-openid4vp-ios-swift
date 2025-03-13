@@ -1,7 +1,6 @@
 import Foundation
 
 enum JWSException: Error, Equatable, LocalizedError {
-    case invalidClientIdScheme(message: String)
     case kidExtractionFailed(message: String)
     case invalidSignature(message: String)
     case proofVerificationFailed(message: String)
@@ -11,8 +10,6 @@ enum JWSException: Error, Equatable, LocalizedError {
     
     public var errorDescription: String? {
         switch self {
-        case .invalidClientIdScheme(let message):
-            return message
         case .kidExtractionFailed(let message):
             return message
         case .invalidSignature(let message):

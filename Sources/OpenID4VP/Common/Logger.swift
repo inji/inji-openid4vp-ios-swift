@@ -50,8 +50,6 @@ class Logger {
             exception = AuthorizationRequestException.invalidVerifierRedirectUri
         case "InvalidLimitDisclosure":
             exception = AuthorizationRequestException.invalidLimitDisclosure
-        case "InvalidClientIdScheme":
-            exception = JWSException.invalidClientIdScheme(message: message ?? "")
         case "UrlCreationFailed":
             exception = NetworkRequestException.urlCreationFailed(message: message ?? "Provided URL is invalid to proceed with making request")
         case "PublicKeyNotFound":
