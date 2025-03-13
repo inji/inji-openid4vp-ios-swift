@@ -1,8 +1,8 @@
-public struct VpTokenForSigning: Encodable {
+public struct VpTokenForSigning: Codable {
     let context = ["https://www.w3.org/2018/credentials/v1"]
     let type = ["VerifiablePresentation"]
     let verifiableCredential: [String]
-    let id = UUIDGenerator.generateUUID()
+    let id: String
     let holder: String
     
     enum CodingKeys: String, CodingKey {

@@ -5,14 +5,14 @@ import CryptoKit
 public struct AuthorizationRequest : Encodable {
     let clientId: String
     let clientIdScheme: String
-    var presentationDefinition: Any
+    var presentationDefinition: PresentationDefinition
     let responseType: String
     let responseMode: String?
     let nonce: String
     let state: String?
     let redirectUri: String?
     let responseUri: String?
-    var clientMetadata: Any?
+    var clientMetadata: ClientMetadata?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
     

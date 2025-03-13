@@ -23,7 +23,6 @@ class DidPublicKeyResolverTests : XCTestCase {
     
     func testThrowErrorWhenKeyIdIsNotMatchingAnyOfTheKeysInDidDocumentResponse() async {
         let did = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"
-        let constructedHTTPUrl = URL(string: "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json")!
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
         
@@ -54,7 +53,7 @@ class DidPublicKeyResolverTests : XCTestCase {
             XCTFail("error should been thrown but its not thrown")
         }
         catch{
-            XCTAssertEqual(JwtVerificationException.publicKeyResolutionFailed(message: "Given did url is not supported"), error as? JwtVerificationException)
+            XCTAssertEqual(JWSException.publicKeyResolutionFailed(message: "Given did url is not supported"), error as? JWSException)
         }
     }
 }

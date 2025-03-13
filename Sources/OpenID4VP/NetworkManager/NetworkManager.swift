@@ -1,30 +1,17 @@
 import Foundation
 
 public protocol NetworkManaging {
-    func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String?, headers: [String: String]?) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse)
-}
-
-extension NetworkManaging {
-    func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String? = nil, headers: [String : String]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
-        return try await sendHTTPRequest(url: url, method: method, bodyParams: bodyParams, headers: headers)
-    }
+    func sendHTTPRequest(url: String, method: HTTP_METHOD, bodyParams: [String:String]?, headers: [String: ContentTypes]?) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse)
 }
 
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
     
-    public func sendHTTPRequest(url: URL, method: HTTP_METHOD, bodyParams: String? = nil, headers: [String : String]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
-        var request = URLRequest(url: url)
-        request.httpMethod = method.rawValue
+    public func sendHTTPRequest(url: String, method: HTTP_METHOD, bodyParams: [String:String]? = nil, headers: [String : ContentTypes]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
         
-        if let headers = headers {
-            for (key, value) in headers {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-        }
-        if method == .POST, let body = bodyParams {
-            request.httpBody = body.data(using: .utf8)
+        guard let url = URL(string: url) else {
+            throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["response_uri"], className: AuthorizationResponse.className)
         }
         
         var exception: Error
@@ -43,17 +30,20 @@ public struct NetworkManager: NetworkManaging {
         }
     }
     
-    private func request(url: URL, method: HTTP_METHOD, bodyParams: String? = nil, headers: [String: String]? = nil) async throws -> (data: Data, httpUrlResponse: HTTPURLResponse) {
+    private func request(url: URL, method: HTTP_METHOD, bodyParams: [String:String]? = nil, headers: [String: ContentTypes]? = nil) async throws -> (data: Data, httpUrlResponse: HTTPURLResponse) {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         
         if let headers = headers {
             for (key, value) in headers {
-                request.setValue(value, forHTTPHeaderField: key)
+                request.setValue(value.rawValue, forHTTPHeaderField: key)
             }
         }
         if method == .POST, let body = bodyParams {
-            request.httpBody = body.data(using: .utf8)
+            let requestBody = body
+                .map { "\($0.key)=\($0.value)" }
+                .joined(separator: "&")
+            request.httpBody = requestBody.data(using: .utf8)
         }
         
         var exception: Error
@@ -87,12 +77,14 @@ public struct NetworkManager: NetworkManaging {
 }
 
 
-public enum HTTP_METHOD: String, Codable {
+public enum HTTP_METHOD: String {
     case POST
     case GET
 }
 
+
 public enum ContentTypes : String {
     case applicationJson = "application/json"
     case applicationJwt = "application/oauth-authz-req+jwt"
+    case applicationFormUrlEncoded = "application/x-www-form-urlencoded"
 }

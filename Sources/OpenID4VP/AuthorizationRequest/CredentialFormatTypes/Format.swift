@@ -1,6 +1,6 @@
 import Foundation
 
-struct Format: Codable, Equatable {
+struct Format: Codable {
     let ldpVc: LdpFormat
     static let className = String(describing: Format.self)
     
@@ -21,9 +21,5 @@ struct Format: Codable, Equatable {
     
     func validate() throws {
         try ldpVc.validate()
-    }
-    
-    static func == (lhs: Format, rhs: Format) -> Bool {
-        return lhs.ldpVc == rhs.ldpVc
     }
 }

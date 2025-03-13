@@ -1,8 +1,13 @@
 import XCTest
 @testable import OpenID4VP
 
-class
-rTests: XCTestCase {
+struct MockFailingEncodable: Encodable {
+    func encode(to encoder: Encoder) throws {
+        throw NSError(domain: "EncodingError", code: 0, userInfo: nil)
+    }
+}
+
+class DecodrTests: XCTestCase {
     //Decode base64 string to JSON
     
     func testDecodeBase64ToJSONSuccessCase() throws {
@@ -29,7 +34,7 @@ rTests: XCTestCase {
         let emptyBase64 = ""
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(emptyBase64)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: JWT Decoding to json failed.", error.localizedDescription)
+            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
         }
     }
     
@@ -38,7 +43,7 @@ rTests: XCTestCase {
         let base64String = Data(nonJSONString.utf8).base64EncodedString()
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(base64String)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: JWT Decoding to json failed.", error.localizedDescription)
+            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
         }
     }
     
@@ -47,9 +52,17 @@ rTests: XCTestCase {
         let base64String = Data(corruptedJSON.utf8).base64EncodedString()
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(base64String)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: JWT Decoding to json failed.", error.localizedDescription)
+            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
         }
     }
+    
+    func testDecodeBase64ToJSONWithInvalidJSONShouldThrowDecodingFailedError() {
+            let invalidJsonBase64 = Data("[1,2,3]".utf8).base64EncodedString()
+
+            XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(invalidJsonBase64)) { error in
+                XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
+            }
+        }
     
     //Test convert base64 to bas64 url safe
     
@@ -60,5 +73,45 @@ rTests: XCTestCase {
         let output = Base64Decoder.makeBase64Standard(input)
         
         XCTAssertEqual(output, expected, "URL-safe characters should be converted and padding should be added")
+    }
+    
+    func testEncodeSuccess() throws {
+        
+        let testObject = MockEncodable(name: "John Doe", age: 30)
+        
+        let encodedString = try encode(testObject, fieldName: "testObject")
+        
+        let jsonData = Data(encodedString.utf8)
+        let decodedObject = try JSONDecoder().decode(MockEncodable.self, from: jsonData)
+        
+        XCTAssertEqual(decodedObject, testObject)
+    }
+
+    
+    func testEncodeFailure() {
+        
+        let failingObject = MockFailingEncodable()
+        
+        XCTAssertThrowsError(try encode(failingObject, fieldName: "failingObject")) {error in
+            XCTAssertEqual(error.localizedDescription, "Json Encoding failed for failingObject due to this error: The operation couldn’t be completed. (EncodingError error 0.).")
+        }
+    }
+    
+    func testEncodeQueryValueWithSpecialCharacters() {
+        let originalValue = "hello world!+test"
+        let encodedValue = encodeQueryValue(originalValue)
+        XCTAssertEqual(encodedValue, "hello%20world!%2Btest")
+    }
+    
+    func testEncodeQueryValueAlreadyEncoded() {
+        let originalValue = "hello%20world"
+        let encodedValue = encodeQueryValue(originalValue)
+        XCTAssertEqual(encodedValue, "hello%20world")
+    }
+    
+    func testEncodeQueryValuePlusSymbolRemoved() {
+        let originalValue = "a+b=c"
+        let encodedValue = encodeQueryValue(originalValue)
+        XCTAssertEqual(encodedValue, "a%2Bb=c")
     }
 }

@@ -55,12 +55,12 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             applicableFields: authRequestWithRedirectUriByValue
         )
         let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: authorizationRequestObject)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{
             try await mockAuthHandler.fetchAuthorizationRequest()
             
-            assertJSONStringEqual(expected: "{\"client_id\":\"https:\\/\\/mock-verifier.com\",\"response_type\":\"vp_token\",\"presentation_definition\":{\"input_descriptors\":[{\"id\":\"input_1\",\"name\":\"Verifiable Credential\",\"purpose\":\"To verify identity using Linked Data Proofs\",\"constraints\":{\"fields\":[{\"filter\":{\"type\":\"string\",\"pattern\":\"@gmail.com\"},\"path\":[\"$.credentialSubject.email\"]}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}}}],\"id\":\"vp_presentation_definition\"},\"response_mode\":\"direct_post\",\"client_metadata\":{\"client_name\":\"Requester name\",\"vp_formats\":{\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]},\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]}},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\"},\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"client_id_scheme\":\"redirect_uri\"}", actual: mockAuthHandler.requestUriResponse!.body)
+            assertJSONStringEqual(expected: "{\"client_metadata\":{\"client_name\":\"Requester name\",\"jwks\":{\"keys\":[{\"use\":\"enc\",\"kty\":\"OKP\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"crv\":\"X25519\",\"alg\":\"ECDH-ES\",\"kid\":\"ed-key1\"}]},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]},\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]}}},\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_type\":\"vp_token\",\"response_mode\":\"direct_post\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id_scheme\":\"redirect_uri\",\"client_id\":\"https:\\/\\/mock-verifier.com\",\"presentation_definition\":{\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"},\"path\":[\"$.credentialSubject.email\"]}]},\"purpose\":\"To verify identity using Linked Data Proofs\",\"name\":\"Verifiable Credential\",\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\"}],\"id\":\"vp_presentation_definition\"}}", actual: mockAuthHandler.requestUriResponse!.body)        
             XCTAssertTrue(mockAuthHandler.wasMethodCalled)
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
@@ -88,6 +88,16 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                     "client_name": "Requester name",
                     "authorization_encrypted_response_enc": "A256GCM",
                     "authorization_encrypted_response_alg": "ECDH-ES",
+                    "jwks": [
+                        "keys": [[
+                            "kty": "OKP",
+                            "crv": "X25519",
+                            "use": "enc",
+                            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                            "alg": "ECDH-ES",
+                            "kid": "ed-key1"
+                        ]]
+                    ],
                     "vp_formats": [
                         "mso_mdoc": [
                             "alg": ["ES256", "EdDSA"]
@@ -157,11 +167,11 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
         let testCases: [TestCase] = [
-            TestCase(input: ["response_mode": "fragment"], expectedError: "response mode is unsupported"),
-            TestCase(input: ["response_mode": ""], expectedError: "response mode is empty"),
-            TestCase(input: ["response_mode": "nil"], expectedError: "response mode value cannot be empty or null"),
-            TestCase(input: ["response_mode": "null"], expectedError: "response mode value cannot be empty or null"),
-            TestCase(input: ["response_mode": nil], expectedError: "response mode property is missing in authorization request")
+            TestCase(input: ["response_mode": "fragment"], expectedError: "Given response_mode - fragment is not supported"),
+            TestCase(input: ["response_mode": ""], expectedError: "Given response_mode -  is not supported"),
+            TestCase(input: ["response_mode": "nil"], expectedError: "Given response_mode - nil is not supported"),
+            TestCase(input: ["response_mode": "null"], expectedError: "Given response_mode - null is not supported"),
+            TestCase(input: ["response_mode": nil], expectedError: "Given response_mode -  is not supported")
         ]
         
         for testCase in testCases {
@@ -169,7 +179,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             XCTAssertThrowsError(try clientIdSchemeBasedAuthorizationRequestHandler.setResponseUrl()){ error in
-                XCTAssertEqual("An unexpected exception occurred: exception type: invalidResponseMode", error.localizedDescription, testCase.expectedError)
+                XCTAssertEqual(error.localizedDescription, testCase.expectedError)
             }
         }
     }
@@ -181,7 +191,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
         let presentationDefinition = convertToJsonString(presentationDefinition)
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/presentation-definition")!,responseBody: presentationDefinition)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{
@@ -213,7 +223,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             applicableFields: authRequestWithRedirectUriByValue
         )
         let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!,responseBody: authorizationRequestObject)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{
@@ -330,7 +340,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             XCTFail("error should have been captured but not captured")
         }
         catch{
-            XCTAssertEqual("Invalid Input: client_metadata value cannot be empty or null", error.localizedDescription)
+            XCTAssertEqual("Missing Input: client_metadata->vp_formats param is required", error.localizedDescription)
         }
     }
     

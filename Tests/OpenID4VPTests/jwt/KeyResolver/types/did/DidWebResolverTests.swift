@@ -45,7 +45,7 @@ final class DidWebResolverTests: XCTestCase {
         ]
         
         for testCase in testCases {
-            mockNetworkManager.setMockResponse(for: URL(string: "https://example.com/did.json")!, responseBody: didResponse)
+            mockNetworkManager.setMockResponse(for: "https://example.com/did.json", responseBody: didResponse)
             let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
             
             let didDocument = try await didWebResolver.resolve()

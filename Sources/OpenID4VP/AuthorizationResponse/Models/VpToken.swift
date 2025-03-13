@@ -1,4 +1,4 @@
-public struct VpToken: Encodable {
+public struct VPToken: Encodable {
     let context: [String]
     let type: [String]
     let verifiableCredential: [String]
@@ -15,8 +15,8 @@ public struct VpToken: Encodable {
         case proof
     }
     
-    static func constructVpToken(signingVPToken: VpTokenForSigning, proof: Proof) -> Self {
-        return VpToken(
+    static func construct(signingVPToken: VpTokenForSigning, proof: Proof) -> Self {
+        return VPToken(
             context: signingVPToken.context,
             type: signingVPToken.type,
             verifiableCredential: signingVPToken.verifiableCredential,

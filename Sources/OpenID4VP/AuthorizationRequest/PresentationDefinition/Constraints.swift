@@ -1,6 +1,6 @@
 import Foundation
 
-struct Constraints: Codable, Equatable {
+struct Constraints: Codable {
     let fields: [Fields]?
     let limitDisclosure: LimitDisclosure?
     static let className = String(describing: Constraints.self)
@@ -47,9 +47,5 @@ struct Constraints: Codable, Equatable {
                 throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: Constraints.className)
             }
         }
-    }
-    
-    static func == (lhs: Constraints, rhs: Constraints) -> Bool {
-        return lhs.fields == rhs.fields && lhs.limitDisclosure == rhs.limitDisclosure
     }
 }

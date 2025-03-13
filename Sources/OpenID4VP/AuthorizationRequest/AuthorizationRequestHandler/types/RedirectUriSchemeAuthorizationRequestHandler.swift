@@ -8,7 +8,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     func validateRequestUriResponse() async throws {
         if let requestUriResponse = self.requestUriResponse {
             let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
-            if (isContentTypeNotJson || isJWT(requestUriResponse.body)) {
+            if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Authorization Request must not be signed for given client_id_scheme",
@@ -40,7 +40,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         try await super.validateAndParseRequestFields()
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
         switch responseMode {
-        case ResponseMode.directPost.rawValue:
+        case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
             try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri.rawValue, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri.rawValue)
         default:
             throw Logger.handleException(

@@ -1,11 +1,12 @@
 import Foundation
 
-public struct ClientMetadata: Codable, Equatable {
+public struct ClientMetadata: Codable {
     let client_name: String?
     let logo_uri:String?
     let authorization_encrypted_response_alg: String?
     let authorization_encrypted_response_enc: String?
-    let vp_formats: [String: [String: [String]]]
+    let vp_formats: VpFormats
+    let jwks: JWKS?
     static let className = String(describing: ClientMetadata.self)
     
     enum CodingKeys: String, CodingKey {
@@ -14,6 +15,7 @@ public struct ClientMetadata: Codable, Equatable {
         case authorization_encrypted_response_alg
         case authorization_encrypted_response_enc
         case vp_formats
+        case jwks
     }
     
     public init(from decoder: any Decoder) throws {
@@ -52,12 +54,20 @@ public struct ClientMetadata: Codable, Equatable {
         )
         
         self .vp_formats = try container.decodeRequired(
-            [String: [String: [String]]].self,
+            VpFormats.self,
             forKey: .vp_formats,
             fieldPath: ["client_metadata", "vp_formats"],
             className: ClientMetadata.className,
             isMandatory: true
         )!
+        
+        self .jwks = try container.decodeRequired(
+            JWKS.self,
+            forKey: .jwks,
+            fieldPath: ["client_metadata", "jwks"],
+            className: ClientMetadata.className,
+            isMandatory: false
+        )
         try validate(self)
     }
     
@@ -75,11 +85,7 @@ public struct ClientMetadata: Codable, Equatable {
     }
     
     fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadata {
-        do {
             return try encodedData.toInstance(as: ClientMetadata.self)
-        } catch {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata"], className: ClientMetadata.className)
-        }
     }
     
     private func validate(_ decodedClientMetadata: ClientMetadata) throws{
@@ -121,11 +127,11 @@ public struct ClientMetadata: Codable, Equatable {
                 }
             }
         }
-    }
-    
-    public static func == (lhs: ClientMetadata, rhs: ClientMetadata) -> Bool {
-        return lhs.client_name == rhs.client_name && lhs.logo_uri == rhs.logo_uri &&
-        lhs.authorization_encrypted_response_alg == rhs.authorization_encrypted_response_alg && lhs.authorization_encrypted_response_enc == rhs.authorization_encrypted_response_enc &&
-        lhs.vp_formats == rhs.vp_formats
+        
+        if decodedClientMetadata.jwks != nil {
+            try decodedClientMetadata.jwks!.validate()
+        }
     }
 }
+
+typealias VpFormats = [String: [String: [String]]]

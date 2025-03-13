@@ -9,7 +9,7 @@ struct Proof: Encodable {
     let proofPurpose: ProofPurpose
     let verificationMethod: String
     
-    static func constructProof(
+    static func construct(
         from vpResponseMetadata: VPResponseMetadata,
         challenge: String
     ) -> Proof {

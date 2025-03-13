@@ -1,6 +1,11 @@
 import OpenID4VP
 import Foundation
 
+public struct MockEncodable: Codable, Equatable {
+    let name: String
+    let age: Int
+}
+
 private let testVerifierList:  [[String: Any]]  = [
     [
         "client_id": "https://mock-verifier.com",
@@ -18,8 +23,10 @@ private let testVerifierList:  [[String: Any]]  = [
 
 let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
 
-let didDocumentUrl = URL(string: "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json")!
-let httpUrlResponseForJWT: HTTPURLResponse = HTTPURLResponse(url: didDocumentUrl, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
+let verifiableCredentialsList = ["vc":["vc1"]]
+
+let didDocumentUrl = "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json"
+let httpUrlResponseForJWS: HTTPURLResponse = HTTPURLResponse(url: URL(string: didDocumentUrl)!, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
 let didResponse = convertToJsonString([
     "assertionMethod": [
         "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
@@ -150,11 +157,23 @@ let presentationDefinition: [String: Any] = [
     ]
 ]
 
-let clientMetadata: [String: Any] = [
+let mockPresentationDefinitionObject = createInstance(presentationDefinition, as: PresentationDefinition.self)
+
+public let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
     "authorization_encrypted_response_alg": "ECDH-ES",
     "authorization_encrypted_response_enc": "A256GCM",
+    "jwks": [
+        "keys": [[
+            "kty": "OKP",
+            "crv": "X25519",
+            "use": "enc",
+            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+            "alg": "ECDH-ES",
+            "kid": "ed-key1"
+        ]]
+    ],
     "vp_formats": [
         "mso_mdoc": [
             "alg": [
@@ -171,6 +190,15 @@ let clientMetadata: [String: Any] = [
         ]
     ]
 ]
+
+let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadata.self)
+
+var vpResponseMetadata = VPResponseMetadata(
+    jws: "validJWS",
+    signatureAlgorithm: "RSA",
+    publicKey: "validPublicKey",
+    domain: "validDomain"
+)
 
 //  client_id_scheme = redirect_uri
 let authorizationRequestParamsWithRedirectUri: [String: Any] = [
@@ -225,9 +253,17 @@ let validJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, au
 
 let invalidJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), addValidSignature: false)
 
-let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), jwtHeaderData: [
+let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfDid), jwsHeaderData: [
     "typ": "oauth-authz-req+jwt",
     "alg": "EdDSA"
 ])
 
 let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
+
+let mockUrlEncodedVpRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
+    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },clientIdAndSchemeOfPreRegistered),clientIdScheme: .preRegistered
+)
+
+let mockAuthorizationRequestObjectWithDirectPostResponseMode = getMockAuthorizationRequest()
+
+let mockAuthorizationRequestObjectWithDirectPostJwtResponseMode = getMockAuthorizationRequest(responseMode: .directPostJwt)

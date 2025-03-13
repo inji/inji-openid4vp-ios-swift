@@ -1,16 +1,14 @@
 import Foundation
 
-
-func encodeQueryValue(_ value: String) -> String {
-    var allowedCharacterSet = CharacterSet.urlQueryAllowed
-    allowedCharacterSet.remove("+")
-    return value.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? value
-}
-
-func encodeToJsonString<T: Encodable>(_ value: T) throws -> String? {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = .withoutEscapingSlashes
-    let jsonData = try encoder.encode(value)
-    let jsonresponse: String? = String(data: jsonData, encoding: .utf8)
-    return jsonresponse
+func constructBodyParams(vpToken: VPToken, presentationSubmission: PresentationSubmission, state: String?, shouldEncode: Bool = true) throws -> [String: Any] {
+    var bodyParams: [String: Any] = [
+        "vp_token": shouldEncode ? encodeQueryValue(try encode(vpToken, fieldName: "vp_token")) : vpToken,
+        "presentation_submission": shouldEncode ? encodeQueryValue(try encode(presentationSubmission, fieldName: "presentation_submission")) : presentationSubmission
+    ]
+    
+    if let state = state {
+        bodyParams["state"] = shouldEncode ? encodeQueryValue(state) : state
+    }
+    
+    return bodyParams
 }

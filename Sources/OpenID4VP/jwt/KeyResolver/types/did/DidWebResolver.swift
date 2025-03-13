@@ -73,11 +73,10 @@ class DidWebResolver {
     private func resolve(parsedDID: ParsedDID) async throws -> [String: Any] {
         do {
             let path = parsedDID.id.split(separator: ":").map { String($0) }.map { $0.removingPercentEncoding ?? $0 }.joined(separator: "/")
-            guard let url = URL(string: "https://\(path)\(DOC_PATH)") else {
-                throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["did_url"], className: DidWebResolver.className)
-            }
             
-            let response = try await networkManager.sendHTTPRequest(url: url, method: .GET)
+            let urlString = "https://\(path)\(DOC_PATH)"
+            
+            let response = try await networkManager.sendHTTPRequest(url: urlString, method: .GET, bodyParams: nil, headers: nil)
             guard let responseBody = response.responseBody.data(using: .utf8) else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",

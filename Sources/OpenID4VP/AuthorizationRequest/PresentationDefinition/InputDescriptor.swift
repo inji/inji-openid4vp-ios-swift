@@ -1,6 +1,6 @@
 import Foundation
 
-struct InputDescriptor: Codable, Equatable {
+struct InputDescriptor: Codable {
     let id: String
     let name: String?
     let purpose: String?
@@ -64,26 +64,11 @@ struct InputDescriptor: Codable, Equatable {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
         }
         
-        if let name = name {
-            guard isNeitherNullNorEmpty(field: name) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","name"], className: InputDescriptor.className)
-            }
-        }
-        
-        if let purpose = purpose {
-            guard isNeitherNullNorEmpty(field: purpose) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","purpose"], className: InputDescriptor.className)
-            }
-        }
+        try validateField(name, ["input_descriptor","name"], InputDescriptor.className)
+        try validateField(purpose, ["input_descriptor","purpose"], InputDescriptor.className)
     
         try constraints.validate()
         
         try format?.validate()
-    }
-    
-    static func == (lhs: InputDescriptor, rhs: InputDescriptor) -> Bool {
-        return lhs.id == rhs.id && lhs.name == rhs.name &&
-        lhs.purpose == rhs.purpose && lhs.constraints == rhs.constraints &&
-        lhs.format == rhs.format
     }
 }

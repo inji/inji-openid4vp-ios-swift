@@ -1,6 +1,6 @@
 import Foundation
 
-struct Fields: Codable, Equatable {
+struct Fields: Codable {
     let path: [String]
     let id: String?
     let name: String?
@@ -77,32 +77,12 @@ struct Fields: Codable, Equatable {
             throw Logger.handleException(exceptionType: "InvalidInputPattern", fieldPath: ["fields","path"], className: Fields.className)
         }
         
-        if let id = id {
-            guard isNeitherNullNorEmpty(field: id) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["fields","purpose"], className: Fields.className)
-            }
-        }
-        
-        if let name = name {
-            guard isNeitherNullNorEmpty(field: name) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["fields","name"], className: Fields.className)
-            }
-        }
-        
-        if let purpose = purpose {
-            guard isNeitherNullNorEmpty(field: purpose) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["fields","purpose"], className: Fields.className)
-            }
-        }
+        try validateField(id, ["fields","id"], Fields.className)
+        try validateField(name, ["fields","name"], Fields.className)
+        try validateField(purpose, ["fields","purpose"], Fields.className)
 
         if let filter = filter {
             try filter.validate()
         }
-    }
-    
-    static func == (lhs: Fields, rhs: Fields) -> Bool {
-        return lhs.path == rhs.path && lhs.id == rhs.id &&
-        lhs.name == rhs.name && lhs.purpose == rhs.purpose &&
-        lhs.filter == rhs.filter && lhs.optional == rhs.optional
     }
 }
