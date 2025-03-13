@@ -2,19 +2,20 @@ import Foundation
 
 
 struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
+    static let className = String(describing: DirectPostJwtResponseModeHandler.self)
     func validate(clientMetadata: ClientMetadata?) throws {
         guard let clientMetadataObject = clientMetadata else {
             throw Logger.handleException(
                 exceptionType: "InvalidData",
                 message: "client_metadata must be present for given response mode",
-                className: className
+                className: DirectPostJwtResponseModeHandler.className
             )
         }
         guard let alg = clientMetadataObject.authorization_encrypted_response_alg else {
             throw Logger.handleException(
                 exceptionType: "MissingInput",
                 fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
-                className: className
+                className: DirectPostJwtResponseModeHandler.className
             )
         }
 
@@ -22,7 +23,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             throw Logger.handleException(
                 exceptionType: "MissingInput",
                 fieldPath: ["client_metadata", "authorization_encrypted_response_enc"],
-                className: className
+                className: DirectPostJwtResponseModeHandler.className
             )
         }
 
@@ -30,7 +31,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             throw Logger.handleException(
                 exceptionType: "MissingInput",
                 fieldPath: ["client_metadata", "jwks"],
-                className: className
+                className: DirectPostJwtResponseModeHandler.className
             )
         }
 
@@ -39,7 +40,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                 exceptionType: "InvalidData",
                 message: "No jwk matching the specified algorithm found",
                 fieldPath: ["jwks", "keys"],
-                className: className
+                className: DirectPostJwtResponseModeHandler.className
             )
         }
     }
