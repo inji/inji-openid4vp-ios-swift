@@ -5,10 +5,12 @@ public class OpenID4VP {
     let networkManager: NetworkManaging
     var authorizationRequest: AuthorizationRequest?
     private var responseUri: String?
+    private var authorizationResponseHandler: AuthorizationResponseHandler
 
     public init(traceabilityId: String, networkManager: NetworkManaging? = nil) {
         self.traceabilityId = traceabilityId
         self.networkManager = networkManager ?? NetworkManager.shared
+        self.authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
     }
 
     public func setResponseUri(_ responseUri: String) {
@@ -30,14 +32,13 @@ public class OpenID4VP {
         }
     }
 
-    public func constructVerifiablePresentationToken(credentialsMap: [String: [String]]) async throws ->  String? {
-
-        return try AuthorizationResponse.constructVpForSigning(credentialsMap)
+    public func constructVerifiablePresentationToken(credentialsMap: [String: [FormatType: Array<Any>]]) async throws ->  [FormatType: VPTokenForSigning] {
+        return try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: credentialsMap, holder: "")
     }
 
-    public func shareVerifiablePresentation(vpResponseMetadata: VPResponseMetadata) async throws -> String? {
+    public func shareVerifiablePresentation(vpResponsesMetadata: [FormatType: VPResponseMetadata]) async throws -> String? {
         do {
-            return try await AuthorizationResponse.shareVp(vpResponseMetadata: vpResponseMetadata, authorizationRequest: authorizationRequest!, responseUri: responseUri!, networkManager: networkManager)
+            return try await self.authorizationResponseHandler.shareVP(authorizationRequest: self.authorizationRequest!, vpResponsesMetadata: vpResponsesMetadata, responseUri: self.responseUri!)
         } catch(let exception) {
             await sendErrorToVerifier(error: exception)
             throw exception
@@ -46,7 +47,7 @@ public class OpenID4VP {
 
     public func sendErrorToVerifier(error: Error) async {
         let logTag = Logger.getLogTag(String(describing: OpenID4VP.self))
-        
+
         let errorInfo =
         [
             "error": "\(error)",

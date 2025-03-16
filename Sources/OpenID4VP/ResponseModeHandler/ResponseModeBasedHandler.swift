@@ -3,10 +3,8 @@ import Foundation
 protocol ResponseModeBasedHandler {
     func validate(clientMetadata: ClientMetadata?) throws
     func sendAuthorizationResponse(
-        vpToken: VPToken,
         authorizationRequest: AuthorizationRequest,
-        presentationSubmission: PresentationSubmission,
-        state: String?,
+        authorizationResponse: AuthorizationResponse,
         url: String,
         networkManager: NetworkManaging
     ) async throws -> String

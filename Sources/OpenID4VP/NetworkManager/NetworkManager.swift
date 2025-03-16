@@ -7,13 +7,13 @@ public protocol NetworkManaging {
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
-    
+
     public func sendHTTPRequest(url: String, method: HTTP_METHOD, bodyParams: [String:String]? = nil, headers: [String : ContentTypes]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
-        
+
         guard let url = URL(string: url) else {
             throw Logger.handleException(exceptionType: "UrlCreationFailed", fieldPath: ["response_uri"], className: AuthorizationResponse.className)
         }
-        
+
         var exception: Error
         do {
             let (data, httpUrlResponse) = try await self.request(url: url, method: method, bodyParams: bodyParams, headers: headers)
@@ -29,11 +29,11 @@ public struct NetworkManager: NetworkManaging {
             throw exception
         }
     }
-    
+
     private func request(url: URL, method: HTTP_METHOD, bodyParams: [String:String]? = nil, headers: [String: ContentTypes]? = nil) async throws -> (data: Data, httpUrlResponse: HTTPURLResponse) {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        
+
         if let headers = headers {
             for (key, value) in headers {
                 request.setValue(value.rawValue, forHTTPHeaderField: key)
@@ -45,7 +45,7 @@ public struct NetworkManager: NetworkManaging {
                 .joined(separator: "&")
             request.httpBody = requestBody.data(using: .utf8)
         }
-        
+
         var exception: Error
         do {
             let (data, urlResponse) = try await URLSession.shared.data(for: request)
@@ -65,7 +65,7 @@ public struct NetworkManager: NetworkManaging {
             throw exception
         }
     }
-    
+
     private func processResponseBody(body: Data,response: HTTPURLResponse) throws -> String{
         guard let bodyString = String(data: body, encoding: .utf8), response.statusCode == 200 else {
             let exception = NetworkRequestException.networkRequestFailed(message: "error in conversion \(body)")

@@ -23,7 +23,7 @@ private let testVerifierList:  [[String: Any]]  = [
 
 let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
 
-let verifiableCredentialsList = ["vc":["vc1"]]
+let verifiableCredentialsList : [String : [FormatType : Array<Any>]] = ["input_descriptor1": [FormatType.ldp_vc : ["VC1"]]]
 
 let didDocumentUrl = "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json"
 let httpUrlResponseForJWS: HTTPURLResponse = HTTPURLResponse(url: URL(string: didDocumentUrl)!, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!
@@ -193,7 +193,7 @@ public let clientMetadata: [String: Any] = [
 
 let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadata.self)
 
-var vpResponseMetadata = VPResponseMetadata(
+var vpResponseMetadata = LdpVPResponseMetadata(
     jws: "validJWS",
     signatureAlgorithm: "RSA",
     publicKey: "validPublicKey",

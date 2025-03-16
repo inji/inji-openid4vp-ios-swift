@@ -5,7 +5,7 @@ final class ProofTests: XCTestCase {
     
     func testConstructProofSuccess() {
          
-        let mockMetadata = VPResponseMetadata(
+        let mockMetadata = LdpVPResponseMetadata(
             jws: "testJWS",
             signatureAlgorithm: "ES256",
             publicKey: "testPublicKey",

@@ -1,57 +1,50 @@
 import Foundation
-import JSONWebEncryption
 
-struct AuthorizationResponse{
-    static var vpTokenForSigning: VpTokenForSigning?
-    static var verifiableCredentials: [String: [String]]?
+struct AuthorizationResponse {
+    let vpToken: VPTokenType
+    let presentation_submission: PresentationSubmission
+    let state: String?
     static let className = String(describing: AuthorizationResponse.self)
-    
-    static func constructVpForSigning(_ verifiableCredentials: [String: [String]]) throws -> String {
-        self.verifiableCredentials = verifiableCredentials
-        
-        var credentialsArray: [String] = []
-        for (_, values) in verifiableCredentials {
-            for vc in values {
-                credentialsArray.append(vc)
-            }
-        }
-        
-        self.vpTokenForSigning = VpTokenForSigning(verifiableCredential: credentialsArray,id: UUIDGenerator.generateUUID(), holder: "")
-        
-        return try encode(self.vpTokenForSigning, fieldName: "vp_token_for_signing")
-    }
-    
-    static func shareVp(vpResponseMetadata: VPResponseMetadata, authorizationRequest: AuthorizationRequest, responseUri: String, networkManager: NetworkManaging) async throws -> String? {
-        
-        try vpResponseMetadata.validate()
-        let proof = Proof.construct(from: vpResponseMetadata, challenge: authorizationRequest.nonce)
-        
-        let presentationSubmission = PresentationSubmission(definition_id: authorizationRequest.clientId, descriptor_map: createDescriptorMap(verifiableCredentials: verifiableCredentials!))
-        let vpToken = VPToken.construct(signingVPToken: vpTokenForSigning!, proof: proof)
-        
-        return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode).sendAuthorizationResponse(vpToken: vpToken, authorizationRequest: authorizationRequest, presentationSubmission: presentationSubmission, state: authorizationRequest.state, url: responseUri, networkManager: networkManager)
-    }
 
-    private static func createDescriptorMap(verifiableCredentials: [String: [String]]) -> [DescriptorMap] {
-        var pathIndex = 0
-        var descriptorMap: [DescriptorMap] = []
+    func toJsonEncodedMap(shouldEncode : Bool = true) throws -> [String: String] {
+        let encodedVPTokenData =  String(data: vpToken.encoded!, encoding: .utf8) ?? ""
+        let encodedPresentationSubmission = try encode(self.presentation_submission, fieldName: "presentation_submission")
+        var bodyParams: [String: String] = [
+            "vp_token": shouldEncode ? encodeQueryValue(encodedVPTokenData) : encodedVPTokenData,
+            "presentation_submission": shouldEncode ? encodeQueryValue(encodedPresentationSubmission) : encodedPresentationSubmission
+        ]
         
-        let sortedKeys = verifiableCredentials.keys.sorted()
-        
-        for key in sortedKeys {
-            if let vcs = verifiableCredentials[key] {
-                for _ in vcs {
-                    descriptorMap.append(
-                        DescriptorMap(
-                            id: key,
-                            format: .ldp_vp,
-                            path: "$.verifiableCredential[\(pathIndex)]"
-                        )
-                    )
-                    pathIndex += 1
-                }
-            }
+        if let state = state {
+            bodyParams["state"] = shouldEncode ? encodeQueryValue(state) : state
         }
-        return descriptorMap
+        
+        return bodyParams
+    }
+}
+
+public enum VPTokenType {
+    case vpTokenArray([VPToken])
+    case vpTokenElement(VPToken)
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+}
+
+extension VPTokenType {
+    var encoded: Data? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+
+        switch self {
+        case .vpTokenArray(let tokens):
+            return try? encoder.encode(tokens.map{
+                try encoder.encode($0)
+            })
+
+        case .vpTokenElement(let token):
+            return try? encoder.encode(token)
+        }
     }
 }

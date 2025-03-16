@@ -214,7 +214,7 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
         clientIdScheme: "123",
         presentationDefinition: mockPresentationDefinitionObject,
         responseType: "vp_token",
-        responseMode: responseMode.rawValue,
+        responseMode: ResponseMode.directPost.rawValue,
         nonce: "nonce",
         state: "state",
         redirectUri: "1234",
