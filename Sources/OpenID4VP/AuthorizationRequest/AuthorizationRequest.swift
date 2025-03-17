@@ -2,6 +2,7 @@ import Foundation
 import JSONWebSignature
 import CryptoKit
 
+//TODO: Remove client_id_scheme property
 public struct AuthorizationRequest : Encodable {
     let clientId: String
     let clientIdScheme: String

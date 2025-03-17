@@ -20,7 +20,6 @@ final class NetworkManagerTests: XCTestCase {
                 _ = try await networkManager.sendHTTPRequest(url: testCase.input, method: .GET)
                 XCTFail("Invalid URL error should have been captured but no error was thrown")
             } catch {
-                print("error \(error)")
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription, "Error - \(testCase.expectedError) should be thrown but got \(error.localizedDescription)")
             }
         }

@@ -61,7 +61,9 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
             try validateAttribute(validAttribute, values: self.authorizationRequestParameters)
         }
         
-        if let validValue = authorizationRequestParameters[validAttribute], let clientIdValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String, validValue as? String != clientIdValue {
+        let validValue = authorizationRequestParameters[validAttribute]
+        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "")
+        if validValue as? String != clientIdValue {
             throw Logger.handleException(
                 exceptionType: "InvalidVerifier",
                 message: "\(validAttribute) should be equal to client_id for given client_id_scheme", className: RedirectUriSchemeAuthorizationRequestHandler.className

@@ -55,7 +55,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    //Fetch authorization request by value - validate authorization request object and authorization request query paramaters
+    /// Fetch authorization request by value - validate authorization request object and authorization request query paramaters
     
     func testFetchAuthorizationRequestOnValidPreRegisteredSchemeAuthRequestSentByValue() async{
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
@@ -123,8 +123,8 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     func testFetchAuthorizationRequestOnValidPreRegisteredSchemeAuthRequestSentByReference() async{
-        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,clientIdAndSchemeOfPreRegistered), applicableFields: authRequestWithPreRegisteredByValue)
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered)) as [String : Any]
+        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientId), applicableFields: authRequestWithPreRegisteredByValue)
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
         preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
         
@@ -160,7 +160,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "response_type": "vp_token",
             "response_mode": "direct_post",
             "response_uri": "https://mock-verifier.com",
-            "client_id_scheme": "pre-registered",
             "presentation_definition": [
                 "input_descriptors": [[
                     "id": "input_1",
@@ -192,7 +191,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id": "some-mock-client",
             "client_id_scheme": ClientIdScheme.preRegistered.rawValue,
         ]), applicableFields: authRequestWithPreRegisteredByValue)
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered)) as [String : Any]
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
         preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
         
@@ -206,7 +205,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     func testFetchAuthorizationRequestThrowExceptionForValidationOfMatchingClientIdSchemeOnAuthRequestSentByReference() async{
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered)) as [String : Any]
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
         preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
         
@@ -219,39 +218,11 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    //Validation of authRequest params obtained via request_uri by matching with url encoded query param data
-    func testShouldThrowErrorWhenClientIdSchemeIsAvailableInOnlyAuthorizationRequestObject() async{
-        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,["client_id":"mock-client"]), applicableFields: authRequestWithPreRegisteredByValue)
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
-        
-        do {
-            try await preRegistered.validateRequestUriResponse()
-            XCTFail("error should have been thrown but it failed")
-        } catch {
-            XCTAssertEqual("Client Id Scheme is mismatching in QR data and Request Uri response",error.localizedDescription)
-        }
-    }
-    
-    func testShouldThrowErrorWhenClientIdSchemeIsAvailableInOnlyUrlEncodedAuthorizationRequestObject() async{
-        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered), applicableFields: authRequestWithPreRegisteredByValue)
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id":"mock-client"])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
-        
-        do {
-            try await preRegistered.validateRequestUriResponse()
-            XCTFail("error should have been thrown but it failed")
-        } catch {
-            XCTAssertEqual("Client Id Scheme is mismatching in QR data and Request Uri response",error.localizedDescription)
-        }
-    }
-    
+    /// Validation of authRequest params obtained via request_uri by matching with url encoded query param data
     
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsJWT() async{
         let requestUriResponse: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered)) as [String : Any]
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
         preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
         
@@ -264,7 +235,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsNotJsonContentType() async {
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered)) as [String : Any]
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
         preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
@@ -278,7 +249,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedDoesNotContainContentTypeFieldInHeader() async {
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered)) as [String : Any]
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
         preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)

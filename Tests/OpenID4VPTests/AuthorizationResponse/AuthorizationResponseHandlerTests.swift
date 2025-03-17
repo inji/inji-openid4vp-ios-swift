@@ -1,7 +1,7 @@
 import XCTest
 @testable import OpenID4VP
 
-final class AuthorizationResponseTests: XCTestCase {
+final class AuthorizationResponseHandlerTests: XCTestCase {
     let mockNetworkManager = MockNetworkManager()
     let verifiableCredentials: [String: [FormatType: [Any]]] = ["input_descriptor1": [.ldp_vc: ["cred1", "cred3"]], "input_descriptor2": [.ldp_vc: ["cred3"]]]
     
@@ -35,7 +35,6 @@ final class AuthorizationResponseTests: XCTestCase {
         XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         let decodedPresentationSubmission = decodeQueryValue((recordedRequest.requestBody?["presentation_submission"])!)
-        print("decodedPre \(decodedPresentationSubmission)")
         compareJsonStrings( "{\"definition_id\":\"vp_presentation_definition\",\"descriptor_map\":[{\"path_nested\":{\"path\":\"$.verifiableCredential[0]\",\"id\":\"input_descriptor1\",\"format\":\"ldp_vp\"},\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path_nested\":{\"id\":\"input_descriptor1\",\"format\":\"ldp_vp\",\"path\":\"$.verifiableCredential[1]\"},\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor2\",\"path\":\"$\",\"path_nested\":{\"format\":\"ldp_vp\",\"path\":\"$.verifiableCredential[2]\",\"id\":\"input_descriptor2\"}}]}", decodedPresentationSubmission, strict: false)
     }
 }

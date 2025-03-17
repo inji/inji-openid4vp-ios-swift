@@ -20,7 +20,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func validateClientId() throws {
-        try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
+        return
     }
     
     func fetchAuthorizationRequest() async throws{

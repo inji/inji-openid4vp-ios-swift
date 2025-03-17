@@ -85,7 +85,8 @@ extension KeyedDecodingContainer {
 
 
 func getAuthorizationRequestHandler(trustedVerifiers : [Verifier], authorizationRequestParameters: [String:Any], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
-    let clientIdScheme = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue]) ?? ClientIdScheme.preRegistered.rawValue
+    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
+    let clientIdScheme = try extractClientIdScheme(clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? "")
     
     switch clientIdScheme {
     case ClientIdScheme.preRegistered.rawValue:
@@ -122,5 +123,35 @@ func validateField(_ field: String?, _ fieldPath: [String], _ className: String)
         guard isNeitherNullNorEmpty(field: field) else {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
         }
+    }
+}
+
+func extractClientIdScheme(clientId: String) throws -> String {
+    if(clientId.isEmpty){
+        throw AuthorizationRequestException.invalidData(message: "Client Identifier is empty")
+    }
+
+    let components = clientId.split(separator: ":", maxSplits: 1)
+
+    if components.count > 1 {
+        return String(components[0])
+    } else {
+        // Fallback client_id_scheme pre-registered; pre-registered clients MUST NOT contain a : character in their Client Identifier
+        return ClientIdScheme.preRegistered.rawValue
+    }
+}
+
+public func extractClientIdPartOnly(_ clientIdWithClientIdSchemeAttached: String) -> String {
+    let components = clientIdWithClientIdSchemeAttached.split(separator: ":", maxSplits: 1)
+    if components.count > 1 {
+        let clientIdScheme = String(components[0])
+        // DID client ID scheme will have the client id itself with did prefix, example - did:example:123#1. So there will not be additional prefix stating client_id_scheme
+        if(clientIdScheme == ClientIdScheme.did.rawValue){
+            return clientIdWithClientIdSchemeAttached
+        }
+        return String(components[1])
+    } else {
+        // client_id_scheme is optional (Fallback client_id_scheme - pre-registered) i.e., a : character is not present in the Client Identifier
+        return clientIdWithClientIdSchemeAttached
     }
 }

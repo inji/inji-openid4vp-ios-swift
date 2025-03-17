@@ -5,17 +5,6 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         delegate = self
     }
     
-    override func validateClientId() throws {
-        try super.validateClientId()
-        let clientId: String = authorizationRequestParameters["client_id"] as! String
-        guard clientId.starts(with: "did") else {
-            throw Logger.handleException(
-                exceptionType: "InvalidVerifier",
-                message: "client ID should start with did prefix if client_id_scheme is did", className: DidSchemeAuthorizationRequestHandler.className
-            )
-        }
-    }
-    
     func validateRequestUriResponse() async throws {
         if let requestUriResponse = self.requestUriResponse {
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
