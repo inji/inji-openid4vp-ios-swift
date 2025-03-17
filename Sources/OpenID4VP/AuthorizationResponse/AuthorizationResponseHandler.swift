@@ -8,21 +8,21 @@ public class AuthorizationResponseHandler {
     
     public static let className = String(describing: AuthorizationResponseHandler.self)
     
-    public init(networkManager: NetworkManaging? = nil) {
-        self.networkManager = networkManager ?? NetworkManager.shared
+    public init(networkManager: NetworkManaging) {
+        self.networkManager = networkManager
     }
     
     func constructVPTokenForSigning(
         credentialsMap: [String: [FormatType: Array<Any>]],
         holder: String
     ) throws -> [FormatType: VPTokenForSigning] {
-        self.credentialsMap = credentialsMap
         if (credentialsMap.isEmpty) {
             throw Logger.handleException(
-                exceptionType : "InvalidInput",
+                exceptionType : "InvalidData",
                 message : "Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.", className : AuthorizationResponseHandler.className
             )
         }
+        self.credentialsMap = credentialsMap
         self.vpTokensForSigning = try createVPTokenForSigning(credentialsMap: credentialsMap, holder: holder)
         return self.vpTokensForSigning
     }
@@ -88,7 +88,7 @@ public class AuthorizationResponseHandler {
             case .ldp_vc:
                 guard let stringCredentials = credentials as? [String] else {
                     throw Logger.handleException(
-                        exceptionType : "InvalidInput",
+                        exceptionType : "InvalidData",
                         message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
                     )
                 }
@@ -109,7 +109,7 @@ public class AuthorizationResponseHandler {
             let vpToken = try VPTokenFactory(
                 vpResponseMetadata: vpResponseMetadata,
                 vpTokenForSigning: vpTokensForSigning[credentialFormat] ?? {
-                    throw Logger.handleException(exceptionType: "MissingInput", message: "Unable to find the entry of \(credentialFormat.rawValue) in vpTokensForSigning", className: AuthorizationResponseHandler.className)
+                    throw Logger.handleException(exceptionType: "InvalidData", message: "unable to find the related credential format - \(credentialFormat) in the vpTokensForSigning map", className: AuthorizationResponseHandler.className)
                 }(),
                 nonce: authorizationRequest.nonce
             ).getVPTokenBuilder(credentialFormat: credentialFormat).build()

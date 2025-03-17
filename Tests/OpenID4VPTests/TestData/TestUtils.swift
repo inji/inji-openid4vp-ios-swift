@@ -136,7 +136,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
         case let (lhs as Bool, rhs as Bool): return lhs == rhs
         case let (lhs as NSNull, rhs as NSNull):
             return lhs == rhs
-        case let (lhs as [String: Any], rhs as [String: Any]): return dictionariesEqual(lhs, rhs)
+        case let (lhs as [String: Any], rhs as [String: Any]): return dictionariesEqual(lhs, rhs, strict: strict)
         case let (lhs as [Any], rhs as [Any]): return arraysEqual(lhs, rhs)
         case let (lhs as any RawRepresentable, rhs as any RawRepresentable):
             return isEqual(lhs.rawValue, rhs.rawValue)
@@ -162,8 +162,9 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
         }
     }
     
-    func dictionariesEqual(_ lhs: [String: Any], _ rhs: [String: Any]) -> Bool {
-        guard lhs.count == rhs.count else { return false }
+    func dictionariesEqual(_ lhs: [String: Any], _ rhs: [String: Any], strict: Bool = true) -> Bool {
+        if strict == true && lhs.count != rhs.count  { return false }
+        
         return lhs.allSatisfy { key, value in
             guard let rhsValue = rhs[key] else { return false }
             return isEqual(value, rhsValue)
@@ -208,12 +209,13 @@ func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = n
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost) -> AuthorizationRequest {
+public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil) -> AuthorizationRequest {
+    let responseType = responseType ?? ResponseType.vp_token.rawValue
     return AuthorizationRequest(
         clientId: "client_id",
         clientIdScheme: "123",
         presentationDefinition: mockPresentationDefinitionObject,
-        responseType: "vp_token",
+        responseType: responseType,
         responseMode: ResponseMode.directPost.rawValue,
         nonce: "nonce",
         state: "state",

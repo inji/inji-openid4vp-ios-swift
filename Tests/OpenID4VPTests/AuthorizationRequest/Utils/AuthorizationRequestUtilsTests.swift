@@ -69,16 +69,16 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     }
     
     // Validate client tests
-    func testInvalidRequestFieldErrorForClientIdField() {
+    func testThrowInvalidRequestFieldErrorForClientIdFieldWhenGettingAuthRequestHandler() {
         let testCases: [TestCase] = [
             TestCase(input: ["client_id": "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
             TestCase(input: ["client_id": ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
             TestCase(input: ["client_id": "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: ["client_id": nil], expectedError: "Missing Input: client_id param is required")
+            TestCase(input: [:], expectedError: "Missing Input: client_id param is required")
         ]
         
         for testCase in testCases {
-            let authorizationRequestParametersWithInvalidClientId: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
+            let authorizationRequestParametersWithInvalidClientId: [String : Any] = testCase.input as [String : Any]
             
             XCTAssertThrowsError(try getAuthorizationRequestHandler(trustedVerifiers: [], authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId, shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)){ error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)

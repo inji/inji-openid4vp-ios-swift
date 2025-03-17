@@ -20,16 +20,12 @@ class OpenID4VPTests: XCTestCase {
     let decodedClientMetadata =
         "{\"name\":\"dummyClient\"}"
 
-    let vpTokens = [FormatType.ldp_vc: LdpVPTokenForSigning(verifiableCredential: ["VC1", "VC2"], id: "123",holder: "")]
-
     override func setUp() {
         super.setUp()
         mockNetworkManager = MockNetworkManager()
         openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager)
         openID4VP.setResponseUri("https://mock-verifier.com")
         openID4VP.authorizationRequest = authorizationRequest
-
-//        AuthorizationResponse.vpTokenForSigning = vpTokens
     }
 
     override func tearDown() {

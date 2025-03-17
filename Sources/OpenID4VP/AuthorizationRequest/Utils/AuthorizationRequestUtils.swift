@@ -36,14 +36,6 @@ func validateAuthorizationRequestObjectAndParameters(params: [String: String], r
     }
 }
 
-func urlEncodedRequest(_ decodedRequest: String) -> String? {
-    return decodedRequest.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-}
-
-func getQueryItems(_ encodedUrl: URL) -> [URLQueryItem]? {
-    return URLComponents(url: encodedUrl, resolvingAgainstBaseURL: false)?.queryItems
-}
-
 extension Dictionary where Key == String, Value == String {
     func values(forKeys keys: [String]) -> [String]? {
         let values = keys.compactMap { self[$0] }

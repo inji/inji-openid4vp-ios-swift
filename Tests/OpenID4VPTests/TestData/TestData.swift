@@ -267,3 +267,8 @@ let mockAuthorizationRequestObjectWithDirectPostJwtResponseMode = getMockAuthori
 
 let mockSetResponseUri: (String) -> Void = { value in
 }
+
+let credentialsMap: [String: [String: Array<Any>]] = [
+    "bank_input":
+        ["ldp_vc": ["VC1"]],
+]
