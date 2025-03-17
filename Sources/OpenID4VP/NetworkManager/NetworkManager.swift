@@ -1,5 +1,6 @@
 import Foundation
 
+
 public protocol NetworkManaging {
     func sendHTTPRequest(url: String, method: HTTP_METHOD, bodyParams: [String:String]?, headers: [String: ContentTypes]?) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse)
 }

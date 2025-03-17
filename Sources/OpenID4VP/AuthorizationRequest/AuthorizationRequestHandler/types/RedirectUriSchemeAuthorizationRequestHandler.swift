@@ -3,6 +3,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     override init(authorizationRequestParameters: [String: Any], networkManager: NetworkManaging, setResponseUri: @escaping (String) -> Void) {
         super.init(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
         delegate = self
+        super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
     
     func validateRequestUriResponse() async throws {
@@ -12,21 +13,21 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Authorization Request must not be signed for given client_id_scheme",
-                    className: RedirectUriSchemeAuthorizationRequestHandler.className
+                    className: className
                 )
             }
             guard let responseBody = requestUriResponse.body.data(using: .utf8) else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Conversion failed",
-                    className: RedirectUriSchemeAuthorizationRequestHandler.className
+                    className: className
                 )
             }
             guard let authorizationRequestObject = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Conversion failed",
-                    className: RedirectUriSchemeAuthorizationRequestHandler.className
+                    className: className
                 )
             }
 
@@ -45,7 +46,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         default:
             throw Logger.handleException(
                 exceptionType : "InvalidResponseMode",
-                message : "Given response_mode \(String(describing: responseMode)) is not supported", className: RedirectUriSchemeAuthorizationRequestHandler.className
+                message : "Given response_mode \(String(describing: responseMode)) is not supported", className: className
             )
         }
         
@@ -55,7 +56,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         if authorizationRequestParameters.keys.contains(inValidAttribute) {
             throw Logger.handleException(
                 exceptionType: "invalidInput",
-                message: "\(inValidAttribute) should not be present for given response_mode", className: RedirectUriSchemeAuthorizationRequestHandler.className
+                message: "\(inValidAttribute) should not be present for given response_mode", className: className
             )
         } else {
             try validateAttribute(validAttribute, values: self.authorizationRequestParameters)
@@ -66,7 +67,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         if validValue as? String != clientIdValue {
             throw Logger.handleException(
                 exceptionType: "InvalidVerifier",
-                message: "\(validAttribute) should be equal to client_id for given client_id_scheme", className: RedirectUriSchemeAuthorizationRequestHandler.className
+                message: "\(validAttribute) should be equal to client_id for given client_id_scheme", className: className
             )
         }
     }

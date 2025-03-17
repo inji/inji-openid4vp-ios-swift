@@ -12,6 +12,8 @@ protocol ResponseModeBasedHandler {
 }
 
 extension ResponseModeBasedHandler {
+    
+    
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws {
         
         try validateAttribute(AuthorizationRequestFieldConstants.responseUri.rawValue, values: authorizationRequestParameters)
@@ -21,7 +23,7 @@ extension ResponseModeBasedHandler {
             throw Logger.handleException(
                 exceptionType: "InvalidData",
                 message: "response_uri data is not valid",
-                className: ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass.className
+                className: String(describing: ResponseModeBasedHandler.self)
             )
         }
         setResponseUri(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String)

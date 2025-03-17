@@ -11,7 +11,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     let networkManager: NetworkManaging
     let setResponseUri: (String) -> Void
     var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
-    static let className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
+    var className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
     
     init(authorizationRequestParameters: [String: Any], networkManager: NetworkManaging, setResponseUri: @escaping (String) -> Void) {
         self.authorizationRequestParameters = authorizationRequestParameters
@@ -26,14 +26,14 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     func fetchAuthorizationRequest() async throws{
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
             if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass.className)
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: className)
             }
             guard isValidUri(requestUri)
             else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "request_uri \(requestUri) data is not valid",
-                    className: ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass.className
+                    className: className
                 )
             }
             
