@@ -74,7 +74,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     final func createAuthorizationRequest() -> AuthorizationRequest {
         return AuthorizationRequest(
             clientId: getStringValue(authorizationRequestParameters["client_id"])!,
-            clientIdScheme: getStringValue(authorizationRequestParameters["client_id_scheme"]) ?? ClientIdScheme.preRegistered.rawValue,
             presentationDefinition: authorizationRequestParameters["presentation_definition"]! as! PresentationDefinition,
             responseType: getStringValue(authorizationRequestParameters["response_type"])!,
             responseMode: getStringValue(authorizationRequestParameters["response_mode"]),

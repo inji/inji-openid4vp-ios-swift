@@ -30,10 +30,6 @@ func validateAuthorizationRequestObjectAndParameters(params: [String: String], r
     guard params["client_id"] == requestUriParams["client_id"] as? String else {
         throw Logger.handleException(exceptionType: "MismatchingClientIDInRequest", className: AuthorizationRequest.className)
     }
-    
-    guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] as? String else {
-        throw Logger.handleException(exceptionType: "MismatchingClientIdSchemeInRequest", className: AuthorizationRequest.className)
-    }
 }
 
 extension Dictionary where Key == String, Value == String {

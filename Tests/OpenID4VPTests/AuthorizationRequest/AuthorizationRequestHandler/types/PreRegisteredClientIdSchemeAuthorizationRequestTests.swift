@@ -9,7 +9,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     
     let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,[
         "client_id": "mock-client",
-        "client_id_scheme": ClientIdScheme.did.rawValue,
     ]), applicableFields: authRequestWithPreRegisteredByValue)
     let requestUri: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
     
@@ -189,7 +188,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestThrowExceptionForValidationOfMatchingClientIdOnAuthRequestSentByReference() async{
         let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,[
             "client_id": "some-mock-client",
-            "client_id_scheme": ClientIdScheme.preRegistered.rawValue,
         ]), applicableFields: authRequestWithPreRegisteredByValue)
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
@@ -201,20 +199,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         } catch {
             XCTAssertTrue(error == AuthorizationRequestException.mismatchingClientIDInRequest)
             XCTAssertEqual("Client Id is mismatching in QR data and Request Uri response", error.localizedDescription)
-        }
-    }
-    
-    func testFetchAuthorizationRequestThrowExceptionForValidationOfMatchingClientIdSchemeOnAuthRequestSentByReference() async{
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
-        
-        do{
-            _ = try await preRegistered.validateRequestUriResponse()
-            XCTFail("Error needs to be thrown")
-        } catch {
-            XCTAssertTrue(error == AuthorizationRequestException.mismatchingClientIdSchemeInRequest)
-            XCTAssertEqual("Client Id Scheme is mismatching in QR data and Request Uri response", error.localizedDescription)
         }
     }
     

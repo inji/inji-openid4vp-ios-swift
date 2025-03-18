@@ -55,6 +55,19 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         }
     }
     
+    /// validate and parse request fields
+    
+    func testThrowNoErrorForValidAuthorizationRequestWhileValidateAndParseRequestFields() async {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
+        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+
+        do{
+            try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
+        } catch {
+            XCTFail("Error should not be thrown but error - \(error) is captured")
+        }
+    }
+    
     func testThrowErrorWhenClientIdIsNotEqualToResponseUriWithDirectPostResponseMode() async{
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId, ["response_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)

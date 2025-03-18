@@ -2,10 +2,8 @@ import Foundation
 import JSONWebSignature
 import CryptoKit
 
-//TODO: Remove client_id_scheme property
 public struct AuthorizationRequest : Encodable {
     let clientId: String
-    let clientIdScheme: String
     var presentationDefinition: PresentationDefinition
     let responseType: String
     let responseMode: String?
@@ -33,7 +31,6 @@ public struct AuthorizationRequest : Encodable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(clientId, forKey: .client_id)
-        try container.encode(clientIdScheme, forKey: .client_id_scheme)
         if let presentationDefString = presentationDefinition as? String {
             try container.encode(presentationDefString, forKey: .presentation_definition)
         } else if let presentationDefObject = presentationDefinition as? PresentationDefinition {

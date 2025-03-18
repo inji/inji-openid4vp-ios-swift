@@ -79,14 +79,12 @@ let preRegisteredSchemeClientId: [String: String] = [
 
 let authRequestParamsByReference : [String] = [
     "client_id",
-    "client_id_scheme",
     "request_uri",
     "request_uri_method"
 ]
 
 let authRequestWithRedirectUriByValue : [String] = [
     "client_id",
-    "client_id_scheme",
     "response_uri",
     "presentation_definition",
     "response_type",
@@ -98,7 +96,6 @@ let authRequestWithRedirectUriByValue : [String] = [
 
 let authRequestWithPreRegisteredByValue : [String] = [
     "client_id",
-    "client_id_scheme",
     "response_mode",
     "response_uri",
     "presentation_definition",
@@ -110,7 +107,6 @@ let authRequestWithPreRegisteredByValue : [String] = [
 
 let authRequestWithDidByValue : [String] = [
     "client_id",
-    "client_id_scheme",
     "response_mode",
     "response_uri",
     "presentation_definition",
@@ -238,7 +234,6 @@ let testValidSignedVpRequestWithDid = createUrlEncodedAuthorizationRequest(reque
 
 let testInValidSignedVpRequestWithDidAndClientIdDifferent = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, [
     "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-21",
-    "client_id_scheme": ClientIdScheme.did.rawValue,
 ]), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
 

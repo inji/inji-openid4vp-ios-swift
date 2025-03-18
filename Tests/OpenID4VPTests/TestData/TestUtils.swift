@@ -213,7 +213,6 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
     let responseType = responseType ?? ResponseType.vp_token.rawValue
     return AuthorizationRequest(
         clientId: "client_id",
-        clientIdScheme: "123",
         presentationDefinition: mockPresentationDefinitionObject,
         responseType: responseType,
         responseMode: ResponseMode.directPost.rawValue,
