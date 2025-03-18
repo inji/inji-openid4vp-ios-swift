@@ -2,19 +2,18 @@ import Foundation
 import Alamofire
 
 public protocol NetworkManaging {
-    func sendHTTPRequest(url: String, method: HttpMethod, bodyParams: [String:String]?, headers: [String: ContentTypes]?) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse)
+    func sendHTTPRequest(url: String, method: HttpMethod, bodyParams: [String:String]?, headers: [String: String]?) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse)
 }
 
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
 
-    //TODO: accept header as [String: String]?
-    public func sendHTTPRequest(url: String, method: HttpMethod, bodyParams requestBody: [String:String]? = nil, headers: [String : ContentTypes]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
+    public func sendHTTPRequest(url: String, method: HttpMethod, bodyParams requestBody: [String:String]? = nil, headers: [String : String]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
         let requestHeaders: HTTPHeaders? = headers?.reduce(into: HTTPHeaders()) { result, header in
-            result.add(name: header.key, value: header.value.rawValue)
+            result.add(name: header.key, value: header.value)
         }
-        let encoding = getEncoding(for: headers?[Header.contentType.rawValue]?.rawValue)
+        let encoding = getEncoding(for: headers?[Header.contentType.rawValue])
         
         return try await withCheckedThrowingContinuation { continuation in
             AF.request(url, method: method, parameters: requestBody, encoding: encoding, headers: requestHeaders)

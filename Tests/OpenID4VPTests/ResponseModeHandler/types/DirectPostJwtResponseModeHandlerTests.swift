@@ -174,7 +174,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)
             XCTAssertTrue(recordedRequest?.requestBody?.keys.count == 1)
             XCTAssertTrue(((recordedRequest?.requestBody?.keys.allSatisfy(["request"].contains(_:))) != nil))
-            assertDictionariesEqual(expected: ["Content-Type":ContentTypes.applicationFormUrlEncoded], actual: recordedRequest?.requestHeaders)
+            assertDictionariesEqual(expected: ["Content-Type":ContentTypes.applicationFormUrlEncoded.rawValue], actual: recordedRequest?.requestHeaders)
             XCTAssertEqual("Response has been shared successfully here.", result)
         }
     }
