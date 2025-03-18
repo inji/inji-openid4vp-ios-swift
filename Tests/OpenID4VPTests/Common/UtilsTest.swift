@@ -53,12 +53,12 @@ class UtilsTest : XCTestCase {
         let postMethod2 = try? determineHttpMethod(method: "POST")
         let postMethod3 = try? determineHttpMethod(method: "Post")
         
-        XCTAssertEqual(getMethod1, HTTP_METHOD.GET)
-        XCTAssertEqual(getMethod2, HTTP_METHOD.GET)
-        XCTAssertEqual(getMethod3, HTTP_METHOD.GET)
-        XCTAssertEqual(postMethod1, HTTP_METHOD.POST)
-        XCTAssertEqual(postMethod2, HTTP_METHOD.POST)
-        XCTAssertEqual(postMethod3, HTTP_METHOD.POST)
+        XCTAssertEqual(getMethod1, .get)
+        XCTAssertEqual(getMethod2, .get)
+        XCTAssertEqual(getMethod3, .get)
+        XCTAssertEqual(postMethod1, .post)
+        XCTAssertEqual(postMethod2, .post)
+        XCTAssertEqual(postMethod3, .post)
     }
     
     func testDetermineHttpMethodToThrowErrorIfInputIsNotValid(){

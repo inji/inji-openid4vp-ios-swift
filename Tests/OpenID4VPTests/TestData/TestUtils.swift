@@ -203,7 +203,7 @@ func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
 
 func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {
     let url = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
-    let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/json"])!
+    let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: [Header.contentType.rawValue: "application/json"])!
     let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
     
     return (body: body, httpUrlResponse: modifiedResponse)

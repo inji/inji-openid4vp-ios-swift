@@ -6,16 +6,16 @@ struct AuthorizationResponse {
     let state: String?
     static let className = String(describing: AuthorizationResponse.self)
 
-    func toJsonEncodedMap(shouldEncode : Bool = true) throws -> [String: String] {
+    func toJsonEncodedMap() throws -> [String: String] {
         let encodedVPTokenData =  String(data: vpToken.encoded!, encoding: .utf8) ?? ""
         let encodedPresentationSubmission = try encode(self.presentation_submission, fieldName: "presentation_submission")
         var bodyParams: [String: String] = [
-            "vp_token": shouldEncode ? encodeQueryValue(encodedVPTokenData) : encodedVPTokenData,
-            "presentation_submission": shouldEncode ? encodeQueryValue(encodedPresentationSubmission) : encodedPresentationSubmission
+            "vp_token": encodedVPTokenData,
+            "presentation_submission": encodedPresentationSubmission
         ]
         
         if let state = state {
-            bodyParams["state"] = shouldEncode ? encodeQueryValue(state) : state
+            bodyParams["state"] = state
         }
         
         return bodyParams

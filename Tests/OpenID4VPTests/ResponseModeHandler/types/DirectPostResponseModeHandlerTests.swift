@@ -24,7 +24,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager)
             
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
-            XCTAssertEqual(HTTP_METHOD.POST, recordedRequest?.requestMethod)
+            XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)
             XCTAssertTrue(recordedRequest?.requestBody?.keys.count == 3)
             XCTAssertTrue(((recordedRequest?.requestBody?.keys.allSatisfy(["vp_token","presentation_submission","state"].contains(_:))) != nil))
             assertDictionariesEqual(expected: ["Content-Type":ContentTypes.applicationFormUrlEncoded], actual: recordedRequest?.requestHeaders)

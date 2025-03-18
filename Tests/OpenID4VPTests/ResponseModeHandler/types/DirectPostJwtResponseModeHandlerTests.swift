@@ -171,7 +171,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             let result = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode.responseUri!, networkManager: mockNetworkManager)
             
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
-            XCTAssertEqual(HTTP_METHOD.POST, recordedRequest?.requestMethod)
+            XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)
             XCTAssertTrue(recordedRequest?.requestBody?.keys.count == 1)
             XCTAssertTrue(((recordedRequest?.requestBody?.keys.allSatisfy(["request"].contains(_:))) != nil))
             assertDictionariesEqual(expected: ["Content-Type":ContentTypes.applicationFormUrlEncoded], actual: recordedRequest?.requestHeaders)

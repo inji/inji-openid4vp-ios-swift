@@ -54,7 +54,7 @@ public class OpenID4VP {
             "traceabilityId": "\(traceabilityId)"
         ]
         do {
-            _ =  try await networkManager.sendHTTPRequest(url: responseUri ?? "", method: HTTP_METHOD.POST, bodyParams: errorInfo, headers: ["Content_Type" : ContentTypes.applicationFormUrlEncoded])
+            _ =  try await networkManager.sendHTTPRequest(url: responseUri ?? "", method: .post, bodyParams: errorInfo, headers: ["Content_Type" : ContentTypes.applicationFormUrlEncoded])
         } catch {
             Logger.error(logTag, NetworkRequestException.invalidResponse(message: "Unexpected error occurred while sending the error to verifier: \(error)"))
         }

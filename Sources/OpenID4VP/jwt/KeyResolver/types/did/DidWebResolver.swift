@@ -76,7 +76,7 @@ class DidWebResolver {
             
             let urlString = "https://\(path)\(DOC_PATH)"
             
-            let response = try await networkManager.sendHTTPRequest(url: urlString, method: .GET, bodyParams: nil, headers: nil)
+            let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
             guard let responseBody = response.responseBody.data(using: .utf8) else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
