@@ -85,7 +85,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testShareVPThrowErrorWhenVerifiableCredentialsAreNotPassedAsStringInLdpVcs() async  {
-        let authorizationRequest = getMockAuthorizationRequest()
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: ["input1": [.ldp_vc : [1,2]]], holder: "holder")) { error in

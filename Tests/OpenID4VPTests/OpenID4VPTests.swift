@@ -50,7 +50,6 @@ class OpenID4VPTests: XCTestCase {
     func testReturnDataForValidRequestWithRedirectUri() async {
         do {
             let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-            let jsonStirng = try JSONEncoder().encode(authorizationRequest)
 
             XCTAssertTrue(authorizationRequest is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
         } catch {
