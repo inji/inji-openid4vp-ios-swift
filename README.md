@@ -1,6 +1,19 @@
 # INJI-OpenID4VP-ios-swift
 
-Description: Implementation of OpenID for Verifiable Presentations - draft 21 specifications in Swift
+inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentations written in swift
+
+**Table of Contents**
+
+- [Supported features](#supported-features)
+- [Specifications supported](#specifications-supported)
+- [Functionalities](#functionalities)
+- [Installation](#installation)
+- [APIs](#apis)
+  - [authenticateVerifier](#authenticateverifier)
+  - [constructVerifiablePresentation](#constructverifiablepresentation)
+  - [shareVerifiablePresentation](#shareverifiablepresentation)
+  - [sendErrorToVerifier](#senderrortoverifier)
+
 
 ## Supported features
 
@@ -9,7 +22,7 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 | Device flow                                                | cross device flow                                                                                                                                                                                                                                                                                                                                                  |
 | Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                                                                                                                                                                                            |
 | Signed authorization request verification algorithms       | Ed25519                                                                                                                                                                                                                                                                                                                                                            |
-| Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html#section-3.2))]_ |
+| Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html#section-3.2))]_ |
 | Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                                                                                                                                                                                         |
 | Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                                                                                                                                                                                             |
 | Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                                                                                                                                                                                          |
@@ -18,7 +31,7 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
 
 
 ## Specifications supported
-- The implementation follows OpenID for Verifiable Presentations - draft 21. [Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html).
+- The implementation follows OpenID for Verifiable Presentations - draft 23. [Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html).
 - Below are the fields we expect in the authorization request based on the client id scheme,
   - Client_id_scheme is **_pre-registered_**
     * client_id
@@ -76,18 +89,30 @@ Description: Implementation of OpenID for Verifiable Presentations - draft 21 sp
  - Returns the validated Authorization request object
 
 
-
-```
-    let response = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier])
+```swift
+    let authorizationRequest : AuthorizationRequest = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier])
 ```
 
 ###### Parameters
 
-| Name                           | Type       | Description                                                                      | Sample                                               |
-|--------------------------------|------------|----------------------------------------------------------------------------------|------------------------------------------------------|
-| urlEncodedAuthorizationRequest | String     | URL Encoded authorization request.                                               | `"T1BFTklENFZQOi8vYXV0"`                             |
-| trustedVerifierJSON            | [Verifier] | Array of verifiers to verify the client id of the verifier.                      | `Verifier(clientId: String, responseUris: [String])` |
-| shouldValidateClient           | Bool?      | Optional Boolean to toggle client validation for pre-registered client id scheme | `true`                                               |
+| Name                           | Type       | Description                                                                      |
+|--------------------------------|------------|----------------------------------------------------------------------------------|
+| urlEncodedAuthorizationRequest | String     | URL Encoded authorization request.                                               |
+| trustedVerifierJSON            | [Verifier] | Array of verifiers to verify the client id of the verifier.                      |
+| shouldValidateClient           | Bool?      | Optional Boolean to toggle client validation for pre-registered client id scheme |
+
+
+###### Example usage
+
+```swift
+ let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
+                urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri,
+                trustedVerifierJSON:  [
+                    Verifier(clientId: "https://mock-verifier.com", responseUris: ["https://mock-verifier.com/response"])
+                ],
+                shouldValidateClient: true
+            )
+```
 
 
 ###### Exceptions
@@ -115,20 +140,32 @@ This method will also notify the Verifier about the error by sending it to the r
 - Receives a dictionary of input_descriptor id & list of verifiable credentials for each input_descriptor that are selected by the end-user.
 - Creates a vp_token without proof using received input_descriptor IDs and verifiable credentials, then returns its string representation to consumer app(mobile wallet) for signing it.
 
-```
-    let response = try openID4VP.constructVerifiablePresentation(credentialsMap: [String: [String]])
+```swift
+    let vpTokensForSigning = try openID4VP.constructVerifiablePresentationToken(credentialsMap: [String: [FormatType: Array<Any>]])
 ```
 
 ###### Parameters
 
-| Name           | Type               | Description                                                                                                   | Sample                         |
-|----------------|--------------------|---------------------------------------------------------------------------------------------------------------|--------------------------------|
-| credentialsMap | [String: [String]] | Contains the input descriptor id as key and corresponding matching Verifiable Credentials as array of string. | `["bank_input":["VC1","VC2"]]` |
+| Name           | Type               | Description                                                                                                                                    |
+|----------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| credentialsMap | [String: [String]] | A Map which contains input descriptor id as key and value is the map of credential format and the list of user selected verifiable credentials |
 
+###### Example usage
+
+```swift
+let vpTokensForSigning: [FormatType: VPTokenForSigning] = try openID4VP.constructVerifiablePresentationToken(
+    credentialsMap: [
+        "input_descriptor_id": [
+            FormatType.LDP_VC.rawValue: ["credential1"]
+        ]
+    ]
+)
+```
 
 ###### Exceptions
 
 1. JsonEncodingFailed exception is thrown if there is any issue while serializing the vp_token without proof.
+2. InvalidData exception is thrown if provided verifiable credentials list is empty
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
@@ -136,22 +173,37 @@ This method will also notify the Verifier about the error by sending it to the r
 - This function constructs a vp_token with proof using received VPResponseMetadata, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
-```
-    let response = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: VPResponseMetadata)
+```swift
+    let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: [FormatType:VPResponseMetadata])
 ```
 
 ###### Parameters
 
-| Name               | Type               | Description                                                                                               | Sample                                                                                                              |
-|--------------------|--------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| vpResponseMetadata | VPResponseMetadata | Contains a VPResponseMetadata which has proof details such as  jws, signatureAlgorithm, publicKey, domain | `VPResponseMetadata(jws: "jws", signatureAlgorithm: "signatureAlgoType", publicKey: "publicKey", domain: "domain")` |
+| Name               | Type               | Description                                                                                                                                                 |
+|--------------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| vpResponseMetadata | VPResponseMetadata | This will be a map with key as credential format and value as VPResponseMetadata (which is specific to respective credential format's required information) |
 
+
+###### Example usage
+
+```swift
+let ldpVpResponseMetadata = LdpVPResponseMetadata(
+    jws : "ey....qweug",
+    signatureAlgorithm : "RsaSignature2018",
+    publicKey : publicKey,
+    domain : "<domain>"
+)
+let vpResponsesMetadata : VPResponsesMetadata = [FormatType.LDP_VC : ldpVpResponseMetadata]
+val response : String = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata : vpResponsesMetadata)
+```
 
 ###### Exceptions
 
 1. JsonEncodingFailed exception is thrown if there is any issue while serializing the generating vp_token or presentation_submission class instances.
 2. InterruptedIOException is thrown if the connection is timed out when network call is made.
 3. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
+4. InvalidData exception is thrown if the response_type in the authorization request is not supported
+
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
@@ -169,6 +221,11 @@ This method will also notify the Verifier about the error by sending it to the r
 |-------|-------|-------------------------------|-----------------------------------------------------------------------------------|
 | error | Error | Contains the exception object | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
 
+###### Example usage
+
+```swift
+await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedError(message: "User rejected the consent"))
+```
 
 ###### Exceptions
 
