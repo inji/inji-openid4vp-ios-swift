@@ -1,4 +1,4 @@
-public struct LdpVPTokenForSigning: Codable, VPTokenForSigning {
+public struct UnsignedLdpVPToken: Codable, UnsignedVPToken {
     let context = ["https://www.w3.org/2018/credentials/v1"]
     let type = ["VerifiablePresentation"]
     let verifiableCredential: [String]

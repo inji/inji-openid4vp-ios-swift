@@ -2,7 +2,7 @@ import Foundation
 
 public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
-    private var vpTokensForSigning: [FormatType: VPTokenForSigning] = [:]
+    private var unsignedVPTokens: [FormatType: UnsignedVPToken] = [:]
     private var path: [FormatType: (index: Int, nestedIndex: Int)] = [:]
     private var credentialsMap: [String: [FormatType: Array<Any>]]?
     
@@ -12,9 +12,9 @@ public class AuthorizationResponseHandler {
         self.networkManager = networkManager
     }
     
-    func constructVPTokenForSigning(
+    func constructUnsignedVPTokens(
         credentialsMap: [String: [FormatType: Array<Any>]]
-    ) throws -> [FormatType: VPTokenForSigning] {
+    ) throws -> [FormatType: UnsignedVPToken] {
         if (credentialsMap.isEmpty) {
             throw Logger.handleException(
                 exceptionType : "InvalidData",
@@ -22,8 +22,8 @@ public class AuthorizationResponseHandler {
             )
         }
         self.credentialsMap = credentialsMap
-        self.vpTokensForSigning = try createVPTokenForSigning(credentialsMap: credentialsMap)
-        return self.vpTokensForSigning
+        self.unsignedVPTokens = try createUnsignedVPTokens(credentialsMap: credentialsMap)
+        return self.unsignedVPTokens
     }
     
     func shareVP(
@@ -70,7 +70,7 @@ public class AuthorizationResponseHandler {
             .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager)
     }
     
-    private func createVPTokenForSigning(credentialsMap: [String: [FormatType: [Any]]]) throws -> [FormatType: VPTokenForSigning] {
+    private func createUnsignedVPTokens(credentialsMap: [String: [FormatType: [Any]]]) throws -> [FormatType: UnsignedVPToken] {
         let groupedVcs: [FormatType: [Any]] = credentialsMap
             .sorted(by: { $0.key < $1.key })
             .compactMap { $0.value }
@@ -81,7 +81,7 @@ public class AuthorizationResponseHandler {
             }
         
         // group all formats together, call specific creator and pass the grouped credentials
-        return try groupedVcs.reduce(into: [FormatType: VPTokenForSigning]()) { result, entry in
+        return try groupedVcs.reduce(into: [FormatType: UnsignedVPToken]()) { result, entry in
             let (format, credentials) = entry
             switch format {
             case .ldp_vc:
@@ -91,7 +91,7 @@ public class AuthorizationResponseHandler {
                         message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
                     )
                 }
-                result[format] = LdpVPTokenForSigning(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "")
+                result[format] = UnsignedLdpVPToken(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "")
             }
         }
     }
@@ -107,7 +107,7 @@ public class AuthorizationResponseHandler {
         for (credentialFormat, vpResponseMetadata) in vpResponsesMetadata {
             let vpToken = try VPTokenFactory(
                 vpResponseMetadata: vpResponseMetadata,
-                vpTokenForSigning: vpTokensForSigning[credentialFormat] ?? {
+                unsignedVPToken: unsignedVPTokens[credentialFormat] ?? {
                     throw Logger.handleException(exceptionType: "InvalidData", message: "unable to find the related credential format - \(credentialFormat) in the vpTokensForSigning map", className: AuthorizationResponseHandler.className)
                 }(),
                 nonce: authorizationRequest.nonce

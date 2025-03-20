@@ -153,7 +153,7 @@ This method will also notify the Verifier about the error by sending it to the r
 ###### Example usage
 
 ```swift
-let vpTokensForSigning: [FormatType: VPTokenForSigning] = try openID4VP.constructVerifiablePresentationToken(
+let vpTokensForSigning: [FormatType: UnsignedVPToken] = try openID4VP.constructVerifiablePresentationToken(
     credentialsMap: [
         "input_descriptor_id": [
             FormatType.LDP_VC.rawValue: ["credential1"]

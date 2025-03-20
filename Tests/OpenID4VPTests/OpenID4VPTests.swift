@@ -210,7 +210,7 @@ class OpenID4VPTests: XCTestCase {
 
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async{
-        let received: [FormatType: VPTokenForSigning]?
+        let received: [FormatType: UnsignedVPToken]?
 
         do {
             received = try await openID4VP.constructVerifiablePresentationToken(credentialsMap: verifiableCredentialsList)

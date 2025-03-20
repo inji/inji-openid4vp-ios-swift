@@ -13,7 +13,7 @@ func constructBodyParams(vpToken: VPToken, presentationSubmission: PresentationS
     return bodyParams
 }
 
-func encodeVPTokenForSigning(_ vpTokensForSigning: [FormatType: VPTokenForSigning]) throws -> [String : String] {
+func encodeUnsignedVPToken(_ vpTokensForSigning: [FormatType: UnsignedVPToken]) throws -> [String : String] {
     let encoder = JSONEncoder()
     encoder.outputFormatting = .withoutEscapingSlashes
     var formatted: [String: String] = [:]
