@@ -11,12 +11,12 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     
     func testConstructVpForSigning() throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let vpTokens: [FormatType: VPTokenForSigning] = try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: verifiableCredentials, holder: "holder")
+        let vpTokens: [FormatType: VPTokenForSigning] = try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: verifiableCredentials)
         
         XCTAssertTrue(vpTokens.keys.count == 1)
         let ldpVpToken = vpTokens[.ldp_vc] as! LdpVPTokenForSigning
         XCTAssertEqual(ldpVpToken.verifiableCredential.count, ["cred1", "cred2", "cred3"].count)
-        XCTAssertEqual(ldpVpToken.holder, "holder")
+        XCTAssertEqual(ldpVpToken.holder, "")
         XCTAssertEqual(ldpVpToken.type, ["VerifiablePresentation"])
         XCTAssertEqual(ldpVpToken.context, ["https://www.w3.org/2018/credentials/v1"])
         XCTAssertNotNil(UUID(uuidString: ldpVpToken.id), "ID should be a valid UUID")
@@ -25,7 +25,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     func testConstructVpForSigningThrowErrorWhenCredentialsListIsEmpty() throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
-        XCTAssertThrowsError(try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: [:], holder: "holder")) { error in
+        XCTAssertThrowsError(try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: [:])) { error in
             XCTAssertEqual("Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.", error.localizedDescription)
         }
        
@@ -35,7 +35,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
     func testShareVPHasThePresentationDefinitionAsExpected() async throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        _ = try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: verifiableCredentials, holder: "holder")
+        _ = try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: verifiableCredentials)
         let responseUri = "https://mock-verifier.com"
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         let mockVPResponsesMetadata = [FormatType.ldp_vc : LdpVPResponseMetadata(
@@ -44,7 +44,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             publicKey: "testPublicKey",
             domain: "testDomain"
         )]
-        _ =  try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: verifiableCredentials, holder: "holder")
+        _ =  try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: verifiableCredentials)
         
         let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpResponsesMetadata: mockVPResponsesMetadata, responseUri: responseUri)
         
@@ -53,8 +53,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let decodedPresentationSubmission = decodeQueryValue((recordedRequest.requestBody?["presentation_submission"])!)
         let decodedVpToken = decodeQueryValue((recordedRequest.requestBody?["vp_token"])!)
         XCTAssertTrue(recordedRequest.requestBody?.keys.count == 3)
-        compareJsonStrings( "{\"definition_id\":\"vp_presentation_definition\",\"descriptor_map\":[{\"path_nested\":{\"path\":\"$.verifiableCredential[0]\",\"id\":\"input_descriptor1\",\"format\":\"ldp_vp\"},\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path_nested\":{\"id\":\"input_descriptor1\",\"format\":\"ldp_vp\",\"path\":\"$.verifiableCredential[1]\"},\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor2\",\"path\":\"$\",\"path_nested\":{\"format\":\"ldp_vp\",\"path\":\"$.verifiableCredential[2]\",\"id\":\"input_descriptor2\"}}]}", decodedPresentationSubmission, strict: false)
-        compareJsonStrings("{\r\n  \"proof\" : {\r\n    \"challenge\" : \"nonce\",\r\n    \"jws\" : \"testJWS\",\r\n    \"verificationMethod\" : \"testPublicKey\",\r\n    \"domain\" : \"testDomain\",\r\n    \"type\" : \"ES256\",\r\n    \"proofPurpose\" : \"authentication\"\r\n  },\r\n  \"type\" : [\r\n    \"VerifiablePresentation\"\r\n  ],\r\n  \"@context\" : [\r\n    \"https:\\/\\/www.w3.org\\/2018\\/credentials\\/v1\"\r\n  ],\r\n  \"holder\" : \"holder\",\r\n  \"verifiableCredential\" : [\r\n    \"cred1\",\r\n    \"cred3\",\r\n    \"cred3\"\r\n  ]\r\n}", decodedVpToken, strict: false)
+        assertJsonString(expected: "{\"definition_id\":\"vp_presentation_definition\",\"descriptor_map\":[{\"path_nested\":{\"path\":\"$.verifiableCredential[0]\",\"id\":\"input_descriptor1\",\"format\":\"ldp_vp\"},\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path_nested\":{\"id\":\"input_descriptor1\",\"format\":\"ldp_vp\",\"path\":\"$.verifiableCredential[1]\"},\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor2\",\"path\":\"$\",\"path_nested\":{\"format\":\"ldp_vp\",\"path\":\"$.verifiableCredential[2]\",\"id\":\"input_descriptor2\"}}]}", actual: decodedPresentationSubmission, strict: false)
+        assertJsonString(expected: "{\r\n  \"proof\" : {\r\n    \"challenge\" : \"nonce\",\r\n    \"jws\" : \"testJWS\",\r\n    \"verificationMethod\" : \"testPublicKey\",\r\n    \"domain\" : \"testDomain\",\r\n    \"type\" : \"ES256\",\r\n    \"proofPurpose\" : \"authentication\"\r\n  },\r\n  \"type\" : [\r\n    \"VerifiablePresentation\"\r\n  ],\r\n  \"@context\" : [\r\n    \"https:\\/\\/www.w3.org\\/2018\\/credentials\\/v1\"\r\n  ],\r\n  \"holder\" : \"\",\r\n  \"verifiableCredential\" : [\r\n    \"cred1\",\r\n    \"cred3\",\r\n    \"cred3\"\r\n  ]\r\n}", actual: decodedVpToken, strict: false)
         XCTAssertEqual("state", recordedRequest.requestBody?["state"])
     }
     
@@ -74,7 +74,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let authorizationRequest = getMockAuthorizationRequest()
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         //constructVPTokenForSigning returns error as empty credentialsMap is passed, so vpTokensForSigning field is empty dictionary
-        do{_ =  try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: [:], holder: "holder")}catch {}
+        do{_ =  try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: [:])}catch {}
 
         do {
             _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpResponsesMetadata: vpResponsesMetaData, responseUri: "https://client.example.org/cb")
@@ -87,7 +87,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     func testShareVPThrowErrorWhenVerifiableCredentialsAreNotPassedAsStringInLdpVcs() async  {
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
-        XCTAssertThrowsError(try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: ["input1": [.ldp_vc : [1,2]]], holder: "holder")) { error in
+        XCTAssertThrowsError(try authorizationResponseHandler.constructVPTokenForSigning(credentialsMap: ["input1": [.ldp_vc : [1,2]]])) { error in
             XCTAssertEqual("ldp_vc credentials are not passed in string format", error.localizedDescription)
         }
     }

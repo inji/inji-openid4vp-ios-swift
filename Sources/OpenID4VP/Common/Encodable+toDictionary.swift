@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Kiruthika Jeyashankar on 13/03/25.
-//
-
 import Foundation
 
 extension Encodable {

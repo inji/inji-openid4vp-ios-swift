@@ -26,5 +26,6 @@ class NetworkRequestUtilsTests: XCTestCase {
             let result = mockResponse.isHeaderContentType(equalTo: testCase.expectedValue)
             XCTAssertEqual(result, testCase.expectedResult, "Failed for input: \(testCase.headerValue ?? "nil")")
         }
+        
     }
 }

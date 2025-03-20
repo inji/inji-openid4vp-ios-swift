@@ -13,8 +13,7 @@ public class AuthorizationResponseHandler {
     }
     
     func constructVPTokenForSigning(
-        credentialsMap: [String: [FormatType: Array<Any>]],
-        holder: String
+        credentialsMap: [String: [FormatType: Array<Any>]]
     ) throws -> [FormatType: VPTokenForSigning] {
         if (credentialsMap.isEmpty) {
             throw Logger.handleException(
@@ -23,7 +22,7 @@ public class AuthorizationResponseHandler {
             )
         }
         self.credentialsMap = credentialsMap
-        self.vpTokensForSigning = try createVPTokenForSigning(credentialsMap: credentialsMap, holder: holder)
+        self.vpTokensForSigning = try createVPTokenForSigning(credentialsMap: credentialsMap)
         return self.vpTokensForSigning
     }
     
@@ -71,7 +70,7 @@ public class AuthorizationResponseHandler {
             .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager)
     }
     
-    private func createVPTokenForSigning(credentialsMap: [String: [FormatType: [Any]]], holder: String) throws -> [FormatType: VPTokenForSigning] {
+    private func createVPTokenForSigning(credentialsMap: [String: [FormatType: [Any]]]) throws -> [FormatType: VPTokenForSigning] {
         let groupedVcs: [FormatType: [Any]] = credentialsMap
             .sorted(by: { $0.key < $1.key })
             .compactMap { $0.value }
@@ -92,7 +91,7 @@ public class AuthorizationResponseHandler {
                         message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
                     )
                 }
-                result[format] = LdpVPTokenForSigning(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: holder)
+                result[format] = LdpVPTokenForSigning(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "")
             }
         }
     }

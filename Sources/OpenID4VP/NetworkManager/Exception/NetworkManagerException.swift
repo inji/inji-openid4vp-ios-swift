@@ -19,8 +19,6 @@ enum NetworkRequestException: Error, LocalizedError {
             return message
         case .invalidInput(let message):
             return message
-        default:
-            return "An error occurred."
         }
     }
 }

@@ -121,76 +121,6 @@ extension Equatable where Self : Error {
     }
 }
 
-//Assert two dictionaries
-func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, file: StaticString = #file, line: UInt = #line, strict: Bool = true) {
-    guard let actualDict = actual else {
-        XCTFail("Actual is nil", file: file, line: line)
-        return
-    }
-    
-    func isEqual(_ lhs: Any?, _ rhs: Any?) -> Bool {
-        switch (lhs, rhs) {
-        case let (lhs as String, rhs as String): return lhs == rhs
-        case let (lhs as Int, rhs as Int): return lhs == rhs
-        case let (lhs as Double, rhs as Double): return lhs == rhs
-        case let (lhs as Bool, rhs as Bool): return lhs == rhs
-        case let (lhs as NSNull, rhs as NSNull):
-            return lhs == rhs
-        case let (lhs as [String: Any], rhs as [String: Any]): return dictionariesEqual(lhs, rhs, strict: strict)
-        case let (lhs as [Any], rhs as [Any]): return arraysEqual(lhs, rhs)
-        case let (lhs as any RawRepresentable, rhs as any RawRepresentable):
-            return isEqual(lhs.rawValue, rhs.rawValue)
-        case let (lhs as Encodable, rhs as Encodable):
-            do {
-                let encoder = JSONEncoder()
-                let jsonData1 = try encoder.encode(lhs)
-                let jsonData2 = try encoder.encode(rhs)
-                
-                let dict1 = try JSONSerialization.jsonObject(with: jsonData1, options: []) as? [String: Any]
-                let dict2 = try JSONSerialization.jsonObject(with: jsonData2, options: []) as? [String: Any]
-                
-                XCTAssertNotNil(dict1, "Failed to convert instance1 to dictionary", file: file, line: line)
-                XCTAssertNotNil(dict2, "Failed to convert instance2 to dictionary", file: file, line: line)
-                
-                assertDictionariesEqual(expected: dict1 ?? [:], actual: dict2, file: file, line: line)
-                return true
-            } catch {
-                print("error - \(error) occurred during conversion")
-                return false
-            }
-        default: return "\(String(describing: lhs))"  == "\(String(describing: rhs))"
-        }
-    }
-    
-    func dictionariesEqual(_ lhs: [String: Any], _ rhs: [String: Any], strict: Bool = true) -> Bool {
-        if strict == true && lhs.count != rhs.count  { return false }
-        
-        return lhs.allSatisfy { key, value in
-            guard let rhsValue = rhs[key] else { return false }
-            return isEqual(value, rhsValue)
-        }
-    }
-    
-    func arraysEqual(_ lhs: [Any], _ rhs: [Any]) -> Bool {
-        guard lhs.count == rhs.count else { return false }
-        return zip(lhs, rhs).allSatisfy { isEqual($0, $1) }
-    }
-    
-    if strict {
-        //TODO: add containsAll check to enhance assertion
-        XCTAssertEqual(expected.count, actualDict.count, "Dictionary sizes are different", file: file, line: line)
-    }
-    
-    for (key, expectedValue) in expected {
-        guard let actualValue = actualDict[key] else {
-            XCTFail("Missing key '\(key)' in actual dictionary", file: file, line: line)
-            continue
-        }
-        
-        XCTAssertTrue(isEqual(expectedValue, actualValue), "Mismatch for key '\(key)'. Expected: \(expectedValue), but got: \(actualValue)", file: file, line: line)
-    }
-}
-
 func decodeQueryValue(_ value: String) -> String {
     return value.removingPercentEncoding ?? value
 }
@@ -222,26 +152,4 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
         responseUri: "https://mock-verifier.com",
         clientMetadata: mockClientMetadataObject
     )
-}
-
-func compareJsonStrings(_ jsonString1: String, _ jsonString2: String, strict: Bool = true, file: StaticString = #file, line: UInt = #line) {
-    do {
-        guard let data1 = jsonString1.data(using: .utf8),
-              let data2 = jsonString2.data(using: .utf8) else {
-            XCTFail("Invalid JSON string encoding", file: file, line: line)
-            return
-        }
-        
-        let json1 = try JSONSerialization.jsonObject(with: data1, options: []) as? [String: Any]
-        let json2 = try JSONSerialization.jsonObject(with: data2, options: []) as? [String: Any]
-
-        XCTAssertNotNil(json1, "Failed to parse first JSON string", file: file, line: line)
-        XCTAssertNotNil(json2, "Failed to parse second JSON string", file: file, line: line)
-
-        if let json1 = json1, let json2 = json2 {
-            assertDictionariesEqual(expected: json1, actual: json2, file: file, line: line, strict: strict)
-        }
-    } catch {
-        XCTFail("JSON deserialization failed with error: \(error)", file: file, line: line)
-    }
 }
