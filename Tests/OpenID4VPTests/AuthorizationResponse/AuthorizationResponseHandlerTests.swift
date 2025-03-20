@@ -5,13 +5,13 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let mockNetworkManager = MockNetworkManager()
     let verifiableCredentials: [String: [FormatType: [Any]]] = ["input_descriptor1": [.ldp_vc: ["cred1", "cred3"]], "input_descriptor2": [.ldp_vc: ["cred3"]]]
     let vpResponsesMetaData = [FormatType.ldp_vc:LdpVPResponseMetadata(jws: "wemcn3234ns", signatureAlgorithm: "RsaSignature2018", publicKey: "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n", domain: "https://example")]
-    let vpTokensForSigning = [FormatType.ldp_vc: UnsignedLdpVPToken(verifiableCredential: ["cred1","cred2", "cred3"], id: "uuid", holder: "wallet/app")]
+    let unsignedVPTokens = [FormatType.ldp_vc: UnsignedLdpVPToken(verifiableCredential: ["cred1","cred2", "cred3"], id: "uuid", holder: "wallet/app")]
     
     /// construction of vp_token for signing
     
-    func testConstructVpForSigning() throws {
+    func testConstructUnsignedVPTokens() throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let vpTokens: [FormatType: UnsignedVPToken] = try authorizationResponseHandler.constructUnsignedVPTokens(credentialsMap: verifiableCredentials)
+        let vpTokens: [FormatType: UnsignedVPToken] = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials)
         
         XCTAssertTrue(vpTokens.keys.count == 1)
         let ldpVpToken = vpTokens[.ldp_vc] as! UnsignedLdpVPToken
@@ -22,10 +22,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertNotNil(UUID(uuidString: ldpVpToken.id), "ID should be a valid UUID")
     }
 
-    func testConstructVpForSigningThrowErrorWhenCredentialsListIsEmpty() throws {
+    func testConstructUnsignedVPTokensThrowErrorWhenCredentialsListIsEmpty() throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
-        XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPTokens(credentialsMap: [:])) { error in
+        XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:])) { error in
             XCTAssertEqual("Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.", error.localizedDescription)
         }
        
@@ -35,7 +35,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
     func testShareVPHasThePresentationDefinitionAsExpected() async throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        _ = try authorizationResponseHandler.constructUnsignedVPTokens(credentialsMap: verifiableCredentials)
+        _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials)
         let responseUri = "https://mock-verifier.com"
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         let mockVPResponsesMetadata = [FormatType.ldp_vc : LdpVPResponseMetadata(
@@ -44,7 +44,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             publicKey: "testPublicKey",
             domain: "testDomain"
         )]
-        _ =  try authorizationResponseHandler.constructUnsignedVPTokens(credentialsMap: verifiableCredentials)
+        _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials)
         
         let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpResponsesMetadata: mockVPResponsesMetadata, responseUri: responseUri)
         
@@ -70,24 +70,24 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
     
-    func testShareVPThrowErrorWhenRespectiveCredentialFormatIsNotAvailableInVpTokensForSigning() async  {
+    func testShareVPThrowErrorWhenRespectiveCredentialFormatIsNotAvailableInUnsignedVPTokens() async  {
         let authorizationRequest = getMockAuthorizationRequest()
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        //constructUnsignedVPTokens returns error as empty credentialsMap is passed, so vpTokensForSigning field is empty dictionary
-        do{_ =  try authorizationResponseHandler.constructUnsignedVPTokens(credentialsMap: [:])}catch {}
+        //constructUnsignedVPTokens returns error as empty credentialsMap is passed, so unsignedVPTokens field is empty dictionary
+        do{_ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:])}catch {}
 
         do {
             _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpResponsesMetadata: vpResponsesMetaData, responseUri: "https://client.example.org/cb")
             XCTFail("Response type not supported error should have been thrown but did not get error")
         } catch {
-            XCTAssertEqual("unable to find the related credential format - ldp_vc in the vpTokensForSigning map", error.localizedDescription)
+            XCTAssertEqual("unable to find the related credential format - ldp_vc in the unsignedVPTokens map", error.localizedDescription)
         }
     }
     
     func testShareVPThrowErrorWhenVerifiableCredentialsAreNotPassedAsStringInLdpVcs() async  {
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
-        XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPTokens(credentialsMap: ["input1": [.ldp_vc : [1,2]]])) { error in
+        XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: ["input1": [.ldp_vc : [1,2]]])) { error in
             XCTAssertEqual("ldp_vc credentials are not passed in string format", error.localizedDescription)
         }
     }

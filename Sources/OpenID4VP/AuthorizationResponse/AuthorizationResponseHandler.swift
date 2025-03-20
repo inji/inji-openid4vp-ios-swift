@@ -12,7 +12,7 @@ public class AuthorizationResponseHandler {
         self.networkManager = networkManager
     }
     
-    func constructUnsignedVPTokens(
+    func constructUnsignedVPToken(
         credentialsMap: [String: [FormatType: Array<Any>]]
     ) throws -> [FormatType: UnsignedVPToken] {
         if (credentialsMap.isEmpty) {
@@ -108,7 +108,7 @@ public class AuthorizationResponseHandler {
             let vpToken = try VPTokenFactory(
                 vpResponseMetadata: vpResponseMetadata,
                 unsignedVPToken: unsignedVPTokens[credentialFormat] ?? {
-                    throw Logger.handleException(exceptionType: "InvalidData", message: "unable to find the related credential format - \(credentialFormat) in the vpTokensForSigning map", className: AuthorizationResponseHandler.className)
+                    throw Logger.handleException(exceptionType: "InvalidData", message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map", className: AuthorizationResponseHandler.className)
                 }(),
                 nonce: authorizationRequest.nonce
             ).getVPTokenBuilder(credentialFormat: credentialFormat).build()

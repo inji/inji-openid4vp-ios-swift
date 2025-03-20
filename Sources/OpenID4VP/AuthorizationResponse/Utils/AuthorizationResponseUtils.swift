@@ -12,16 +12,3 @@ func constructBodyParams(vpToken: VPToken, presentationSubmission: PresentationS
     
     return bodyParams
 }
-
-func encodeUnsignedVPToken(_ vpTokensForSigning: [FormatType: UnsignedVPToken]) throws -> [String : String] {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = .withoutEscapingSlashes
-    var formatted: [String: String] = [:]
-    for (key,value) in vpTokensForSigning {
-        let encodedContent = try encoder.encode(value)
-        formatted[key.rawValue] = String(data: encodedContent, encoding: .utf8)
-    }
-
-    return formatted
-
-}

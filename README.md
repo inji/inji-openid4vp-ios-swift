@@ -141,7 +141,7 @@ This method will also notify the Verifier about the error by sending it to the r
 - Creates a vp_token without proof using received input_descriptor IDs and verifiable credentials, then returns its string representation to consumer app(mobile wallet) for signing it.
 
 ```swift
-    let vpTokensForSigning = try openID4VP.construcUnsignedVPToken(credentialsMap: [String: [FormatType: Array<Any>]])
+    let unsignedVPTokens = try openID4VP.constructUnsignedVPToken(credentialsMap: [String: [FormatType: Array<Any>]])
 ```
 
 ###### Parameters
@@ -153,7 +153,7 @@ This method will also notify the Verifier about the error by sending it to the r
 ###### Example usage
 
 ```swift
-let vpTokensForSigning: [FormatType: UnsignedVPToken] = try openID4VP.construcUnsignedVPToken(
+let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUnsignedVPToken(
     credentialsMap: [
         "input_descriptor_id": [
             FormatType.LDP_VC.rawValue: ["credential1"]
