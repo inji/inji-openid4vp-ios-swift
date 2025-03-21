@@ -3,9 +3,6 @@ import XCTest
 @testable import OpenID4VP
 
 class UtilsTest : XCTestCase {
-    struct TestCase {
-        let input: String
-    }
     
     // Validate url tests
     

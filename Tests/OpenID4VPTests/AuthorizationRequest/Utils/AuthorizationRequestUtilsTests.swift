@@ -4,11 +4,6 @@ import XCTest
 class AuthorizationRequestUtilsTests : XCTestCase {
     let mockNetworkManager = MockNetworkManager()
     
-    struct TestCase {
-        let input: [String: Any]
-        let expectedError: String
-    }
-    
     ///Test Decoding of url encoded paramters to Dictionary
     
     func testDecoding() throws {
