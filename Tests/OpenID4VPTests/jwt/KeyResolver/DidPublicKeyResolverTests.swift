@@ -22,21 +22,28 @@ class DidPublicKeyResolverTests : XCTestCase {
     }
     
     func testThrowErrorWhenKeyIdIsNotMatchingAnyOfTheKeysInDidDocumentResponse() async {
-        let did = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"
-        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
-        let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
+        let testCases: [TestCase] = [
+            TestCase(input: ""),
+            TestCase(input: "did:example:123#2"),
+        ]
         
-        do{
-//        kid = did:example:123#2 is not available in didResponse
-            let _ = try await didKeyResolver.resolveKey(header: [
-                "typ": "oauth-authz-req+jwt",
-                "alg": "EdDSA",
-                "kid": "did:example:123#2"
-            ])
-            XCTFail("error should been thrown but its not thrown")
-        }
-        catch{
-            XCTAssertEqual("No matching public key found in did resolver with the provided key id", error.localizedDescription)
+        for testCase in testCases {
+            let did = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"
+            mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+            let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
+            
+            do{
+    //        kid = \(testcase.input) is not available in didResponse
+                let _ = try await didKeyResolver.resolveKey(header: [
+                    "typ": "oauth-authz-req+jwt",
+                    "alg": "EdDSA",
+                    "kid": testCase.input
+                ])
+                XCTFail("error should been thrown but its not thrown for input - '\(testCase.input)'")
+            }
+            catch{
+                XCTAssertEqual("No matching public key found in did resolver with the provided key id", error.localizedDescription)
+            }
         }
     }
     
