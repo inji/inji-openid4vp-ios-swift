@@ -46,16 +46,6 @@ class OpenID4VPTests: XCTestCase {
             XCTFail("Should not get error but got error - \(error)")
         }
     }
-    
-    func testReturnDataForValidRequestWithRedirectUri() async {
-        do {
-            let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-
-            XCTAssertTrue(authorizationRequest is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
-        } catch {
-            XCTFail("Should not get error but got error - \(error)")
-        }
-    }
 
     // client_id_scheme = redirect_uri, response_mode = fragment
     func testInvalidResponseModeWithRedirectUriScheme() async {
