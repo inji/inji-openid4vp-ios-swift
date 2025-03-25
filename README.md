@@ -179,9 +179,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name               | Type               | Description                                                                                                                                                 |
-|--------------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpResponseMetadata | VPResponseMetadata | This will be a map with key as credential format and value as VPResponseMetadata (which is specific to respective credential format's required information) |
+| Name                | Type                             | Description                                                                                                                                                 |
+|---------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| vpResponsesMetadata | [FormatType: VPResponseMetadata] | This will be a map with key as credential format and value as VPResponseMetadata (which is specific to respective credential format's required information) |
 
 
 ###### Example usage
@@ -193,7 +193,7 @@ let ldpVpResponseMetadata = LdpVPResponseMetadata(
     publicKey : publicKey,
     domain : "<domain>"
 )
-let vpResponsesMetadata : VPResponsesMetadata = [FormatType.LDP_VC : ldpVpResponseMetadata]
+let vpResponsesMetadata : [FormatType: VPResponseMetadata] = [FormatType.LDP_VC : ldpVpResponseMetadata]
 val response : String = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata : vpResponsesMetadata)
 ```
 
