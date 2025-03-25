@@ -150,20 +150,20 @@ public class AuthorizationResponseHandler {
         var formatTypeToCredentialIndex: [FormatType: Int] = [:]
         
         let descriptorMappings = credentialsMap.sorted(by: { $0.key < $1.key }).flatMap { (inputDescriptorId, formatMap) in
-            formatMap.flatMap { (format, credentials) in
-                let vpTokenIndex = credentialFormatIndex[format] ?? -1
+            formatMap.flatMap { (credentialFormat, credentials) in
+                let vpTokenIndex = credentialFormatIndex[credentialFormat] ?? -1
                 
                 return credentials.map { credential in
                     let rootLevelPath = multipleVpTokens ? "$[\(vpTokenIndex)]" : "$"
-                    let credentialIndex = (formatTypeToCredentialIndex[format] ?? -1) + 1
+                    let credentialIndex = (formatTypeToCredentialIndex[credentialFormat] ?? -1) + 1
                     let relativePath: String
                     let vpFormat: VPFormatType
-                    switch format {
+                    switch credentialFormat {
                     case .ldp_vc:
                         relativePath = "$.\(LdpVpToken.internalPath)[\(credentialIndex)]"
                         vpFormat = VPFormatType.ldp_vp
                     }
-                    formatTypeToCredentialIndex[format] = credentialIndex
+                    formatTypeToCredentialIndex[credentialFormat] = credentialIndex
                     
                     return DescriptorMap(
                         id: inputDescriptorId,
@@ -171,7 +171,7 @@ public class AuthorizationResponseHandler {
                         path: rootLevelPath,
                         pathNested: PathNested(
                             id: inputDescriptorId,
-                            format: vpFormat,
+                            format: credentialFormat,
                             path: relativePath
                         )
                     )

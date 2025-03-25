@@ -14,7 +14,7 @@ struct DescriptorMap: Encodable{
 
 struct PathNested : Encodable {
     let id: String
-    let format: VPFormatType
+    let format: FormatType
     let path: String
 }
 
