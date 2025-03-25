@@ -2,7 +2,7 @@ struct DescriptorMap: Encodable{
     let id: String
     let format: VPFormatType
     let path: String
-    let pathNested: PathNested
+    let pathNested: PathNested?
     
     enum CodingKeys: String, CodingKey {
         case id

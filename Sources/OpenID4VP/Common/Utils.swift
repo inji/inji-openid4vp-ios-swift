@@ -82,16 +82,6 @@ func encode<T: Encodable>(_ data: T, fieldName: String) throws -> String {
     }
 }
 
-func encodeQueryValue(_ value: String) -> String {
-    var allowedCharacterSet = CharacterSet.urlQueryAllowed
-    allowedCharacterSet.remove("+")
-
-    if let decodedValue = value.removingPercentEncoding, decodedValue != value {
-        return value
-    }
-    return value.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? value
-}
-
 func toData(_ input: [String: Any]) throws -> Data {
     var processedInput: [String: Any] = [:]
 

@@ -1,11 +1,6 @@
 import OpenID4VP
 import Foundation
 
-public struct MockEncodable: Codable, Equatable {
-    let name: String
-    let age: Int
-}
-
 private let testVerifierList:  [[String: Any]]  = [
     [
         "client_id": "https://mock-verifier.com",
