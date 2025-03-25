@@ -7,7 +7,7 @@ struct AuthorizationResponse {
     static let className = String(describing: AuthorizationResponse.self)
 
     func toJsonEncodedMap() throws -> [String: String] {
-        let encodedVPTokenData =  String(data: vpToken.encoded!, encoding: .utf8) ?? ""
+        let encodedVPTokenData =  vpToken.encoded ?? ""
         let encodedPresentationSubmission = try encode(self.presentation_submission, fieldName: "presentation_submission")
         var bodyParams: [String: String] = [
             "vp_token": encodedVPTokenData,
@@ -33,18 +33,20 @@ public enum VPTokenType {
 }
 
 extension VPTokenType {
-    var encoded: Data? {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
+    var encoded: String? {
+        do {
+            switch self {
+            case .vpTokenArray(let tokens):
+                let encodedTokens = try tokens.map { try encode($0, fieldName: "vpToken") }
+                return try encode(encodedTokens, fieldName: "vpTokenArray")
 
-        switch self {
-        case .vpTokenArray(let tokens):
-            return try? encoder.encode(tokens.map{
-                try encoder.encode($0)
-            })
-
-        case .vpTokenElement(let token):
-            return try? encoder.encode(token)
+            case .vpTokenElement(let token):
+                let encodedToken = try encode(token, fieldName: "vpTokenElement")
+                return encodedToken
+            }
+        } catch {
+            return nil
         }
     }
 }
+
