@@ -61,7 +61,7 @@ class Logger {
         case "UnsupportedHttpMethod" :
             exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
         case "InvalidData":
-            exception = AuthorizationRequestException.invalidData(message: message ?? "")
+            exception = Exceptions.invalidData(message: message ?? "")
         case "InvalidResponseMode":
             exception = AuthorizationRequestException.invalidResponseMode(message: message ?? "")
         case "UnsupportedDidUrl":

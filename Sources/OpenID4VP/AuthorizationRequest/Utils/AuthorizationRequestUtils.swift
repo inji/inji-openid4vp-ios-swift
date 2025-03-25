@@ -116,11 +116,11 @@ func validateField(_ field: String?, _ fieldPath: [String], _ className: String)
 
 func extractClientIdScheme(clientId: String) throws -> String {
     if(clientId.isEmpty){
-        throw AuthorizationRequestException.invalidData(message: "Client Identifier is empty")
+        throw Logger.handleException(exceptionType: "InvalidData", message: "Client Identifier is empty", className: AuthorizationRequest.className)
     }
-
+    
     let components = clientId.split(separator: ":", maxSplits: 1)
-
+    
     if components.count > 1 {
         return String(components[0])
     } else {
