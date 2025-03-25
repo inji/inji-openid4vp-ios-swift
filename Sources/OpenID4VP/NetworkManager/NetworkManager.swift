@@ -45,9 +45,9 @@ public struct NetworkManager: NetworkManaging {
     
     private func getEncoding(for contentType: String?) -> ParameterEncoding {
         switch contentType {
-        case "application/json":
+        case ContentTypes.applicationJson.rawValue:
             return JSONEncoding.default
-        case "application/x-www-form-urlencoded":
+        case ContentTypes.applicationFormUrlEncoded.rawValue:
             return URLEncoding.default
         default:
             return URLEncoding.default
