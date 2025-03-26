@@ -127,11 +127,6 @@ final class DidWebResolverTests: XCTestCase {
         
     }
     
-    struct TestCase {
-        let input: String
-        let expectedError: String
-    }
-    
     func testThrowErrorDidResolutionFailedWhenNetworkResponseToDidJsonIsInvalid() async {
         let testCases: [TestCase] = [
             TestCase(input: "{\"key\":\"value", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
@@ -150,7 +145,7 @@ final class DidWebResolverTests: XCTestCase {
                 XCTFail("Error - didResolutionFailed should be thrown but did not throw")
             } catch {
                 XCTAssertEqual(error as? DidResolverExceptions , DidResolverExceptions.didResolutionFailed(message: testCase.expectedError))
-                XCTAssertEqual("Failed to resolve did due to \(testCase.expectedError)", error.localizedDescription, "input - \(testCase.input) failed")
+                XCTAssertEqual("Failed to resolve did due to \(testCase.expectedError!)", error.localizedDescription, "input - \(testCase.input) failed")
             }
         }
     }

@@ -9,10 +9,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         self.shouldValidateClient = shouldValidateClient
         super.init(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
         delegate = self
+        super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
     }
     
     override func validateClientId() throws {
-        try super.validateClientId()
         if shouldValidateClient {
             guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String }) else {
                 throw Logger.handleException(exceptionType: "InvalidVerifier", message: "Verifier not available in trusted list", className: AuthorizationRequest.className)
@@ -28,7 +28,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Authorization Request must not be signed for given client_id_scheme",
-                    className: PreRegisteredSchemeAuthorizationRequestHandler.className
+                    className: className
                 )
             }
             
@@ -36,14 +36,14 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Conversion failed",
-                    className: PreRegisteredSchemeAuthorizationRequestHandler.className
+                    className: className
                 )
             }
             guard let authorizationRequestObject = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
                     message: "Conversion failed",
-                    className: PreRegisteredSchemeAuthorizationRequestHandler.className
+                    className: className
                 )
             }
 

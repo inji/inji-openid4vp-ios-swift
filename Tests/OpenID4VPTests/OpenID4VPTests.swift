@@ -11,8 +11,8 @@ class OpenID4VPTests: XCTestCase {
     let publicKey = "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n"
     let domain = "https://example"
     let descriptorMap: [DescriptorMap] = [
-        DescriptorMap(id: "bank_input", format: .ldp_vp, path: "$.verifiableCredential[0]"),
-        DescriptorMap(id: "bank_input", format: .ldp_vp, path: "$.verifiableCredential[1]")
+        DescriptorMap(id: "bank_input", format: .ldp_vp, path: "$", pathNested: PathNested(id: "input_1", format: .ldp_vc, path: "$.verifiableCredential[0]")),
+        DescriptorMap(id: "bank_input", format: .ldp_vp, path: "$", pathNested: PathNested(id: "input_1", format: .ldp_vc, path: "$.verifiableCredential[0]"))
     ]
 
     let decodedPresentationDefinition = "{\"id\":\"#2345333\",\"input_descriptors\":[{\"id\":\"banking_input_1\",\"name\":\"Bank Account Information\",\"purpose\":\"We can\",\"constraints\":{\"fields\":[{\"path\":[\"$.crede\"],\"purpose\":\"We can use for  # verification purpose # for anything\",\"filter\":{\"type\":\"string\",\"pattern\":\"^$\"}},{\"path\":[\"$.vc.credential\",\"$.vc.credentialSubject.account[*].route\",\"$.account[*].route\"],\"purpose\":\"We can use for verification purpose\",\"filter\":{\"type\":\"string\",\"pattern\":\"^\"}}]}}]}"
@@ -20,16 +20,12 @@ class OpenID4VPTests: XCTestCase {
     let decodedClientMetadata =
         "{\"name\":\"dummyClient\"}"
 
-    let vpToken = VpTokenForSigning(verifiableCredential: ["VC1", "VC2"], id: "123",holder: "")
-
     override func setUp() {
         super.setUp()
         mockNetworkManager = MockNetworkManager()
         openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager)
         openID4VP.setResponseUri("https://mock-verifier.com")
         openID4VP.authorizationRequest = authorizationRequest
-
-        AuthorizationResponse.vpTokenForSigning = vpToken
     }
 
     override func tearDown() {
@@ -45,20 +41,7 @@ class OpenID4VPTests: XCTestCase {
             let jsonData = try JSONEncoder().encode(decoded)
             let authorizationRequestJsonString = String(decoding: jsonData, as: UTF8.self)
             
-            compareJsonStrings("{\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"client_id_scheme\":\"redirect_uri\",\"response_type\":\"vp_token\",\"redirect_uri\":null,\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"client_name\":\"Requester name\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]},\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]}},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"jwks\":{\"keys\":[{\"kty\":\"OKP\",\"use\":\"enc\",\"kid\":\"ed-key1\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\",\"crv\":\"X25519\"}]}},\"presentation_definition\":{\"input_descriptors\":[{\"purpose\":\"To verify identity using Linked Data Proofs\",\"id\":\"input_1\",\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"name\":\"Verifiable Credential\"}],\"id\":\"vp_presentation_definition\"},\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id\":\"https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\"}", authorizationRequestJsonString)
-        } catch {
-            XCTFail("Should not get error but got error - \(error)")
-        }
-    }
-    
-    func testReturnDataForValidRequestWithRedirectUri() async {
-        do {
-            
-            
-            let decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-            let jsonStirng = try JSONEncoder().encode(decoded)
-            print("json string \(String(decoding: jsonStirng, as: UTF8.self))")
-            XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+            assertJsonString(expected: "{\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_type\":\"vp_token\",\"redirect_uri\":null,\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"client_name\":\"Requester name\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]},\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]}},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"jwks\":{\"keys\":[{\"kty\":\"OKP\",\"use\":\"enc\",\"kid\":\"ed-key1\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\",\"crv\":\"X25519\"}]}},\"presentation_definition\":{\"input_descriptors\":[{\"purpose\":\"To verify identity using Linked Data Proofs\",\"id\":\"input_1\",\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"name\":\"Verifiable Credential\"}],\"id\":\"vp_presentation_definition\"},\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\"}", actual: authorizationRequestJsonString)
         } catch {
             XCTFail("Should not get error but got error - \(error)")
         }
@@ -217,11 +200,10 @@ class OpenID4VPTests: XCTestCase {
 
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async{
-        let credentialsMap: [String: [String]] = ["bank_input":["VC1","VC2"]]
-        let received: String?
+        let received: [FormatType: UnsignedVPToken]?
 
         do {
-            received = try await openID4VP.constructVerifiablePresentationToken(credentialsMap: credentialsMap)
+            received = try await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
         }catch{
             received = nil
         }
@@ -231,14 +213,11 @@ class OpenID4VPTests: XCTestCase {
     // NetworkManager Tests Success
     func testSendVpSuccess() async throws {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
-        
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        let vpResponsesMetaData = [FormatType.ldp_vc: LdpVPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
+        _ = try await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
         
-        let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
-        
-        AuthorizationResponse.verifiableCredentials = verifiableCredentialsList
-
-        let response = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: vcResponseMetaData)
+        let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: vpResponsesMetaData)
 
         XCTAssertEqual(response, "Success: Request completed successfully.")
     }
@@ -247,15 +226,13 @@ class OpenID4VPTests: XCTestCase {
     func testSendVpFailure() async {
         let errorMessage = "Network Request failed with error response: response"
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", error: NetworkRequestException.networkRequestFailed(message: errorMessage))
-       
-       AuthorizationResponse.verifiableCredentials = verifiableCredentialsList
-        
-        let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
+        _ = try! await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
+        let vpResponsesMetaData = [FormatType.ldp_vc: LdpVPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
 
         do {
             authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             
-            let _ = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: vcResponseMetaData)
+            let _ = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: vpResponsesMetaData)
         } catch let error as NetworkRequestException {
             switch error {
             case .networkRequestFailed(let message):
@@ -270,15 +247,13 @@ class OpenID4VPTests: XCTestCase {
     
     func testShareVPSuccessWhenResponseModeIsDirectPostJwt() async throws {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
-
-         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         
-        AuthorizationResponse.verifiableCredentials = verifiableCredentialsList
+        authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        _ = try! await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
+        let vpResponsesMetaData = [FormatType.ldp_vc: LdpVPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
+                
+        let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: vpResponsesMetaData)
         
-        let vcResponseMetaData = VPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)
-
-        let response = try await openID4VP.shareVerifiablePresentation(vpResponseMetadata: vcResponseMetaData)
-
         XCTAssertEqual(response, "Success: Request completed successfully.")
     }
 }

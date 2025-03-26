@@ -1,10 +1,10 @@
-public struct VpTokenForSigning: Codable {
+public struct UnsignedLdpVPToken: Codable, UnsignedVPToken {
     let context = ["https://www.w3.org/2018/credentials/v1"]
     let type = ["VerifiablePresentation"]
     let verifiableCredential: [String]
     let id: String
     let holder: String
-    
+
     enum CodingKeys: String, CodingKey {
         case context = "@context"
         case type

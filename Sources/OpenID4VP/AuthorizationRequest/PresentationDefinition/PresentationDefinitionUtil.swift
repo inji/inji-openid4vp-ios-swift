@@ -66,7 +66,7 @@ func parseAndValidatePresentationDefinition(
         }
         
         let response = try await networkManager.sendHTTPRequest(
-            url: valueStr, method: .GET, bodyParams: nil, headers: nil
+            url: valueStr, method: .get, bodyParams: nil, headers: nil
         )
         guard let data = response.responseBody.data(using: .utf8) else {
             throw Logger.handleException(

@@ -2,12 +2,23 @@ import Foundation
 import XCTest
 @testable import OpenID4VP
 
-class UtilsTest : XCTestCase {
-    struct TestCase {
-        let input: String
-    }
+struct MockDataClass: Codable {
+    let key: String
+    let keyWithMoreThanOneWord: String
+    let nullableField: String?
+    let number: Int
     
-    // Validate url tests
+    enum CodingKeys: String, CodingKey {
+        case key
+        case keyWithMoreThanOneWord = "key_with_more_than_one_word"
+        case nullableField = "nullable_field"
+        case number
+    }
+}
+
+class UtilsTest : XCTestCase {
+    
+    /// Validate url tests
     
     func testInvalidUrl() {
         let testCases: [TestCase] = [
@@ -33,7 +44,7 @@ class UtilsTest : XCTestCase {
         XCTAssertTrue(isValidUri("https://example.com"))
     }
     
-    // Check if input is JWT tests
+    /// Check if input is JWT tests
     
     func testIsStringIsJWT() {
         let invalidJwt = isJWS("eeeee")
@@ -43,7 +54,7 @@ class UtilsTest : XCTestCase {
         XCTAssertTrue(validJwt)
     }
     
-    // Test for string to HTTP method conversion
+    /// Test for string to HTTP method conversion
     
     func testDetermineHttpMethodToReturnHttpMethodIfInputIsValid(){
         let getMethod1 = try? determineHttpMethod(method: "get")
@@ -53,12 +64,12 @@ class UtilsTest : XCTestCase {
         let postMethod2 = try? determineHttpMethod(method: "POST")
         let postMethod3 = try? determineHttpMethod(method: "Post")
         
-        XCTAssertEqual(getMethod1, HTTP_METHOD.GET)
-        XCTAssertEqual(getMethod2, HTTP_METHOD.GET)
-        XCTAssertEqual(getMethod3, HTTP_METHOD.GET)
-        XCTAssertEqual(postMethod1, HTTP_METHOD.POST)
-        XCTAssertEqual(postMethod2, HTTP_METHOD.POST)
-        XCTAssertEqual(postMethod3, HTTP_METHOD.POST)
+        XCTAssertEqual(getMethod1, .get)
+        XCTAssertEqual(getMethod2, .get)
+        XCTAssertEqual(getMethod3, .get)
+        XCTAssertEqual(postMethod1, .post)
+        XCTAssertEqual(postMethod2, .post)
+        XCTAssertEqual(postMethod3, .post)
     }
     
     func testDetermineHttpMethodToThrowErrorIfInputIsNotValid(){
@@ -72,7 +83,7 @@ class UtilsTest : XCTestCase {
     
     func testToDataConversionSuccess() throws {
         
-        let mockEncodable = MockEncodable(name: "John Doe", age: 30)
+        let mockEncodable = MockDataClass(key: "value", keyWithMoreThanOneWord: "value1", nullableField: "value3", number: 1)
         
         let bodyParams: [String: Any] = [
             "key1": "value1",
@@ -90,8 +101,10 @@ class UtilsTest : XCTestCase {
         
         let encodedMock = decoded?["key3"] as? [String: Any]
         XCTAssertNotNil(encodedMock)
-        XCTAssertEqual(encodedMock?["name"] as? String, "John Doe")
-        XCTAssertEqual(encodedMock?["age"] as? Int, 30)
+        XCTAssertEqual(encodedMock?["key"] as? String, "value")
+        XCTAssertEqual(encodedMock?["key_with_more_than_one_word"] as? String, "value1")
+        XCTAssertEqual(encodedMock?["nullable_field"] as? String, "value3")
+        XCTAssertEqual(encodedMock?["number"] as? Int, 1)
     }
     
     func testToDataConversionFailure() throws {
@@ -99,6 +112,53 @@ class UtilsTest : XCTestCase {
         
         XCTAssertThrowsError(try toData(input), "Expected error for invalid JSON input") { error in
             XCTAssertEqual("Json Encoding failed for  due to this error: Invalid JSON object.", error.localizedDescription)
+        }
+    }
+    
+    /// Encoding of classes to JSON test
+
+    struct MockFailingEncodable: Encodable {
+        func encode(to encoder: Encoder) throws {
+            throw NSError(domain: "EncodingError", code: 0, userInfo: nil)
+        }
+    }
+    
+    func testEncodeWithAllProperties() throws {
+        let mockDataClass = MockDataClass(
+            key: "id_credential",
+            keyWithMoreThanOneWord: "ldp_vp",
+            nullableField: "value",
+            number: 1
+        )
+
+        let encodedJson = try encode(mockDataClass, fieldName: "mockDataClass")
+        let expectedJson = "{\"key\":\"id_credential\",\"key_with_more_than_one_word\":\"ldp_vp\",\"nullable_field\":\"value\",\"number\":1}"
+        
+        assertJsonString(expected: expectedJson, actual: encodedJson)
+    }
+
+    func testEncodeWithoutNullableField() throws {
+        let mockDataClass = MockDataClass(
+            key: "id_credential",
+            keyWithMoreThanOneWord: "ldp_vp",
+            nullableField: nil,
+            number: 1
+        )
+
+        let encodedJson = try encode(mockDataClass, fieldName: "mockDataClass")
+        print("data \(encodedJson)")
+        let expectedJson = "{\"key\":\"id_credential\",\"number\":1,\"key_with_more_than_one_word\":\"ldp_vp\"}"
+        
+        assertJsonString(expected: expectedJson, actual: encodedJson)
+    }
+
+    
+    func testEncodeFailure() {
+        
+        let failingObject = MockFailingEncodable()
+        
+        XCTAssertThrowsError(try encode(failingObject, fieldName: "failingObject")) {error in
+            XCTAssertEqual(error.localizedDescription, "Json Encoding failed for failingObject due to this error: The operation couldn’t be completed. (EncodingError error 0.).")
         }
     }
 }

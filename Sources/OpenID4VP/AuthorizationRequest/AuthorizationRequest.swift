@@ -4,7 +4,6 @@ import CryptoKit
 
 public struct AuthorizationRequest : Encodable {
     let clientId: String
-    let clientIdScheme: String
     var presentationDefinition: PresentationDefinition
     let responseType: String
     let responseMode: String?
@@ -32,23 +31,15 @@ public struct AuthorizationRequest : Encodable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(clientId, forKey: .client_id)
-        try container.encode(clientIdScheme, forKey: .client_id_scheme)
-        if let presentationDefString = presentationDefinition as? String {
-            try container.encode(presentationDefString, forKey: .presentation_definition)
-        } else if let presentationDefObject = presentationDefinition as? PresentationDefinition {
-            try container.encode(presentationDefObject, forKey: .presentation_definition)
-        }
+        try container.encode(presentationDefinition, forKey: .presentation_definition)
         try container.encode(responseType, forKey: .response_type)
         try container.encode(responseMode, forKey: .response_mode)
         try container.encode(nonce, forKey: .nonce)
         try container.encode(state, forKey: .state)
         try container.encode(responseUri, forKey: .response_uri)
         try container.encode(redirectUri, forKey: .redirect_uri)
-        if let clientMetadataString = clientMetadata as? String {
-            try container.encode(clientMetadataString, forKey: .client_metadata)
-        } else if let clientMetadataObject = clientMetadata as? ClientMetadata {
-            try container.encode(clientMetadataObject, forKey: .client_metadata)
-        }
+        try container.encode(clientMetadata, forKey: .client_metadata)
+        
     }
     
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String, setResponseUri: @escaping (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging) async throws -> AuthorizationRequest {

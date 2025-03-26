@@ -44,10 +44,6 @@ class Logger {
             exception = AuthorizationRequestException.invalidVerifier(message: message)
         case "MismatchingClientIDInRequest":
             exception = AuthorizationRequestException.mismatchingClientIDInRequest
-        case "MismatchingClientIdSchemeInRequest":
-            exception = AuthorizationRequestException.mismatchingClientIdSchemeInRequest
-        case "InvalidVerifierRedirectUri":
-            exception = AuthorizationRequestException.invalidVerifierRedirectUri
         case "InvalidLimitDisclosure":
             exception = AuthorizationRequestException.invalidLimitDisclosure
         case "UrlCreationFailed":
@@ -65,7 +61,7 @@ class Logger {
         case "UnsupportedHttpMethod" :
             exception = AuthorizationRequestException.unsupportedHttpMethod(message: message ?? "")
         case "InvalidData":
-            exception = AuthorizationRequestException.invalidData(message: message ?? "")
+            exception = Exceptions.invalidData(message: message ?? "")
         case "InvalidResponseMode":
             exception = AuthorizationRequestException.invalidResponseMode(message: message ?? "")
         case "UnsupportedDidUrl":

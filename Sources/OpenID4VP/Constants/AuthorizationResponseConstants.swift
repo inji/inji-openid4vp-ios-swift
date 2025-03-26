@@ -1,6 +1,10 @@
 import Foundation
 
 public enum FormatType: String, Codable {
+    case ldp_vc = "ldp_vc"
+}
+
+public enum VPFormatType: String, Codable {
     case ldp_vp = "ldp_vp"
 }
 

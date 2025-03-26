@@ -11,8 +11,7 @@ final class VpResponseMetadataTests: XCTestCase {
     }
     
     func testValidateFailureEmptyString() {
-    
-        let invalidMetadata = VPResponseMetadata(
+        let invalidMetadata = LdpVPResponseMetadata(
             jws: "",
             signatureAlgorithm: vpResponseMetadata.signatureAlgorithm,
             publicKey: vpResponseMetadata.publicKey,
@@ -25,8 +24,7 @@ final class VpResponseMetadataTests: XCTestCase {
     }
     
     func testValidateFailureNullValue() {
-        
-        let invalidMetadata = VPResponseMetadata(
+        let invalidMetadata = LdpVPResponseMetadata(
             jws: "null",
             signatureAlgorithm: vpResponseMetadata.signatureAlgorithm,
             publicKey: vpResponseMetadata.publicKey,

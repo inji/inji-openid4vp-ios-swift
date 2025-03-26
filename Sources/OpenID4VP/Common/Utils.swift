@@ -26,12 +26,12 @@ func base64URLEscaped(_ base64String: String) -> String {
         .replacingOccurrences(of: "=", with: "")
 }
 
-func determineHttpMethod(method: String) throws -> HTTP_METHOD {
+func determineHttpMethod(method: String) throws -> HttpMethod {
     let methodValue = method.lowercased()
     if methodValue == "get" {
-        return HTTP_METHOD.GET
+        return .get
     } else if methodValue == "post" {
-        return HTTP_METHOD.POST
+        return .post
     } else {
         throw Logger.handleException(exceptionType: "UnsupportedHttpMethod", message: method, className: AuthorizationRequest.className)
     }
@@ -66,16 +66,6 @@ func convertToInstance<T: Decodable>(_ input: String, as type: T.Type, fieldPath
     return try jsonData.toInstance(as: T.self)
 }
 
-extension Encodable {
-    func toDictionary() -> [String: Any]? {
-        guard let data = try? JSONEncoder().encode(self),
-              let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
-            return nil
-        }
-        return json
-    }
-}
-
 func encode<T: Encodable>(_ data: T, fieldName: String) throws -> String {
     do {
         let encoder = JSONEncoder()
@@ -90,16 +80,6 @@ func encode<T: Encodable>(_ data: T, fieldName: String) throws -> String {
             className: AuthorizationResponse.className
         )
     }
-}
-
-func encodeQueryValue(_ value: String) -> String {
-    var allowedCharacterSet = CharacterSet.urlQueryAllowed
-    allowedCharacterSet.remove("+")
-
-    if let decodedValue = value.removingPercentEncoding, decodedValue != value {
-        return value
-    }
-    return value.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? value
 }
 
 func toData(_ input: [String: Any]) throws -> Data {

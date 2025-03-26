@@ -10,31 +10,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     var decodedClientMetadata: ClientMetadata?
     var decodedPresentationDefinition: PresentationDefinition?
     
-    struct TestCase {
-        let input: [String:String?]
-        let expectedError: String
-    }
-    
-    // Validate client tests
-    func testInvalidRequestFieldErrorForClientIdField() {
-        let testCases: [TestCase] = [
-            TestCase(input: ["client_id": "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: ["client_id": ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: ["client_id": "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: ["client_id": nil], expectedError: "Missing Input: client_id param is required")
-        ]
-        
-        for testCase in testCases {
-            let authorizationRequestParametersWithInvalidClientId: [String : Any?] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input))
-            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId as [String : Any], networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-            
-            XCTAssertThrowsError(try clientIdSchemeBasedAuthorizationRequestHandler.validateClientId()){ error in
-                XCTAssertEqual(testCase.expectedError, error.localizedDescription)
-            }
-        }
-    }
-    
-    //    Fetch authorization request
+    ///    Fetch authorization request
     class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler {
         var wasMethodCalled = false
         
@@ -51,16 +27,35 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     func testFetchAuthorizationRequestByReference() async{
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri),
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId),
             applicableFields: authRequestWithRedirectUriByValue
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         do{
             try await mockAuthHandler.fetchAuthorizationRequest()
-            
-            assertJSONStringEqual(expected: "{\"client_metadata\":{\"client_name\":\"Requester name\",\"jwks\":{\"keys\":[{\"use\":\"enc\",\"kty\":\"OKP\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"crv\":\"X25519\",\"alg\":\"ECDH-ES\",\"kid\":\"ed-key1\"}]},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]},\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]}}},\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_type\":\"vp_token\",\"response_mode\":\"direct_post\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id_scheme\":\"redirect_uri\",\"client_id\":\"https:\\/\\/mock-verifier.com\",\"presentation_definition\":{\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"},\"path\":[\"$.credentialSubject.email\"]}]},\"purpose\":\"To verify identity using Linked Data Proofs\",\"name\":\"Verifiable Credential\",\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\"}],\"id\":\"vp_presentation_definition\"}}", actual: mockAuthHandler.requestUriResponse!.body)        
+                        
+            assertJSONStringEqual(expected: "{\"response_type\":\"vp_token\",\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"vp_formats\":{\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]},\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]}},\"client_name\":\"Requester name\",\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"jwks\":{\"keys\":[{\"kid\":\"ed-key1\",\"crv\":\"X25519\",\"use\":\"enc\",\"kty\":\"OKP\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\"}]}},\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"presentation_definition\":{\"id\":\"vp_presentation_definition\",\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\",\"name\":\"Verifiable Credential\",\"purpose\":\"To verify identity using Linked Data Proofs\"}]},\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_uri\":\"https:\\/\\/mock-verifier.com\"}", actual: mockAuthHandler.requestUriResponse!.body)
+            XCTAssertTrue(mockAuthHandler.wasMethodCalled)
+        } catch {
+            XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
+        }
+    }
+    
+    func testFetchAuthorizationRequestByValueWithRequestUriMethodNotAvailableInAuthorizationRequestProvided() async{
+        let authorizationRequestObject = createAuthorizationRequestObject(
+            clientIdScheme: .redirectUri,
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId),
+            applicableFields: authRequestWithRedirectUriByValue
+        )
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: ["client_id", "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        do{
+            try await mockAuthHandler.fetchAuthorizationRequest()
+                        
+            assertJSONStringEqual(expected: "{\"response_type\":\"vp_token\",\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"vp_formats\":{\"mso_mdoc\":{\"alg\":[\"ES256\",\"EdDSA\"]},\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\",\"RsaSignature2018\"]}},\"client_name\":\"Requester name\",\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"jwks\":{\"keys\":[{\"kid\":\"ed-key1\",\"crv\":\"X25519\",\"use\":\"enc\",\"kty\":\"OKP\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\"}]}},\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"presentation_definition\":{\"id\":\"vp_presentation_definition\",\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\",\"name\":\"Verifiable Credential\",\"purpose\":\"To verify identity using Linked Data Proofs\"}]},\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_uri\":\"https:\\/\\/mock-verifier.com\"}", actual: mockAuthHandler.requestUriResponse!.body)
             XCTAssertTrue(mockAuthHandler.wasMethodCalled)
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
@@ -68,8 +63,9 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     ///   Authorization request obtained by value: gives all data as url encoded (presentation_definition is also obtained by value)
+    
     func testFetchAuthorizationRequestByValue() async{
-        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
         do{
@@ -82,7 +78,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 "response_uri": "https://mock-verifier.com",
                 "response_mode": "direct_post",
                 "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
-                "client_id": "https://mock-verifier.com",
+                "client_id": "redirect_uri:https://mock-verifier.com",
                 "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
                 "client_metadata": [
                     "client_name": "Requester name",
@@ -108,7 +104,6 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                     ],
                     "logo_uri": "https://mock-verifier.com/logo"
                 ],
-                "client_id_scheme": "redirect_uri"
             ], actual: mockAuthHandler.authorizationRequestParameters)
             XCTAssertTrue(mockAuthHandler.wasMethodCalled)
         } catch {
@@ -117,7 +112,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testFetchAuthRequestShouldThrowErrorWhenRequestUriIsNotHttpsScheme() async{
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered,["request_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId,["request_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
         
         do {
@@ -136,7 +131,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input))  as [String : Any]
+            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input))  as [String : Any]
             let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do {
@@ -150,7 +145,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     //Fetch info for sending response (error or authorization response) to verifier
     func testResponseUrlSetSuccessfullyForResponseModeDirectPost(){
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered))  as [String : Any]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId))  as [String : Any]
         let expectation = expectation(description: "Handler should be called with expected parameter")
         var responseUri: String?
         let mockSetResponseUri: (String) -> Void = { value in
@@ -166,7 +161,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
-        let testCases: [TestCase] = [
+        let testCases: [TestCase<[String:String?]>] = [
             TestCase(input: ["response_mode": "fragment"], expectedError: "Given response_mode - fragment is not supported"),
             TestCase(input: ["response_mode": ""], expectedError: "Given response_mode -  is not supported"),
             TestCase(input: ["response_mode": "nil"], expectedError: "Given response_mode - nil is not supported"),
@@ -175,7 +170,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input))  as [String : Any]
+            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input))  as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             XCTAssertThrowsError(try clientIdSchemeBasedAuthorizationRequestHandler.setResponseUrl()){ error in
@@ -190,7 +185,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
         decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
         let presentationDefinition = convertToJsonString(presentationDefinition)
-        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
@@ -205,9 +200,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 "response_type": "vp_token",
                 "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
                 "client_metadata": decodedClientMetadata!,
-                "client_id": "https://mock-verifier.com",
+                "client_id": "redirect_uri:https://mock-verifier.com",
                 "response_mode": "direct_post",
-                "client_id_scheme": "redirect_uri"
             ], actual: mockAuthHandler.authorizationRequestParameters)
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
@@ -219,10 +213,10 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri),
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId),
             applicableFields: authRequestWithRedirectUriByValue
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfRedirectUri)) as [String : Any]
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
@@ -232,12 +226,11 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             assertDictionariesEqual(expected: [
                 "client_metadata": decodedClientMetadata!,
                 "response_mode": "direct_post",
-                "client_id": "https://mock-verifier.com",
+                "client_id": "redirect_uri:https://mock-verifier.com",
                 "response_uri": "https://mock-verifier.com",
                 "presentation_definition": decodedPresentationDefinition!,
                 "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
                 "state": "+mRQe1d6pBoJqF6Ab28klg==",
-                "client_id_scheme": "redirect_uri",
                 "response_type": "vp_token"
             ], actual: mockAuthHandler.authorizationRequestParameters)
         } catch {
@@ -254,7 +247,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)) as [String : Any]
+            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do{
@@ -275,7 +268,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)) as [String : Any]
+            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do{
@@ -296,7 +289,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)) as [String : Any]
+            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do{
@@ -318,7 +311,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         ]
         
         for testCase in testCases {
-            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, clientIdAndSchemeOfPreRegistered, testCase.input)) as [String : Any]
+            let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
             
             do{

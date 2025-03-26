@@ -1,27 +1,23 @@
 import XCTest
 @testable import OpenID4VP
 
-final class NetworkManagerTests: XCTestCase {
-    struct TestCase {
-        let input: String
-        let expectedError: String
-    }
+import Foundation
 
+final class NetworkManagerTests: XCTestCase {
     func testThrowErrorWhenInvalidUrlIsPassedAsInput() async throws {
         let networkManager = NetworkManager()
-        let testCases: [TestCase] = [
-            TestCase(input: "", expectedError: "Provided URL is invalid to proceed with making request"),
-            TestCase(input: "invalid-url", expectedError: "Network request failed with error response - Network request failed with error response - unsupported URL"),
-            TestCase(input: "http://exa<mpl>e.com", expectedError: "Provided URL is invalid to proceed with making request"),
+        let testCases: [TestCase<String>] = [
+            TestCase(input: "", expectedError: "Network request failed with error response - URL is not valid: "),
+            TestCase(input: "invalid-url", expectedError: "Network request failed with error response - URLSessionTask failed with error: unsupported URL"),
+            TestCase(input: "http://exa<mpl>e.com", expectedError: "Network request failed with error response - URL is not valid: http://exa<mpl>e.com"),
         ]
         
         for testCase in testCases {
             do {
-                _ = try await networkManager.sendHTTPRequest(url: testCase.input, method: .GET)
+                _ = try await networkManager.sendHTTPRequest(url: testCase.input, method: .get)
                 XCTFail("Invalid URL error should have been captured but no error was thrown")
             } catch {
-                print("error \(error)")
-                XCTAssertEqual(testCase.expectedError, error.localizedDescription, "Error - \(testCase.expectedError) should be thrown but got \(error.localizedDescription)")
+                XCTAssertEqual(testCase.expectedError, error.localizedDescription, "Error - \(testCase.expectedError!) should be thrown but got \(error.localizedDescription)")
             }
         }
     }

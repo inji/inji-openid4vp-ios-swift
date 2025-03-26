@@ -7,7 +7,7 @@ final class JWKSTests: XCTestCase {
         
         XCTAssertThrowsError(try jwksWithInvalidJWK.validate()){ error in
             XCTAssertEqual("jwks.keys[0] is invalid", error.localizedDescription)
-            XCTAssertNotNil(error as? AuthorizationRequestException)
+            XCTAssertNotNil(error as? Exceptions)
         }
         
     }

@@ -10,3 +10,8 @@ public enum ResponseMode: String {
     case directPost = "direct_post"
     case directPostJwt = "direct_post.jwt"
 }
+
+
+enum ResponseType: String {
+    case vp_token = "vp_token"
+}
