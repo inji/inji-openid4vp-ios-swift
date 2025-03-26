@@ -231,3 +231,7 @@ await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedE
 
 1. InterruptedIOException is thrown if the connection is timed out when network call is made.
 2. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
+
+## Architecture decisions
+
+Architecture decisions are noted as ADRs [here](https://github.com/mosip/inji-openid4vp/tree/master/doc).
