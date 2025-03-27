@@ -45,7 +45,7 @@ final class DidWebResolverTests: XCTestCase {
         ]
         
         for testCase in testCases {
-            mockNetworkManager.setMockResponse(for: "https://example.com/did.json", responseBody: didResponse)
+            mockNetworkManager.setMockResponse(for: "https://example.com/.well-known/did.json", responseBody: didResponse)
             let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
             
             let didDocument = try await didWebResolver.resolve()
@@ -73,6 +73,40 @@ final class DidWebResolverTests: XCTestCase {
                     "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
                 ]
             ], actual: didDocument)
+        }
+    }
+    
+    func testConstructDIDUrlWithPath() async throws {
+        let testCases: [TestCase] = [
+            TestCase(input: "did:web:example.com:user", expectedOutput: "https://example.com/user/did.json"),
+            TestCase(input: "did:web:example.com:services:auth", expectedOutput: "https://example.com/services/auth/did.json"),
+            TestCase(input: "did:web:example.com:folder:anotherFolder", expectedOutput: "https://example.com/folder/anotherFolder/did.json")
+        ]
+        
+        for testCase in testCases {
+            mockNetworkManager.setMockResponse(for: testCase.expectedOutput!, responseBody: didResponse)
+            let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
+            _ = try await didWebResolver.resolve()
+            
+            XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains(testCase.expectedOutput!),
+                                  "Expected request to \(testCase.expectedOutput!) but it was not recorded.")
+        
+        }
+    }
+    
+    func testConstructDIDUrlWithoutPath() async throws {
+        let testCases: [TestCase] = [
+            TestCase(input: "did:web:example.com", expectedOutput: "https://example.com/.well-known/did.json"),
+            TestCase(input: "did:web:sub.example.com", expectedOutput: "https://sub.example.com/.well-known/did.json")
+        ]
+        
+        for testCase in testCases {
+            mockNetworkManager.setMockResponse(for: testCase.expectedOutput!, responseBody: didResponse)
+            let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
+            _ = try await didWebResolver.resolve()
+            
+            XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains(testCase.expectedOutput!),
+                                  "Expected request to \(testCase.expectedOutput!) but it was not recorded.")
         }
     }
     
