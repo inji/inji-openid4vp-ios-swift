@@ -72,11 +72,9 @@ class DidWebResolver {
     
     private func resolve(parsedDID: ParsedDID) async throws -> [String: Any] {
         do {
-            let path = parsedDID.id.split(separator: ":").map { String($0) }.map { $0.removingPercentEncoding ?? $0 }.joined(separator: "/")
+            let urlString = try constructDIDUrl(from: parsedDID)
             
-            let urlString = "https://\(path)\(DOC_PATH)"
-            
-            let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
+            let response = try await networkManager.sendHTTPRequest(url: urlString, method: .GET, bodyParams: nil, headers: nil)
             guard let responseBody = response.responseBody.data(using: .utf8) else {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",
@@ -96,6 +94,22 @@ class DidWebResolver {
         } catch {
             throw Logger.handleException(exceptionType: "DidResultionFailed", message: error.localizedDescription, className: DidWebResolver.className)
         }
+    }
+    
+    private func constructDIDUrl(from parsedDID: ParsedDID) throws -> String {
+        let idComponents = parsedDID.id.split(separator: ":").map(String.init)
+        guard let baseDomain = idComponents.first else {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "Conversion failed",
+                className: DidWebResolver.className
+            )
+        }
+        
+        let path = idComponents.dropFirst().joined(separator: "/")
+        let urlPath = path.isEmpty ? ".well-known/did.json" : "\(path)/did.json"
+        
+        return "https://\(baseDomain)/\(urlPath)"
     }
 }
 

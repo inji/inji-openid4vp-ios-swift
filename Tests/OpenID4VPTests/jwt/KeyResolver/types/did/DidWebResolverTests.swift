@@ -124,7 +124,52 @@ final class DidWebResolverTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? DidResolverExceptions , DidResolverExceptions.didResolutionFailed(message: "Network request failed with error response - Network Request failed with error response: response"))
         }
+    }
+    
+ 
+    func testConstructDIDUrl() async throws {
+        let testCases: [(input: String, expectedUrl: String)] = [
+            ("did:web:example.com", "https://example.com/.well-known/did.json"),
+            ("did:web:example.com:user:profile", "https://example.com/user/profile/did.json"),
+            ("did:web:sub.example.com", "https://sub.example.com/.well-known/did.json"),
+            ("did:web:example.com:services:auth", "https://example.com/services/auth/did.json"),
+            ("did:web:example.com:folder:anotherFolder", "https://example.com/folder/anotherFolder/did.json")
+        ]
         
+        for testCase in testCases {
+            mockNetworkManager.setMockResponse(for: testCase.expectedUrl, responseBody: didResponse)
+            let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
+            let parsedDID = try await didWebResolver.resolve()
+            
+            assertDictionariesEqual(expected: [
+                "assertionMethod": [
+                    "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
+                ],
+                "service": [],
+                "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+                "verificationMethod": [
+                    [
+                        "publicKey": "IKXhA7W1HD1sAl+OfG59VKAqciWrrOL1Rw5F+PGLhi4=",
+                        "controller": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+                        "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
+                        "type": "Ed25519VerificationKey2020",
+                        "@context": "https://w3id.org/security/suites/ed25519-2020/v1"
+                    ]
+                ],
+                "@context": [
+                    "https://www.w3.org/ns/did/v1"
+                ],
+                "alsoKnownAs": [],
+                "authentication": [
+                    "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
+                ]
+            ], actual: parsedDID)
+        }
+    }
+    
+    struct TestCase {
+        let input: String
+        let expectedError: String
     }
     
     func testThrowErrorDidResolutionFailedWhenNetworkResponseToDidJsonIsInvalid() async {
