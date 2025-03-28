@@ -1,4 +1,4 @@
 .DS_Store
-.swiftpm/
+.swiftpm/xcode/**/xcuserdata/
 .idea
 .build
