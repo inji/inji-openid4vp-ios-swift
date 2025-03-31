@@ -5,7 +5,6 @@ import PackageDescription
 let package = Package(
     name: "OpenID4VP",
     platforms: [
-        .macOS(.v12),
         .iOS(.v14)
     ],
     products: [
@@ -24,6 +23,6 @@ let package = Package(
             ]),
         .testTarget(
             name: "OpenID4VPTests",
-            dependencies: ["OpenID4VP"]),
+            dependencies: ["OpenID4VP","jose-swift"]),
     ]
 )
