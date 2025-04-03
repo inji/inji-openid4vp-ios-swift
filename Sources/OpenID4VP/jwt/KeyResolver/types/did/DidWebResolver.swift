@@ -15,8 +15,10 @@ class DidWebResolver {
     public static let className = String(describing: DidWebResolver.self)
     
     
-    private let DID_MATCHER = "^did:\(method):\(methodId)\(params)\(path)\(query)\(fragment)$"
-    private let DOC_PATH = "/did.json"
+    private let didMatcher = "^did:\(method):\(methodId)\(params)\(path)\(query)\(fragment)$"
+    private let docPath = "/did.json"
+    private let wellKnownPath = ".well-known"
+
     
     private let didWebMethod = "web"
     
@@ -39,7 +41,7 @@ class DidWebResolver {
     }
     
     private func parse() throws -> ParsedDID {
-        let didUrlPattern = try! NSRegularExpression(pattern: DID_MATCHER, options: [])
+        let didUrlPattern = try! NSRegularExpression(pattern: didMatcher, options: [])
         let nsString = didUrl as NSString
         var sections: [String] = []
         if let match = didUrlPattern.firstMatch(in: didUrl, options: [], range: NSRange(location: 0, length: nsString.length)) {
@@ -72,9 +74,8 @@ class DidWebResolver {
     
     private func resolve(parsedDID: ParsedDID) async throws -> [String: Any] {
         do {
-            let path = parsedDID.id.split(separator: ":").map { String($0) }.map { $0.removingPercentEncoding ?? $0 }.joined(separator: "/")
-            
-            let urlString = "https://\(path)\(DOC_PATH)"
+
+            let urlString = constructDIDUrl(from: parsedDID)
             
             let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
             guard let responseBody = response.responseBody.data(using: .utf8) else {
@@ -96,6 +97,15 @@ class DidWebResolver {
         } catch {
             throw Logger.handleException(exceptionType: "DidResultionFailed", message: error.localizedDescription, className: DidWebResolver.className)
         }
+    }
+    
+    private func constructDIDUrl(from parsedDID: ParsedDID) -> String {
+        let idComponents = parsedDID.id.split(separator: ":").map(String.init)
+        let baseDomain = idComponents.first!
+        let path = idComponents.dropFirst().joined(separator: "/")
+        let urlPath = path.isEmpty ? "\(wellKnownPath)\(docPath)" : "\(path)\(docPath)"
+        
+        return "https://\(baseDomain)/\(urlPath)"
     }
 }
 
