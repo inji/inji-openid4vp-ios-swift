@@ -5,6 +5,7 @@ public typealias HttpMethod = HTTPMethod
 
 enum Header : String {
     case contentType = "Content-Type"
+    case accept = "Accept"
 }
 
 

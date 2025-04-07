@@ -2,9 +2,9 @@ import Foundation
 
 let className = String(describing: ClientMetadata.self)
 
-func parseAndValidateClientMetadata(_ authorizationRequest: [String: Any],
-                                    _ shouldValidateWithWalletMetadata: Bool,
-                                    _ walletMetadata: WalletMetadata?) throws -> [String: Any] {
+func parseAndValidateClientMetadata(authorizationRequest: [String: Any],
+                                    shouldValidateWithWalletMetadata: Bool,
+                                    walletMetadata: WalletMetadata?) throws -> [String: Any] {
     var mutableParams = authorizationRequest
     if let clientMetadataObject = authorizationRequest["client_metadata"] as? NSDictionary{
         let data = try JSONSerialization.data(withJSONObject: clientMetadataObject, options: [])

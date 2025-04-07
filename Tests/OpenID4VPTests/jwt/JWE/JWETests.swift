@@ -2,7 +2,7 @@ import XCTest
 @testable import OpenID4VP
 
 public class JWEHandlerTests: XCTestCase {
-    let (jweKeyEncryptionAlgorithm, jweContentEncryptionAlgorithm, verifierPublicKey) = (mockClientMetadataObject.authorization_encrypted_response_alg!, mockClientMetadataObject.authorization_encrypted_response_enc!, mockClientMetadataObject.jwks!.keys[0])
+    let (jweKeyEncryptionAlgorithm, jweContentEncryptionAlgorithm, verifierPublicKey) = (mockClientMetadataObject.authorizationEncryptedResponseAlg!, mockClientMetadataObject.authorizationEncryptedResponseEnc!, mockClientMetadataObject.jwks!.keys[0])
 
 
 

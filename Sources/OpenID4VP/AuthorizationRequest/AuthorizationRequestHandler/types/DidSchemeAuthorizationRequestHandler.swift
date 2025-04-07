@@ -48,8 +48,8 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     }
     
     func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return ["content-type": ContentTypes.applicationFormUrlEncoded.rawValue,
-                "accept": ContentTypes.applicationJwt.rawValue]
+        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+                Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
     }
     
     private func validateAuthorizationRequestSigningAlgorithm(header: [String: Any]) throws {

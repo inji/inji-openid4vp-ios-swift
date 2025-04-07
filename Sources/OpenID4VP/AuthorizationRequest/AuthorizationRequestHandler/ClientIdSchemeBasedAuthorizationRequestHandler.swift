@@ -10,14 +10,14 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     var delegate: AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler!
     var authorizationRequestParameters: [String: Any]
-    var walletMetadata: WalletMetadata?
+    let walletMetadata: WalletMetadata?
     let setResponseUri: (String) -> Void
     let networkManager: NetworkManaging
     var shouldValidateWithWalletMetadata: Bool = false
     var className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
     
     init(authorizationRequestParameters: [String: Any],
-         walletMetadata: WalletMetadata? = nil,
+         walletMetadata: WalletMetadata?,
          setResponseUri: @escaping (String) -> Void,
          networkManager: NetworkManaging) {
         self.authorizationRequestParameters = authorizationRequestParameters
@@ -83,9 +83,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
         
-        authorizationRequestParameters = try parseAndValidateClientMetadata(authorizationRequestParameters, shouldValidateWithWalletMetadata, walletMetadata)
+        authorizationRequestParameters = try parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
         
-        let presentationDefinitionUriSupported = !shouldValidateWithWalletMetadata || (walletMetadata?.presentationDefinitionURISupported ?? true)
+        let presentationDefinitionUriSupported = !shouldValidateWithWalletMetadata || walletMetadata?.presentationDefinitionURISupported ?? true
         
         authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, presentationDefinitionUriSupported, networkManager)
     }
@@ -97,7 +97,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     private func isClientIdSchemeSupported(walletMetadata: WalletMetadata) throws {
-        let clientId = getStringValue(authorizationRequestParameters["client_id"])
+        let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])
         let clientIdScheme = try extractClientIdScheme(clientId: clientId ?? "")
         if !walletMetadata.clientIdSchemesSupported.contains(clientIdScheme) {
             throw Logger.handleException(

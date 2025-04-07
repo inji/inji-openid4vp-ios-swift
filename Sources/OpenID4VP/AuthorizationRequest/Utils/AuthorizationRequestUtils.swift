@@ -179,5 +179,3 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdSchemeAttached: String
         return clientIdWithClientIdSchemeAttached
     }
 }
-
-typealias VpFormats = [String: [String: [String]]]

@@ -4,15 +4,15 @@ public struct PresentationDefinition: Codable {
     let id: String
     let name: String?
     let purpose: String?
-    let input_descriptors: [InputDescriptor]
-    let format: VpFormats?
+    let inputDescriptors: [InputDescriptor]
+    let format: [String: [String: [String]]]?
     let className = String(describing: PresentationDefinition.self)
     
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case purpose
-        case input_descriptors
+        case inputDescriptors = "input_descriptors"
         case format
     }
     
@@ -28,9 +28,9 @@ public struct PresentationDefinition: Codable {
             isMandatory: true
         )!
         
-        self.input_descriptors = try container.decodeRequired(
+        self.inputDescriptors = try container.decodeRequired(
             [InputDescriptor].self,
-            forKey: .input_descriptors,
+            forKey: .inputDescriptors,
             fieldPath: ["presentation_definition", "input_descriptors"],
             className: className,
             isMandatory: true
@@ -51,7 +51,7 @@ public struct PresentationDefinition: Codable {
             isMandatory: false)
         
         self.format = try container.decodeRequired(
-            VpFormats.self,
+            [String: [String: [String]]].self,
             forKey: .format,
             fieldPath: ["presentation_definition", "format"],
             className: className,
@@ -65,7 +65,7 @@ public struct PresentationDefinition: Codable {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","id"], className: className)
         }
         
-        guard !input_descriptors.isEmpty else {
+        guard !inputDescriptors.isEmpty else {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: className)
         }
         
@@ -73,7 +73,7 @@ public struct PresentationDefinition: Codable {
         try validateField(purpose, ["presentation_definition","purpose"], className)
         try validateField(format, ["presentation_definition","format"], className)
         
-        for descriptor in input_descriptors {
+        for descriptor in inputDescriptors {
             try descriptor.validate()
         }
     }

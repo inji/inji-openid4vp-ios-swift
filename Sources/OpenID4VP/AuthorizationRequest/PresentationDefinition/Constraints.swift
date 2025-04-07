@@ -5,9 +5,10 @@ struct Constraints: Codable {
     let limitDisclosure: LimitDisclosure?
     let className = String(describing: Constraints.self)
     
+    //check
     enum CodingKeys: String, CodingKey {
         case fields
-        case limitDisclosure
+        case limitDisclosure = "limit_disclosure"
     }
     
     init(from decoder: Decoder) throws {

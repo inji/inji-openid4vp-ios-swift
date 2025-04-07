@@ -6,7 +6,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     
     init(trustedVerifiers: [Verifier],
          authorizationRequestParameters: [String: Any],
-         walletMetadata: WalletMetadata? = nil,
+         walletMetadata: WalletMetadata?,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
          networkManager: NetworkManaging) {
@@ -35,8 +35,8 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     }
     
     func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return ["content-type": ContentTypes.applicationFormUrlEncoded.rawValue,
-                "accept": ContentTypes.applicationJson.rawValue]
+        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+                Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
     }
     
     func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?) async throws {

@@ -48,6 +48,21 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         }
     }
     
+    func testShouldThrowErrorWhenAuthRequestsAlgObtainedByReferenceDoesNotMatchWithWalletMetadata() async {
+        let url: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId)) as [String : Any]
+        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        didSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
+        let requestUriResponse = createNetworkResponse("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ10.SflK5c", httpUrlResponse: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"]))
+        
+        do{
+            try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)
+            XCTFail("Expected error to be thrown but it did not happen")
+        } catch {
+            XCTAssertEqual("request_object_signing_alg is not supported by wallet", error.localizedDescription)
+        }
+    }
+    
     func testShouldThrowErrorWhenAuthRequestObtainedByReferenceDoesNotContainJWTContentTypeInHeader() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId)) as [String : Any]
         let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
@@ -78,11 +93,11 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         let preRegistered = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
         
         let expectedHeader =
-        ["content-type": ContentTypes.applicationFormUrlEncoded.rawValue,
-         "accept": ContentTypes.applicationJwt.rawValue]
+        [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+         Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
             
         let header = preRegistered.getHeadersForAuthorizationRequestUri()
         
-        assertDictionariesEqual(expected: convertToDictionary(object: expectedHeader)!, actual: convertToDictionary(object: header))
+        assertDictionariesEqual(expected: expectedHeader, actual: header)
     }
 }

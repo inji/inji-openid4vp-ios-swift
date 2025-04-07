@@ -1,7 +1,7 @@
 import Foundation
 class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
     override init(authorizationRequestParameters: [String: Any],
-                  walletMetadata: WalletMetadata? = nil,
+                  walletMetadata: WalletMetadata?,
                   setResponseUri: @escaping (String) -> Void,
                   networkManager: NetworkManaging) {
         super.init(authorizationRequestParameters: authorizationRequestParameters,
@@ -50,8 +50,8 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     }
     
     func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return ["content-type": ContentTypes.applicationFormUrlEncoded.rawValue,
-                "accept": ContentTypes.applicationJson.rawValue]
+        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+                Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
     }
     
     override func validateAndParseRequestFields()async throws {

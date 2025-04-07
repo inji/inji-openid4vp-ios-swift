@@ -5,7 +5,7 @@ struct InputDescriptor: Codable {
     let name: String?
     let purpose: String?
     let constraints: Constraints
-    let format: VpFormats?
+    let format: [String: [String: [String]]]?
     let className = String(describing: InputDescriptor.self)
     
     enum CodingKeys: String, CodingKey {
@@ -50,7 +50,7 @@ struct InputDescriptor: Codable {
             isMandatory: false)
         
         self.format = try container.decodeRequired(
-            VpFormats.self,
+            [String: [String: [String]]].self,
             forKey: .format,
             fieldPath: ["input_descriptor", "format"],
             className: className,

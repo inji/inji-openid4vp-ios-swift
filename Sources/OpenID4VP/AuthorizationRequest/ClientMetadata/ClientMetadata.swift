@@ -1,61 +1,61 @@
 import Foundation
 
 public struct ClientMetadata: Codable {
-    let client_name: String?
-    let logo_uri:String?
-    let authorization_encrypted_response_alg: String?
-    let authorization_encrypted_response_enc: String?
-    let vp_formats: VpFormats
+    let clientName: String?
+    let logoUri:String?
+    let authorizationEncryptedResponseAlg: String?
+    let authorizationEncryptedResponseEnc: String?
+    let vpFormats: [String: [String: [String]]]
     let jwks: JWKS?
     static let className = String(describing: ClientMetadata.self)
     
     enum CodingKeys: String, CodingKey {
-        case client_name
-        case logo_uri
-        case authorization_encrypted_response_alg
-        case authorization_encrypted_response_enc
-        case vp_formats
+        case clientName = "client_name"
+        case logoUri = "logo_uri"
+        case authorizationEncryptedResponseAlg = "authorization_encrypted_response_alg"
+        case authorizationEncryptedResponseEnc = "authorization_encrypted_response_enc"
+        case vpFormats = "vp_formats"
         case jwks
     }
     
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        self.client_name = try container.decodeRequired(
+        self .clientName = try container.decodeRequired(
             String.self,
-            forKey: .client_name,
+            forKey: .clientName,
             fieldPath: ["client_metadata", "client_name"],
             className: ClientMetadata.className,
             isMandatory: false
         )
         
-        self.logo_uri = try container.decodeRequired(
+        self .logoUri = try container.decodeRequired(
             String.self,
-            forKey: .logo_uri,
+            forKey: .logoUri,
             fieldPath: ["client_metadata", "logo_uri"],
             className: ClientMetadata.className,
             isMandatory: false
         )
         
-        self .authorization_encrypted_response_alg = try container.decodeRequired(
+        self .authorizationEncryptedResponseAlg = try container.decodeRequired(
             String.self,
-            forKey: .authorization_encrypted_response_alg,
+            forKey: .authorizationEncryptedResponseAlg,
             fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
             className: ClientMetadata.className,
             isMandatory: false
         )
         
-        self .authorization_encrypted_response_enc = try container.decodeRequired(
+        self .authorizationEncryptedResponseEnc = try container.decodeRequired(
             String.self,
-            forKey: .authorization_encrypted_response_enc,
+            forKey: .authorizationEncryptedResponseEnc,
             fieldPath: ["client_metadata", "authorization_encrypted_response_enc"],
             className: ClientMetadata.className,
             isMandatory: false
         )
         
-        self .vp_formats = try container.decodeRequired(
-            VpFormats.self,
-            forKey: .vp_formats,
+        self .vpFormats = try container.decodeRequired(
+            [String: [String: [String]]].self,
+            forKey: .vpFormats,
             fieldPath: ["client_metadata", "vp_formats"],
             className: ClientMetadata.className,
             isMandatory: true
@@ -89,44 +89,12 @@ public struct ClientMetadata: Codable {
     }
     
     private func validate(_ decodedClientMetadata: ClientMetadata) throws{
-        if decodedClientMetadata.client_name != nil {
-            guard isNeitherNullNorEmpty(field: decodedClientMetadata.client_name!) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata","client_name"], className: ClientMetadata.className)
-            }
-        }
         
-        if decodedClientMetadata.logo_uri != nil {
-            guard isNeitherNullNorEmpty(field: decodedClientMetadata.logo_uri!) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata","logo_uri"], className: ClientMetadata.className)
-            }
-        }
-        
-        if decodedClientMetadata.authorization_encrypted_response_alg != nil {
-            guard isNeitherNullNorEmpty(field: decodedClientMetadata.authorization_encrypted_response_alg!) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata", "authorization_encrypted_response_alg"], className: ClientMetadata.className)
-            }
-        }
-        
-        if decodedClientMetadata.authorization_encrypted_response_enc != nil {
-            guard isNeitherNullNorEmpty(field: decodedClientMetadata.authorization_encrypted_response_enc!) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata", "authorization_encrypted_response_enc"], className: ClientMetadata.className)
-            }
-        }
-        
-        if decodedClientMetadata.vp_formats.isEmpty {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata", "vp_formats"], className: ClientMetadata.className)
-        }
-        
-        for (key, value) in decodedClientMetadata.vp_formats {
-            if value.isEmpty {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata", "vp_formats", key], className: ClientMetadata.className)
-            }
-            for (subKey, subValue) in value {
-                if subValue.isEmpty {
-                    throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["client_metadata", "vp_formats", key, subKey], className: ClientMetadata.className)
-                }
-            }
-        }
+        try validateField(decodedClientMetadata.clientName, ["client_metadata", "client_name"], ClientMetadata.className)
+        try validateField(decodedClientMetadata.logoUri, ["client_metadata", "logo_uri"], ClientMetadata.className)
+        try validateField(decodedClientMetadata.authorizationEncryptedResponseAlg, ["client_metadata", "authorization_encrypted_response_alg"], ClientMetadata.className)
+        try validateField(decodedClientMetadata.authorizationEncryptedResponseEnc, ["client_metadata", "authorization_encrypted_response_enc"], ClientMetadata.className)
+        try validateField(decodedClientMetadata.vpFormats, ["client_metadata", "vp_formats"], ClientMetadata.className)
         
         if decodedClientMetadata.jwks != nil {
             try decodedClientMetadata.jwks!.validate()

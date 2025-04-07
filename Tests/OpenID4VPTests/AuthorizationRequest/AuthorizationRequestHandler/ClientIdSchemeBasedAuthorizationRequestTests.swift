@@ -189,7 +189,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             expectation.fulfill()
         }
         
-        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         try? clientIdSchemeBasedAuthorizationRequestHandler.setResponseUrl()
         
         wait(for: [expectation], timeout: 2.0)
@@ -207,7 +207,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input))  as [String : Any]
-            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
             
             XCTAssertThrowsError(try clientIdSchemeBasedAuthorizationRequestHandler.setResponseUrl()){ error in
                 XCTAssertEqual(error.localizedDescription, testCase.expectedError)
@@ -284,7 +284,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
-            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
             
             do{
                 try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
@@ -305,7 +305,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
-            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
             
             do{
                 try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
@@ -326,7 +326,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
-            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
             
             do{
                 try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
@@ -348,7 +348,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
-            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+            let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
             
             do{
                 try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
@@ -375,7 +375,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorWhenBothPresenentationDefinitionAndPresenentationDefinitionUriArePresent() async{
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition", "presentation_definition": presentationDefinition])
-        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         do{
             try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
@@ -420,4 +420,25 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             XCTAssertEqual("presentation_definition_uri is not supported", error.localizedDescription)
         }
     }
+    
+    func testShouldThrowErrorForFetchAuthorizationRequestByReferenceForInvalidClientIdAndResponseUriMethodIsPost() async {
+        var authorizationRequestParamsWithValueUpdated = authorizationRequestParamsWithValue
+        authorizationRequestParamsWithValueUpdated["request_uri_method"] = "post"
+        authorizationRequestParamsWithValueUpdated["client_id"] = ""
+
+        let authorizationRequestObject = createAuthorizationRequestObject(
+            clientIdScheme: .preRegistered,
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValueUpdated, redirectUriSchemeClientId),
+            applicableFields: authRequestWithRedirectUriByValue
+        )
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: authorizationRequestParamsWithValueUpdated) as [String : Any]
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        do{
+            try await mockAuthHandler.fetchAuthorizationRequest()
+        } catch {
+            XCTAssertEqual("Client Identifier is empty", error.localizedDescription)
+        }
+    }
+    
 }
