@@ -63,14 +63,14 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     func testFetchAuthorizationRequestByReferenceAndRequestUriMethodIsPost() async{
         
         var authorizationRequestWithPostRequestUriMethod = authorizationRequestParamsWithValue
-           authorizationRequestParamsWithValueUpdated["request_uri_method"] = "post"
+        authorizationRequestWithPostRequestUriMethod["request_uri_method"] = "post"
         
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdScheme: .preRegistered,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValueUpdated, redirectUriSchemeClientId),
+            authorizationRequestParams: mergeMaps(authorizationRequestWithPostRequestUriMethod, redirectUriSchemeClientId),
             applicableFields: authRequestWithRedirectUriByValue
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValueUpdated, redirectUriSchemeClientId)) as [String : Any]
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestWithPostRequestUriMethod, redirectUriSchemeClientId)) as [String : Any]
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         do{
@@ -81,6 +81,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             
             let recordedBody = mockNetworkManager.recordedRequests["https://mock-verifier.com/verifier/get-auth-request-obj"]?.requestBody
             XCTAssertNotNil(recordedBody!["wallet_metadata"], "Expected wallet_metadata to be present in the request body")
+            
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
         }
