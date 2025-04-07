@@ -1,8 +1,9 @@
 import Foundation
 
 func parseAndValidatePresentationDefinition(
-    authorizationRequest: [String: Any],
-    networkManager: NetworkManaging
+    _ authorizationRequest: [String: Any],
+    _ isPresentationDefinitionUriSupported: Bool,
+    _ networkManager: NetworkManaging
 ) async throws -> [String: Any] {
     
     let hasPresentationDefinition = authorizationRequest.keys.contains("presentation_definition")
@@ -29,7 +30,7 @@ func parseAndValidatePresentationDefinition(
                 )
             }
 
-            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition.rawValue], className: PresentationDefinition.className)
+            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition.rawValue], className: AuthorizationRequest.className)
         } else if let presentationDefinitionJson = value as? [String: Any] {
             //Presentation Definition is of type Dictionary when auth request obtained by reference
             do {
@@ -49,6 +50,15 @@ func parseAndValidatePresentationDefinition(
             )
         }
     } else if hasPresentationDefinitionUri, let presentationDefintionUri = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+        
+        if !isPresentationDefinitionUriSupported {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "presentation_definition_uri is not supported",
+                className: AuthorizationRequest.className
+            )
+        }
+        
         guard let valueStr = getStringValue(presentationDefintionUri), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
             throw Logger.handleException(
                 exceptionType: "InvalidInput",

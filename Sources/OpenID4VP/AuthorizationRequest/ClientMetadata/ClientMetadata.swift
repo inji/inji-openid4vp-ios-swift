@@ -133,5 +133,3 @@ public struct ClientMetadata: Codable {
         }
     }
 }
-
-typealias VpFormats = [String: [String: [String]]]

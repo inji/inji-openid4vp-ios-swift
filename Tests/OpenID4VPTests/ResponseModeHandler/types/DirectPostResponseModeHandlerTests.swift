@@ -12,7 +12,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
         
-        XCTAssertNoThrow(try directPostAuthorizationResponseModeHandler.validate(clientMetadata: mockClientMetadataObject))
+        XCTAssertNoThrow(try directPostAuthorizationResponseModeHandler.validate(clientMetadata: mockClientMetadataObject, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true))
     }
     
     func testSendAuthorizationResponseForDirectPostResponseMode()  async throws {

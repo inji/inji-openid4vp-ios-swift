@@ -5,8 +5,8 @@ struct InputDescriptor: Codable {
     let name: String?
     let purpose: String?
     let constraints: Constraints
-    let format: Format?
-    static let className = String(describing: PresentationDefinition.self)
+    let format: VpFormats?
+    let className = String(describing: InputDescriptor.self)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -23,7 +23,7 @@ struct InputDescriptor: Codable {
             String.self,
             forKey: .id,
             fieldPath: ["input_descriptor", "id"],
-            className: InputDescriptor.className,
+            className: className,
             isMandatory: true
         )!
         
@@ -31,7 +31,7 @@ struct InputDescriptor: Codable {
             Constraints.self,
             forKey: .constraints,
             fieldPath: ["input_descriptor", "constraints"],
-            className: InputDescriptor.className,
+            className: className,
             isMandatory: true
         )!
         
@@ -39,21 +39,21 @@ struct InputDescriptor: Codable {
             String.self,
             forKey: .name,
             fieldPath: ["input_descriptor", "name"],
-            className: InputDescriptor.className,
+            className: className,
             isMandatory: false)
         
         self.purpose = try container.decodeRequired(
             String.self,
             forKey: .purpose,
             fieldPath: ["input_descriptor", "purpose"],
-            className: InputDescriptor.className,
+            className: className,
             isMandatory: false)
         
         self.format = try container.decodeRequired(
-            Format.self,
+            VpFormats.self,
             forKey: .format,
             fieldPath: ["input_descriptor", "format"],
-            className: InputDescriptor.className,
+            className: className,
             isMandatory: false)
         
         try validate()
@@ -61,14 +61,13 @@ struct InputDescriptor: Codable {
     
     func validate() throws {
         guard isNeitherNullNorEmpty(field: id) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: InputDescriptor.className)
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: className)
         }
         
-        try validateField(name, ["input_descriptor","name"], InputDescriptor.className)
-        try validateField(purpose, ["input_descriptor","purpose"], InputDescriptor.className)
-    
-        try constraints.validate()
+        try validateField(name, ["input_descriptor","name"], className)
+        try validateField(purpose, ["input_descriptor","purpose"], className)
+        try validateField(format, ["input_descriptor","format"], className)
         
-        try format?.validate()
+        try constraints.validate()
     }
 }

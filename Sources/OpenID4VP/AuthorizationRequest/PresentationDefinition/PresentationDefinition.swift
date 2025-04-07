@@ -5,8 +5,8 @@ public struct PresentationDefinition: Codable {
     let name: String?
     let purpose: String?
     let input_descriptors: [InputDescriptor]
-    let format: Format?
-    static let className = String(describing: PresentationDefinition.self)
+    let format: VpFormats?
+    let className = String(describing: PresentationDefinition.self)
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -24,7 +24,7 @@ public struct PresentationDefinition: Codable {
             String.self,
             forKey: .id,
             fieldPath: ["presentation_definition", "id"],
-            className: PresentationDefinition.className,
+            className: className,
             isMandatory: true
         )!
         
@@ -32,7 +32,7 @@ public struct PresentationDefinition: Codable {
             [InputDescriptor].self,
             forKey: .input_descriptors,
             fieldPath: ["presentation_definition", "input_descriptors"],
-            className: PresentationDefinition.className,
+            className: className,
             isMandatory: true
         )!
         
@@ -40,21 +40,21 @@ public struct PresentationDefinition: Codable {
             String.self,
             forKey: .name,
             fieldPath: ["presentation_definition", "name"],
-            className: PresentationDefinition.className,
+            className: className,
             isMandatory: false)
 
         self.purpose = try container.decodeRequired(
             String.self,
             forKey: .purpose,
             fieldPath: ["presentation_definition", "purpose"],
-            className: PresentationDefinition.className,
+            className: className,
             isMandatory: false)
         
         self.format = try container.decodeRequired(
-            Format.self,
+            VpFormats.self,
             forKey: .format,
             fieldPath: ["presentation_definition", "format"],
-            className: PresentationDefinition.className,
+            className: className,
             isMandatory: false)
         
         try validate()
@@ -62,17 +62,16 @@ public struct PresentationDefinition: Codable {
     
     func validate() throws {
         guard isNeitherNullNorEmpty(field: id) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","id"], className: PresentationDefinition.className)
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","id"], className: className)
         }
         
         guard !input_descriptors.isEmpty else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: PresentationDefinition.className)
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: className)
         }
         
-        try validateField(name, ["presentation_definition","name"], PresentationDefinition.className)
-        try validateField(purpose, ["presentation_definition","purpose"], PresentationDefinition.className)
-        
-        try format?.validate()
+        try validateField(name, ["presentation_definition","name"], className)
+        try validateField(purpose, ["presentation_definition","purpose"], className)
+        try validateField(format, ["presentation_definition","format"], className)
         
         for descriptor in input_descriptors {
             try descriptor.validate()

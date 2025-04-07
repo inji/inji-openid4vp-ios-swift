@@ -16,7 +16,7 @@ struct JWSHandler {
     func verify() async throws {
         do {
             // TODO: keyResolver.resolveKey should return publicKey instead of String once multiple signature support is added
-            let publicKey = try await publicKeyResolver.resolveKey(header: try extractDataJsonFromJws(jws: self.jws, jwsPart: .header))
+            let publicKey = try await publicKeyResolver.resolveKey(header: try extractDataJsonFromJws(jwsPart: .header))
             
             let base64PublicKey = Base64Decoder.makeBase64Standard(publicKey)
             
@@ -26,7 +26,7 @@ struct JWSHandler {
             do {
                 let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
                 
-                let jws = try JWS(jwsString: self.jws)
+                let jws = try JWS(jwsString: jws)
                 guard try jws.verify(key: publicKey) else {
                     throw Logger.handleException(exceptionType: "InvalidSignature", message: "JWS proof verification failed",className: JWSHandler.className)
                 }
@@ -34,6 +34,12 @@ struct JWSHandler {
         } catch {
             throw Logger.handleException(exceptionType: "ProofVerificationFailed", message: error.localizedDescription,className: JWSHandler.className)
         }
+    }
+    
+    func extractDataJsonFromJws(jwsPart: JWSPart) throws -> [String:Any] {
+        let components = jws.split(separator: ".")
+        let payload = String(components[jwsPart.rawValue])
+        return try Base64Decoder.decodeBase64ToJSON(payload)
     }
 }
 

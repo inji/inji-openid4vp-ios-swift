@@ -2,21 +2,28 @@ import Foundation
 
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
-    func validateRequestUriResponse() async throws
+    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?) async throws
+    func process(walletMetadata: WalletMetadata) -> WalletMetadata
+    func getHeadersForAuthorizationRequestUri() -> [String: String]?
 }
 
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     var delegate: AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler!
     var authorizationRequestParameters: [String: Any]
-    let networkManager: NetworkManaging
+    var walletMetadata: WalletMetadata?
     let setResponseUri: (String) -> Void
-    var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
+    let networkManager: NetworkManaging
+    var shouldValidateWithWalletMetadata: Bool = false
     var className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
     
-    init(authorizationRequestParameters: [String: Any], networkManager: NetworkManaging, setResponseUri: @escaping (String) -> Void) {
+    init(authorizationRequestParameters: [String: Any],
+         walletMetadata: WalletMetadata? = nil,
+         setResponseUri: @escaping (String) -> Void,
+         networkManager: NetworkManaging) {
         self.authorizationRequestParameters = authorizationRequestParameters
         self.setResponseUri = setResponseUri
         self.networkManager = networkManager
+        self.walletMetadata = walletMetadata
     }
     
     func validateClientId() throws {
@@ -24,6 +31,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func fetchAuthorizationRequest() async throws{
+        var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
             if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["requestUri"], className: className)
@@ -37,14 +45,28 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                 )
             }
             
-            let requestUriMethod = authorizationRequestParameters["request_uri_method"] as? String ?? "get"
+            let requestUriMethod = authorizationRequestParameters["request_uri_method"] as? String ?? HttpMethod.get.rawValue
             let httpMethod = try determineHttpMethod(method: requestUriMethod)
             
-            let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: nil, headers: nil)
+            var body: [String: String]? = nil
+            var headers: [String: String]? = nil
+
+            if httpMethod == .post {
+                if let walletMetadata = walletMetadata {
+                    try isClientIdSchemeSupported(walletMetadata: walletMetadata)
+                    let processedWalletMetadata = delegate.process(walletMetadata: walletMetadata)
+                    body = ["wallet_metadata": try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)]
+                    headers = delegate.getHeadersForAuthorizationRequestUri()
+                    shouldValidateWithWalletMetadata = true
+                }
+            }
             
-            self.requestUriResponse = (response.responseBody, response.httpUrlResponse)
+            let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+            
+            requestUriResponse = (response.responseBody, response.httpUrlResponse)
+            
         }
-        try await delegate.validateRequestUriResponse()
+        try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse)
     }
     
     func validateAndParseRequestFields() async throws {
@@ -61,14 +83,28 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
         
-        authorizationRequestParameters = try parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters)
-        authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequest: authorizationRequestParameters, networkManager: networkManager)
+        authorizationRequestParameters = try parseAndValidateClientMetadata(authorizationRequestParameters, shouldValidateWithWalletMetadata, walletMetadata)
+        
+        let presentationDefinitionUriSupported = !shouldValidateWithWalletMetadata || (walletMetadata?.presentationDefinitionURISupported ?? true)
+        
+        authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, presentationDefinitionUriSupported, networkManager)
     }
     
     final func setResponseUrl() throws {
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
         
         try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
+    }
+    
+    private func isClientIdSchemeSupported(walletMetadata: WalletMetadata) throws {
+        let clientId = getStringValue(authorizationRequestParameters["client_id"])
+        let clientIdScheme = try extractClientIdScheme(clientId: clientId ?? "")
+        if !walletMetadata.clientIdSchemesSupported.contains(clientIdScheme) {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "client_id_scheme is not supported by wallet", className: className
+            )
+        }
     }
     
     final func createAuthorizationRequest() -> AuthorizationRequest {

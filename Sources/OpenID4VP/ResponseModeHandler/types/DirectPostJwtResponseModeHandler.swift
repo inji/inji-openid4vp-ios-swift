@@ -2,47 +2,79 @@ import Foundation
 
 
 struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
-    static let className = String(describing: DirectPostJwtResponseModeHandler.self)
-    func validate(clientMetadata: ClientMetadata?) throws {
+    
+    let className = String(describing: DirectPostJwtResponseModeHandler.self)
+    func validate(clientMetadata: ClientMetadata?,
+                  walletMetadata: WalletMetadata?,
+                  shouldValidateWithWalletMetadata: Bool) throws {
+        
         guard let clientMetadataObject = clientMetadata else {
             throw Logger.handleException(
                 exceptionType: "InvalidData",
                 message: "client_metadata must be present for given response mode",
-                className: DirectPostJwtResponseModeHandler.className
+                className: className
             )
         }
-        guard let alg = clientMetadataObject.authorization_encrypted_response_alg else {
-            throw Logger.handleException(
-                exceptionType: "MissingInput",
-                fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
-                className: DirectPostJwtResponseModeHandler.className
-            )
+        
+        try validateMandatoryField(clientMetadata: clientMetadataObject)
+        
+        if shouldValidateWithWalletMetadata {
+            try validateDataWithWalletMetadata(clientMetadata: clientMetadataObject, walletMetadata: walletMetadata)
         }
-
-        if (clientMetadataObject.authorization_encrypted_response_enc) == nil {
-            throw Logger.handleException(
-                exceptionType: "MissingInput",
-                fieldPath: ["client_metadata", "authorization_encrypted_response_enc"],
-                className: DirectPostJwtResponseModeHandler.className
-            )
+    }
+    
+    private func validateMandatoryField(clientMetadata: ClientMetadata) throws {
+        guard let alg = clientMetadata.authorization_encrypted_response_alg else {
+            return try throwMissingInputException(fieldName: "authorization_encrypted_response_alg")
         }
-
-        guard let jwks = clientMetadataObject.jwks else {
-            throw Logger.handleException(
-                exceptionType: "MissingInput",
-                fieldPath: ["client_metadata", "jwks"],
-                className: DirectPostJwtResponseModeHandler.className
-            )
+        guard clientMetadata.authorization_encrypted_response_enc != nil else {
+            return try throwMissingInputException(fieldName: "authorization_encrypted_response_enc")
+        }
+        guard let jwks = clientMetadata.jwks else {
+            return try throwMissingInputException(fieldName: "jwks")
         }
 
         if !jwks.keys.contains(where: { $0.alg == alg }) {
-            throw Logger.handleException(
-                exceptionType: "InvalidData",
-                message: "No jwk matching the specified algorithm found",
-                fieldPath: ["jwks", "keys"],
-                className: DirectPostJwtResponseModeHandler.className
-            )
+            try throwInvalidDataException(message: "No jwk matching the specified algorithm found")
         }
+    }
+    
+    private func validateDataWithWalletMetadata(clientMetadata: ClientMetadata, walletMetadata: WalletMetadata?) throws  {
+        guard let walletMetadata = walletMetadata else {
+            return try throwInvalidDataException(message: "wallet_metadata must be present")
+        }
+
+        if let encSupported = walletMetadata.authorizationEncryptionEncValuesSupported {
+            if !encSupported.contains(clientMetadata.authorization_encrypted_response_enc!) {
+                return try throwInvalidDataException(message: "authorization_encrypted_response_enc is not supported")
+            }
+        } else {
+            return try throwInvalidDataException(message: "authorization_encryption_enc_values_supported must be present in wallet_metadata")
+        }
+
+        if let algSupported = walletMetadata.authorizationEncryptionAlgValuesSupported {
+            if !algSupported.contains(clientMetadata.authorization_encrypted_response_alg!) {
+                return try throwInvalidDataException(message: "authorization_encrypted_response_alg is not supported")
+            }
+        } else {
+            return try throwInvalidDataException(message: "authorization_encryption_alg_values_supported must be present in wallet_metadata")
+        }
+    }
+    
+    private func throwMissingInputException(fieldName: String) throws {
+        throw Logger.handleException(
+            exceptionType: "MissingInput",
+            fieldPath: ["client_metadata", fieldName],
+            className: className
+        )
+    }
+    
+    private func throwInvalidDataException(message: String) throws {
+        throw Logger.handleException(
+            exceptionType: "InvalidData",
+            message: message,
+            className: className
+        )
     }
     
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging) async throws -> String {

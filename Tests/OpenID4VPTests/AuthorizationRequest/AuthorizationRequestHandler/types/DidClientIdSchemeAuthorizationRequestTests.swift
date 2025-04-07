@@ -9,10 +9,10 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorWhenRequestUriIsNotAvailableInAuthorizationRequest() async {
         let authorizationRequestByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithDidByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId)) as [String : Any]
-        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestByValue, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        
+        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestByValue, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+    
         do{
-            try await didSchemeAuthRequestHandler.validateRequestUriResponse()
+            try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: nil)
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
             XCTAssertEqual("Missing Input: request_uri param is required", error.localizedDescription)
@@ -22,11 +22,12 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     func testShouldThrowErrorWhenAuthRequestObtainedByReferenceIsNotJWT() async {
         let url: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId)) as [String : Any]
-        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        didSchemeAuthRequestHandler.requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
+        
+        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
         
         do{
-            try await didSchemeAuthRequestHandler.validateRequestUriResponse()
+            try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
             XCTAssertEqual("Authorization Request must be signed and contain JWT for given client_id_scheme - did", error.localizedDescription)
@@ -36,11 +37,11 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     func testShouldThrowErrorWhenAuthRequestObtainedByReferenceDoesNotContainContentTypeFieldItselfInHeader() async {
         let url: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId)) as [String : Any]
-        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        didSchemeAuthRequestHandler.requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: [:])!)
+        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: [:])!)
         
         do{
-            try await didSchemeAuthRequestHandler.validateRequestUriResponse()
+            try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)
             XCTFail("Expected error to be thrown but it did not happen")
         } catch {
             XCTAssertEqual("Authorization Request must be signed and contain JWT for given client_id_scheme - did", error.localizedDescription)
@@ -48,10 +49,8 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenAuthRequestObtainedByReferenceDoesNotContainJWTContentTypeInHeader() async {
-        let url: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId)) as [String : Any]
-        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        didSchemeAuthRequestHandler.requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/json"])!)
+        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         do{
             try await didSchemeAuthRequestHandler.fetchAuthorizationRequest()
@@ -59,5 +58,31 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         } catch {
             XCTAssertEqual("Authorization Request must be signed and contain JWT for given client_id_scheme - did", error.localizedDescription)
         }
+    }
+    
+    func testProcessingWalletMetadataSuccessfully() async{
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+            "client_id": "mock-client",
+        ])) as [String : Any]
+        let didScheme = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
+            
+        let processedMetadata = didScheme.process(walletMetadata: walletMetadata)
+        
+        assertDictionariesEqual(expected: convertToDictionary(object: walletMetadata)!, actual: convertToDictionary(object: processedMetadata))
+    }
+    
+    func testFetchingHeadersForDIDClientIdSchemeSuccessfully() async{
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithDidByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+            "client_id": "mock-client",
+        ])) as [String : Any]
+        let preRegistered = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
+        
+        let expectedHeader =
+        ["content-type": ContentTypes.applicationFormUrlEncoded.rawValue,
+         "accept": ContentTypes.applicationJwt.rawValue]
+            
+        let header = preRegistered.getHeadersForAuthorizationRequestUri()
+        
+        assertDictionariesEqual(expected: convertToDictionary(object: expectedHeader)!, actual: convertToDictionary(object: header))
     }
 }

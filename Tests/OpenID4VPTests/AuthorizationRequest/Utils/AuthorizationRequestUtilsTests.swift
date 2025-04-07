@@ -48,9 +48,9 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     func testGetAuthorizationRequestHandlerToGiveRespectiveClientIdBasedAuthorizationRequestHandler(){
         let mockSetResponseUri: (String) -> Void = { value in
         }
-        let didAuthRequestHandler = try? getAuthorizationRequestHandler(trustedVerifiers: [], authorizationRequestParameters: DidSchemeClientId, shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(trustedVerifiers: [], authorizationRequestParameters: preRegisteredSchemeClientId, shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
-        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(trustedVerifiers: [], authorizationRequestParameters: redirectUriSchemeClientId, shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)
+        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientId, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientId, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientId, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         XCTAssertTrue(didAuthRequestHandler is DidSchemeAuthorizationRequestHandler)
         XCTAssertTrue(preRegisteredSchemeAuthRequestHandler is PreRegisteredSchemeAuthorizationRequestHandler)
@@ -58,7 +58,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenClientIdSchemeIsNotSupported() async{
-        XCTAssertThrowsError(try getAuthorizationRequestHandler( trustedVerifiers: [], authorizationRequestParameters: ["client_id":"x509_san_dns:mock-verifier"], shouldValidateClient: true, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)) { error in
+        XCTAssertThrowsError(try getAuthorizationRequestHandler( authorizationRequestParameters: ["client_id":"x509_san_dns:mock-verifier"], trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)) { error in
             XCTAssertEqual("Client id scheme in request is not supported", error.localizedDescription)
         }
     }
@@ -75,7 +75,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         for testCase in testCases {
             let authorizationRequestParametersWithInvalidClientId: [String : Any] = testCase.input as [String : Any]
             
-            XCTAssertThrowsError(try getAuthorizationRequestHandler(trustedVerifiers: [], authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId, shouldValidateClient: false, networkManager: mockNetworkManager, setResponseUri: mockSetResponseUri)){ error in
+            XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId, trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)){ error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
             }
         }

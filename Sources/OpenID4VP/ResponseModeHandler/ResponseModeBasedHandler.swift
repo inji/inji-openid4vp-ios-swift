@@ -1,19 +1,19 @@
 import Foundation
 
 protocol ResponseModeBasedHandler {
-    func validate(clientMetadata: ClientMetadata?) throws
-    func sendAuthorizationResponse(
-        authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponse,
-        url: String,
-        networkManager: NetworkManaging
-    ) async throws -> String
+    func validate(clientMetadata: ClientMetadata?,
+                  walletMetadata: WalletMetadata?,
+                  shouldValidateWithWalletMetadata: Bool) throws
+    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest,
+                                   authorizationResponse: AuthorizationResponse,
+                                   url: String,
+                                   networkManager: NetworkManaging
+                                   ) async throws -> String
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
 }
 
 extension ResponseModeBasedHandler {
-    
-    
+
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws {
         
         try validateAttribute(AuthorizationRequestFieldConstants.responseUri.rawValue, values: authorizationRequestParameters)

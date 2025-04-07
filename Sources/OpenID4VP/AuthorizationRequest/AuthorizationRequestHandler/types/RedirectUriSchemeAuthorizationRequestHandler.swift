@@ -1,13 +1,19 @@
 import Foundation
 class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
-    override init(authorizationRequestParameters: [String: Any], networkManager: NetworkManaging, setResponseUri: @escaping (String) -> Void) {
-        super.init(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+    override init(authorizationRequestParameters: [String: Any],
+                  walletMetadata: WalletMetadata? = nil,
+                  setResponseUri: @escaping (String) -> Void,
+                  networkManager: NetworkManaging) {
+        super.init(authorizationRequestParameters: authorizationRequestParameters,
+                   walletMetadata: walletMetadata,
+                   setResponseUri: setResponseUri,
+                   networkManager: networkManager)
         delegate = self
         super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
     
-    func validateRequestUriResponse() async throws {
-        if let requestUriResponse = self.requestUriResponse {
+    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?) async throws {
+        if let requestUriResponse = requestUriResponse {
             let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
             if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {
                 throw Logger.handleException(
@@ -35,6 +41,17 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
             
             self.authorizationRequestParameters = authorizationRequestObject
         }
+    }
+    
+    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
+        var updatedWalletMetadata = walletMetadata
+        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
+        return updatedWalletMetadata
+    }
+    
+    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
+        return ["content-type": ContentTypes.applicationFormUrlEncoded.rawValue,
+                "accept": ContentTypes.applicationJson.rawValue]
     }
     
     override func validateAndParseRequestFields()async throws {

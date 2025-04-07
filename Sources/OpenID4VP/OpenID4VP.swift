@@ -17,13 +17,22 @@ public class OpenID4VP {
         self.responseUri = responseUri
     }
 
-    public func authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier], shouldValidateClient: Bool = false) async throws -> AuthorizationRequest {
+    public func authenticateVerifier(urlEncodedAuthorizationRequest: String,
+                                     trustedVerifierJSON: [Verifier],
+                                     walletMetadata: WalletMetadata? = nil,
+                                     shouldValidateClient: Bool = false
+                                    ) async throws -> AuthorizationRequest {
 
         Logger.setTraceabilityId(className:String(describing: type(of: self)), traceabilityId: traceabilityId)
 
         do {
-            authorizationRequest =  try await AuthorizationRequest.validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,setResponseUri: setResponseUri, shouldValidateClient: shouldValidateClient, trustedVerifierJSON: trustedVerifierJSON, networkManager: networkManager as NetworkManaging)
-
+            authorizationRequest =  try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+                                                                        urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
+                                                                        trustedVerifierJSON: trustedVerifierJSON,
+                                                                        walletMetadata: walletMetadata,
+                                                                        setResponseUri: setResponseUri,
+                                                                        shouldValidateClient: shouldValidateClient,
+                                                                        networkManager: networkManager as NetworkManaging)
             return authorizationRequest!
 
         } catch(let exception) {

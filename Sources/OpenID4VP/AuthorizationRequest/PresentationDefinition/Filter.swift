@@ -3,7 +3,7 @@ import Foundation
 struct Filter: Codable {
     let type: String
     let pattern: String
-    static let className = String(describing: PresentationDefinition.self)
+    let className = String(describing: Filter.self)
     
     enum CodingKeys: String, CodingKey {
         case type
@@ -17,7 +17,7 @@ struct Filter: Codable {
             String.self,
             forKey: .type,
             fieldPath: ["filter", "type"],
-            className: Filter.className,
+            className: className,
             isMandatory: true
         )!
         
@@ -25,7 +25,7 @@ struct Filter: Codable {
             String.self,
             forKey: .pattern,
             fieldPath: ["filter", "pattern"],
-            className: Filter.className,
+            className: className,
             isMandatory: true
         )!
         
@@ -33,7 +33,7 @@ struct Filter: Codable {
     }
     
     func validate() throws {
-        try validateField(type, ["filter","type"], Filter.className)
-        try validateField(pattern, ["filter","pattern"], Filter.className)
+        try validateField(type, ["filter","type"], className)
+        try validateField(pattern, ["filter","pattern"], className)
     }
 }
