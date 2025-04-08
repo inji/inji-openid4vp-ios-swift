@@ -50,7 +50,7 @@ public struct VPFormatSupported: Codable {
 }
 
 private func validateVpFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws {
-    guard !vpFormatsSupported.isEmpty else {
+    if vpFormatsSupported.isEmpty {
         throw Logger.handleException(
             exceptionType: "InvalidData",
             message: "vp_formats_supported should at least have one supported vp_format",

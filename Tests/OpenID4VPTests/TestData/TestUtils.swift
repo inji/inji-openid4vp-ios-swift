@@ -178,31 +178,3 @@ func createWalletMetadata(
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
     )
 }
-
-internal func assertAsyncThrowsError<T>(
-    _ expression: @autoclosure () async throws -> T,
-    _ message: @autoclosure () -> String = "",
-    file: StaticString = #filePath,
-    line: UInt = #line,
-    _ errorHandler: (_ error: any Error) -> Void = { _ in }
-) async {
-    do {
-        _ = try await expression()
-        XCTFail("Expected error to be thrown, but no error was thrown. \(message())", file: file, line: line)
-    } catch {
-        errorHandler(error)
-    }
-}
-
-internal func assertAsyncNoThrowsError<T>(
-    _ expression: @autoclosure () async throws -> T,
-    _ message: @autoclosure () -> String = "",
-    file: StaticString = #filePath,
-    line: UInt = #line
-) async {
-    do {
-        _ = try await expression()
-    } catch {
-        XCTFail("Expected no error to be thrown, but an error was thrown: \(error). \(message())", file: file, line: line)
-    }
-}

@@ -96,7 +96,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 #### WalletMetadata Parameters
 
-| Parameter                                 | Type                        | Optional | Default Value      | Description                                                                                      |
+| Parameter                                 | Type                        | Required | Default Value      | Description                                                                                      |
 |-------------------------------------------|-----------------------------|----------|--------------------|--------------------------------------------------------------------------------------------------|
 | presentationDefinitionURISupported        | Bool                        | No       | true               | Indicates whether the wallet supports `presentation_definition_uri`.                             |
 | vpFormatsSupported                        | [String: VPFormatSupported] | No       | N/A                | A dictionary specifying the supported verifiable presentation formats and their algorithms.      |
