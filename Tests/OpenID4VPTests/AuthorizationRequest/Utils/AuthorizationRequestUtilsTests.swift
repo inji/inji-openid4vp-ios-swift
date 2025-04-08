@@ -3,6 +3,11 @@ import XCTest
 
 class AuthorizationRequestUtilsTests : XCTestCase {
     let mockNetworkManager = MockNetworkManager()
+    private var walletMetadata: WalletMetadata!
+    
+    override func setUpWithError() throws {
+        walletMetadata = try createWalletMetadata()
+    }
     
     ///Test Decoding of url encoded paramters to Dictionary
     

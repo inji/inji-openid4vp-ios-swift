@@ -162,15 +162,6 @@ let vpFormatsMap: [String: VPFormatSupported] = [
     "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"])
 ]
 
-let walletMetadata = WalletMetadata(
-    presentationDefinitionURISupported: true,
-    vpFormatsSupported: vpFormatsMap,
-    clientIdSchemesSupported: [ClientIdScheme.redirectUri.rawValue, ClientIdScheme.did.rawValue, ClientIdScheme.preRegistered.rawValue],
-    requestObjectSigningAlgValuesSupported: ["EdDSA"],
-    authorizationEncryptionAlgValuesSupported: ["ECDH-ES"],
-    authorizationEncryptionEncValuesSupported: ["A256GCM"]
-)
-
 public let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",

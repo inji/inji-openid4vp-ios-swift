@@ -9,6 +9,12 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     }
     let requestUri: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
     
+    private var walletMetadata: WalletMetadata!
+    
+    override func setUpWithError() throws {
+        walletMetadata = try createWalletMetadata()
+    }
+    
     func setup(){
         super.setUp()
         mockNetworkManager.clearMockResponses()
@@ -20,10 +26,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String:Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))
-            XCTFail("Expected error to be thrown but it did not happen")
-        } catch {
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))) { error in
             XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
         }
     }
@@ -33,10 +36,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         let requestUriResponse = createNetworkResponse("string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
         
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)
-            XCTFail("Expected error to be thrown but it did not happen")
-        } catch {
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)) { error in
             XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
         }
     }
@@ -45,11 +45,8 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String:Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         let requestUriResponse = createNetworkResponse("string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
-        
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)
-            XCTFail("Expected error to be thrown but it did not happen")
-        } catch {
+
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)) { error in
             XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
         }
     }
@@ -59,22 +56,15 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     func testThrowNoErrorForValidAuthorizationRequestWhileValidateAndParseRequestFields() async {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
-        } catch {
-            XCTFail("Error should not be thrown but error - \(error) is captured")
-        }
+
+        await assertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields())
     }
     
     func testThrowErrorWhenClientIdIsNotEqualToResponseUriWithDirectPostResponseMode() async{
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId, ["response_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
-            XCTFail("Expected error to be thrown but it did not happen")
-        } catch {
+
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()) { error in
             XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.response_uri should be equal to client_id for given client_id_scheme", error.localizedDescription)
         }
     }
@@ -82,26 +72,19 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     func testThrowErrorWhenAuthorizationRequestObjectClientIdIsNotMatchingWithRequestParameterClientIdInDirectPostResponseMode() async {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId, ["response_mode": "fragment","redirect_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()
-            XCTFail("Expected error to be thrown but it did not happen")
-        } catch {
+
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()) { error in
             XCTAssertEqual("Given response_mode - fragment is not supported", error.localizedDescription)
         }
     }
     
-    func testSuccessfulWhenAuthorizationRequestObjectClientIdIsNotMatchingWithRequestParameterClientIdInDirectPostResponseMode() async {
+    func testSuccessfulValidationOfRequestUriResponseWhenResponseModeIsDirectPost() async {
         let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .redirectUri, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,redirectUriSchemeClientId), applicableFields: authRequestWithRedirectUriByValue)
-        
+
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String:Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        
-        do{
-            try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))
-        }catch{
-            XCTFail("Error should not be thrown but error - \(error) is captured")
-        }
+
+        await assertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse)))
     }
     
     func testProcessingWalletMetadataSuccessfully() async{

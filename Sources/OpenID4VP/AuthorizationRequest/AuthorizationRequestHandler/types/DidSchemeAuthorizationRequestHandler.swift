@@ -43,7 +43,13 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         }
     }
     
-    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
+    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
+        if(walletMetadata.requestObjectSigningAlgValuesSupported == nil) {
+            throw Logger.handleException(
+                exceptionType: "InvalidData",
+                message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
+                className: className)
+        }
         return walletMetadata
     }
     

@@ -3,7 +3,7 @@ import Foundation
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?) async throws
-    func process(walletMetadata: WalletMetadata) -> WalletMetadata
+    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
 }
 
@@ -54,7 +54,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             if httpMethod == .post {
                 if let walletMetadata = walletMetadata {
                     try isClientIdSchemeSupported(walletMetadata: walletMetadata)
-                    let processedWalletMetadata = delegate.process(walletMetadata: walletMetadata)
+                    let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
                     body = ["wallet_metadata": try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)]
                     headers = delegate.getHeadersForAuthorizationRequestUri()
                     shouldValidateWithWalletMetadata = true

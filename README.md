@@ -91,11 +91,22 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
  - The library also validates the incoming authorization request with the wallet metadata
  - Returns the validated Authorization request object
 
-**Handling of Wallet Metadata in the Library**
-- The wallet can send the entire metadata to the library.
-- The library customizes the metadata based on the `client_id_scheme` specified in the authorization request.
-  - For example, in the case of the `pre-registered` scheme, the library modifies the wallet metadata to exclude request object signing information properties, as per the specification.
-- If the `clientIdSchemesSupported` field in the wallet metadata is empty or nil, the library assigns a default value of `["pre-registered"]`.
+**Notes**
+- Wallet can send the entire metadata, library will customize it as per authorization request client_id_scheme. Eg - in case pre-registered, library modifies wallet metadata to be sent without request object signing info properties as specified in the specification.
+
+#### WalletMetadata Parameters
+
+| Parameter                                 | Type                        | Optional | Default Value      | Description                                                                                      |
+|-------------------------------------------|-----------------------------|----------|--------------------|--------------------------------------------------------------------------------------------------|
+| presentationDefinitionURISupported        | Bool                        | No       | true               | Indicates whether the wallet supports `presentation_definition_uri`.                             |
+| vpFormatsSupported                        | [String: VPFormatSupported] | No       | N/A                | A dictionary specifying the supported verifiable presentation formats and their algorithms.      |
+| clientIdSchemesSupported                  | [String]                    | Yes      | ["pre-registered"] | A list of supported client ID schemes.                                                           |
+| requestObjectSigningAlgValuesSupported    | [String]?                   | Yes      | nil                | A list of supported algorithms for signing request objects.                                      |
+| authorizationEncryptionAlgValuesSupported | [String]?                   | Yes      | nil                | A list of supported algorithms for encrypting authorization responses.                           |
+| authorizationEncryptionEncValuesSupported | [String]?                   | Yes      | nil                | A list of supported encryption methods for authorization responses.                              |
+
+
+
 
 ```swift
     let authorizationRequest : AuthorizationRequest = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier],walletMetadata: WalletMetadata, shouldValidateClient: Bool)
@@ -103,12 +114,12 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 ###### Parameters
 
-| Name                           | Type             | Description                                                                |
+| Name                           | Type             | Description                                                                      |
 |--------------------------------|------------------|----------------------------------------------------------------------------------|
 | urlEncodedAuthorizationRequest | String           | URL Encoded authorization request.                                               |
 | trustedVerifierJSON            | [Verifier]       | Array of verifiers to verify the client id of the verifier.                      |
-| walletMetadata                 | WalletMetadata?  | Optional WalletMetadata to be shared with Verifier                                   |
-| shouldValidateClient           | Bool?            | Optional Boolean to toggle client validation for pre-registered client id scheme     |
+| walletMetadata                 | WalletMetadata?  | Optional WalletMetadata to be shared with Verifier                               |
+| shouldValidateClient           | Bool             | Optional Boolean to toggle client validation for pre-registered client id scheme |
 
 
 ###### Example usage

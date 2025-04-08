@@ -8,6 +8,13 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     
     private let mockNetworkManager = MockNetworkManager()
     private let responseUri = "https://mock-verifier.com"
+    
+    private var walletMetadata: WalletMetadata!
+
+        override func setUpWithError() throws {
+            walletMetadata = try createWalletMetadata()
+        }
+
 
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()

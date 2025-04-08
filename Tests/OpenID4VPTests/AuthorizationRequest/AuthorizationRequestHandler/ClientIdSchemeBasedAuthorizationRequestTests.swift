@@ -10,6 +10,12 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     var decodedClientMetadata: ClientMetadata?
     var decodedPresentationDefinition: PresentationDefinition?
     
+    private var walletMetadata: WalletMetadata!
+    
+    override func setUpWithError() throws {
+        walletMetadata = try createWalletMetadata()
+    }
+    
     ///    Fetch authorization request
     class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler {
         func getHeadersForAuthorizationRequestUri() -> [String : String]? {
@@ -154,11 +160,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     func testFetchAuthRequestShouldThrowErrorWhenRequestUriIsNotHttpsScheme() async{
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId,["request_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        
-        do {
-            try await mockAuthHandler.fetchAuthorizationRequest()
-            XCTFail("request_uri data is not valid error to be thrown but not thrown")
-        } catch{
+
+        await assertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             XCTAssertEqual("request_uri http://invalid-mock-verifier.com data is not valid", error.localizedDescription)
         }
     }
@@ -169,15 +172,12 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             TestCase(input: ["request_uri": "nil"], expectedError: "Invalid Input: requestUri value cannot be empty or null"),
             TestCase(input: ["request_uri": "null"], expectedError: "Invalid Input: requestUri value cannot be empty or null"),
         ]
-        
+
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input))  as [String : Any]
             let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-            
-            do {
-                try await mockAuthHandler.fetchAuthorizationRequest()
-                XCTFail("request_uri data is not valid error to be thrown but not thrown")
-            } catch{
+
+            await assertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
             }
         }
@@ -285,16 +285,12 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             TestCase(input: ["response_type": "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null"),
             TestCase(input: ["response_type": nil], expectedError: "Missing Input: response_type param is required")
         ]
-        
+
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-            
-            do{
-                try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
-                XCTFail("error should have been captured but not captured")
-            }
-            catch{
+
+            await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
             }
         }
@@ -306,16 +302,12 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             TestCase(input: ["state": ""], expectedError: "Invalid Input: state value cannot be empty or null"),
             TestCase(input: ["state": "nil"], expectedError: "Invalid Input: state value cannot be empty or null"),
         ]
-        
+
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-            
-            do{
-                try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
-                XCTFail("error should have been captured but not captured")
-            }
-            catch{
+
+            await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
             }
         }
@@ -327,16 +319,12 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             TestCase(input: ["response_mode": ""], expectedError: "Invalid Input: response_mode value cannot be empty or null"),
             TestCase(input: ["response_mode": "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null"),
         ]
-        
+
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-            
-            do{
-                try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
-                XCTFail("error should have been captured but not captured")
-            }
-            catch{
+
+            await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
             }
         }
@@ -349,16 +337,12 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             TestCase(input: ["nonce": "nil"], expectedError: "Invalid Input: nonce value cannot be empty or null"),
             TestCase(input: ["nonce": nil], expectedError: "Missing Input: nonce param is required")
         ]
-        
+
         for testCase in testCases {
             let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, testCase.input)) as [String : Any]
             let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-            
-            do{
-                try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
-                XCTFail("error should have been captured but not captured")
-            }
-            catch{
+
+            await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
                 XCTAssertEqual(testCase.expectedError, error.localizedDescription)
             }
         }
@@ -368,11 +352,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["client_metadata": "{}"])
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
-        do{
-            try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
-            XCTFail("error should have been captured but not captured")
-        }
-        catch{
+        await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             XCTAssertEqual("Missing Input: client_metadata->vp_formats param is required", error.localizedDescription)
         }
     }
@@ -381,11 +361,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition", "presentation_definition": presentationDefinition])
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
-        do{
-            try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
-            XCTFail("error should have been captured but not captured")
-        }
-        catch {
+        await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             XCTAssertEqual("Either presentation_definition or presentation_definition_uri request param can be provided but not both", error.localizedDescription)
         }
     }
@@ -406,21 +382,16 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         XCTAssertTrue(NSDictionary(dictionary: expectedDict).isEqual(to: actualDict), "JSONs do not match")
     }
     
-    func testShouldThrowErrorWhenPresenentationDefinitionUriIsPresentButNotSupportedByWallet() async{
-        
+    func testShouldThrowErrorWhenPresenentationDefinitionUriIsPresentButNotSupportedByWallet() async throws {
         let requestUriResponse: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriWithPresentationDefinitionUri , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
         let authorizationRequestParameters: [String : Any] = mergeMaps(requestUriResponse,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition"])
-        
-        let walletMetadata = createWalletMetadata(presentationDefinitionURISupported: false)
-        
+
+        let walletMetadata = try createWalletMetadata(presentationDefinitionURISupported: false)
+
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         clientIdSchemeBasedAuthorizationRequestHandler.shouldValidateWithWalletMetadata = true
-        
-        do{
-            try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()
-            XCTFail("error should have been captured but not captured")
-        }
-        catch {
+
+        await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             XCTAssertEqual("presentation_definition_uri is not supported", error.localizedDescription)
         }
     }
@@ -438,9 +409,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: authorizationRequestParamsWithValueUpdated) as [String : Any]
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        do{
-            try await mockAuthHandler.fetchAuthorizationRequest()
-        } catch {
+        
+        await assertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             XCTAssertEqual("Client Identifier is empty", error.localizedDescription)
         }
     }

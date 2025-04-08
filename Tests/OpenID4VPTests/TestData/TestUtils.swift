@@ -164,12 +164,12 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
 func createWalletMetadata(
     presentationDefinitionURISupported: Bool = true,
     vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
-    clientIdSchemesSupported: [String] = ["pre-registered"],
-    requestObjectSigningAlgValuesSupported: [String]? = nil,
-    authorizationEncryptionAlgValuesSupported: [String]? = nil,
-    authorizationEncryptionEncValuesSupported: [String]? = nil
-) -> WalletMetadata {
-    return WalletMetadata(
+    clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
+    requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
+    authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
+    authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
+) throws -> WalletMetadata {
+    return try WalletMetadata(
         presentationDefinitionURISupported: presentationDefinitionURISupported,
         vpFormatsSupported: vpFormatsSupported,
         clientIdSchemesSupported: clientIdSchemesSupported,
@@ -177,4 +177,32 @@ func createWalletMetadata(
         authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
     )
+}
+
+internal func assertAsyncThrowsError<T>(
+    _ expression: @autoclosure () async throws -> T,
+    _ message: @autoclosure () -> String = "",
+    file: StaticString = #filePath,
+    line: UInt = #line,
+    _ errorHandler: (_ error: any Error) -> Void = { _ in }
+) async {
+    do {
+        _ = try await expression()
+        XCTFail("Expected error to be thrown, but no error was thrown. \(message())", file: file, line: line)
+    } catch {
+        errorHandler(error)
+    }
+}
+
+internal func assertAsyncNoThrowsError<T>(
+    _ expression: @autoclosure () async throws -> T,
+    _ message: @autoclosure () -> String = "",
+    file: StaticString = #filePath,
+    line: UInt = #line
+) async {
+    do {
+        _ = try await expression()
+    } catch {
+        XCTFail("Expected no error to be thrown, but an error was thrown: \(error). \(message())", file: file, line: line)
+    }
 }
