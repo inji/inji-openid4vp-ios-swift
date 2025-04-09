@@ -12,13 +12,19 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     ]), applicableFields: authRequestWithPreRegisteredByValue)
     let requestUri: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
     
+    private var walletMetadata: WalletMetadata!
+
+        override func setUpWithError() throws {
+            walletMetadata = try createWalletMetadata()
+        }
+    
     // Validate client tests
     
     func testThrowExceptionWhenClientIdIsNotAvailableAsTrustedVerifier(){
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "untrusted-mock-client",
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.validateClientId()){ error in
             XCTAssertTrue(error == AuthorizationRequestException.invalidVerifier(message: "Verifier not available in trusted list"))
@@ -30,7 +36,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     
     func testThrowExceptionWhenTrustedVerifiersListIsEmpty(){
         let authorizationRequestParameters: [String : Any] = ["client_id": "other-mock-client","response_uri": "https://mock-verifier.com"]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.validateClientId()){ error in
             XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.Verifier not available in trusted list", (error as! AuthorizationRequestException).errorDescription)
@@ -43,12 +49,9 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id": "mock-client",
             "response_uri": "https://some-other-url.com"
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        
-        do {
-            try await preRegistered.validateAndParseRequestFields()
-        }
-        catch{
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+
+        await assertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()){ error in
             XCTAssertTrue(error == AuthorizationRequestException.invalidVerifier(message: "response_uri trust cannot be established"))
             XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.response_uri trust cannot be established", error.localizedDescription)
         }
@@ -60,7 +63,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "mock-client",
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         try? await preRegistered.fetchAuthorizationRequest()
         
@@ -109,11 +112,8 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
                     ]]
                 ],
                 "vp_formats": [
-                    "mso_mdoc": [
-                        "alg": ["ES256", "EdDSA"]
-                    ],
                     "ldp_vp": [
-                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020", "RsaSignature2018"]
+                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020"]
                     ]
                 ]
             ]
@@ -124,21 +124,17 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestOnValidPreRegisteredSchemeAuthRequestSentByReference() async{
         let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientId), applicableFields: authRequestWithPreRegisteredByValue)
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
-        try? await preRegistered.validateRequestUriResponse()
+        try? await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))
         
         assertDictionariesEqual(expected: preRegistered.authorizationRequestParameters, actual: [
             "client_id": "mock-client",
             "state": "+mRQe1d6pBoJqF6Ab28klg==",
             "client_metadata": [
                 "vp_formats": [
-                    "mso_mdoc": [
-                        "alg": ["ES256", "EdDSA"]
-                    ],
                     "ldp_vp": [
-                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020", "RsaSignature2018"]
+                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020"]
                     ]
                 ],
                 "jwks": [
@@ -190,13 +186,9 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id": "some-mock-client",
         ]), applicableFields: authRequestWithPreRegisteredByValue)
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
-        
-        do{
-            _ = try await preRegistered.validateRequestUriResponse()
-            XCTFail("Error needs to be thrown")
-        } catch {
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+
+        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))) { error in
             XCTAssertTrue(error == AuthorizationRequestException.mismatchingClientIDInRequest)
             XCTAssertEqual("Client Id is mismatching in QR data and Request Uri response", error.localizedDescription)
         }
@@ -207,27 +199,20 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsJWT() async{
         let requestUriResponse: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse)
-        
-        do{
-            _ = try await preRegistered.validateRequestUriResponse()
-            XCTFail("Error needs to be thrown")
-        } catch {
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+
+        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))) { error in
             XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
         }
     }
     
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsNotJsonContentType() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
-        
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
-        
-        do{
-            _ = try await preRegistered.validateRequestUriResponse()
-            XCTFail("Error needs to be thrown")
-        } catch {
+
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
+
+        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse)) { error in
             XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
         }
     }
@@ -235,14 +220,41 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedDoesNotContainContentTypeFieldInHeader() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId)) as [String : Any]
         
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, networkManager: mockNetworkManager, shouldValidateClient: true, setResponseUri: mockSetResponseUri)
-        preRegistered.requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
-        do{
-            _ = try await preRegistered.validateRequestUriResponse()
-            XCTFail("Error needs to be thrown")
-        } catch {
+        let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
+        
+        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse)) { error in
             XCTAssertEqual("Authorization Request must not be signed for given client_id_scheme", error.localizedDescription)
         }
+    }
+    
+    func testProcessingWalletMetadataSuccessfully() async{
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+            "client_id": "mock-client",
+        ])) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
+        
+        var expectedWalletMetadata: WalletMetadata = walletMetadata
+        expectedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
+            
+        let processedMetadata = preRegistered.process(walletMetadata: walletMetadata)
+        
+        assertDictionariesEqual(expected: convertToDictionary(object: expectedWalletMetadata)!, actual: convertToDictionary(object: processedMetadata))
+    }
+    
+    func testFetchingHeadersForPreRegisteredClientIdSchemeSuccessfully() async{
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+            "client_id": "mock-client",
+        ])) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
+        
+        let expectedHeader =
+        [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+         Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
+            
+        let header = preRegistered.getHeadersForAuthorizationRequestUri()
+        
+        assertDictionariesEqual(expected: expectedHeader, actual: header)
     }
 }

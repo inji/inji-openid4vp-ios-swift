@@ -89,6 +89,17 @@ let authRequestWithRedirectUriByValue : [String] = [
     "client_metadata"
 ]
 
+let authRequestWithRedirectUriWithPresentationDefinitionUri : [String] = [
+    "client_id",
+    "response_uri",
+    "presentation_definition_uri",
+    "response_type",
+    "response_mode",
+    "nonce",
+    "state",
+    "client_metadata"
+]
+
 let authRequestWithPreRegisteredByValue : [String] = [
     "client_id",
     "response_mode",
@@ -147,6 +158,10 @@ let presentationDefinition: [String: Any] = [
 
 let mockPresentationDefinitionObject = createInstance(presentationDefinition, as: PresentationDefinition.self)
 
+let vpFormatsMap: [String: VPFormatSupported] = [
+    "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"])
+]
+
 public let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
@@ -163,17 +178,10 @@ public let clientMetadata: [String: Any] = [
         ]]
     ],
     "vp_formats": [
-        "mso_mdoc": [
-            "alg": [
-                "ES256",
-                "EdDSA"
-            ]
-        ],
         "ldp_vp": [
             "proof_type": [
                 "Ed25519Signature2018",
-                "Ed25519Signature2020",
-                "RsaSignature2018"
+                "Ed25519Signature2020"
             ]
         ]
     ]

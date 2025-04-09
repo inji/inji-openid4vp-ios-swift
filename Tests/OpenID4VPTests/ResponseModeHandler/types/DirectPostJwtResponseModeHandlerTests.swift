@@ -8,11 +8,17 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     let mockPresentationSubmission = PresentationSubmission(definition_id: "client-identifier", descriptor_map: [DescriptorMap(id: "input_1", format: .ldp_vp, path: "$", pathNested: PathNested(id: "input_1", format: .ldp_vc, path: "$.verifiableCredential[0]"))])
     private let mockNetworkManager = MockNetworkManager()
     private let responseUri = "https://mock-verifier.com"
+    
+    private var walletMetadata: WalletMetadata!
+    
+    override func setUpWithError() throws {
+        walletMetadata = try createWalletMetadata()
+    }
 
 /// client metadata validation tests
     
     func testThrowErrorWhenClientMetadataIsNil() throws {
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: nil)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: nil, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("client_metadata must be present for given response mode", error.localizedDescription)
         }
     }
@@ -49,7 +55,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->authorization_encrypted_response_alg param is required", error.localizedDescription)
         }
     }
@@ -86,7 +92,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->authorization_encrypted_response_enc param is required", error.localizedDescription)
         }
     }
@@ -114,7 +120,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->jwks param is required", error.localizedDescription)
         }
     }
@@ -152,13 +158,127 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self))) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("No jwk matching the specified algorithm found", error.localizedDescription)
         }
     }
     
+    func testThrowErrorWhenClientMetadataResponseEncDoesNotMatchWithWalletMetadataResponseEnc() throws {
+        let invalidClientMetadataForDirectPostJwt: [String: Any] = [
+            "client_name": "Requester name",
+            "logo_uri": "https://mock-verifier.com/logo",
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "authorization_encrypted_response_enc": "GCM",
+            "jwks": [
+                "keys": [[
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-ES",
+                    "kid": "ed-key1"
+                ]]
+            ],
+            "vp_formats": [
+                "ldp_vp": [
+                    "proof_type": [
+                        "Ed25519Signature2018",
+                        "Ed25519Signature2020",
+                        "RsaSignature2018"
+                    ]
+                ]
+            ]
+        ]
+        
+        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: ["ECDH-ES"], authorizationEncryptionEncValuesSupported: ["A256GCM"])
+        
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+            XCTAssertEqual("authorization_encrypted_response_enc is not supported", error.localizedDescription)
+        }
+    }
+    
+    func testThrowErrorWhenClientMetadataResponseAlgDoesNotMatchWithWalletMetadataResponseAlg() throws {
+        let invalidClientMetadataForDirectPostJwt: [String: Any] = [
+            "client_name": "Requester name",
+            "logo_uri": "https://mock-verifier.com/logo",
+            "authorization_encrypted_response_alg": "ECDH-AS",
+            "authorization_encrypted_response_enc": "A256GCM",
+            "jwks": [
+                "keys": [[
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-AS",
+                    "kid": "ed-key1"
+                ]]
+            ],
+            "vp_formats": [
+                "ldp_vp": [
+                    "proof_type": [
+                        "Ed25519Signature2018",
+                        "Ed25519Signature2020",
+                        "RsaSignature2018"
+                    ]
+                ]
+            ]
+        ]
+        
+        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: ["ECDH-ES"], authorizationEncryptionEncValuesSupported: ["A256GCM"])
+
+
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+            XCTAssertEqual("authorization_encrypted_response_alg is not supported", error.localizedDescription)
+        }
+    }
+    
+    func testThrowErrorWhenWalletMetadataIsNilAndIfRequiredValuesAreNil() throws {
+        let validClientMetadataForDirectPostJwt: [String: Any] = [
+            "client_name": "Requester name",
+            "logo_uri": "https://mock-verifier.com/logo",
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "authorization_encrypted_response_enc": "A256GCM",
+            "jwks": [
+                "keys": [[
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-ES",
+                    "kid": "ed-key1"
+                ]]
+            ],
+            "vp_formats": [
+                "ldp_vp": [
+                    "proof_type": [
+                        "Ed25519Signature2018",
+                        "Ed25519Signature2020",
+                        "RsaSignature2018"
+                    ]
+                ]
+            ]
+        ]
+
+        // Wallet metadata is nil
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: nil, shouldValidateWithWalletMetadata: true)) { error in
+            XCTAssertEqual("wallet_metadata must be present", error.localizedDescription)
+        }
+        
+        // Alg values are nil
+        var invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: ["A256GCM"])
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+            XCTAssertEqual("authorization_encryption_alg_values_supported must be present in wallet_metadata", error.localizedDescription)
+        }
+        
+        // Enc values are nil
+        invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: ["ECDH-ES"], authorizationEncryptionEncValuesSupported: nil)
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+            XCTAssertEqual("authorization_encryption_enc_values_supported must be present in wallet_metadata", error.localizedDescription)
+        }
+    }
+    
     func testShouldNotThrowErrorForValidClientMetadataOnValidation() {
-        XCTAssertNoThrow(try directPostJwtResponseModeHandler.validate(clientMetadata: mockClientMetadataObject))
+        XCTAssertNoThrow(try directPostJwtResponseModeHandler.validate(clientMetadata: mockClientMetadataObject,walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true))
     }
     
  /// Send authorization response tests

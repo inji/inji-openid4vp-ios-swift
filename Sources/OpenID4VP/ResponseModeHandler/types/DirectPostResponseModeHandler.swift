@@ -1,7 +1,9 @@
 import Foundation
 
 struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
-    func validate(clientMetadata: ClientMetadata?) throws {
+    func validate(clientMetadata: ClientMetadata?,
+                  walletMetadata: WalletMetadata?,
+                  shouldValidateWithWalletMetadata: Bool) throws {
         return
     }
     

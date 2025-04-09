@@ -7,7 +7,7 @@ struct Fields: Codable {
     let purpose: String?
     let filter: Filter?
     let optional: Bool?
-    static let className = String(describing: PresentationDefinition.self)
+    let className = String(describing: Fields.self)
     
     enum CodingKeys: String, CodingKey {
         case path
@@ -25,7 +25,7 @@ struct Fields: Codable {
                 [String].self,
                 forKey: .path,
                 fieldPath: ["fields", "path"],
-                className: Fields.className,
+                className: className,
                 isMandatory: true
             )!
             
@@ -33,35 +33,35 @@ struct Fields: Codable {
                 String.self,
                 forKey: .id,
                 fieldPath: ["fields", "id"],
-                className: Fields.className,
+                className: className,
                 isMandatory: false)
             
             self.name = try container.decodeRequired(
                 String.self,
                 forKey: .name,
                 fieldPath: ["fields", "name"],
-                className: Fields.className,
+                className: className,
                 isMandatory: false)
             
             self.purpose = try container.decodeRequired(
                 String.self,
                 forKey: .purpose,
                 fieldPath: ["fields", "purpose"],
-                className: Fields.className,
+                className: className,
                 isMandatory: false)
             
             self.filter = try container.decodeRequired(
                 Filter.self,
                 forKey: .filter,
                 fieldPath: ["fields", "filter"],
-                className: Fields.className,
+                className: className,
                 isMandatory: false)
             
             self.optional = try container.decodeRequired(
                 Bool.self,
                 forKey: .optional,
                 fieldPath: ["fields", "optional"],
-                className: Fields.className,
+                className: className,
                 isMandatory: false)
             
             try validate()
@@ -69,17 +69,17 @@ struct Fields: Codable {
     
     func validate() throws {
         guard !path.isEmpty else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["fields","path"], className: Fields.className)
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["fields","path"], className: className)
         }
         
         let pathPrefixArray = ["$.","$["]
         if !path.allSatisfy({ p in pathPrefixArray.contains(where: { p.hasPrefix($0) }) }) {
-            throw Logger.handleException(exceptionType: "InvalidInputPattern", fieldPath: ["fields","path"], className: Fields.className)
+            throw Logger.handleException(exceptionType: "InvalidInputPattern", fieldPath: ["fields","path"], className: className)
         }
         
-        try validateField(id, ["fields","id"], Fields.className)
-        try validateField(name, ["fields","name"], Fields.className)
-        try validateField(purpose, ["fields","purpose"], Fields.className)
+        try validateField(id, ["fields","id"], className)
+        try validateField(name, ["fields","name"], className)
+        try validateField(purpose, ["fields","purpose"], className)
 
         if let filter = filter {
             try filter.validate()

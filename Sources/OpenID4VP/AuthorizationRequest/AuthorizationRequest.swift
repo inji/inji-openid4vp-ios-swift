@@ -42,14 +42,35 @@ public struct AuthorizationRequest : Encodable {
         
     }
     
-    static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String, setResponseUri: @escaping (String) -> Void, shouldValidateClient: Bool, trustedVerifierJSON: [Verifier], networkManager: NetworkManaging) async throws -> AuthorizationRequest {
+    static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,
+                                                      trustedVerifierJSON: [Verifier],
+                                                      walletMetadata: WalletMetadata?,
+                                                      setResponseUri: @escaping (String) -> Void,
+                                                      shouldValidateClient: Bool,
+                                                      networkManager: NetworkManaging
+                                                      ) async throws -> AuthorizationRequest {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
         
-        return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters, trustedVerifiers: trustedVerifierJSON, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
+        return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters,
+                                                 trustedVerifiers: trustedVerifierJSON,
+                                                 walletMetadata: walletMetadata,
+                                                 setResponseUri: setResponseUri,
+                                                 shouldValidateClient: shouldValidateClient,
+                                                 networkManager: networkManager)
     }
     
-    private static func getAuthorizationRequest(authorizationRequestParameters : [String:Any],trustedVerifiers : [Verifier], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) async throws -> AuthorizationRequest{
-        let authorizationRequestHandler = try getAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, shouldValidateClient: shouldValidateClient, networkManager: networkManager, setResponseUri: setResponseUri)
+    private static func getAuthorizationRequest(authorizationRequestParameters : [String:Any],
+                                                trustedVerifiers : [Verifier],
+                                                walletMetadata: WalletMetadata?,
+                                                setResponseUri: @escaping (String) -> Void,
+                                                shouldValidateClient: Bool,
+                                                networkManager: NetworkManaging
+                                                ) async throws -> AuthorizationRequest{
+        let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,                                                                                     trustedVerifiers: trustedVerifiers,
+                                                                             walletMetadata: walletMetadata,
+                                                                             shouldValidateClient: shouldValidateClient,
+                                                                             setResponseUri: setResponseUri,
+                                                                             networkManager: networkManager)
         
         try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler)
         

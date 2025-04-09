@@ -37,12 +37,6 @@ func determineHttpMethod(method: String) throws -> HttpMethod {
     }
 }
 
-func extractDataJsonFromJws(jws: String, jwsPart: JWSPart) throws -> [String:Any] {
-    let components = jws.split(separator: ".")
-    let payload = String(components[jwsPart.rawValue])
-    return try Base64Decoder.decodeBase64ToJSON(payload)
-}
-
 func getStringValue(_ value: Any?) -> String? {
     return value as? String
 }
@@ -66,7 +60,7 @@ func convertToInstance<T: Decodable>(_ input: String, as type: T.Type, fieldPath
     return try jsonData.toInstance(as: T.self)
 }
 
-func encode<T: Encodable>(_ data: T, fieldName: String) throws -> String {
+func encode<T: Encodable>(_ data: T, fieldName: String, className: String) throws -> String {
     do {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .withoutEscapingSlashes
@@ -77,7 +71,7 @@ func encode<T: Encodable>(_ data: T, fieldName: String) throws -> String {
             exceptionType: "JsonEncodingFailed",
             message: error.localizedDescription,
             fieldPath: [fieldName],
-            className: AuthorizationResponse.className
+            className: className
         )
     }
 }

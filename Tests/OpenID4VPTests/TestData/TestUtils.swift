@@ -96,6 +96,13 @@ func convertToJsonString(_ data: [String: Any]) -> String {
     return jsonString!
 }
 
+func convertToDictionary<T: Encodable>(object: T) -> [String: Any]? {
+    guard let data = try? JSONEncoder().encode(object) else {
+        return nil
+    }
+    return try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+}
+
 func addingPercentEncoding(_ value: String) -> String {
     return value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
 }
@@ -151,5 +158,23 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
         redirectUri: "1234",
         responseUri: "https://mock-verifier.com",
         clientMetadata: mockClientMetadataObject
+    )
+}
+
+func createWalletMetadata(
+    presentationDefinitionURISupported: Bool = true,
+    vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
+    clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
+    requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
+    authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
+    authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
+) throws -> WalletMetadata {
+    return try WalletMetadata(
+        presentationDefinitionURISupported: presentationDefinitionURISupported,
+        vpFormatsSupported: vpFormatsSupported,
+        clientIdSchemesSupported: clientIdSchemesSupported,
+        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
+        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
+        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
     )
 }

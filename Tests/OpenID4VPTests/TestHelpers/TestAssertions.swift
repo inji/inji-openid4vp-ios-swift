@@ -93,3 +93,31 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
         XCTAssertTrue(isEqual(expectedValue, actualValue), "Mismatch for key '\(key)'. Expected: \(expectedValue), but got: \(actualValue)", file: file, line: line)
     }
 }
+
+func assertAsyncThrowsError<T>(
+    _ expression: @autoclosure () async throws -> T,
+    _ message: @autoclosure () -> String = "",
+    file: StaticString = #filePath,
+    line: UInt = #line,
+    _ errorHandler: (_ error: any Error) -> Void = { _ in }
+) async {
+    do {
+        _ = try await expression()
+        XCTFail("Expected error to be thrown, but no error was thrown. \(message())", file: file, line: line)
+    } catch {
+        errorHandler(error)
+    }
+}
+
+func assertAsyncNoThrowsError<T>(
+    _ expression: @autoclosure () async throws -> T,
+    _ message: @autoclosure () -> String = "",
+    file: StaticString = #filePath,
+    line: UInt = #line
+) async {
+    do {
+        _ = try await expression()
+    } catch {
+        XCTFail("Expected no error to be thrown, but an error was thrown: \(error). \(message())", file: file, line: line)
+    }
+}

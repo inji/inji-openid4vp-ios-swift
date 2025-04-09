@@ -1,10 +1,3 @@
-//
-//  InputDescriptorTests.swift
-//  
-//
-//  Created by Kiruthika Jeyashankar on 21/03/25.
-//
-
 import XCTest
 @testable import OpenID4VP
 
@@ -166,7 +159,7 @@ final class InputDescriptorTests: XCTestCase {
         """.data(using: .utf8)!
         
         XCTAssertThrowsError(try JSONDecoder().decode(InputDescriptor.self, from: inputDescriptorWithInvalidFormatField)) { error in
-            XCTAssertEqual("Invalid Input: ldpFormat->proof_type value cannot be empty or null", error.localizedDescription)
+            XCTAssertEqual("Invalid Input: input_descriptor->format->ldp_vc->proof_type value cannot be empty or null", error.localizedDescription)
         }
     }
 }

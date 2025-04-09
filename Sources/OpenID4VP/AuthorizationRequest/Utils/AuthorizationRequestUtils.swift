@@ -62,7 +62,7 @@ extension KeyedDecodingContainer {
                 throw Logger.handleException(
                     exceptionType: "InvalidInput",
                     fieldPath: fieldPath,
-                    className: InputDescriptor.className
+                    className: className
                 )
             }
             return rawValue!
@@ -72,17 +72,34 @@ extension KeyedDecodingContainer {
 }
 
 
-func getAuthorizationRequestHandler(trustedVerifiers : [Verifier], authorizationRequestParameters: [String:Any], shouldValidateClient: Bool, networkManager: NetworkManaging,setResponseUri: @escaping (String) -> Void) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
+func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any],
+                                    trustedVerifiers : [Verifier],
+                                    walletMetadata: WalletMetadata?,
+                                    shouldValidateClient: Bool,
+                                    setResponseUri: @escaping (String) -> Void,
+                                    networkManager: NetworkManaging
+                                    ) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
     try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
     let clientIdScheme = try extractClientIdScheme(clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? "")
     
     switch clientIdScheme {
     case ClientIdScheme.preRegistered.rawValue:
-        return PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, shouldValidateClient: shouldValidateClient, setResponseUri: setResponseUri)
+        return PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers,
+                                                              authorizationRequestParameters: authorizationRequestParameters,
+                                                              walletMetadata: walletMetadata,
+                                                              shouldValidateClient: shouldValidateClient,
+                                                              setResponseUri: setResponseUri,
+                                                              networkManager: networkManager)
     case ClientIdScheme.did.rawValue:
-        return DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+        return DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
+                                                    walletMetadata: walletMetadata,
+                                                    setResponseUri: setResponseUri,
+                                                    networkManager: networkManager)
     case ClientIdScheme.redirectUri.rawValue:
-        return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+        return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
+                                                            walletMetadata: walletMetadata,
+                                                            setResponseUri: setResponseUri,
+                                                            networkManager: networkManager)
     default:
         throw Logger.handleException(exceptionType: "InvalidData",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
     }
@@ -106,11 +123,30 @@ func extractQueryParameters(_ input: String) throws -> [String: String] {
     return decodedParams
 }
 
-func validateField(_ field: String?, _ fieldPath: [String], _ className: String) throws {
-    if let field = field {
-        guard isNeitherNullNorEmpty(field: field) else {
+func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) throws {
+    guard let field = field else { return }
+    
+    switch field {
+    case let stringValue as String:
+        guard isNeitherNullNorEmpty(field: stringValue) else {
             throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
         }
+    case let dictValue as [String: Any]:
+        guard !dictValue.isEmpty else {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
+        }
+        try dictValue.forEach { key, value in
+            try validateField(value, fieldPath + [key], className)
+        }
+    case let arrayValue as [Any]:
+        guard !arrayValue.isEmpty else {
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
+        }
+        for (index, value) in arrayValue.enumerated() {
+            try validateField(value, fieldPath + ["\(index)"], className)
+        }
+    default:
+        break
     }
 }
 

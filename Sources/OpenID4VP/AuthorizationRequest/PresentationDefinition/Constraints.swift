@@ -3,11 +3,11 @@ import Foundation
 struct Constraints: Codable {
     let fields: [Fields]?
     let limitDisclosure: LimitDisclosure?
-    static let className = String(describing: Constraints.self)
+    let className = String(describing: Constraints.self)
     
     enum CodingKeys: String, CodingKey {
         case fields
-        case limitDisclosure
+        case limitDisclosure = "limit_disclosure"
     }
     
     init(from decoder: Decoder) throws {
@@ -17,7 +17,7 @@ struct Constraints: Codable {
                 [Fields].self,
                 forKey: .fields,
                 fieldPath: ["constraints", "fields"],
-                className: Constraints.className,
+                className: className,
                 isMandatory: false
             )
             
@@ -25,7 +25,7 @@ struct Constraints: Codable {
                 LimitDisclosure.self,
                 forKey: .limitDisclosure,
                 fieldPath: ["constraints", "limitDisclosure"],
-                className: Constraints.className,
+                className: className,
                 isMandatory: false
             )
             
@@ -40,11 +40,11 @@ struct Constraints: Codable {
         
         if let limitDisclosure = limitDisclosure {
             guard isNeitherNullNorEmpty(field: limitDisclosure.rawValue) else {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["constraints","limit_disclosure"], className: Constraints.className)
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["constraints","limit_disclosure"], className: className)
             }
             
             guard limitDisclosure == .required || limitDisclosure == .preferred else {
-                throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: Constraints.className)
+                throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: className)
             }
         }
     }

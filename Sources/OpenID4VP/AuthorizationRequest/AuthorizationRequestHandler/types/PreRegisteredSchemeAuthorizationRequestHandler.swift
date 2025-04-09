@@ -4,10 +4,18 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     let trustedVerifiers: [Verifier]
     let shouldValidateClient: Bool
     
-    init(trustedVerifiers: [Verifier], authorizationRequestParameters: [String: Any], networkManager: NetworkManaging, shouldValidateClient: Bool, setResponseUri: @escaping (String) -> Void) {
+    init(trustedVerifiers: [Verifier],
+         authorizationRequestParameters: [String: Any],
+         walletMetadata: WalletMetadata?,
+         shouldValidateClient: Bool,
+         setResponseUri: @escaping (String) -> Void,
+         networkManager: NetworkManaging) {
         self.trustedVerifiers = trustedVerifiers
         self.shouldValidateClient = shouldValidateClient
-        super.init(authorizationRequestParameters: authorizationRequestParameters, networkManager: networkManager, setResponseUri: setResponseUri)
+        super.init(authorizationRequestParameters: authorizationRequestParameters,
+                   walletMetadata: walletMetadata,
+                   setResponseUri: setResponseUri,
+                   networkManager: networkManager)
         delegate = self
         super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
     }
@@ -20,8 +28,19 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         }
     }
     
-    func validateRequestUriResponse() async throws {
-        if let requestUriResponse = self.requestUriResponse {
+    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
+        var updatedWalletMetadata = walletMetadata
+        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
+        return updatedWalletMetadata
+    }
+    
+    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
+        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+                Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
+    }
+    
+    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?) async throws {
+        if let requestUriResponse = requestUriResponse {
             let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
 
             if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {

@@ -131,7 +131,7 @@ class UtilsTest : XCTestCase {
             number: 1
         )
 
-        let encodedJson = try encode(mockDataClass, fieldName: "mockDataClass")
+        let encodedJson = try encode(mockDataClass, fieldName: "mockDataClass", className: className)
         let expectedJson = "{\"key\":\"id_credential\",\"key_with_more_than_one_word\":\"ldp_vp\",\"nullable_field\":\"value\",\"number\":1}"
         
         assertJsonString(expected: expectedJson, actual: encodedJson)
@@ -145,7 +145,7 @@ class UtilsTest : XCTestCase {
             number: 1
         )
 
-        let encodedJson = try encode(mockDataClass, fieldName: "mockDataClass")
+        let encodedJson = try encode(mockDataClass, fieldName: "mockDataClass", className: className)
         print("data \(encodedJson)")
         let expectedJson = "{\"key\":\"id_credential\",\"number\":1,\"key_with_more_than_one_word\":\"ldp_vp\"}"
         
@@ -157,7 +157,7 @@ class UtilsTest : XCTestCase {
         
         let failingObject = MockFailingEncodable()
         
-        XCTAssertThrowsError(try encode(failingObject, fieldName: "failingObject")) {error in
+        XCTAssertThrowsError(try encode(failingObject, fieldName: "failingObject", className: className)) {error in
             XCTAssertEqual(error.localizedDescription, "Json Encoding failed for failingObject due to this error: The operation couldn’t be completed. (EncodingError error 0.).")
         }
     }
