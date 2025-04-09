@@ -96,14 +96,14 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 #### WalletMetadata Parameters
 
-| Parameter                                 | Type                        | Required | Default Value      | Description                                                                                      |
-|-------------------------------------------|-----------------------------|----------|--------------------|--------------------------------------------------------------------------------------------------|
-| presentationDefinitionURISupported        | Bool                        | No       | true               | Indicates whether the wallet supports `presentation_definition_uri`.                             |
-| vpFormatsSupported                        | [String: VPFormatSupported] | No       | N/A                | A dictionary specifying the supported verifiable presentation formats and their algorithms.      |
-| clientIdSchemesSupported                  | [String]                    | Yes      | ["pre-registered"] | A list of supported client ID schemes.                                                           |
-| requestObjectSigningAlgValuesSupported    | [String]?                   | Yes      | nil                | A list of supported algorithms for signing request objects.                                      |
-| authorizationEncryptionAlgValuesSupported | [String]?                   | Yes      | nil                | A list of supported algorithms for encrypting authorization responses.                           |
-| authorizationEncryptionEncValuesSupported | [String]?                   | Yes      | nil                | A list of supported encryption methods for authorization responses.                              |
+| Parameter                                 | Type                        | Required   | Default Value      | Description                                                                                      |
+|-------------------------------------------|-----------------------------|------------|--------------------|--------------------------------------------------------------------------------------------------|
+| presentationDefinitionURISupported        | Bool                        | No         | true               | Indicates whether the wallet supports `presentation_definition_uri`.                             |
+| vpFormatsSupported                        | [String: VPFormatSupported] | Yes        | N/A                | A dictionary specifying the supported verifiable presentation formats and their algorithms.      |
+| clientIdSchemesSupported                  | [String]                    | No         | ["pre-registered"] | A list of supported client ID schemes.                                                           |
+| requestObjectSigningAlgValuesSupported    | [String]?                   | No         | nil                | A list of supported algorithms for signing request objects.                                      |
+| authorizationEncryptionAlgValuesSupported | [String]?                   | No         | nil                | A list of supported algorithms for encrypting authorization responses.                           |
+| authorizationEncryptionEncValuesSupported | [String]?                   | No         | nil                | A list of supported encryption methods for authorization responses.                              |
 
 
 
