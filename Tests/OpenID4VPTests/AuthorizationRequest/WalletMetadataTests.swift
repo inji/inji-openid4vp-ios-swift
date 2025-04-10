@@ -23,7 +23,9 @@ final class WalletMetadataTests: XCTestCase {
     
     func testWalletMetadataThrowsForEmptyVPFormatsSupported() {
         XCTAssertThrowsError(try WalletMetadata(
-            vpFormatsSupported: [:]
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: [:],
+            clientIdSchemesSupported: nil
         )) { error in
             XCTAssertEqual(error.localizedDescription, "vp_formats_supported should at least have one supported vp_format")
         }
@@ -35,7 +37,9 @@ final class WalletMetadataTests: XCTestCase {
         ]
         
         XCTAssertThrowsError(try WalletMetadata(
-            vpFormatsSupported: badVPFormat
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: badVPFormat,
+            clientIdSchemesSupported: nil
         )) { error in
             XCTAssertEqual(error.localizedDescription, "vp_formats_supported cannot have empty keys.")
         }
@@ -47,7 +51,9 @@ final class WalletMetadataTests: XCTestCase {
         ]
         
         let metadata = try WalletMetadata(
-            vpFormatsSupported: vpFormats
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: vpFormats,
+            clientIdSchemesSupported: nil
         )
         let walletMetadata = try createWalletMetadata(presentationDefinitionURISupported: true, vpFormatsSupported: vpFormats,
                                                       clientIdSchemesSupported: ["pre-registered"], requestObjectSigningAlgValuesSupported: nil, authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: nil)

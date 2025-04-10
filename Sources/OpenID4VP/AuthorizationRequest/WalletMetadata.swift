@@ -19,16 +19,16 @@ public struct WalletMetadata: Codable {
     }
     
     public init(
-        presentationDefinitionURISupported: Bool = true,
+        presentationDefinitionURISupported: Bool?,
         vpFormatsSupported: [String: VPFormatSupported],
-        clientIdSchemesSupported: [String] = [ClientIdScheme.preRegistered.rawValue],
+        clientIdSchemesSupported: [String]?,
         requestObjectSigningAlgValuesSupported: [String]? = nil,
         authorizationEncryptionAlgValuesSupported: [String]? = nil,
         authorizationEncryptionEncValuesSupported: [String]? = nil
     ) throws {
-        self.presentationDefinitionURISupported = presentationDefinitionURISupported
+        self.presentationDefinitionURISupported = presentationDefinitionURISupported ?? true
         self.vpFormatsSupported = vpFormatsSupported
-        self.clientIdSchemesSupported = clientIdSchemesSupported
+        self.clientIdSchemesSupported = clientIdSchemesSupported ?? [ClientIdScheme.preRegistered.rawValue]
         self.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
