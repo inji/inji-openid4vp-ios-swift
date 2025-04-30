@@ -1,4 +1,6 @@
 import Foundation
+import CryptoKit
+import SwiftCBOR
 
 enum JWSPart: Int {
     case header = 0, payload, signature
@@ -95,3 +97,29 @@ func toData(_ input: [String: Any]) throws -> Data {
     }
     return try JSONSerialization.data(withJSONObject: processedInput, options: [])
 }
+
+/**
+ accept entropy size in bytes, default = 16
+ */
+func createNonce(entropy: Int = 16) -> String {
+    var randomData = Data(count: entropy)
+    
+    _ = randomData.withUnsafeMutableBytes {
+        SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!)
+    }
+    
+    //TODO: Move this encoding logic to encoder class separately
+    let base64String = randomData.base64EncodedString()
+    let base64url = base64String
+        .replacingOccurrences(of: "+", with: "-")
+        .replacingOccurrences(of: "/", with: "_")
+        .replacingOccurrences(of: "=", with: "")
+    
+    return base64url
+}
+
+func SHA256Hash(from data: CBOR) -> [UInt8] {
+    let hash: SHA256.Digest = SHA256.hash(data: CBOR.encode(data))
+    return ([UInt8])(Data(hash))
+}
+
