@@ -93,7 +93,7 @@ public class AuthorizationResponseHandler {
                         message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
                     )
                 }
-                result[format] = UnsignedLdpVPToken(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "")
+                result[format] = UnsignedLdpVPTokenBuilder(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "").build()
             case .mso_mdoc:
                 guard let stringCredentials = credentials as? [String] else {
                     throw Logger.handleException(
@@ -101,7 +101,7 @@ public class AuthorizationResponseHandler {
                         message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
                     )
                 }
-                result[format] = try UnsignedMdocVPToken(verifiableCredentials: stringCredentials, clientId: authorizationRequest.clientId, responseUri: responseUri, nonce: authorizationRequest.responseType)
+                result[format] = try UnsignedMdocVPTokenBuilder(verifiableCredentials: stringCredentials, clientId: authorizationRequest.clientId, responseUri: responseUri, nonce: authorizationRequest.nonce).build()
             }
         }
     }

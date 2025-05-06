@@ -1,14 +1,29 @@
-import SwiftCBOR
-import Foundation
+struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
+    let verifiableCredential: [String]
+    let clientId: String
+    let responseUri: String
+    let nonce: String
 
-public struct UnsignedMdocVPToken: Codable, UnsignedVPToken {
-    // map of docType to map of signature algorithm and deviceAuthenticationBytes which will be used as payload for signing
-    var deviceAuthenticationBytes : [String : String] = [:]
-    
-    //TODO: Extract builder for this
-    init(verifiableCredentials: [String], clientId: String, responseUri: String, nonce: String) throws {
+//TODO: Format the file
+    init( verifiableCredentials: [String], clientId: String, responseUri: String, nonce: String) {
+        self.verifiableCredential = verifiableCredential
+        self.clientId = clientId
+        self.responseUri = responseUri
+        self.nonce = nonce
+     }
+
+     func build() throws -> UnsignedVPToken {
+        return UnsignedLdpVPToken(context : ["https://www.w3.org/2018/credentials/v1"]
+    type : ["VerifiablePresentation"]
+    verifiableCredential: self.verifiableCredential
+    id: self.id
+    holder: self.holder)
+     }
+
+    func build() throws ->  UnsignedVPToken {
         //TODO: Accept this param as input
         let mdocGeneratedNonce = (createNonce())
+        var deviceAuthenticationBytes : [String : String] = [:]
         for verifiableCredential in verifiableCredentials {
             guard let credential = decodeCBOR(input: verifiableCredential) else {
                 throw NSError(domain: "Invalid Verifiable Credential", code: 1001, userInfo: nil)
@@ -33,18 +48,16 @@ public struct UnsignedMdocVPToken: Codable, UnsignedVPToken {
                 deviceNamespacesBytes!
             ])
             
-            let deviceAuthenticationBytes = wrapCBORInputWithTag24(input: deviceAuthentication)
-            self.deviceAuthenticationBytes[extractStringFromCBOR(docType!)!] = cborToByteString(cbor: deviceAuthenticationBytes!)
+            let deviceAuthenticationBytesOfCredential = wrapCBORInputWithTag24(input: deviceAuthentication)
+            deviceAuthenticationBytes[extractStringFromCBOR(docType!)!] = cborToByteString(cbor: deviceAuthenticationBytesOfCredential!)
         }
-    }
-    
-    func print(){
-        for (k, v) in deviceAuthenticationBytes {
-            Swift.print("\(k): \(v)")
-        }
+
+        return UnsignedMdocVPToken(deviceAuthenticationBytes: deviceAuthenticationBytes)
     }
 }
 
+
+//TODO: Move CBOR related functions to CBORUtils
 func getValueFromCBORMap(cborMap: CBOR, key: String) -> CBOR? {
     guard case let .map(items) = cborMap else { return nil }
     
