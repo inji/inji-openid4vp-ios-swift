@@ -7,10 +7,10 @@ class MdocVPTokenBuilder : VpTokenBuilder {
     private let nonce: String
     private let credentials: [String]
     
-    init(mdocVPResponeMetadata:  MdocVPResponseMetadata,unsignedMdocVPToken:  UnsignedMdocVPToken, authorizationRequest: AuthorizationRequest, credentials: [String]) {
+    init(mdocVPResponeMetadata:  MdocVPResponseMetadata,unsignedMdocVPToken:  UnsignedMdocVPToken, nonce: String, credentials: [String]) {
         self.mdocVPResponeMetadata = mdocVPResponeMetadata
         self.unsignedMdocVPToken = unsignedMdocVPToken
-        self.nonce = authorizationRequest.nonce
+        self.nonce = nonce
         self.credentials = credentials
     }
     

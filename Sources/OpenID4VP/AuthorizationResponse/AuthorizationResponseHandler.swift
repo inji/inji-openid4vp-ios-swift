@@ -13,7 +13,9 @@ public class AuthorizationResponseHandler {
     }
     
     func constructUnsignedVPToken(
-        credentialsMap: [String: [FormatType: Array<Any>]]
+        credentialsMap: [String: [FormatType: Array<Any>]],
+        authorizationRequest: AuthorizationRequest,
+        responseUri: String
     ) throws -> [FormatType: UnsignedVPToken] {
         if (credentialsMap.isEmpty) {
             throw Logger.handleException(
@@ -22,7 +24,7 @@ public class AuthorizationResponseHandler {
             )
         }
         self.credentialsMap = credentialsMap
-        self.unsignedVPTokens = try createUnsignedVPTokens(credentialsMap: credentialsMap)
+        self.unsignedVPTokens = try createUnsignedVPTokens(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri)
         return self.unsignedVPTokens
     }
     
@@ -70,7 +72,7 @@ public class AuthorizationResponseHandler {
             .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager)
     }
     
-    private func createUnsignedVPTokens(credentialsMap: [String: [FormatType: [Any]]]) throws -> [FormatType: UnsignedVPToken] {
+    private func createUnsignedVPTokens(credentialsMap: [String: [FormatType: [Any]]], authorizationRequest: AuthorizationRequest, responseUri : String) throws -> [FormatType: UnsignedVPToken] {
         let groupedVcs: [FormatType: [Any]] = credentialsMap
             .sorted(by: { $0.key < $1.key })
             .compactMap { $0.value }
@@ -92,6 +94,14 @@ public class AuthorizationResponseHandler {
                     )
                 }
                 result[format] = UnsignedLdpVPToken(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "")
+            case .mso_mdoc:
+                guard let stringCredentials = credentials as? [String] else {
+                    throw Logger.handleException(
+                        exceptionType : "InvalidData",
+                        message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
+                    )
+                }
+                result[format] = try UnsignedMdocVPToken(verifiableCredentials: stringCredentials, clientId: authorizationRequest.clientId, responseUri: responseUri, nonce: authorizationRequest.responseType)
             }
         }
     }
@@ -103,6 +113,15 @@ public class AuthorizationResponseHandler {
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
         
+        // create an map of credential format to credentials from credentialsMap
+        let groupedVcs: [FormatType: [Any]] = credentialsMap!
+            .compactMap { $0.value }
+            .reduce(into: [FormatType: [String]]()) { result, entry in
+                for (key, value) in entry {
+                    result[key, default: []].append(contentsOf: value)
+                }
+            }
+        
         var count = 0
         for (credentialFormat, vpResponseMetadata) in vpResponsesMetadata {
             let vpToken = try VPTokenFactory(
@@ -110,7 +129,8 @@ public class AuthorizationResponseHandler {
                 unsignedVPToken: unsignedVPTokens[credentialFormat] ?? {
                     throw Logger.handleException(exceptionType: "InvalidData", message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map", className: AuthorizationResponseHandler.className)
                 }(),
-                nonce: authorizationRequest.nonce
+                nonce: authorizationRequest.nonce,
+                groupedVcs: groupedVcs
             ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
             
             vpTokens.append(vpToken)
@@ -161,15 +181,18 @@ public class AuthorizationResponseHandler {
                     switch credentialFormat {
                     case .ldp_vc:
                         let relativePath = "$.\(LdpVpToken.internalPath)[\(credentialIndex)]"
-                        vpFormat = VPFormatType.ldp_vp
+                        vpFormat = .ldp_vp
                         pathNested = PathNested(
                             id: inputDescriptorId,
                             format: credentialFormat,
                             path: relativePath
                         )
+                    case .mso_mdoc:
+                        // In case of mso_mdoc, path is $[i]
+                        pathNested = nil
+                        vpFormat = .mso_mdoc
                     }
                     formatTypeToCredentialIndex[credentialFormat] = credentialIndex
-                    
                     
                     return DescriptorMap(
                         id: inputDescriptorId,

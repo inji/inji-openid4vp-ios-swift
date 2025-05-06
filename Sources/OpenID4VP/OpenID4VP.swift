@@ -42,7 +42,7 @@ public class OpenID4VP {
     }
 
     public func constructUnsignedVPToken(credentialsMap: [String: [FormatType: Array<Any>]]) async throws ->  [FormatType: UnsignedVPToken] {
-        return try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: credentialsMap)
+        return try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: self.authorizationRequest!, responseUri: self.responseUri!)
     }
 
     public func shareVerifiablePresentation(vpResponsesMetadata: [FormatType: VPResponseMetadata]) async throws -> String? {
