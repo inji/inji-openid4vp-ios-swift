@@ -1,15 +1,17 @@
 import Foundation
-
 public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
     private var unsignedVPTokens: [FormatType: UnsignedVPToken] = [:]
     private var path: [FormatType: (index: Int, nestedIndex: Int)] = [:]
     private var credentialsMap: [String: [FormatType: Array<Any>]]?
+    private let walletNonce: String
     
     public static let className = String(describing: AuthorizationResponseHandler.self)
     
     public init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
+        //Nonce of entropy 16 bytes
+        self.walletNonce =  (createNonce())
     }
     
     func constructUnsignedVPToken(
@@ -101,7 +103,7 @@ public class AuthorizationResponseHandler {
                         message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
                     )
                 }
-                result[format] = try UnsignedMdocVPTokenBuilder(verifiableCredentials: stringCredentials, clientId: authorizationRequest.clientId, responseUri: responseUri, nonce: authorizationRequest.nonce).build()
+                result[format] = try UnsignedMdocVPTokenBuilder(verifiableCredentials: stringCredentials, clientId: authorizationRequest.clientId, responseUri: responseUri, verifierNonce: authorizationRequest.nonce, mdocGeneratedNonce: walletNonce).build()
             }
         }
     }

@@ -1,7 +1,7 @@
 struct UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
-    let verifiableCredential: [String]
-    let id: String
-    let holder: String
+    private let verifiableCredential: [String]
+    private let id: String
+    private let holder: String
 
 //TODO: Format the file
     init( verifiableCredential: [String],

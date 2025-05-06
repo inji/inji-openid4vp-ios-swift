@@ -1,37 +1,30 @@
 struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
-    let verifiableCredential: [String]
-    let clientId: String
-    let responseUri: String
-    let nonce: String
+    private let verifiableCredential: [String]
+    private let clientId: String
+    private let responseUri: String
+    // nonce in Authorization Request parameter
+    private let verifierNonce: String
+    private let mdocGeneratedNonce: String
 
 //TODO: Format the file
-    init( verifiableCredentials: [String], clientId: String, responseUri: String, nonce: String) {
+    init( verifiableCredentials: [String], clientId: String, responseUri: String, verifierNonce: String, mdocGeneratedNonce: String) {
         self.verifiableCredential = verifiableCredential
         self.clientId = clientId
         self.responseUri = responseUri
-        self.nonce = nonce
-     }
-
-     func build() throws -> UnsignedVPToken {
-        return UnsignedLdpVPToken(context : ["https://www.w3.org/2018/credentials/v1"]
-    type : ["VerifiablePresentation"]
-    verifiableCredential: self.verifiableCredential
-    id: self.id
-    holder: self.holder)
+        self.verifierNonce = verifierNonce
+        self.mdocGeneratedNonce = mdocGeneratedNonce
      }
 
     func build() throws ->  UnsignedVPToken {
-        //TODO: Accept this param as input
-        let mdocGeneratedNonce = (createNonce())
         var deviceAuthenticationBytes : [String : String] = [:]
         for verifiableCredential in verifiableCredentials {
             guard let credential = decodeCBOR(input: verifiableCredential) else {
                 throw NSError(domain: "Invalid Verifiable Credential", code: 1001, userInfo: nil)
             }
             
-            let clientIdToHash = CBOR.array([.utf8String(clientId), .utf8String(mdocGeneratedNonce)])
+            let clientIdToHash = CBOR.array([.utf8String(clientId), .utf8String(self.mdocGeneratedNonce)])
             let clientIdHash = CBOR.byteString(SHA256Hash(from: clientIdToHash))
-            let responseUriToHash = CBOR.array([.utf8String(responseUri), .utf8String(mdocGeneratedNonce)])
+            let responseUriToHash = CBOR.array([.utf8String(responseUri), .utf8String(self.mdocGeneratedNonce)])
             let responseUriHash = CBOR.byteString(SHA256Hash(from: responseUriToHash))
             
             let openID4VPHandover = CBOR.array([clientIdHash, responseUriHash, .utf8String(nonce)])
