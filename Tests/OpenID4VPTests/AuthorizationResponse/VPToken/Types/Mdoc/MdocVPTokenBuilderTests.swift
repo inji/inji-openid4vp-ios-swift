@@ -1,35 +1,84 @@
-//
-//  MdocVPTokenBuilderTests.swift
-//  OpenID4VP
-//
-//  Created by Kiruthika Jeyashankar on 02/05/25.
-//
-
 import XCTest
+@testable import OpenID4VP
 
 final class MdocVPTokenBuilderTests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    let unsignedToken = try! UnsignedMdocVPToken(verifiableCredentials: ["cred"], clientId: "client_if", responseUri: "", nonce: "nonce")
+    
+    func testBuildsVPTokenSuccessfullyWithValidInput() {
+        let metadata = MdocVPResponseMetadata(deviceAuthenticationBytesSigned: ["docType1": DeviceAuthentication(signature: "validSignature", algorithm: "RS256")])
+        let authorizationRequest = getMockAuthorizationRequest()
+        let credentials = [
+            """
+            {
+                "docType": "docType1"
+            }
+            """
+        ]
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        
+        XCTAssertNoThrow(try builder.build())
     }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    
+    func testThrowsErrorWhenCredentialIsInvalidCBOR() {
+        let metadata = MdocVPResponseMetadata(deviceAuthenticationBytesSigned: ["docType1": DeviceAuthentication(signature: "validSignature", algorithm: "RS256")])
+        let authorizationRequest = getMockAuthorizationRequest()
+        let credentials = ["invalidCBOR"]
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        
+        XCTAssertThrowsError(try builder.build()) { error in
+            XCTAssertEqual((error as NSError).domain, "Invalid Verifiable Credential")
+            XCTAssertEqual((error as NSError).code, 1001)
         }
     }
-
+    
+    func testThrowsErrorWhenDocTypeIsMissingInCredential() {
+        let metadata = MdocVPResponseMetadata(deviceAuthenticationBytesSigned: ["docType1": DeviceAuthentication(signature: "validSignature", algorithm: "RS256")])
+        let authorizationRequest = getMockAuthorizationRequest()
+        let credentials = [
+            """
+            {
+                "invalidKey": "value"
+            }
+            """
+        ]
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        
+        XCTAssertThrowsError(try builder.build()) { error in
+            XCTAssertEqual((error as NSError).domain, "Invalid Verifiable Credential")
+            XCTAssertEqual((error as NSError).code, 1002)
+        }
+    }
+    
+    func testThrowsErrorWhenDeviceAuthenticationBytesAreMissing() {
+        let metadata = MdocVPResponseMetadata(deviceAuthenticationBytesSigned: ["docType1": DeviceAuthentication(signature: "validSignature", algorithm: "RS256")])
+        let authorizationRequest = getMockAuthorizationRequest()
+        let credentials = [
+            """
+            {
+                "docType": "docType1"
+            }
+            """
+        ]
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        
+        XCTAssertThrowsError(try builder.build()) { error in
+            XCTAssertEqual((error as NSError).domain, "Invalid Verifiable Credential")
+            XCTAssertEqual((error as NSError).code, 1003)
+        }
+    }
+    
+    func testThrowsErrorWhenMetadataValidationFails() {
+        let metadata = MdocVPResponseMetadata(deviceAuthenticationBytesSigned: [:]) // Invalid metadata
+        let authorizationRequest = getMockAuthorizationRequest()
+        let credentials = [
+            """
+            {
+                "docType": "docType1"
+            }
+            """
+        ]
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        
+        XCTAssertThrowsError(try builder.build())
+    }
 }

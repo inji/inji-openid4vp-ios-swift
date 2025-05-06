@@ -7,6 +7,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case invalidQueryParams(message: String)
     case invalidInput(fieldPath: String)
     case invalidLimitDisclosure
+    //TODO: MOve missing input exception to common
     case missingInput(fieldPath: String)
     case decodingException(fieldPath: String)
     case utf8Encoding(fieldPath: String)

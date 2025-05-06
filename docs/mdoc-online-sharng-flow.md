@@ -26,17 +26,18 @@ sequenceDiagram
     openid4vp -->> openid4vp: 6.1 iterate the map of VPResponseMetadata <br/> 6.2 For mdoc, take the signature and construct COSE_Sign1 structure <br/> 6.3 attach the COSE_Sign1 to the respective credential using docType <br/> create mdoc vp_token
     note over openid4vp: 6.4 construct the vp_token & presentation_submission for attaching in auth response
     note over verifier, wallet: 7. Send the Authorization response to Verifier and display result in wallet
+
 ```
 
-Tech class diagram
+Tech class flow diagram
 
 ```mermaid
 ---
-title: Animal example
+title: Class flow diagram
 ---
 classDiagram
-    
-    
+
+
     class OpenID4VP{
         +constructUnsignedVPToken(credentialsMap: [String: [FormatType: Array<Any>]) [FormatType: UnsignedVPToken]
     }
@@ -50,9 +51,8 @@ classDiagram
     }
     class UnsignedLdpVPToken{
         ~ init (verifiableCredential: String, id: UUID)
-       ~ build
+        ~ build
     }
-%%    build method not required here update
     class UnsignedMdocVPToken{
         ~ init (verifiableCredential: String, id: UUID)
         + Map<String, ByteArray> deviceAuthenticationBytes

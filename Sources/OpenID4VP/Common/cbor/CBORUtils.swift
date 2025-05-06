@@ -88,6 +88,9 @@ func createEmbeddedEncodedCborWithTag( data: CBOR) -> [UInt8]  {
     return encodedData
 }
 
+func cborEncode(_ input: CBOR) -> [UInt8]? {
+    return CBOR.encode(input)
+}
 
 // created #6.24 (bstr .cbor input)
 func wrapCBORInputWithTag24(input: CBOR) -> CBOR? {
@@ -119,4 +122,8 @@ func decodeCBOR(base64UrlEncodedData: String) throws -> CBOR?{
         print("Error decoding the input")
         return nil
     }
+}
+
+internal func toCBORArray(_ input: [CBOR]) -> CBOR {
+    return CBOR.array(input.map { ($0) })
 }
