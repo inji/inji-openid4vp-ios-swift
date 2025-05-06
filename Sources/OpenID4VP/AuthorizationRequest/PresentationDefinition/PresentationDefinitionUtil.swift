@@ -29,7 +29,7 @@ func parseAndValidatePresentationDefinition(
                     className: AuthorizationRequest.className
                 )
             }
-
+            
             finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition.rawValue], className: AuthorizationRequest.className)
         } else if let presentationDefinitionJson = value as? [String: Any] {
             //Presentation Definition is of type Dictionary when auth request obtained by reference

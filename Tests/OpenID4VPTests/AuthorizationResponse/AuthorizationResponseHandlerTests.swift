@@ -5,7 +5,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let mockNetworkManager = MockNetworkManager()
     let verifiableCredentials: [String: [FormatType: [Any]]] = ["input_descriptor1": [.ldp_vc: ["cred1", "cred3"]], "input_descriptor2": [.ldp_vc: ["cred3"]]]
     let vpResponsesMetaData = [FormatType.ldp_vc:LdpVPResponseMetadata(jws: "wemcn3234ns", signatureAlgorithm: "RsaSignature2018", publicKey: "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n", domain: "https://example")]
-    let unsignedVPTokens = [FormatType.ldp_vc: UnsignedLdpVPToken(verifiableCredential: ["cred1","cred2", "cred3"], id: "uuid", holder: "wallet/app")]
+    let unsignedVPTokens = [FormatType.ldp_vc: UnsignedLdpVPToken(context: ["https://www.w3.org/2018/credentials/v1"], type: ["VerifiablePresentation"], verifiableCredential: ["cred1","cred2", "cred3"], id: "uuid", holder: "wallet/app")]
     
     /// construction of vp_token for signing
     

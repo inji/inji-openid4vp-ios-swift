@@ -1,6 +1,6 @@
 public struct UnsignedLdpVPToken: Codable, UnsignedVPToken {
-    let context
-    let type
+    let context: [String]
+    let type: [String]
     let verifiableCredential: [String]
     let id: String
     let holder: String

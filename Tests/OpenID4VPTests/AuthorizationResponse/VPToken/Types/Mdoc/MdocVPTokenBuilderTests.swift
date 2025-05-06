@@ -2,7 +2,7 @@ import XCTest
 @testable import OpenID4VP
 
 final class MdocVPTokenBuilderTests: XCTestCase {
-    let unsignedToken = try! UnsignedMdocVPToken(verifiableCredentials: ["cred"], clientId: "client_if", responseUri: "", nonce: "nonce")
+    let unsignedToken = UnsignedMdocVPToken(deviceAuthenticationBytes: ["org.iso.18013.5.1.mosip": "bytes"])
     
     func testBuildsVPTokenSuccessfullyWithValidInput() {
         let metadata = MdocVPResponseMetadata(deviceAuthenticationBytesSigned: ["docType1": DeviceAuthentication(signature: "validSignature", algorithm: "RS256")])
