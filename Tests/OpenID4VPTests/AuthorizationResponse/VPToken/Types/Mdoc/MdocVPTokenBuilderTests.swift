@@ -14,7 +14,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             }
             """
         ]
-        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, nonce: authorizationRequest.nonce, credentials: credentials)
         
         XCTAssertNoThrow(try builder.build())
     }
@@ -23,7 +23,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let metadata = MdocVPResponseMetadata(deviceAuthenticationBytesSigned: ["docType1": DeviceAuthentication(signature: "validSignature", algorithm: "RS256")])
         let authorizationRequest = getMockAuthorizationRequest()
         let credentials = ["invalidCBOR"]
-        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, nonce: authorizationRequest.nonce, credentials: credentials)
         
         XCTAssertThrowsError(try builder.build()) { error in
             XCTAssertEqual((error as NSError).domain, "Invalid Verifiable Credential")
@@ -41,7 +41,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             }
             """
         ]
-        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, nonce: authorizationRequest.nonce, credentials: credentials)
         
         XCTAssertThrowsError(try builder.build()) { error in
             XCTAssertEqual((error as NSError).domain, "Invalid Verifiable Credential")
@@ -59,7 +59,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             }
             """
         ]
-        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, nonce: authorizationRequest.nonce, credentials: credentials)
         
         XCTAssertThrowsError(try builder.build()) { error in
             XCTAssertEqual((error as NSError).domain, "Invalid Verifiable Credential")
@@ -77,7 +77,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             }
             """
         ]
-        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, authorizationRequest: authorizationRequest, credentials: credentials)
+        let builder = MdocVPTokenBuilder(mdocVPResponeMetadata: metadata, unsignedMdocVPToken: unsignedToken, nonce: authorizationRequest.nonce, credentials: credentials)
         
         XCTAssertThrowsError(try builder.build())
     }

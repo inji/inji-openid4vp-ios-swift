@@ -11,7 +11,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     
     func testConstructUnsignedVPTokens() throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let vpTokens: [FormatType: UnsignedVPToken] = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials)
+        let vpTokens: [FormatType: UnsignedVPToken] = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")
         
         XCTAssertTrue(vpTokens.keys.count == 1)
         let ldpVpToken = vpTokens[.ldp_vc] as! UnsignedLdpVPToken
@@ -25,7 +25,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     func testConstructUnsignedVPTokensThrowErrorWhenCredentialsListIsEmpty() throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
-        XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:])) { error in
+        XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:], authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")) { error in
             XCTAssertEqual("Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.", error.localizedDescription)
         }
        
@@ -35,7 +35,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
     func testShareVPHasThePresentationDefinitionAsExpected() async throws {
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials)
+        _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(),responseUri : "/response-uri")
         let responseUri = "https://mock-verifier.com"
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         let mockVPResponsesMetadata = [FormatType.ldp_vc : LdpVPResponseMetadata(
@@ -44,7 +44,33 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             publicKey: "testPublicKey",
             domain: "testDomain"
         )]
-        _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials)
+        _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")
+        
+        let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpResponsesMetadata: mockVPResponsesMetadata, responseUri: responseUri)
+        
+        XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
+        let decodedPresentationSubmission = decodeQueryValue((recordedRequest.requestBody?["presentation_submission"])!)
+        let decodedVpToken = decodeQueryValue((recordedRequest.requestBody?["vp_token"])!)
+        XCTAssertTrue(recordedRequest.requestBody?.keys.count == 3)
+        assertJsonString(expected: "{\"definition_id\":\"vp_presentation_definition\",\"descriptor_map\":[{\"path_nested\":{\"path\":\"$.verifiableCredential[0]\",\"id\":\"input_descriptor1\",\"format\":\"ldp_vc\"},\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path_nested\":{\"id\":\"input_descriptor1\",\"format\":\"ldp_vc\",\"path\":\"$.verifiableCredential[1]\"},\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor2\",\"path\":\"$\",\"path_nested\":{\"format\":\"ldp_vc\",\"path\":\"$.verifiableCredential[2]\",\"id\":\"input_descriptor2\"}}]}", actual: decodedPresentationSubmission, strict: false)
+        assertJsonString(expected: "{\r\n  \"proof\" : {\r\n    \"challenge\" : \"nonce\",\r\n    \"jws\" : \"testJWS\",\r\n    \"verificationMethod\" : \"testPublicKey\",\r\n    \"domain\" : \"testDomain\",\r\n    \"type\" : \"ES256\",\r\n    \"proofPurpose\" : \"authentication\"\r\n  },\r\n  \"type\" : [\r\n    \"VerifiablePresentation\"\r\n  ],\r\n  \"@context\" : [\r\n    \"https:\\/\\/www.w3.org\\/2018\\/credentials\\/v1\"\r\n  ],\r\n  \"holder\" : \"\",\r\n  \"verifiableCredential\" : [\r\n    \"cred1\",\r\n    \"cred3\",\r\n    \"cred3\"\r\n  ]\r\n}", actual: decodedVpToken, strict: false)
+        XCTAssertEqual("state", recordedRequest.requestBody?["state"])
+    }
+    
+    ///// sharing of authorization response with more than one VP format in response_type vp_token
+    func testShareVPSendingAuthorizationResponseWithMultipleVPFormatsSuccessfully() async throws {
+        let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(),responseUri : "/response-uri")
+        let responseUri = "https://mock-verifier.com"
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
+        let mockVPResponsesMetadata = [FormatType.ldp_vc : LdpVPResponseMetadata(
+            jws: "testJWS",
+            signatureAlgorithm: "ES256",
+            publicKey: "testPublicKey",
+            domain: "testDomain"
+        )]
+        _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")
         
         let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpResponsesMetadata: mockVPResponsesMetadata, responseUri: responseUri)
         
@@ -74,7 +100,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let authorizationRequest = getMockAuthorizationRequest()
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         //constructUnsignedVPTokens returns error as empty credentialsMap is passed, so unsignedVPTokens field is empty dictionary
-        do{_ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:])}catch {}
+        do{_ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:], authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")}catch {}
 
         do {
             _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpResponsesMetadata: vpResponsesMetaData, responseUri: "https://client.example.org/cb")
@@ -85,10 +111,15 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testShareVPThrowErrorWhenVerifiableCredentialsAreNotPassedAsStringInLdpVcs() async  {
+        let testCases: [TestCase] = [
+            TestCase(input: ["input1": [FormatType.ldp_vc : [1,2]]], expectedError: "ldp_vc credentials are not passed in string format"),
+            TestCase(input: ["input1": [.mso_mdoc : [1,2]]], expectedError: "mso_mdoc credentials are not passed in string format"),
+        ]
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        
-        XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: ["input1": [.ldp_vc : [1,2]]])) { error in
-            XCTAssertEqual("ldp_vc credentials are not passed in string format", error.localizedDescription)
+        for testCase in testCases {
+            XCTAssertThrowsError(try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: testCase.input, authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")) { error in
+                XCTAssertEqual(testCase.expectedError, error.localizedDescription)
+            }
         }
     }
 }
