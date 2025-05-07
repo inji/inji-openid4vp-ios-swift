@@ -18,7 +18,7 @@ class MdocVPTokenBuilder : VpTokenBuilder {
         try mdocVPResponeMetadata.validate()
         
         try credentials.forEach { mdocCredential in
-            guard var document = decodeCBOR(input: mdocCredential) else {
+            guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
                 throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
             }
             guard let docType = getValueFromCBORMap(cborMap: document, key: "docType") else {

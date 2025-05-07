@@ -8,6 +8,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     // nonce in Authorization Request parameter
     private let verifierNonce: String
     private let mdocGeneratedNonce: String
+    static let className = String(describing: UnsignedMdocVPTokenBuilder.self)
     
     init( mdocCredentials: [String], clientId: String, responseUri: String, verifierNonce: String, mdocGeneratedNonce: String) {
         self.mdocCredentials = mdocCredentials
@@ -31,8 +32,8 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         let deviceNamespacesBytes = wrapCBORInputWithTag24(input: deviceNamespaces)
         
         for mdocCredential in self.mdocCredentials {
-            guard let credential = decodeCBOR(input: mdocCredential) else {
-                throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
+            guard let credential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
+                throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: Error while decoding credential", className: UnsignedMdocVPTokenBuilder.className)
             }
             let docType: CBOR? = getValueFromCBORMap(cborMap: credential, key: "docType")
             

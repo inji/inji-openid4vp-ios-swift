@@ -1,6 +1,6 @@
 import Foundation
 
-let className = String(describing: ClientMetadata.self)
+fileprivate let className = String(describing: ClientMetadata.self)
 
 func parseAndValidateClientMetadata(authorizationRequest: [String: Any],
                                     shouldValidateWithWalletMetadata: Bool,

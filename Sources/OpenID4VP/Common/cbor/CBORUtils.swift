@@ -8,84 +8,22 @@
 import Foundation
 import SwiftCBOR
 
-func decodeCBOR(input : String) -> CBOR? {
+fileprivate let className = "CBORUtils"
+
+func decodeCBOR(base64EncodedInput : String) throws -> CBOR? {
     do{
-        guard let decodedBase64Data = Data(base64EncodedURLSafe: input) else {
+        guard let decodedBase64Data = Data(base64EncodedURLSafe: base64EncodedInput) else {
             print("Invalid base64 URL string provided")
-            return nil
-            //            throw decodeByteArrayError.customError(description: "Error while base64 url decoding the data")
+            throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid base64 URL string provided", className: String(describing: className))
         }
         
         let inputToCBORDecode = Array(decodedBase64Data)
-        if let cborDecodedData = try? CBOR.decode(inputToCBORDecode) {
-            return cborDecodedData
-        } else {
-            print("Error while CBOR decoding the data")
-            return nil
-            //            throw decodeError.customError(description: "CBOR decoding failed")
-        }
+        let cborDecodedData = try CBOR.decode(inputToCBORDecode)
+        return cborDecodedData
     }
     catch let error {
-        print("error occurred while parsing  data - \(error)")
-        return nil
-        //        throw decodeByteArrayError.customError(description: "error occurred while parsing  data - \(error.localizedDescription)")
+        throw Logger.handleException(exceptionType: "InvalidData", message: "Error while decoding input - \(error)", className: String(describing: CBOR.self))
     }
-}
-
-//
-func encodeToCBOR() {
-    // Example array of key-value pairs
-    let elements: [(String, String)] = [("key1", "value1"), ("key2", "value2")]
-    
-    // Step 1: Convert the array into a CBOR dictionary
-    let cborMap: [CBOR: CBOR] = Dictionary(uniqueKeysWithValues: elements.map { key, value in
-        (CBOR.utf8String(key), CBOR.utf8String(value))
-    })
-    
-    // Step 2: Create a CBOR map
-    let cborData = CBOR.map(cborMap)
-    let encodedData =    CBOR.encode(cborMap)
-    
-    //    // Step 3: Encode the CBOR map
-    //    guard let encodedData = try? CBOR.encode(cborData) else {
-    //        fatalError("Failed to encode CBOR data")
-    //    }
-    let hexString = encodedData.map { String(format: "%02x", $0) }.joined()
-    
-    // Output the encoded CBOR data
-    print("CBOR Data: \(hexString)")
-}
-
-func createEmbeddedEncodedCborWithTag( data: [String: Any]) -> [UInt8]  {
-    // Convert the input dictionary to CBOR format
-    let cborMap = CBOR.map(data.reduce(into: [CBOR: CBOR]()) { result, item in
-        result[CBOR.utf8String(item.key)] = CBOR.utf8String("\(item.value)")
-    })
-    
-    
-    // Create a CBOR tagged object
-    guard let taggedData = wrapCBORInputWithTag24(input: cborMap) else {
-        print("error")
-        return []
-    }
-    let encodedData :[UInt8] = SwiftCBOR.CBOR.encode(taggedData)
-    
-    return encodedData
-    
-    let hexString = encodedData.map { String(format: "%02x", $0) }.joined()
-    //
-    print("CBOR Data: \(hexString)")
-}
-
-func createEmbeddedEncodedCborWithTag( data: CBOR) -> [UInt8]  {
-    // Create a CBOR tagged object
-    guard let taggedData = wrapCBORInputWithTag24(input: data) else {
-        print("error")
-        return []
-    }
-    let encodedData :[UInt8] = SwiftCBOR.CBOR.encode(taggedData)
-    
-    return encodedData
 }
 
 func cborEncode(_ input: CBOR) -> [UInt8] {
@@ -105,21 +43,6 @@ func wrapCBORInputWithTag24(input: CBOR) -> CBOR? {
     let cborTaggedValue: CBOR = .tagged(CBOR.Tag(rawValue: 24), .byteString(encodedInput!))
     
     return cborTaggedValue
-}
-
-func decodeCBOR(base64UrlEncodedData: String) throws -> CBOR?{
-    guard let decodedBase64Data = Data(base64EncodedURLSafe: base64UrlEncodedData) else {
-        print("Error decoding the input")
-        return nil
-    }
-    
-    let inputToCBORDecode = Array(decodedBase64Data)
-    if let cborDecodedData = try? CBOR.decode(inputToCBORDecode) {
-        return cborDecodedData
-    } else {
-        print("Error decoding the input")
-        return nil
-    }
 }
 
 internal func toCBORArray(_ input: [CBOR]) -> CBOR {

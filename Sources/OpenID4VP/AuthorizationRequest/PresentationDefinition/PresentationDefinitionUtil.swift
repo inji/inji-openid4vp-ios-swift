@@ -1,5 +1,7 @@
 import Foundation
 
+fileprivate let className = "PresentationDefinitionUtil"
+
 func parseAndValidatePresentationDefinition(
     _ authorizationRequest: [String: Any],
     _ isPresentationDefinitionUriSupported: Bool,
