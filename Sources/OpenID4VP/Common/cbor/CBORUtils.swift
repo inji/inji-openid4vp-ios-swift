@@ -146,10 +146,10 @@ func cborToByteString(cbor: CBOR) -> String {
     return encodedData.map { String(format: "%02x", $0) }.joined()
 }
 
-func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> Int {
+func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> UInt64 {
     switch algorithm {
     case "ES256":
-        return -7
+        return 6
     default:
         throw NSError(domain: "Unsupported signing algorithm: \(algorithm)", code: 0, userInfo: nil)
     }

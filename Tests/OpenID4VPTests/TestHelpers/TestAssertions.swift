@@ -121,3 +121,15 @@ func assertAsyncNoThrowsError<T>(
         XCTFail("Expected no error to be thrown, but an error was thrown: \(error). \(message())", file: file, line: line)
     }
 }
+
+func XCTAssertNoThrowAndVerify<T>(_ expression: @autoclosure () throws -> T,
+                                 file: StaticString = #filePath,
+                                 line: UInt = #line,
+                                 _ assertions: (T) -> Void) {
+    do {
+        let result = try expression()
+        assertions(result)
+    } catch {
+        XCTFail("Expression threw an error: \(error)", file: file, line: line)
+    }
+}

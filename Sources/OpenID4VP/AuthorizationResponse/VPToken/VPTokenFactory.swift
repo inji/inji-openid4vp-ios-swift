@@ -18,7 +18,7 @@ class VPTokenFactory {
         if(credentialFormat == .ldp_vc){
             return LdpVpTokenBuilder(ldpVPResponseMetadata: self.vpResponseMetadata as! LdpVPResponseMetadata, unsignedLdpVPToken: self.unsignedVPToken as! UnsignedLdpVPToken, nonce: nonce)
         } else if (credentialFormat == .mso_mdoc){
-            return MdocVPTokenBuilder(mdocVPResponeMetadata: self.vpResponseMetadata as! MdocVPResponseMetadata, unsignedMdocVPToken: self.unsignedVPToken as! UnsignedMdocVPToken, nonce: nonce, credentials: groupedVcs[credentialFormat] as! [String])
+            return MdocVPTokenBuilder(mdocVPResponeMetadata: self.vpResponseMetadata as! MdocVPResponseMetadata, unsignedMdocVPToken: self.unsignedVPToken as! UnsignedMdocVPToken, credentials: groupedVcs[credentialFormat] as! [String])
         }else {
             throw Logger.handleException(exceptionType: "InvalidData", className: VPTokenFactory.className)
         }

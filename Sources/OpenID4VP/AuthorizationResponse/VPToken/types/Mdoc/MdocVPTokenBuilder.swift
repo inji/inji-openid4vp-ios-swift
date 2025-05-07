@@ -4,13 +4,12 @@ import SwiftCBOR
 class MdocVPTokenBuilder : VpTokenBuilder {
     private let mdocVPResponeMetadata:  MdocVPResponseMetadata
     private let unsignedMdocVPToken:  UnsignedMdocVPToken
-    private let nonce: String
     private let credentials: [String]
+    private let className = String(describing: MdocVPTokenBuilder.self)
     
-    init(mdocVPResponeMetadata:  MdocVPResponseMetadata,unsignedMdocVPToken:  UnsignedMdocVPToken, nonce: String, credentials: [String]) {
+    init(mdocVPResponeMetadata:  MdocVPResponseMetadata,unsignedMdocVPToken:  UnsignedMdocVPToken, credentials: [String]) {
         self.mdocVPResponeMetadata = mdocVPResponeMetadata
         self.unsignedMdocVPToken = unsignedMdocVPToken
-        self.nonce = nonce
         self.credentials = credentials
     }
     
@@ -20,31 +19,20 @@ class MdocVPTokenBuilder : VpTokenBuilder {
         
         try credentials.forEach { mdocCredential in
             guard var document = decodeCBOR(input: mdocCredential) else {
-                throw NSError(domain: "Invalid Verifiable Credential", code: 1001, userInfo: nil)
+                throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
             }
             guard let docType = getValueFromCBORMap(cborMap: document, key: "docType") else {
-                throw NSError(domain: "Invalid Verifiable Credential", code: 1002, userInfo: nil)
+                throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: docType not available in credential", className: className)
             }
             let docTypeString = extractStringFromCBOR(docType)!
-            guard unsignedMdocVPToken.deviceAuthenticationBytes[docTypeString] != nil else {
-                throw NSError(domain: "Invalid Verifiable Credential", code: 1003, userInfo: nil)
+            
+            guard let deviceAuthSignature: DeviceAuthentication = mdocVPResponeMetadata.deviceAuthenticationBytesSigned[docTypeString] else {
+                throw Logger.handleException(exceptionType: "MissingInput",message: "Device authentication signature not found for mdoc credential docType \(docTypeString)", fieldPath: ["mdocVPResponeMetadata","deviceAuthenticationBytesSigned","DeviceAuthentication"], className: className)
             }
             
-            //TODO: throw error if credential's docType is not available in VPResponseMetadata
-
-            // create COSE_Sign1 structure
-            let vpResoonseMetadata: DeviceAuthentication = mdocVPResponeMetadata.deviceAuthenticationBytesSigned[docTypeString]!
-            let coseSign1 = CBOR.array([
-                //TODO: algorithm value need to be following the COSE spec 1 -> -7
-                .map([.utf8String("alg"): .utf8String(vpResoonseMetadata.algorithm)]),
-                .null,
-                .null,
-                //TODO: Base64 Decode the signature before adding
-                .utf8String(vpResoonseMetadata.signature)
-            ])
+            let deviceSignature = try createDeviceSignature(deviceAuthSignature)
             
-            
-            let deviceAuth = CBOR.map([.utf8String("deviceSignature"): coseSign1])
+            let deviceAuth = CBOR.map([.utf8String("deviceSignature"): deviceSignature])
             let deviceNamespacesBytes = wrapCBORInputWithTag24(input: CBOR.map([:]))!
             let deviceSigned = CBOR.map([
                 .utf8String("deviceAuthentication"): deviceAuth,
@@ -56,14 +44,41 @@ class MdocVPTokenBuilder : VpTokenBuilder {
             
             documents.append(document)
         }
+        
         let deviceRespone = CBOR.map([
             .utf8String("version"): .utf8String("1.0"),
             .utf8String("documents"): .array(documents),
-            .utf8String("status"): .unsignedInt(UInt64(0)),
+            .utf8String("status"): .unsignedInt(UInt64(0)), // Status = OK
         ])
-       
+        
         //base64 url encode without padding the deviceResponse
-        let encodedDeviceResponseBase64Url = Data(cborEncode(deviceRespone)!).toBase64UrlEncoded()
+        let encodedDeviceResponseBase64Url = Data(cborEncode(deviceRespone)).toBase64UrlEncoded()
         return MdocVPToken(value: encodedDeviceResponseBase64Url)
+    }
+    
+    // DeviceSignature is of COSE_Sign1 structure
+    /**
+     COSE_Sign1 = [
+     Headers, //protected , unprotected in order
+     payload : bstr / nil,
+     signature : bstr
+     ]
+     */
+    private func createDeviceSignature(_ vpResoonseMetadata: DeviceAuthentication) throws -> CBOR {
+        let base64DecodedSignature = try Base64Decoder.decodeBase64ToData(vpResoonseMetadata.signature)
+        let cborEncodedSignature = cborEncode(toCBOR(base64DecodedSignature))
+        let protectedHeaders = CBOR.map([
+            .unsignedInt(1): .negativeInt((try mapSigningAlgorithmToProtectedAlg(algorithm: vpResoonseMetadata.algorithm)))
+        ])
+        let unprotectedHeaders = CBOR.map([:])
+        //Payload is available as detached content
+        let payload = CBOR.null
+        
+        return CBOR.array([
+            protectedHeaders,
+            unprotectedHeaders,
+            payload,
+            .byteString(cborEncodedSignature),
+        ])
     }
 }
