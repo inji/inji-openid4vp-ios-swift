@@ -17,13 +17,13 @@ sequenceDiagram
     end
     openid4vp ->> wallet: 5. Return the constructed UnsignedVPTokens
     note right of openid4vp: returns -> Map<FormatType, UnsignedVPToken> <br/> Eg - {mso_mdoc: unsignedMdocVPToken, ...}, <br/> unsignedMdocVPToken = {docType: "..",signingAlgorithm: "...", payload: "..." //payload = deviceAuthenticationBytes}
-    wallet -->> wallet: 5.1 iterate the map of unsignedVPTokens <br/> 5.2 sign the payload provided using the signing algorithm <br/> 5.3 construct the MdocVPResponseMetadata with signedData, docType
+    wallet -->> wallet: 5.1 iterate the map of unsignedVPTokens <br/> 5.2 sign the payload provided using the signing algorithm <br/> 5.3 construct the MdocVpTokenSigningResult with signedData, docType
     rect rgba(0, 0, 255, .1)
         note over openid4vp: Technical details: CBOR encoding, CBOR encoding with & without tagging, COSE-Sign1 creation
     end
-    wallet ->> openid4vp: 6. Send VPResponseMetadata
-    note left of wallet: returns -> Map<FormatType, VPResponseMetadata> <br/> Eg - {mso_mdoc: mdocVPResponseMetadata, ...}, <br/> mdocVPResponseMetadata = {docType: "..",signature: "..."}
-    openid4vp -->> openid4vp: 6.1 iterate the map of VPResponseMetadata <br/> 6.2 For mdoc, take the signature and construct COSE_Sign1 structure <br/> 6.3 attach the COSE_Sign1 to the respective credential using docType <br/> create mdoc vp_token
+    wallet ->> openid4vp: 6. Send VpTokenSigningResult
+    note left of wallet: returns -> Map<FormatType, VpTokenSigningResult> <br/> Eg - {mso_mdoc: mdocVpTokenSigningResult, ...}, <br/> mdocVpTokenSigningResult = {docType: "..",signature: "..."}
+    openid4vp -->> openid4vp: 6.1 iterate the map of VpTokenSigningResult <br/> 6.2 For mdoc, take the signature and construct COSE_Sign1 structure <br/> 6.3 attach the COSE_Sign1 to the respective credential using docType <br/> create mdoc vp_token
     note over openid4vp: 6.4 construct the vp_token & presentation_submission for attaching in auth response
     note over verifier, wallet: 7. Send the Authorization response to Verifier and display result in wallet
 

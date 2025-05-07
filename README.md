@@ -202,30 +202,30 @@ let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUns
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
 ### shareVerifiablePresentation
-- This function constructs a vp_token with proof using received VPResponseMetadata, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
+- This function constructs a vp_token with proof using received VpTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
 ```swift
-    let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: [FormatType:VPResponseMetadata])
+    let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: [FormatType:VpTokenSigningResult])
 ```
 
 ###### Parameters
 
 | Name                | Type                             | Description                                                                                                                                                 |
 |---------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpResponsesMetadata | [FormatType: VPResponseMetadata] | This will be a map with key as credential format and value as VPResponseMetadata (which is specific to respective credential format's required information) |
+| vpResponsesMetadata | [FormatType: VpTokenSigningResult] | This will be a map with key as credential format and value as VpTokenSigningResult (which is specific to respective credential format's required information) |
 
 
 ###### Example usage
 
 ```swift
-let ldpVpResponseMetadata = LdpVPResponseMetadata(
+let ldpVpTokenSigningResult = LdpVpTokenSigningResult(
     jws : "ey....qweug",
     signatureAlgorithm : "RsaSignature2018",
     publicKey : publicKey,
     domain : "<domain>"
 )
-let vpResponsesMetadata : [FormatType: VPResponseMetadata] = [FormatType.LDP_VC : ldpVpResponseMetadata]
+let vpResponsesMetadata : [FormatType: VpTokenSigningResult] = [FormatType.LDP_VC : ldpVpTokenSigningResult]
 val response : String = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata : vpResponsesMetadata)
 ```
 

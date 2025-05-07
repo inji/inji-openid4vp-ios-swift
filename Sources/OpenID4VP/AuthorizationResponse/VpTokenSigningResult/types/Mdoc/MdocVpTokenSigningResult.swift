@@ -1,7 +1,7 @@
-public struct MdocVPResponseMetadata : VPResponseMetadata {
+public struct MdocVpTokenSigningResult : VpTokenSigningResult {
     //map of docType to the signed deviceAuthenticationBytes
     let deviceAuthenticationBytesSigned : [String : DeviceAuthentication]
-    static let className = String(describing: MdocVPResponseMetadata.self)
+    static let className = String(describing: MdocVpTokenSigningResult.self)
     
     public init(deviceAuthenticationBytesSigned: [String: DeviceAuthentication]) {
         self.deviceAuthenticationBytesSigned = deviceAuthenticationBytesSigned
@@ -9,7 +9,7 @@ public struct MdocVPResponseMetadata : VPResponseMetadata {
     
     func validate() throws {
         if(deviceAuthenticationBytesSigned.isEmpty) {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["MdocVPResponseMetadata","deviceAuthenticationBytesSigned"], className: MdocVPResponseMetadata.className)
+            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["MdocVpTokenSigningResult","deviceAuthenticationBytesSigned"], className: MdocVpTokenSigningResult.className)
         }
         for (_, deviceAuthentication) in deviceAuthenticationBytesSigned {
             try deviceAuthentication.validate()

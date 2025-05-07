@@ -189,7 +189,7 @@ public let clientMetadata: [String: Any] = [
 
 let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadata.self)
 
-var vpResponseMetadata = LdpVPResponseMetadata(
+var vpTokenSigningResult = LdpVpTokenSigningResult(
     jws: "validJWS",
     signatureAlgorithm: "RSA",
     publicKey: "validPublicKey",

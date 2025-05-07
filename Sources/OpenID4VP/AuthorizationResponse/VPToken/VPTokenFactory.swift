@@ -1,14 +1,14 @@
 import Foundation
 
 class VPTokenFactory {
-    private let vpResponseMetadata:  VPResponseMetadata
+    private let vpTokenSigningResult:  VpTokenSigningResult
     private let unsignedVPToken:  UnsignedVPToken
     private let nonce: String
     private let groupedVcs: [FormatType: [Any]]
     static let className = String(describing: VPTokenFactory.self)
 
-    init(vpResponseMetadata:  VPResponseMetadata,unsignedVPToken:  UnsignedVPToken, nonce: String, groupedVcs: [FormatType: [Any]]) {
-        self.vpResponseMetadata = vpResponseMetadata
+    init(vpTokenSigningResult:  VpTokenSigningResult,unsignedVPToken:  UnsignedVPToken, nonce: String, groupedVcs: [FormatType: [Any]]) {
+        self.vpTokenSigningResult = vpTokenSigningResult
         self.unsignedVPToken = unsignedVPToken
         self.nonce = nonce
         self.groupedVcs = groupedVcs
@@ -16,9 +16,9 @@ class VPTokenFactory {
 
     func getVPTokenBuilder(credentialFormat: FormatType) throws -> VpTokenBuilder {
         if(credentialFormat == .ldp_vc){
-            return LdpVpTokenBuilder(ldpVPResponseMetadata: self.vpResponseMetadata as! LdpVPResponseMetadata, unsignedLdpVPToken: self.unsignedVPToken as! UnsignedLdpVPToken, nonce: nonce)
+            return LdpVpTokenBuilder(ldpVpTokenSigningResult: self.vpTokenSigningResult as! LdpVpTokenSigningResult, unsignedLdpVPToken: self.unsignedVPToken as! UnsignedLdpVPToken, nonce: nonce)
         } else if (credentialFormat == .mso_mdoc){
-            return MdocVPTokenBuilder(mdocVPResponeMetadata: self.vpResponseMetadata as! MdocVPResponseMetadata, unsignedMdocVPToken: self.unsignedVPToken as! UnsignedMdocVPToken, credentials: groupedVcs[credentialFormat] as! [String])
+            return MdocVPTokenBuilder(mdocVPResponeMetadata: self.vpTokenSigningResult as! MdocVpTokenSigningResult, unsignedMdocVPToken: self.unsignedVPToken as! UnsignedMdocVPToken, credentials: groupedVcs[credentialFormat] as! [String])
         }else {
             throw Logger.handleException(exceptionType: "InvalidData", className: VPTokenFactory.className)
         }

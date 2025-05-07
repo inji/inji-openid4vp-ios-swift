@@ -2,12 +2,12 @@ import Foundation
 import SwiftCBOR
 
 class MdocVPTokenBuilder : VpTokenBuilder {
-    private let mdocVPResponeMetadata:  MdocVPResponseMetadata
+    private let mdocVPResponeMetadata:  MdocVpTokenSigningResult
     private let unsignedMdocVPToken:  UnsignedMdocVPToken
     private let credentials: [String]
     private let className = String(describing: MdocVPTokenBuilder.self)
     
-    init(mdocVPResponeMetadata:  MdocVPResponseMetadata,unsignedMdocVPToken:  UnsignedMdocVPToken, credentials: [String]) {
+    init(mdocVPResponeMetadata:  MdocVpTokenSigningResult,unsignedMdocVPToken:  UnsignedMdocVPToken, credentials: [String]) {
         self.mdocVPResponeMetadata = mdocVPResponeMetadata
         self.unsignedMdocVPToken = unsignedMdocVPToken
         self.credentials = credentials

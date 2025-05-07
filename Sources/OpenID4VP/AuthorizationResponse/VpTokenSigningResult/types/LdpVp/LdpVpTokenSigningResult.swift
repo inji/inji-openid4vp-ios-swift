@@ -1,9 +1,9 @@
-public struct LdpVPResponseMetadata : VPResponseMetadata {
+public struct LdpVpTokenSigningResult : VpTokenSigningResult {
     let jws: String
     let signatureAlgorithm: String
     let publicKey: String
     let domain: String
-    static let className = String(describing: LdpVPResponseMetadata.self)
+    static let className = String(describing: LdpVpTokenSigningResult.self)
     
     public init(jws: String, signatureAlgorithm: String, publicKey: String, domain: String) {
         self.jws = jws
@@ -22,7 +22,7 @@ public struct LdpVPResponseMetadata : VPResponseMetadata {
         
         for (_, value) in requiredParams {
             if value.isEmpty || value == "null" {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["vp response metadata",value], className: LdpVPResponseMetadata.className)
+                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["vp response metadata",value], className: LdpVpTokenSigningResult.className)
             }
         }
     }

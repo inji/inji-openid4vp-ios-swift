@@ -32,7 +32,7 @@ public class AuthorizationResponseHandler {
     
     func shareVP(
         authorizationRequest: AuthorizationRequest,
-        vpResponsesMetadata: [FormatType: VPResponseMetadata],
+        vpResponsesMetadata: [FormatType: VpTokenSigningResult],
         responseUri: String
     ) async throws -> String {
         let authorizationResponse: AuthorizationResponse = try createAuthorizationResponse(
@@ -50,7 +50,7 @@ public class AuthorizationResponseHandler {
     }
     
     //Create authorization response based on response_type
-    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpResponsesMetadata : [FormatType: VPResponseMetadata]) throws -> AuthorizationResponse {
+    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpResponsesMetadata : [FormatType: VpTokenSigningResult]) throws -> AuthorizationResponse {
         switch authorizationRequest.responseType {
         case ResponseType.vp_token.rawValue:
             var credentialFormatIndex: [FormatType: Int] = [:]
@@ -112,7 +112,7 @@ public class AuthorizationResponseHandler {
     }
     
     private func createVPToken(
-        vpResponsesMetadata: [FormatType: VPResponseMetadata],
+        vpResponsesMetadata: [FormatType: VpTokenSigningResult],
         authorizationRequest: AuthorizationRequest,
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
@@ -128,9 +128,9 @@ public class AuthorizationResponseHandler {
             } ?? [:]
         
         var count = 0
-        for (credentialFormat, vpResponseMetadata) in vpResponsesMetadata {
+        for (credentialFormat, vpTokenSigningResult) in vpResponsesMetadata {
             let vpToken = try VPTokenFactory(
-                vpResponseMetadata: vpResponseMetadata,
+                vpTokenSigningResult: vpTokenSigningResult,
                 unsignedVPToken: unsignedVPTokens[credentialFormat] ?? {
                     throw Logger.handleException(exceptionType: "InvalidData", message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map", className: AuthorizationResponseHandler.className)
                 }(),
