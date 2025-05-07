@@ -4,7 +4,7 @@ import XCTest
 final class LdpVpTokenSigningResultTests: XCTestCase {
     
     func testValidateSuccess() throws {
-        let validMetadata = vpTokenSigningResult
+        let validMetadata = ldpVpTokenSigningResult
         
         XCTAssertNoThrow(try validMetadata.validate())
     }
@@ -12,9 +12,9 @@ final class LdpVpTokenSigningResultTests: XCTestCase {
     func testValidateFailureEmptyString() {
         let invalidMetadata = LdpVpTokenSigningResult(
             jws: "",
-            signatureAlgorithm: vpTokenSigningResult.signatureAlgorithm,
-            publicKey: vpTokenSigningResult.publicKey,
-            domain: vpTokenSigningResult.domain
+            signatureAlgorithm: ldpVpTokenSigningResult.signatureAlgorithm,
+            publicKey: ldpVpTokenSigningResult.publicKey,
+            domain: ldpVpTokenSigningResult.domain
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
@@ -25,9 +25,9 @@ final class LdpVpTokenSigningResultTests: XCTestCase {
     func testValidateFailureNullValue() {
         let invalidMetadata = LdpVpTokenSigningResult(
             jws: "null",
-            signatureAlgorithm: vpTokenSigningResult.signatureAlgorithm,
-            publicKey: vpTokenSigningResult.publicKey,
-            domain: vpTokenSigningResult.domain
+            signatureAlgorithm: ldpVpTokenSigningResult.signatureAlgorithm,
+            publicKey: ldpVpTokenSigningResult.publicKey,
+            domain: ldpVpTokenSigningResult.domain
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in

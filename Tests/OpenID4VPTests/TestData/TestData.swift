@@ -189,11 +189,15 @@ public let clientMetadata: [String: Any] = [
 
 let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadata.self)
 
-var vpTokenSigningResult = LdpVpTokenSigningResult(
+let ldpVpTokenSigningResult = LdpVpTokenSigningResult(
     jws: "validJWS",
     signatureAlgorithm: "RSA",
     publicKey: "validPublicKey",
     domain: "validDomain"
+)
+
+let mdocSigningResult = MdocVpTokenSigningResult(
+    deviceAuthenticationBytesSigned: ["docType": DeviceAuthentication(signature: "signature", algorithm: "ES256")],
 )
 
 //  client_id_scheme = redirect_uri
