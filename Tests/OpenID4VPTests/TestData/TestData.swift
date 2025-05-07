@@ -197,7 +197,7 @@ let ldpVpTokenSigningResult = LdpVpTokenSigningResult(
 )
 
 let mdocSigningResult = MdocVpTokenSigningResult(
-    deviceAuthenticationBytesSigned: ["docType": DeviceAuthentication(signature: "signature", algorithm: "ES256")],
+    deviceAuthenticationBytesSigned: ["docType": DeviceAuthentication(signature: "signature", algorithm: "ES256")]
 )
 
 //  client_id_scheme = redirect_uri

@@ -25,6 +25,7 @@ let package = Package(
             ]),
         .testTarget(
             name: "OpenID4VPTests",
-            dependencies: ["OpenID4VP","jose-swift","Alamofire"]),
+            dependencies: ["OpenID4VP","jose-swift","Alamofire", "SwiftCBOR"]
+        ),
     ]
 )

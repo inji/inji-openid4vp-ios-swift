@@ -2,7 +2,6 @@ import XCTest
 @testable import OpenID4VP
 
 final class MdocVpTokenSigningResultTests: XCTestCase {
-
     func testMdocVpTokenSigningResultSuccess() {
         let validDeviceAuth = DeviceAuthentication(
             signature: "validSignature",
