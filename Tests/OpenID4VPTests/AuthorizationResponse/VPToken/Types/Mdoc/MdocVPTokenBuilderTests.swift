@@ -1,5 +1,6 @@
 import XCTest
 @testable import OpenID4VP
+import SwiftCBOR
 
 final class MdocVPTokenBuilderTests: XCTestCase {
     let unsignedToken = UnsignedMdocVPToken(deviceAuthenticationBytes: ["org.iso.18013.5.1.mDL": "bytes"])
@@ -12,7 +13,14 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         XCTAssertNoThrowAndVerify(try builder.build()) { vpToken in
             XCTAssertTrue(vpToken is MdocVPToken, "vpToken should be of type MdocVPToken")
             XCTAssertNotNil((vpToken as! MdocVPToken).value)
-            //TODO: Assert real value
+            let mdocVPToken: (MdocVPToken) = (vpToken as! MdocVPToken)
+            let decodedToken = try? decodeCBOR(base64EncodedInput: mdocVPToken.value)
+            
+            // Verify keys - status, version, documents, documents -> deviceSigned is available in the token as its attached to the Verifiable Presentation by the builder
+            XCTAssertEqual(decodedToken?["status"], CBOR.unsignedInt(0))
+            XCTAssertEqual(decodedToken?["version"], CBOR.utf8String("1.0"))
+            XCTAssertTrue(decodedToken?["documents"] is CBOR.ArrayLiteralElement, "documents should be an array")
+            XCTAssertNotNil(decodedToken?["documents"]?[0]?["deviceSigned"], "Token should contain deviceSigned key")
         }
     }
     

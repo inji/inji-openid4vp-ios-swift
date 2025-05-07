@@ -75,7 +75,7 @@ class MdocVPTokenBuilder : VpTokenBuilder {
         let payload = CBOR.null
         
         return CBOR.array([
-            protectedHeaders,
+            .byteString(cborEncode(protectedHeaders)),
             unprotectedHeaders,
             payload,
             .byteString(cborEncodedSignature),

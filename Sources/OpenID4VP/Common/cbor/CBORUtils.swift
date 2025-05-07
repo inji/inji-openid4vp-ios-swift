@@ -12,11 +12,7 @@ fileprivate let className = "CBORUtils"
 
 func decodeCBOR(base64EncodedInput : String) throws -> CBOR? {
     do{
-        guard let decodedBase64Data = Data(base64EncodedURLSafe: base64EncodedInput) else {
-            print("Invalid base64 URL string provided")
-            throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid base64 URL string provided", className: String(describing: className))
-        }
-        
+        let decodedBase64Data = try Base64Decoder.decodeBase64ToData(base64EncodedInput)
         let inputToCBORDecode = Array(decodedBase64Data)
         let cborDecodedData = try CBOR.decode(inputToCBORDecode)
         return cborDecodedData

@@ -1,4 +1,4 @@
-public struct LdpVpToken: Encodable, VPToken {
+struct LdpVpToken: Encodable, VPToken {
     let context: [String]
     let type: [String]
     let verifiableCredential: [String]

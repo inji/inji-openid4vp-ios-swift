@@ -25,10 +25,10 @@ final class CBORUtilsTests: XCTestCase {
     }
     
     func testDecodeCBOR_InvalidBase64() {
-        let invalidBase64 = "this is not base64!"
+        let invalidBase64 = "abc!@#123+"
         
         XCTAssertThrowsError(try decodeCBOR(base64EncodedInput: invalidBase64)) { error in
-            XCTAssertTrue(error.localizedDescription.contains("Invalid base64 URL string provided"))
+            XCTAssertEqual(error.localizedDescription, "Error while decoding input - decodingException(fieldPath: \"\")")
         }
     }
     

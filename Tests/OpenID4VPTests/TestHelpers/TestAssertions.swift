@@ -123,9 +123,9 @@ func assertAsyncNoThrowsError<T>(
 }
 
 func XCTAssertNoThrowAndVerify<T>(_ expression: @autoclosure () throws -> T,
-                                 file: StaticString = #filePath,
-                                 line: UInt = #line,
-                                 _ assertions: (T) -> Void) {
+                                  file: StaticString = #filePath,
+                                  line: UInt = #line,
+                                  _ assertions: (T) -> Void) {
     do {
         let result = try expression()
         assertions(result)

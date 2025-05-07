@@ -128,7 +128,7 @@ public class AuthorizationResponseHandler {
             } ?? [:]
         
         var count = 0
-        for (credentialFormat, vpTokenSigningResult) in vpResponsesMetadata {
+        for (credentialFormat, vpTokenSigningResult) in vpResponsesMetadata.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             let vpToken = try VPTokenFactory(
                 vpTokenSigningResult: vpTokenSigningResult,
                 unsignedVPToken: unsignedVPTokens[credentialFormat] ?? {
@@ -158,8 +158,8 @@ public class AuthorizationResponseHandler {
         let presentationDefinitionId = (authorizationRequest.presentationDefinition ).id
         
         return PresentationSubmission(
-            definition_id: presentationDefinitionId,
-            descriptor_map: descriptorMap
+            definitionId: presentationDefinitionId,
+            descriptorMap: descriptorMap
         )
     }
     

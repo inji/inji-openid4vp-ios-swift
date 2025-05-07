@@ -21,6 +21,12 @@ struct PathNested : Encodable {
 //TODO: use coding keys to handle modification of field names
 struct PresentationSubmission: Encodable{
     let id: String = UUIDGenerator.generateUUID()
-    let definition_id: String
-    let descriptor_map: [DescriptorMap]
+    let definitionId: String
+    let descriptorMap: [DescriptorMap]
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case definitionId = "definition_id"
+        case descriptorMap = "descriptor_map"
+    }
 }
