@@ -92,20 +92,14 @@ func cborEncode(_ input: CBOR) -> [UInt8]? {
     return CBOR.encode(input)
 }
 
-// created #6.24 (bstr .cbor input)
+// creates #6.24 (bstr .cbor input)
 func wrapCBORInputWithTag24(input: CBOR) -> CBOR? {
-    //    CBOR.tagged(.init(rawValue: 24), .byteString(CBOR.encode(devicesNamespaces)))
-    // Explicitly use SwiftCBOR.CBOR.encode to avoid ambiguity
     guard let encodedInput: [UInt8]? = SwiftCBOR.CBOR.encode(input) else {
         print("Failed to encode input CBOR")
         return nil
     }
-    
-    // Wrap the encoded byte string with CBOR tag (24)
     let cborTaggedValue: CBOR = .tagged(CBOR.Tag(rawValue: 24), .byteString(encodedInput!))
     
-    // Encode the tagged CBOR object to bytes
-    //    return SwiftCBOR.CBOR.encode(cborTaggedValue)
     return cborTaggedValue
 }
 

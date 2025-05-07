@@ -96,8 +96,24 @@ func parseAndValidatePresentationDefinition(
         )
     }
     
+    let responseMode = getStringValue(authorizationRequest[AuthorizationRequestFieldConstants.responseMode.rawValue])
+    try validateForCredentialFormat(finalPresentationDefinition, responseMode: responseMode)
+    
     var mutableParams = authorizationRequest
     mutableParams[AuthorizationRequestFieldConstants.presentationDefinition.rawValue] = finalPresentationDefinition
     
     return mutableParams
+}
+
+//Credential Format specific authorization request's presentation definition checks w.r.t to response_mode
+fileprivate func validateForCredentialFormat(_ presentationDefinition: PresentationDefinition, responseMode: String?) throws {
+    //In case of mso_mdoc format VCs requested in Authorization Request, direct_post.jwt is the allowed response_mode
+    let hasMsoMdocFormat: Bool =  presentationDefinition.format?.contains(where: { $0.key == FormatType.mso_mdoc.rawValue }) ?? false || presentationDefinition.inputDescriptors.contains(where: {$0.format?.contains(where: { $0.key == FormatType.mso_mdoc.rawValue }) ?? false})
+    if(hasMsoMdocFormat && responseMode != ResponseMode.directPostJwt.rawValue){
+        throw Logger.handleException(
+            exceptionType: "InvalidData",
+            message: "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt",
+            className: className
+        )
+    }
 }

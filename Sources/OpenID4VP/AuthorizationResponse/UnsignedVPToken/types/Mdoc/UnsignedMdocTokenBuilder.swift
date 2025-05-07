@@ -9,7 +9,6 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     private let verifierNonce: String
     private let mdocGeneratedNonce: String
     
-    //TODO: Format the file
     init( mdocCredentials: [String], clientId: String, responseUri: String, verifierNonce: String, mdocGeneratedNonce: String) {
         self.mdocCredentials = mdocCredentials
         self.clientId = clientId

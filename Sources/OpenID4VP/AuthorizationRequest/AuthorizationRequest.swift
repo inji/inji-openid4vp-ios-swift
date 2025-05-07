@@ -14,7 +14,7 @@ public struct AuthorizationRequest : Encodable {
     var clientMetadata: ClientMetadata?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
-    //TODO: In case mso_mdoc , only direct_post.jwt is allowed
+
     enum CodingKeys: String, CodingKey {
         case client_id
         case client_id_scheme

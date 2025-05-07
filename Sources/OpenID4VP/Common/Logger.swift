@@ -25,9 +25,9 @@ class Logger {
         let exception: Error
         switch exceptionType {
         case "MissingInput":
-            exception = AuthorizationRequestException.missingInput(fieldPath: fieldPathAsString)
+            exception = Exceptions.missingInput(fieldPath: fieldPathAsString)
         case "InvalidInput":
-            exception = AuthorizationRequestException.invalidInput(fieldPath: fieldPathAsString)
+            exception = Exceptions.invalidInput(fieldPath: fieldPathAsString)
         case "InvalidInputPattern":
             exception = AuthorizationRequestException.invalidInputPattern(fieldPath: fieldPathAsString)
         case "InvalidQueryParams":

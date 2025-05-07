@@ -114,15 +114,15 @@ public class AuthorizationResponseHandler {
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
-        
+                
         // create an map of credential format to credentials from credentialsMap
-        let groupedVcs: [FormatType: [Any]] = credentialsMap!
+        let groupedVcs: [FormatType: [Any]] = credentialsMap?
             .compactMap { $0.value }
-            .reduce(into: [FormatType: [String]]()) { result, entry in
+            .reduce(into: [FormatType: [Any]]()) { result, entry in
                 for (key, value) in entry {
                     result[key, default: []].append(contentsOf: value)
                 }
-            }
+            } ?? [:]
         
         var count = 0
         for (credentialFormat, vpResponseMetadata) in vpResponsesMetadata {

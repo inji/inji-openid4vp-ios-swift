@@ -26,7 +26,7 @@ public class OpenID4VP {
         Logger.setTraceabilityId(className:String(describing: type(of: self)), traceabilityId: traceabilityId)
 
         do {
-            authorizationRequest =  try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+            self.authorizationRequest =  try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                                                                         urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                                                                         trustedVerifierJSON: trustedVerifierJSON,
                                                                         walletMetadata: walletMetadata,
