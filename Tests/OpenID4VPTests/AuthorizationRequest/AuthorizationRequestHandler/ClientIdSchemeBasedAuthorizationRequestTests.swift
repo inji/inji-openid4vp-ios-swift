@@ -201,7 +201,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
-        let testCases: [TestCase<[String:String?]>] = [
+        let testCases: [TestCase<[String:String?], Void>] = [
             TestCase(input: ["response_mode": "fragment"], expectedError: "Given response_mode - fragment is not supported"),
             TestCase(input: ["response_mode": ""], expectedError: "Given response_mode -  is not supported"),
             TestCase(input: ["response_mode": "nil"], expectedError: "Given response_mode - nil is not supported"),

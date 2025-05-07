@@ -17,6 +17,7 @@ struct MockDataClass: Codable {
 }
 
 class UtilsTest : XCTestCase {
+    private let className = String(describing: UtilsTest.self)
     
     /// Validate url tests
     

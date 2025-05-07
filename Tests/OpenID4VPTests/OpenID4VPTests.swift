@@ -201,8 +201,9 @@ class OpenID4VPTests: XCTestCase {
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async{
         let received: [FormatType: UnsignedVPToken]?
-
         do {
+            _ = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            
             received = try await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
         }catch{
             received = nil
@@ -226,11 +227,11 @@ class OpenID4VPTests: XCTestCase {
     func testSendVpFailure() async {
         let errorMessage = "Network Request failed with error response: response"
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", error: NetworkRequestException.networkRequestFailed(message: errorMessage))
-        _ = try! await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
         let vpResponsesMetaData = [FormatType.ldp_vc: LdpVPResponseMetadata(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
 
         do {
             authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            _ = try! await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
             
             let _ = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: vpResponsesMetaData)
         } catch let error as NetworkRequestException {

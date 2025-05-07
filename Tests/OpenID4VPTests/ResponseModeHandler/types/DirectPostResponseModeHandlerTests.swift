@@ -10,12 +10,12 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     private let responseUri = "https://mock-verifier.com"
     
     private var walletMetadata: WalletMetadata!
-
-        override func setUpWithError() throws {
-            walletMetadata = try createWalletMetadata()
-        }
-
-
+    
+    override func setUpWithError() throws {
+        walletMetadata = try createWalletMetadata()
+    }
+    
+    
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
         
@@ -28,7 +28,9 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
         
         do {
-            let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager)
+            let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager,
+                producerInfo: "wallet-nonce",
+                recepientInfo: "verifier-nonce")
             
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
             XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)

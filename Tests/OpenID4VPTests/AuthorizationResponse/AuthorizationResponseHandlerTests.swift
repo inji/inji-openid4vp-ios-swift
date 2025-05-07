@@ -100,7 +100,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let authorizationRequest = getMockAuthorizationRequest()
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         //constructUnsignedVPTokens returns error as empty credentialsMap is passed, so unsignedVPTokens field is empty dictionary
-        do{_ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:], authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")}catch {}
+        do{_ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:], authorizationRequest: authorizationRequest, responseUri : "/response-uri")}catch {}
 
         do {
             _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpResponsesMetadata: vpResponsesMetaData, responseUri: "https://client.example.org/cb")
