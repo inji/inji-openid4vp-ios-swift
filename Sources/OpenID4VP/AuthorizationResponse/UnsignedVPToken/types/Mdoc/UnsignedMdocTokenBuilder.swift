@@ -32,7 +32,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         
         for mdocCredential in self.mdocCredentials {
             guard let credential = decodeCBOR(input: mdocCredential) else {
-                throw NSError(domain: "Invalid Verifiable Credential", code: 1001, userInfo: nil)
+                throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
             }
             let docType: CBOR? = getValueFromCBORMap(cborMap: credential, key: "docType")
             
