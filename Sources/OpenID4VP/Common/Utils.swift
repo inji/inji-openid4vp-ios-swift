@@ -98,6 +98,8 @@ func toData(_ input: [String: Any]) throws -> Data {
     return try JSONSerialization.data(withJSONObject: processedInput, options: [])
 }
 
+
+
 /**
  accept entropy size in bytes, default = 16
  */
