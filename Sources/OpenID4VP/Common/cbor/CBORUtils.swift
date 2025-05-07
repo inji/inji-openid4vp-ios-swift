@@ -88,8 +88,12 @@ func createEmbeddedEncodedCborWithTag( data: CBOR) -> [UInt8]  {
     return encodedData
 }
 
-func cborEncode(_ input: CBOR) -> [UInt8]? {
+func cborEncode(_ input: CBOR) -> [UInt8] {
     return CBOR.encode(input)
+}
+
+func toCBOR(_ input: Data) -> CBOR {
+    return CBOR.byteString([UInt8](input))
 }
 
 // creates #6.24 (bstr .cbor input)
@@ -120,4 +124,33 @@ func decodeCBOR(base64UrlEncodedData: String) throws -> CBOR?{
 
 internal func toCBORArray(_ input: [CBOR]) -> CBOR {
     return CBOR.array(input.map { ($0) })
+}
+
+func getValueFromCBORMap(cborMap: CBOR, key: String) -> CBOR? {
+    guard case let .map(items) = cborMap else { return nil }
+    
+    let cborKey = CBOR.utf8String(key)
+    return items[cborKey]
+}
+
+func extractStringFromCBOR(_ cbor: CBOR) -> String? {
+    if case let .utf8String(str) = cbor {
+        return str
+    }
+    return nil
+}
+
+func cborToByteString(cbor: CBOR) -> String {
+    let encodedData : [UInt8] = CBOR.encode(cbor)
+    
+    return encodedData.map { String(format: "%02x", $0) }.joined()
+}
+
+func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> Int {
+    switch algorithm {
+    case "ES256":
+        return -7
+    default:
+        throw NSError(domain: "Unsupported signing algorithm: \(algorithm)", code: 0, userInfo: nil)
+    }
 }
