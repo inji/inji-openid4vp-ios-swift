@@ -5,6 +5,9 @@ public struct JWEHandler {
     let contentEncryptionAlgorithm: String
     let keyEncryptionAlgorithm: String
     let publicKey: JWK
+    let producerInfo: String
+    let recipientInfo: String
+    
     static let className = String(describing: JWEHandler.self)
 
     func generateEncryptedResponse(payload: [String:Any]) throws -> String {
@@ -22,7 +25,7 @@ public struct JWEHandler {
 
         let (ciphertext, nonce, tag) = try encrypter.encrypt(payloadData, with: sharedKey)
 
-        var header = keyAgreement.getJWEHeader(alg: publicKey.alg, enc: contentEncryptionAlgorithm, jwk: publicKey)
+        var header = keyAgreement.getJWEHeader(alg: publicKey.alg, enc: contentEncryptionAlgorithm, jwk: publicKey, producerInfo: producerInfo, recipientInfo: recipientInfo)
         if let epk = keyAgreement.getEphemeralPublicKey() {
             header["epk"] = epk
         }

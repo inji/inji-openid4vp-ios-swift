@@ -43,7 +43,9 @@ public class AuthorizationResponseHandler {
         return try await sendAuthorizationResponse(
             authorizationRequest: authorizationRequest,
             authorizationResponse : authorizationResponse,
-            responseUri : responseUri
+            responseUri : responseUri,
+            producerInfo: walletNonce,
+            recepientInfo: authorizationRequest.nonce
         )
     }
     
@@ -69,9 +71,10 @@ public class AuthorizationResponseHandler {
     }
     
     //Send authorization response based on response_mode
-    private func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest ,authorizationResponse: AuthorizationResponse, responseUri: String) async throws -> String {
+    private func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest ,authorizationResponse: AuthorizationResponse, responseUri: String, producerInfo: String,
+                                           recepientInfo: String) async throws -> String {
         return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
-            .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager)
+            .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager, producerInfo: producerInfo, recepientInfo: recepientInfo)
     }
     
     private func createUnsignedVPTokens(credentialsMap: [String: [FormatType: [Any]]], authorizationRequest: AuthorizationRequest, responseUri : String) throws -> [FormatType: UnsignedVPToken] {

@@ -36,11 +36,13 @@ class X25519KeyAgreement: JWEKeyAgreement {
         ]
     }
 
-    func getJWEHeader(alg: String, enc: String, jwk: JWK) -> [String: Any] {
+    func getJWEHeader(alg: String, enc: String, jwk: JWK, producerInfo: String, recipientInfo: String) -> [String: Any] {
         return [
             "alg": alg,
             "enc": enc,
-            "kid": jwk.kid
+            "kid": jwk.kid,
+            "apu": producerInfo,
+            "apv": recipientInfo,
         ]
     }
     
