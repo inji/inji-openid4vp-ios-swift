@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  OpenID4VP
-//
-//  Created by Kiruthika Jeyashankar on 24/04/25.
-//
-
 import Foundation
 import SwiftCBOR
 

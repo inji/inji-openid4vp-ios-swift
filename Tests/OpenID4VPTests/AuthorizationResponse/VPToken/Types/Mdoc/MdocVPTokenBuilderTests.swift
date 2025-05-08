@@ -3,7 +3,7 @@ import XCTest
 import SwiftCBOR
 
 final class MdocVPTokenBuilderTests: XCTestCase {
-    let unsignedToken = UnsignedMdocVPToken(deviceAuthenticationBytes: ["org.iso.18013.5.1.mDL": "bytes"])
+    let unsignedToken = UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: ["org.iso.18013.5.1.mDL": "bytes"])
     
     func testBuildsVPTokenSuccessfullyWithValidInput() {
         let metadata = MdocVpTokenSigningResult(deviceAuthenticationBytesSigned: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "validSignature", algorithm: "ES256")])

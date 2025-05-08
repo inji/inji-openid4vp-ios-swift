@@ -19,7 +19,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     }
     
     func build() throws ->  UnsignedVPToken {
-        var deviceAuthenticationBytes : [String : String] = [:]
+        var docTypeToDeviceAuthenticationBytes : [String : String] = [:]
         let clientIdToHash = CBOR.array([.utf8String(clientId), .utf8String(self.mdocGeneratedNonce)])
         let clientIdHash = CBOR.byteString(SHA256Hash(from: clientIdToHash))
         let responseUriToHash = CBOR.array([.utf8String(responseUri), .utf8String(self.mdocGeneratedNonce)])
@@ -45,9 +45,9 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             ])
             
             let deviceAuthenticationBytesOfCredential = wrapCBORInputWithTag24(input: deviceAuthentication)
-            deviceAuthenticationBytes[extractStringFromCBOR(docType!)!] = cborToByteString(cbor: deviceAuthenticationBytesOfCredential!)
+            docTypeToDeviceAuthenticationBytes[extractStringFromCBOR(docType!)!] = cborToByteString(cbor: deviceAuthenticationBytesOfCredential!)
         }
         
-        return UnsignedMdocVPToken(deviceAuthenticationBytes: deviceAuthenticationBytes)
+        return UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes)
     }
 }

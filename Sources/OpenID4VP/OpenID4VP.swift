@@ -45,9 +45,9 @@ public class OpenID4VP {
         return try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: self.authorizationRequest!, responseUri: self.responseUri!)
     }
 
-    public func shareVerifiablePresentation(vpResponsesMetadata: [FormatType: VpTokenSigningResult]) async throws -> String? {
+    public func shareVerifiablePresentation(vpTokenSigningResults: [FormatType: VpTokenSigningResult]) async throws -> String? {
         do {
-            return try await self.authorizationResponseHandler.shareVP(authorizationRequest: self.authorizationRequest!, vpResponsesMetadata: vpResponsesMetadata, responseUri: self.responseUri!)
+            return try await self.authorizationResponseHandler.shareVP(authorizationRequest: self.authorizationRequest!, vpTokenSigningResults: vpTokenSigningResults, responseUri: self.responseUri!)
         } catch(let exception) {
             await sendErrorToVerifier(error: exception)
             throw exception

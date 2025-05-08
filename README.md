@@ -212,14 +212,14 @@ This method will also notify the Verifier about the error by sending it to the r
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
 ```swift
-    let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: [FormatType:VpTokenSigningResult])
+    let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: [FormatType:VpTokenSigningResult])
 ```
 
 ###### Parameters
 
 | Name                | Type                             | Description                                                                                                                                                 |
 |---------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpResponsesMetadata | [FormatType: VpTokenSigningResult] | This will be a map with key as credential format and value as VpTokenSigningResult (which is specific to respective credential format's required information) |
+| vpTokenSigningResults | [FormatType: VpTokenSigningResult] | This will be a map with key as credential format and value as VpTokenSigningResult (which is specific to respective credential format's required information) |
 
 
 ###### Example usage
@@ -231,8 +231,8 @@ let ldpVpTokenSigningResult = LdpVpTokenSigningResult(
     publicKey : publicKey,
     domain : "<domain>"
 )
-let vpResponsesMetadata : [FormatType: VpTokenSigningResult] = [FormatType.LDP_VC : ldpVpTokenSigningResult]
-val response : String = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata : vpResponsesMetadata)
+let vpTokenSigningResults : [FormatType: VpTokenSigningResult] = [FormatType.LDP_VC : ldpVpTokenSigningResult]
+val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults : vpTokenSigningResults)
 ```
 
 ###### Exceptions

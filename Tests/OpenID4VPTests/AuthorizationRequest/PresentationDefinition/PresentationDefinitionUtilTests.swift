@@ -1,10 +1,3 @@
-//
-//  PresentationDefinitionUtilTests.swift
-//  OpenID4VP
-//
-//  Created by Kiruthika Jeyashankar on 06/05/25.
-//
-
 import XCTest
 @testable import OpenID4VP
 

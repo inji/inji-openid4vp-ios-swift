@@ -215,10 +215,10 @@ class OpenID4VPTests: XCTestCase {
     func testSendVpSuccess() async throws {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        let vpResponsesMetaData = [FormatType.ldp_vc: LdpVpTokenSigningResult(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
+        let vpTokenSigningResults = [FormatType.ldp_vc: LdpVpTokenSigningResult(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
         _ = try await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
         
-        let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: vpResponsesMetaData)
+        let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
 
         XCTAssertEqual(response, "Success: Request completed successfully.")
     }
@@ -227,13 +227,13 @@ class OpenID4VPTests: XCTestCase {
     func testSendVpFailure() async {
         let errorMessage = "Network Request failed with error response: response"
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", error: NetworkRequestException.networkRequestFailed(message: errorMessage))
-        let vpResponsesMetaData = [FormatType.ldp_vc: LdpVpTokenSigningResult(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
+        let vpTokenSigningResults = [FormatType.ldp_vc: LdpVpTokenSigningResult(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
 
         do {
             authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             _ = try! await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
             
-            let _ = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: vpResponsesMetaData)
+            let _ = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
         } catch let error as NetworkRequestException {
             switch error {
             case .networkRequestFailed(let message):
@@ -251,9 +251,9 @@ class OpenID4VPTests: XCTestCase {
         
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVpRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         _ = try! await openID4VP.constructUnsignedVPToken(credentialsMap: verifiableCredentialsList)
-        let vpResponsesMetaData = [FormatType.ldp_vc: LdpVpTokenSigningResult(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
+        let vpTokenSigningResults = [FormatType.ldp_vc: LdpVpTokenSigningResult(jws: jws, signatureAlgorithm: signatureAlgoType, publicKey: publicKey, domain: domain)]
                 
-        let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: vpResponsesMetaData)
+        let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
         
         XCTAssertEqual(response, "Success: Request completed successfully.")
     }

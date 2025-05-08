@@ -32,12 +32,12 @@ public class AuthorizationResponseHandler {
     
     func shareVP(
         authorizationRequest: AuthorizationRequest,
-        vpResponsesMetadata: [FormatType: VpTokenSigningResult],
+        vpTokenSigningResults: [FormatType: VpTokenSigningResult],
         responseUri: String
     ) async throws -> String {
         let authorizationResponse: AuthorizationResponse = try createAuthorizationResponse(
             authorizationRequest : authorizationRequest,
-            vpResponsesMetadata : vpResponsesMetadata
+            vpTokenSigningResults : vpTokenSigningResults
         )
         
         return try await sendAuthorizationResponse(
@@ -50,12 +50,12 @@ public class AuthorizationResponseHandler {
     }
     
     //Create authorization response based on response_type
-    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpResponsesMetadata : [FormatType: VpTokenSigningResult]) throws -> AuthorizationResponse {
+    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpTokenSigningResults : [FormatType: VpTokenSigningResult]) throws -> AuthorizationResponse {
         switch authorizationRequest.responseType {
         case ResponseType.vp_token.rawValue:
             var credentialFormatIndex: [FormatType: Int] = [:]
             let vpToken = try createVPToken(
-                vpResponsesMetadata: vpResponsesMetadata,
+                vpTokenSigningResults: vpTokenSigningResults,
                 authorizationRequest: authorizationRequest,
                 credentialFormatIndex: &credentialFormatIndex
             )
@@ -112,7 +112,7 @@ public class AuthorizationResponseHandler {
     }
     
     private func createVPToken(
-        vpResponsesMetadata: [FormatType: VpTokenSigningResult],
+        vpTokenSigningResults: [FormatType: VpTokenSigningResult],
         authorizationRequest: AuthorizationRequest,
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
@@ -128,7 +128,7 @@ public class AuthorizationResponseHandler {
             } ?? [:]
         
         var count = 0
-        for (credentialFormat, vpTokenSigningResult) in vpResponsesMetadata.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
+        for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             let vpToken = try VPTokenFactory(
                 vpTokenSigningResult: vpTokenSigningResult,
                 unsignedVPToken: unsignedVPTokens[credentialFormat] ?? {

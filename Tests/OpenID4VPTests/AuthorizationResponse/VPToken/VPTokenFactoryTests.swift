@@ -29,7 +29,7 @@ final class VPTokenFactoryTests: XCTestCase {
     ///Test credential format - mso_mdoc
     func testGetVPTokenBuilder_WithMdocFormat() throws {
         let unsignedToken = UnsignedMdocVPToken(
-            deviceAuthenticationBytes: ["org.iso.18013.5.1.mDL": "bytes"]
+            docTypeToDeviceAuthenticationBytes: ["org.iso.18013.5.1.mDL": "bytes"]
         )
         
         let nonce = "nonce123"

@@ -4,7 +4,7 @@ import XCTest
 final class AuthorizationResponseHandlerTests: XCTestCase {
     let mockNetworkManager = MockNetworkManager()
     let verifiableCredentials: [String: [FormatType: [Any]]] = ["input_descriptor1": [.ldp_vc: ["cred1", "cred3"]], "input_descriptor2": [.ldp_vc: ["cred3"]]]
-    let vpResponsesMetaData = [FormatType.ldp_vc:LdpVpTokenSigningResult(jws: "wemcn3234ns", signatureAlgorithm: "RsaSignature2018", publicKey: "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n", domain: "https://example")]
+    let vpTokenSigningResults = [FormatType.ldp_vc:LdpVpTokenSigningResult(jws: "wemcn3234ns", signatureAlgorithm: "RsaSignature2018", publicKey: "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n", domain: "https://example")]
     let unsignedVPTokens = [FormatType.ldp_vc: UnsignedLdpVPToken(context: ["https://www.w3.org/2018/credentials/v1"], type: ["VerifiablePresentation"], verifiableCredential: ["cred1","cred2", "cred3"], id: "uuid", holder: "wallet/app")]
     
     /// construction of vp_token for signing
@@ -38,7 +38,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(),responseUri : "/response-uri")
         let responseUri = "https://mock-verifier.com"
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
-        let mockVPResponsesMetadata = [FormatType.ldp_vc : LdpVpTokenSigningResult(
+        let mockVPTokenSigningResults = [FormatType.ldp_vc : LdpVpTokenSigningResult(
             jws: "testJWS",
             signatureAlgorithm: "ES256",
             publicKey: "testPublicKey",
@@ -46,7 +46,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )]
         _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")
         
-        let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpResponsesMetadata: mockVPResponsesMetadata, responseUri: responseUri)
+        let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpTokenSigningResults: mockVPTokenSigningResults, responseUri: responseUri)
         
         XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
@@ -69,7 +69,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let mockAuthorizationRequest = getMockAuthorizationRequest(responseMode: .directPostJwt)
         let responseUri = "https://mock-verifier.com"
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
-        let mockVPResponsesMetadata : [FormatType: VpTokenSigningResult] = [
+        let mockVPTokenSigningResults : [FormatType: VpTokenSigningResult] = [
             .ldp_vc : LdpVpTokenSigningResult(
                 jws: "testJWS",
                 signatureAlgorithm: "ES256",
@@ -82,7 +82,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: mockAuthorizationRequest, responseUri : "/response-uri")
         
-        let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequest, vpResponsesMetadata: mockVPResponsesMetadata, responseUri: responseUri)
+        let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequest, vpTokenSigningResults: mockVPTokenSigningResults, responseUri: responseUri)
         
         XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
@@ -97,7 +97,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let authorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
         do {
-            _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpResponsesMetadata: vpResponsesMetaData, responseUri: "https://client.example.org/cb")
+            _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpTokenSigningResults: vpTokenSigningResults, responseUri: "https://client.example.org/cb")
             XCTFail("Response type not supported error should have been thrown but did not get error")
         } catch {
             XCTAssertEqual("response type - fragment is not supported", error.localizedDescription)
@@ -111,7 +111,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         do{_ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: [:], authorizationRequest: authorizationRequest, responseUri : "/response-uri")}catch {}
         
         do {
-            _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpResponsesMetadata: vpResponsesMetaData, responseUri: "https://client.example.org/cb")
+            _ = try await authorizationResponseHandler.shareVP(authorizationRequest: authorizationRequest, vpTokenSigningResults: vpTokenSigningResults, responseUri: "https://client.example.org/cb")
             XCTFail("Response type not supported error should have been thrown but did not get error")
         } catch {
             XCTAssertEqual("unable to find the related credential format - ldp_vc in the unsignedVPTokens map", error.localizedDescription)
