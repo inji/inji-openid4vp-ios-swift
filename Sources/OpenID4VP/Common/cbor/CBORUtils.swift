@@ -58,11 +58,28 @@ func cborToByteString(cbor: CBOR) -> String {
     return encodedData.map { String(format: "%02x", $0) }.joined()
 }
 
-func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> UInt64 {
+//RFC 8610, 8230 ECDSA / EdDSA Algorithm Values
+func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> CBOR {
     switch algorithm {
     case "ES256":
-        return 6
+        return .negativeInt(6)   // ECDSA w/ SHA-256 (-7 in COSE)
+    case "ES384":
+        return .negativeInt(34)  // ECDSA w/ SHA-384 (-35 in COSE)
+    case "ES512":
+        return .negativeInt(35)  // ECDSA w/ SHA-512 (-36 in COSE)
+    case "EdDSA":
+        return .negativeInt(7)   // EdDSA (-8 in COSE)
+    case "PS256":
+        return .negativeInt(36)  // RSASSA-PSS w/ SHA-256 (-37 in COSE)
+    case "PS384":
+        return .negativeInt(37)  // RSASSA-PSS w/ SHA-384 (-38 in COSE)
+    case "PS512":
+        return .negativeInt(38)  // RSASSA-PSS w/ SHA-512 (-39 in COSE)
     default:
-        throw Logger.handleException(exceptionType: "InvalidData", message: "Unsupported signing algorithm: \(algorithm)", className: className)
+        throw Logger.handleException(
+            exceptionType: "InvalidData",
+            message: "Unsupported signing algorithm: \(algorithm)",
+            className: className
+        )
     }
 }

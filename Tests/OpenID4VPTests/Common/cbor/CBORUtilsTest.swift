@@ -156,8 +156,19 @@ final class CBORUtilsTests: XCTestCase {
     /// mapSigningAlgorithmToProtectedAlg Tests
     
     func testMapSigningAlgorithmToProtectedAlg_ES256() throws {
-        let result = try mapSigningAlgorithmToProtectedAlg(algorithm: "ES256")
-        XCTAssertEqual(result, 6)
+        XCTAssertEqual(try mapSigningAlgorithmToProtectedAlg(algorithm: "ES256"),CBOR.negativeInt(6)) // ES256 (-7 in COSE)
+
+        XCTAssertEqual(try mapSigningAlgorithmToProtectedAlg(algorithm: "ES384"), CBOR.negativeInt(34)) // ES384 (-35 in COSE)
+
+        XCTAssertEqual(try mapSigningAlgorithmToProtectedAlg(algorithm: "ES512"), CBOR.negativeInt(35)) // ES512 (-36 in COSE)
+
+        XCTAssertEqual(try mapSigningAlgorithmToProtectedAlg(algorithm: "EdDSA"), CBOR.negativeInt(7)) // EdDSA (-8 in COSE)
+        
+        XCTAssertEqual(try mapSigningAlgorithmToProtectedAlg(algorithm: "PS256"), CBOR.negativeInt(36)) // PS256 (-37 in COSE)
+
+        XCTAssertEqual(try mapSigningAlgorithmToProtectedAlg(algorithm: "PS384"), CBOR.negativeInt(37)) // PS384 (-38 in COSE)
+
+        XCTAssertEqual(try mapSigningAlgorithmToProtectedAlg(algorithm: "PS512"), CBOR.negativeInt(38)) // EdDSA (-39 in COSE)
     }
     
     func testMapSigningAlgorithmToProtectedAlg_UnsupportedAlgorithm() {

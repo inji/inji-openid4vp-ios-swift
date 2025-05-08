@@ -68,7 +68,7 @@ class MdocVPTokenBuilder : VpTokenBuilder {
         let base64DecodedSignature = try Base64Decoder.decodeBase64ToData(vpResoonseMetadata.signature)
         let cborEncodedSignature = cborEncode(toCBOR(base64DecodedSignature))
         let protectedHeaders = CBOR.map([
-            .unsignedInt(1): .negativeInt((try mapSigningAlgorithmToProtectedAlg(algorithm: vpResoonseMetadata.algorithm)))
+            .unsignedInt(1): try mapSigningAlgorithmToProtectedAlg(algorithm: vpResoonseMetadata.algorithm)
         ])
         let unprotectedHeaders = CBOR.map([:])
         //Payload is available as detached content
