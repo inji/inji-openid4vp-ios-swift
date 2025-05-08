@@ -21,13 +21,16 @@ struct Constraints: Codable {
                 isMandatory: false
             )
             
-            self.limitDisclosure = try container.decodeRequired(
+            guard let limitDisclosure = try? container.decodeRequired(
                 LimitDisclosure.self,
                 forKey: .limitDisclosure,
                 fieldPath: ["constraints", "limitDisclosure"],
                 className: className,
                 isMandatory: false
-            )
+            ) else {
+                throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: className)
+            }
+            self.limitDisclosure = limitDisclosure
             
             try validate()
         }
@@ -41,10 +44,6 @@ struct Constraints: Codable {
         if let limitDisclosure = limitDisclosure {
             guard isNeitherNullNorEmpty(field: limitDisclosure.rawValue) else {
                 throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["constraints","limit_disclosure"], className: className)
-            }
-            
-            guard limitDisclosure == .required || limitDisclosure == .preferred else {
-                throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: className)
             }
         }
     }
