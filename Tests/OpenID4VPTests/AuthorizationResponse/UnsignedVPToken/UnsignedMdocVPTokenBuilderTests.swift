@@ -15,4 +15,12 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
             XCTAssertEqual(error.localizedDescription, "Invalid Verifiable Credential: Error while decoding credential")
         }
     }
+    
+    func testThrowErrorWhenSelectedCredentialsHaveMoreThanOneCredentialWithSameDocType() throws {
+        let unsignedMdocVPTokenBuilder : UnsignedMdocVPTokenBuilder = try UnsignedMdocVPTokenBuilder(mdocCredentials: [sampleMdoc, sampleMdoc], clientId: "client-id", responseUri: "response-uri", verifierNonce: "verifier-nonce", mdocGeneratedNonce: "wallet-nonce")
+        
+        XCTAssertThrowsError(try unsignedMdocVPTokenBuilder.build()) { error in
+            XCTAssertEqual(error.localizedDescription, "Duplicate Mdoc Credentials with same doctype found")
+        }
+    }
 }

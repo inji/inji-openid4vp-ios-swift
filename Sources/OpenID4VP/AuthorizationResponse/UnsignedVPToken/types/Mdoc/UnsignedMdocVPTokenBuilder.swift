@@ -45,7 +45,14 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             ])
             
             let deviceAuthenticationBytesOfCredential = wrapCBORInputWithTag24(input: deviceAuthentication)
-            docTypeToDeviceAuthenticationBytes[extractStringFromCBOR(docType!)!] = cborToByteString(cbor: deviceAuthenticationBytesOfCredential!)
+            let docTypeString = extractStringFromCBOR(docType!)!
+            
+            // In the case of mdoc credentials,ensure that the docType of the credential is unique
+            if(docTypeToDeviceAuthenticationBytes[docTypeString] != nil) {
+                throw Logger.handleException(exceptionType: "InvalidData", message: "Duplicate Mdoc Credentials with same doctype found", className: UnsignedMdocVPTokenBuilder.className)
+            }
+            
+            docTypeToDeviceAuthenticationBytes[docTypeString] = cborToByteString(cbor: deviceAuthenticationBytesOfCredential!)
         }
         
         return UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes)
