@@ -63,6 +63,6 @@ func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> UInt64 {
     case "ES256":
         return 6
     default:
-        throw NSError(domain: "Unsupported signing algorithm: \(algorithm)", code: 0, userInfo: nil)
+        throw Logger.handleException(exceptionType: "InvalidData", message: "Unsupported signing algorithm: \(algorithm)", className: className)
     }
 }

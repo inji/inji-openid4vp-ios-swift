@@ -162,7 +162,7 @@ final class CBORUtilsTests: XCTestCase {
     
     func testMapSigningAlgorithmToProtectedAlg_UnsupportedAlgorithm() {
         XCTAssertThrowsError(try mapSigningAlgorithmToProtectedAlg(algorithm: "RS256")) { error in
-            XCTAssertEqual(error.localizedDescription, "The operation couldn’t be completed. (Unsupported signing algorithm: RS256 error 0.)")
+            XCTAssertEqual(error.localizedDescription, "Unsupported signing algorithm: RS256")
         }
     }
 }
