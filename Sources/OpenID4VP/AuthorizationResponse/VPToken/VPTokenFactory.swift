@@ -19,7 +19,7 @@ class VPTokenFactory {
         case .ldp_vc:
             return LdpVPTokenBuilder(ldpVPTokenSigningResult: self.vpTokenSigningResult as! LdpVPTokenSigningResult, unsignedLdpVPToken: self.unsignedVPToken as! UnsignedLdpVPToken, nonce: nonce)
         case .mso_mdoc:
-            return MdocVPTokenBuilder(mdocVPResponeMetadata: self.vpTokenSigningResult as! MdocVPTokenSigningResult, unsignedMdocVPToken: self.unsignedVPToken as! UnsignedMdocVPToken, credentials: groupedVcs[credentialFormat] as! [String])
+            return MdocVPTokenBuilder(mdocVPTokenSigningResult: self.vpTokenSigningResult as! MdocVPTokenSigningResult, unsignedMdocVPToken: self.unsignedVPToken as! UnsignedMdocVPToken, credentials: groupedVcs[credentialFormat] as! [String])
         }
     }
 }

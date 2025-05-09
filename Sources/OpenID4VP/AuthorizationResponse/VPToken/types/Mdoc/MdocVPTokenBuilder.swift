@@ -2,20 +2,20 @@ import Foundation
 import SwiftCBOR
 
 class MdocVPTokenBuilder : VPTokenBuilder {
-    private let mdocVPResponeMetadata:  MdocVPTokenSigningResult
+    private let mdocVPTokenSigningResult:  MdocVPTokenSigningResult
     private let unsignedMdocVPToken:  UnsignedMdocVPToken
     private let credentials: [String]
     private let className = String(describing: MdocVPTokenBuilder.self)
     
-    init(mdocVPResponeMetadata:  MdocVPTokenSigningResult,unsignedMdocVPToken:  UnsignedMdocVPToken, credentials: [String]) {
-        self.mdocVPResponeMetadata = mdocVPResponeMetadata
+    init(mdocVPTokenSigningResult:  MdocVPTokenSigningResult,unsignedMdocVPToken:  UnsignedMdocVPToken, credentials: [String]) {
+        self.mdocVPTokenSigningResult = mdocVPTokenSigningResult
         self.unsignedMdocVPToken = unsignedMdocVPToken
         self.credentials = credentials
     }
     
     func build() throws -> VPToken {
         var documents : [CBOR] = []
-        try mdocVPResponeMetadata.validate()
+        try mdocVPTokenSigningResult.validate()
         
         try credentials.forEach { mdocCredential in
             guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
@@ -26,8 +26,8 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             }
             let docTypeString = extractStringFromCBOR(docType)!
             
-            guard let deviceAuthSignature: DeviceAuthentication = mdocVPResponeMetadata.deviceAuthenticationBytesSigned[docTypeString] else {
-                throw Logger.handleException(exceptionType: "MissingInput",message: "Device authentication signature not found for mdoc credential docType \(docTypeString)", fieldPath: ["mdocVPResponeMetadata","deviceAuthenticationBytesSigned","DeviceAuthentication"], className: className)
+            guard let deviceAuthSignature: DeviceAuthentication = mdocVPTokenSigningResult.deviceAuthenticationBytesSigned[docTypeString] else {
+                throw Logger.handleException(exceptionType: "MissingInput",message: "Device authentication signature not found for mdoc credential docType \(docTypeString)", fieldPath: ["mdocVPTokenSigningResult","deviceAuthenticationBytesSigned","DeviceAuthentication"], className: className)
             }
             
             let deviceSignature = try createDeviceSignature(deviceAuthSignature)
