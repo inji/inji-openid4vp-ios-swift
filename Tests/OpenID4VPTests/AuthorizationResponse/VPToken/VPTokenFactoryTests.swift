@@ -15,7 +15,7 @@ final class VPTokenFactoryTests: XCTestCase {
         let nonce = "nonce123"
         let groupedVcs: [FormatType: [Any]] = [.ldp_vc: ["vc1", "vc2"]]
         let factory = VPTokenFactory(
-            vpTokenSigningResult: ldpVpTokenSigningResult,
+            vpTokenSigningResult: ldpVPTokenSigningResult,
             unsignedVPToken: unsignedToken,
             nonce: nonce,
             groupedVcs: groupedVcs
@@ -23,7 +23,7 @@ final class VPTokenFactoryTests: XCTestCase {
         
         let builder = try factory.getVPTokenBuilder(credentialFormat: .ldp_vc)
         
-        XCTAssertTrue(builder is LdpVpTokenBuilder)
+        XCTAssertTrue(builder is LdpVPTokenBuilder)
     }
     
     ///Test credential format - mso_mdoc

@@ -33,7 +33,7 @@ public struct WalletMetadata: Codable {
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
         
-        try validateVpFormatsSupported(vpFormatsSupported)
+        try validateVPFormatsSupported(vpFormatsSupported)
     }
 }
 
@@ -49,7 +49,7 @@ public struct VPFormatSupported: Codable {
     }
 }
 
-private func validateVpFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws {
+private func validateVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws {
     if vpFormatsSupported.isEmpty {
         throw Logger.handleException(
             exceptionType: "InvalidData",

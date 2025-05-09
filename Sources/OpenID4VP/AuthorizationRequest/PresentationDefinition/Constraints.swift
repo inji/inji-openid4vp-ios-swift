@@ -28,7 +28,7 @@ struct Constraints: Codable {
                 className: className,
                 isMandatory: false
             ) else {
-                throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", fieldPath: ["constraints","limit_disclosure"], className: className)
+                throw Logger.handleException(exceptionType: "InvalidLimitDisclosure", className: className)
             }
             self.limitDisclosure = limitDisclosure
             

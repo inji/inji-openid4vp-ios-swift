@@ -32,7 +32,7 @@ public class AuthorizationResponseHandler {
     
     func shareVP(
         authorizationRequest: AuthorizationRequest,
-        vpTokenSigningResults: [FormatType: VpTokenSigningResult],
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         responseUri: String
     ) async throws -> String {
         let authorizationResponse: AuthorizationResponse = try createAuthorizationResponse(
@@ -50,7 +50,7 @@ public class AuthorizationResponseHandler {
     }
     
     //Create authorization response based on response_type
-    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpTokenSigningResults : [FormatType: VpTokenSigningResult]) throws -> AuthorizationResponse {
+    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpTokenSigningResults : [FormatType: VPTokenSigningResult]) throws -> AuthorizationResponse {
         switch authorizationRequest.responseType {
         case ResponseType.vp_token.rawValue:
             var credentialFormatIndex: [FormatType: Int] = [:]
@@ -112,7 +112,7 @@ public class AuthorizationResponseHandler {
     }
     
     private func createVPToken(
-        vpTokenSigningResults: [FormatType: VpTokenSigningResult],
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest,
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
@@ -171,7 +171,7 @@ public class AuthorizationResponseHandler {
     ) -> [DescriptorMap] {
         // In case of only single VP, presentation_submission -> path = $, path_nest = $.<credentialPathIdentifier - internalPath>[n]
         // and in case of multiple VPs, presentation_submission -> path = $[i], path_nest = $[i].<credentialPathIdentifier - internalPath>[n]
-        let multipleVpTokens = credentialFormatIndex.keys.count > 1
+        let multipleVPTokens = credentialFormatIndex.keys.count > 1
         var formatTypeToCredentialIndex: [FormatType: Int] = [:]
         
         let descriptorMappings = credentialsMap.sorted(by: { $0.key < $1.key }).flatMap { (inputDescriptorId, formatMap) in
@@ -179,13 +179,13 @@ public class AuthorizationResponseHandler {
                 let vpTokenIndex = credentialFormatIndex[credentialFormat] ?? -1
                 
                 return credentials.map { credential in
-                    let rootLevelPath = multipleVpTokens ? "$[\(vpTokenIndex)]" : "$"
+                    let rootLevelPath = multipleVPTokens ? "$[\(vpTokenIndex)]" : "$"
                     let credentialIndex = (formatTypeToCredentialIndex[credentialFormat] ?? -1) + 1
                     let vpFormat: VPFormatType
                     let pathNested: PathNested?
                     switch credentialFormat {
                     case .ldp_vc:
-                        let relativePath = "$.\(LdpVpToken.internalPath)[\(credentialIndex)]"
+                        let relativePath = "$.\(LdpVPToken.internalPath)[\(credentialIndex)]"
                         vpFormat = .ldp_vp
                         pathNested = PathNested(
                             id: inputDescriptorId,

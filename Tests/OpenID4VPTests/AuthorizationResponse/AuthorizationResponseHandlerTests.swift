@@ -4,7 +4,7 @@ import XCTest
 final class AuthorizationResponseHandlerTests: XCTestCase {
     let mockNetworkManager = MockNetworkManager()
     let verifiableCredentials: [String: [FormatType: [Any]]] = ["input_descriptor1": [.ldp_vc: ["cred1", "cred3"]], "input_descriptor2": [.ldp_vc: ["cred3"]]]
-    let vpTokenSigningResults = [FormatType.ldp_vc:LdpVpTokenSigningResult(jws: "wemcn3234ns", signatureAlgorithm: "RsaSignature2018", publicKey: "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n", domain: "https://example")]
+    let vpTokenSigningResults = [FormatType.ldp_vc:LdpVPTokenSigningResult(jws: "wemcn3234ns", signatureAlgorithm: "RsaSignature2018", publicKey: "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n", domain: "https://example")]
     let unsignedVPTokens = [FormatType.ldp_vc: UnsignedLdpVPToken(context: ["https://www.w3.org/2018/credentials/v1"], type: ["VerifiablePresentation"], verifiableCredential: ["cred1","cred2", "cred3"], id: "uuid", holder: "wallet/app")]
     
     /// construction of vp_token for signing
@@ -14,12 +14,12 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let vpTokens: [FormatType: UnsignedVPToken] = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")
         
         XCTAssertTrue(vpTokens.keys.count == 1)
-        let ldpVpToken = vpTokens[.ldp_vc] as! UnsignedLdpVPToken
-        XCTAssertEqual(ldpVpToken.verifiableCredential.count, ["cred1", "cred2", "cred3"].count)
-        XCTAssertEqual(ldpVpToken.holder, "")
-        XCTAssertEqual(ldpVpToken.type, ["VerifiablePresentation"])
-        XCTAssertEqual(ldpVpToken.context, ["https://www.w3.org/2018/credentials/v1"])
-        XCTAssertNotNil(UUID(uuidString: ldpVpToken.id), "ID should be a valid UUID")
+        let ldpVPToken = vpTokens[.ldp_vc] as! UnsignedLdpVPToken
+        XCTAssertEqual(ldpVPToken.verifiableCredential.count, ["cred1", "cred2", "cred3"].count)
+        XCTAssertEqual(ldpVPToken.holder, "")
+        XCTAssertEqual(ldpVPToken.type, ["VerifiablePresentation"])
+        XCTAssertEqual(ldpVPToken.context, ["https://www.w3.org/2018/credentials/v1"])
+        XCTAssertNotNil(UUID(uuidString: ldpVPToken.id), "ID should be a valid UUID")
     }
     
     func testConstructUnsignedVPTokensThrowErrorWhenCredentialsListIsEmpty() throws {
@@ -38,7 +38,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(),responseUri : "/response-uri")
         let responseUri = "https://mock-verifier.com"
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
-        let mockVPTokenSigningResults = [FormatType.ldp_vc : LdpVpTokenSigningResult(
+        let mockVPTokenSigningResults = [FormatType.ldp_vc : LdpVPTokenSigningResult(
             jws: "testJWS",
             signatureAlgorithm: "ES256",
             publicKey: "testPublicKey",
@@ -51,10 +51,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         let decodedPresentationSubmission = decodeQueryValue((recordedRequest.requestBody?["presentation_submission"])!)
-        let decodedVpToken = decodeQueryValue((recordedRequest.requestBody?["vp_token"])!)
+        let decodedVPToken = decodeQueryValue((recordedRequest.requestBody?["vp_token"])!)
         XCTAssertTrue(recordedRequest.requestBody?.keys.count == 3)
         assertJsonString(expected: "{\"definition_id\":\"vp_presentation_definition\",\"descriptor_map\":[{\"path_nested\":{\"path\":\"$.verifiableCredential[0]\",\"id\":\"input_descriptor1\",\"format\":\"ldp_vc\"},\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor1\",\"path_nested\":{\"id\":\"input_descriptor1\",\"format\":\"ldp_vc\",\"path\":\"$.verifiableCredential[1]\"},\"path\":\"$\"},{\"format\":\"ldp_vp\",\"id\":\"input_descriptor2\",\"path\":\"$\",\"path_nested\":{\"format\":\"ldp_vc\",\"path\":\"$.verifiableCredential[2]\",\"id\":\"input_descriptor2\"}}]}", actual: decodedPresentationSubmission, strict: false)
-        assertJsonString(expected: "{\r\n  \"proof\" : {\r\n    \"challenge\" : \"nonce\",\r\n    \"jws\" : \"testJWS\",\r\n    \"verificationMethod\" : \"testPublicKey\",\r\n    \"domain\" : \"testDomain\",\r\n    \"type\" : \"ES256\",\r\n    \"proofPurpose\" : \"authentication\"\r\n  },\r\n  \"type\" : [\r\n    \"VerifiablePresentation\"\r\n  ],\r\n  \"@context\" : [\r\n    \"https:\\/\\/www.w3.org\\/2018\\/credentials\\/v1\"\r\n  ],\r\n  \"holder\" : \"\",\r\n  \"verifiableCredential\" : [\r\n    \"cred1\",\r\n    \"cred3\",\r\n    \"cred3\"\r\n  ]\r\n}", actual: decodedVpToken, strict: false)
+        assertJsonString(expected: "{\r\n  \"proof\" : {\r\n    \"challenge\" : \"nonce\",\r\n    \"jws\" : \"testJWS\",\r\n    \"verificationMethod\" : \"testPublicKey\",\r\n    \"domain\" : \"testDomain\",\r\n    \"type\" : \"ES256\",\r\n    \"proofPurpose\" : \"authentication\"\r\n  },\r\n  \"type\" : [\r\n    \"VerifiablePresentation\"\r\n  ],\r\n  \"@context\" : [\r\n    \"https:\\/\\/www.w3.org\\/2018\\/credentials\\/v1\"\r\n  ],\r\n  \"holder\" : \"\",\r\n  \"verifiableCredential\" : [\r\n    \"cred1\",\r\n    \"cred3\",\r\n    \"cred3\"\r\n  ]\r\n}", actual: decodedVPToken, strict: false)
         XCTAssertEqual("state", recordedRequest.requestBody?["state"])
     }
     
@@ -69,14 +69,14 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let mockAuthorizationRequest = getMockAuthorizationRequest(responseMode: .directPostJwt)
         let responseUri = "https://mock-verifier.com"
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
-        let mockVPTokenSigningResults : [FormatType: VpTokenSigningResult] = [
-            .ldp_vc : LdpVpTokenSigningResult(
+        let mockVPTokenSigningResults : [FormatType: VPTokenSigningResult] = [
+            .ldp_vc : LdpVPTokenSigningResult(
                 jws: "testJWS",
                 signatureAlgorithm: "ES256",
                 publicKey: "testPublicKey",
                 domain: "testDomain"
             ),
-            .mso_mdoc: MdocVpTokenSigningResult(
+            .mso_mdoc: MdocVPTokenSigningResult(
                 deviceAuthenticationBytesSigned: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]
             )
         ]

@@ -145,7 +145,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
  let trustedVerifiers: [Verifier] = [Verifier(clientId: "https://mock-verifier.com", responseUris:["https://mock-verifier.com/response"]
 
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
-                urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri,
+                urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri,
                 trustedVerifierJSON: trustedVerifiers),
                 walletMetadata: walletMetadata,
                 shouldValidateClient: true
@@ -208,30 +208,30 @@ let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUns
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
 ### shareVerifiablePresentation
-- This function constructs a vp_token with proof using received VpTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
+- This function constructs a vp_token with proof using received VPTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
 ```swift
-    let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: [FormatType:VpTokenSigningResult])
+    let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
 ```
 
 ###### Parameters
 
 | Name                | Type                             | Description                                                                                                                                                 |
 |---------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpTokenSigningResults | [FormatType: VpTokenSigningResult] | This will be a map with key as credential format and value as VpTokenSigningResult (which is specific to respective credential format's required information) |
+| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
 
 
 ###### Example usage
 
 ```swift
-let ldpVpTokenSigningResult = LdpVpTokenSigningResult(
+let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
     jws : "ey....qweug",
     signatureAlgorithm : "RsaSignature2018",
     publicKey : publicKey,
     domain : "<domain>"
 )
-let vpTokenSigningResults : [FormatType: VpTokenSigningResult] = [FormatType.LDP_VC : ldpVpTokenSigningResult]
+let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.LDP_VC : ldpVPTokenSigningResult]
 val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults : vpTokenSigningResults)
 ```
 

@@ -23,7 +23,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
         case .invalidQueryParams(let message):
             return message
         case .invalidLimitDisclosure:
-            return "Invalid Input: constraints->limit_disclosure value should be either required or preferred"
+            return "Invalid Input: constraints->limit_disclosure value should be preferred"
         case .decodingException(let fieldPath):
             return "Error occurred while decoding \(fieldPath)"
         case .utf8Encoding(let fieldPath):

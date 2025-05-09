@@ -72,7 +72,7 @@ final class ConstraintsTests: XCTestCase {
                             }
                         }
                     ],
-                    "limit_disclosure": "required"
+                    "limit_disclosure": "preferred"
                 }
                 """,
                 expectedError: "Missing Input: fields->path param is required"

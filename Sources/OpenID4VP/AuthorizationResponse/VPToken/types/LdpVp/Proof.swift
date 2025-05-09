@@ -10,7 +10,7 @@ struct Proof: Encodable {
     let verificationMethod: String
 
     static func construct(
-        from vpTokenSigningResult: LdpVpTokenSigningResult,
+        from vpTokenSigningResult: LdpVPTokenSigningResult,
         challenge: String
     ) -> Proof {
 

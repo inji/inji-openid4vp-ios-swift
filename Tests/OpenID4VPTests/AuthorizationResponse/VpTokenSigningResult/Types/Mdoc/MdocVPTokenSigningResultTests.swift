@@ -1,26 +1,26 @@
 import XCTest
 @testable import OpenID4VP
 
-final class MdocVpTokenSigningResultTests: XCTestCase {
-    func testMdocVpTokenSigningResultSuccess() {
+final class MdocVPTokenSigningResultTests: XCTestCase {
+    func testMdocVPTokenSigningResultSuccess() {
         let validDeviceAuth = DeviceAuthentication(
             signature: "validSignature",
             algorithm: "ES256"
         )
         
         let deviceAuthMap = ["org.iso.18013.5.1.mosip": validDeviceAuth]
-        let validMetadata = MdocVpTokenSigningResult(deviceAuthenticationBytesSigned: deviceAuthMap)
+        let validMetadata = MdocVPTokenSigningResult(deviceAuthenticationBytesSigned: deviceAuthMap)
         
         XCTAssertNoThrow(try validMetadata.validate())
     }
     
-    func testMdocVpTokenSigningResultWitInvalidDeviceAuthentication() {
+    func testMdocVPTokenSigningResultWitInvalidDeviceAuthentication() {
         let invalidDeviceAuth = DeviceAuthentication(
             signature: "",
             algorithm: "ES256"
         )
         
-        let invalidMetadata = MdocVpTokenSigningResult(
+        let invalidMetadata = MdocVPTokenSigningResult(
             deviceAuthenticationBytesSigned: ["org.iso.18013.5.1.mosip": invalidDeviceAuth]
         )
         
@@ -29,13 +29,13 @@ final class MdocVpTokenSigningResultTests: XCTestCase {
         }
     }
     
-    func testMdocVpTokenSigningResultWithEmptyInputPassed() {
-        let invalidMetadata = MdocVpTokenSigningResult(
+    func testMdocVPTokenSigningResultWithEmptyInputPassed() {
+        let invalidMetadata = MdocVPTokenSigningResult(
             deviceAuthenticationBytesSigned: [:]
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Input: MdocVpTokenSigningResult->deviceAuthenticationBytesSigned value cannot be empty or null")
+            XCTAssertEqual(error.localizedDescription, "Invalid Input: MdocVPTokenSigningResult->deviceAuthenticationBytesSigned value cannot be empty or null")
         }
     }
 }

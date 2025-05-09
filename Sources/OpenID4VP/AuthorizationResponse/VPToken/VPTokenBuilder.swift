@@ -1,5 +1,5 @@
 import Foundation
 
-protocol VpTokenBuilder {
+protocol VPTokenBuilder {
     func build() throws -> VPToken
 }
