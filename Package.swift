@@ -14,16 +14,18 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/beatt83/jose-swift.git", .upToNextMinor(from: "4.0.2")),
-        .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMajor(from: "5.10.0"))
+        .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMajor(from: "5.10.0")),
+        .package(url: "https://github.com/valpackett/SwiftCBOR.git",  .upToNextMajor(from: "0.5.0")),
     ],
     targets: [
         .target(
             name: "OpenID4VP",
             dependencies: [
-                "jose-swift", "Alamofire"
+                "jose-swift", "Alamofire", "SwiftCBOR"
             ]),
         .testTarget(
             name: "OpenID4VPTests",
-            dependencies: ["OpenID4VP","jose-swift","Alamofire"]),
+            dependencies: ["OpenID4VP","jose-swift","Alamofire", "SwiftCBOR"]
+        ),
     ]
 )

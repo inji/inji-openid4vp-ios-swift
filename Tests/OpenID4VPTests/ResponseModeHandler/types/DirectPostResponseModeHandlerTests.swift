@@ -2,20 +2,20 @@ import XCTest
 @testable import OpenID4VP
 
 final class DirectPostResponseModeHandlerTests: XCTestCase {
-    let mockVPTokens = VPTokenType.vpTokenElement(LdpVpToken(context: ["context"], type: ["typ1"], verifiableCredential: ["VC1"], id: "identifier", holder: "holder", proof: Proof(type: "Ed25519Signature2018", created: "2021-03-19T15:30:15Z", challenge: "n-0S6_WzA2Mj", domain: "https://client.example.org/cb", jws: "eyJhbG...IAoDA", proofPurpose: .vpProofPurpose, verificationMethod: "did:example:holder#key-1")))
+    let mockVPTokens = VPTokenType.vpTokenElement(LdpVPToken(context: ["context"], type: ["typ1"], verifiableCredential: ["VC1"], id: "identifier", holder: "holder", proof: Proof(type: "Ed25519Signature2018", created: "2021-03-19T15:30:15Z", challenge: "n-0S6_WzA2Mj", domain: "https://client.example.org/cb", jws: "eyJhbG...IAoDA", proofPurpose: .vpProofPurpose, verificationMethod: "did:example:holder#key-1")))
     
-    let mockPresentationSubmission = PresentationSubmission(definition_id: "client-identifier", descriptor_map: [DescriptorMap(id: "input_1", format: .ldp_vp, path: "$", pathNested: PathNested(id: "input_1", format: .ldp_vc, path: "$.verifiableCredential[0]"))])
+    let mockPresentationSubmission = PresentationSubmission(definitionId: "client-identifier", descriptorMap: [DescriptorMap(id: "input_1", format: .ldp_vp, path: "$", pathNested: PathNested(id: "input_1", format: .ldp_vc, path: "$.verifiableCredential[0]"))])
     
     private let mockNetworkManager = MockNetworkManager()
     private let responseUri = "https://mock-verifier.com"
     
     private var walletMetadata: WalletMetadata!
-
-        override func setUpWithError() throws {
-            walletMetadata = try createWalletMetadata()
-        }
-
-
+    
+    override func setUpWithError() throws {
+        walletMetadata = try createWalletMetadata()
+    }
+    
+    
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
         
@@ -28,7 +28,9 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
         
         do {
-            let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager)
+            let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager,
+                producerInfo: "wallet-nonce",
+                recepientInfo: "verifier-nonce")
             
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
             XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)

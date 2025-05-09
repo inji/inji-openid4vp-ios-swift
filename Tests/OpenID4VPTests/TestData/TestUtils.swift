@@ -152,7 +152,7 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
         clientId: "client_id",
         presentationDefinition: mockPresentationDefinitionObject,
         responseType: responseType,
-        responseMode: ResponseMode.directPost.rawValue,
+        responseMode: responseMode.rawValue,
         nonce: "nonce",
         state: "state",
         redirectUri: "1234",

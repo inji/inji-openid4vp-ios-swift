@@ -5,9 +5,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case jsonEncodingFailed(fieldPath: String, message: String)
     case invalidPresentationDefinition
     case invalidQueryParams(message: String)
-    case invalidInput(fieldPath: String)
     case invalidLimitDisclosure
-    case missingInput(fieldPath: String)
     case decodingException(fieldPath: String)
     case utf8Encoding(fieldPath: String)
     case urlCreationFailed(message: String)
@@ -22,14 +20,10 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     
     public var errorDescription: String? {
         switch self {
-        case .invalidInput(let fieldName):
-            return "Invalid Input: \(fieldName) value cannot be empty or null"
-        case .missingInput(let fieldName):
-            return "Missing Input: \(fieldName) param is required"
         case .invalidQueryParams(let message):
             return message
         case .invalidLimitDisclosure:
-            return "Invalid Input: constraints->limit_disclosure value should be either required or preferred"
+            return "Invalid Input: constraints->limit_disclosure value should be preferred"
         case .decodingException(let fieldPath):
             return "Error occurred while decoding \(fieldPath)"
         case .utf8Encoding(let fieldPath):

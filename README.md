@@ -19,23 +19,32 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 | Feature                                                    | Supported values                                                                                                                                                                                                                                                                                                                                                   |
 |------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Device flow                                                | cross device flow                                                                                                                                                                                                                                                                                                                                                  |
+| Device flow                                                | cross device flow, Same device flow                                                                                                                                                                                                                                                                                                                                |
 | Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                                                                                                                                                                                            |
 | Signed authorization request verification algorithms       | Ed25519                                                                                                                                                                                                                                                                                                                                                            |
 | Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html#section-3.2))]_ |
 | Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                                                                                                                                                                                         |
+| Presentation Request                                       | Presentation Exchange                                                                                                                                                                                                                                                                                                                                              |
 | Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                                                                                                                                                                                             |
 | Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                                                                                                                                                                                          |
 | Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                                                                                                                                                                                                                                                                                          |
 | Authorization Response type                                | `vp_token`                                                                                                                                                                                                                                                                                                                                                         |
+| Supported Credential formats                               | `ldp_vc`, `mso_mdoc`                                                                                                                                                                                                                                                                                                                                               |
 
+#### Notes on Supported response modes
+1. `direct_post` : 
+   - Authorization Response is sent as a POST request to the `response_uri` endpoint. Authorization Response is attached as request body in `application/x-www-form-urlencoded` HTTP content type
+2. `direct_post.jwt` : 
+   - Authorization Response is sent as a POST request to the `response_uri` endpoint. 
+   - Authorization Response is attached as request body in `application/x-www-form-urlencoded` HTTP content type. 
+   - The response is encrypted using the public key provided in the client_metadata of the authorization request.
+   - The created JWE's header contains the `apu` (producer info) as wallet generated nonce (with entropy 16 bytes) and `apv` (recipient info) as the verifier nonce i.e., the nonce received in the authorization request.
 
 ## Specifications supported
 - The implementation follows OpenID for Verifiable Presentations - draft 23. [Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html).
 - Below are the fields we expect in the authorization request based on the client id scheme,
   - Client_id_scheme is **_pre-registered_**
     * client_id
-    * client_id_scheme
     * presentation_definition/presentation_definition_uri
     * response_type
     * response_mode
@@ -46,7 +55,6 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
   - Client_id_scheme is **_redirect_uri_**
     * client_id
-    * client_id_scheme
     * presentation_definition/presentation_definition_uri
     * response_type
     * nonce
@@ -57,7 +65,6 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
   - **_Request Uri_** is also supported as part of this version.
   - When request_uri is passed as part of the authorization request, below are the fields we expect in the authorization request,
      * client_id
-     * client_id_scheme
      * request_uri
      * request_uri_method
    
@@ -138,7 +145,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
  let trustedVerifiers: [Verifier] = [Verifier(clientId: "https://mock-verifier.com", responseUris:["https://mock-verifier.com/response"]
 
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
-                urlEncodedAuthorizationRequest: testValidUrlEncodedVpRequestWithRedirectUri,
+                urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri,
                 trustedVerifierJSON: trustedVerifiers),
                 walletMetadata: walletMetadata,
                 shouldValidateClient: true
@@ -201,31 +208,31 @@ let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUns
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
 ### shareVerifiablePresentation
-- This function constructs a vp_token with proof using received VPResponseMetadata, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
+- This function constructs a vp_token with proof using received VPTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
 ```swift
-    let response = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata: [FormatType:VPResponseMetadata])
+    let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
 ```
 
 ###### Parameters
 
 | Name                | Type                             | Description                                                                                                                                                 |
 |---------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpResponsesMetadata | [FormatType: VPResponseMetadata] | This will be a map with key as credential format and value as VPResponseMetadata (which is specific to respective credential format's required information) |
+| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
 
 
 ###### Example usage
 
 ```swift
-let ldpVpResponseMetadata = LdpVPResponseMetadata(
+let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
     jws : "ey....qweug",
     signatureAlgorithm : "RsaSignature2018",
     publicKey : publicKey,
     domain : "<domain>"
 )
-let vpResponsesMetadata : [FormatType: VPResponseMetadata] = [FormatType.LDP_VC : ldpVpResponseMetadata]
-val response : String = try await openID4VP.shareVerifiablePresentation(vpResponsesMetadata : vpResponsesMetadata)
+let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.LDP_VC : ldpVPTokenSigningResult]
+val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults : vpTokenSigningResults)
 ```
 
 ###### Exceptions

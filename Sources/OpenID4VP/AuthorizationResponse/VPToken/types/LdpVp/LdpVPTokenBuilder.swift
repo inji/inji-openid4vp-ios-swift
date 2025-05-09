@@ -1,20 +1,20 @@
 import Foundation
 
-class LdpVpTokenBuilder : VpTokenBuilder {
-    private(set) var ldpVPResponseMetadata:  LdpVPResponseMetadata
+class LdpVPTokenBuilder : VPTokenBuilder {
+    private(set) var ldpVPTokenSigningResult:  LdpVPTokenSigningResult
     private(set) var unsignedLdpVPToken:  UnsignedLdpVPToken
     private(set) var nonce: String
     
-    init(ldpVPResponseMetadata:  LdpVPResponseMetadata,unsignedLdpVPToken:  UnsignedLdpVPToken, nonce: String) {
-        self.ldpVPResponseMetadata = ldpVPResponseMetadata
+    init(ldpVPTokenSigningResult:  LdpVPTokenSigningResult,unsignedLdpVPToken:  UnsignedLdpVPToken, nonce: String) {
+        self.ldpVPTokenSigningResult = ldpVPTokenSigningResult
         self.unsignedLdpVPToken = unsignedLdpVPToken
         self.nonce = nonce
     }
     
     func build() throws -> VPToken {
-        try ldpVPResponseMetadata.validate()
-        let proof = Proof.construct(from: ldpVPResponseMetadata, challenge: self.nonce)
-        return LdpVpToken(
+        try ldpVPTokenSigningResult.validate()
+        let proof = Proof.construct(from: ldpVPTokenSigningResult, challenge: self.nonce)
+        return LdpVPToken(
             context: unsignedLdpVPToken.context,
             type: unsignedLdpVPToken.type,
             verifiableCredential: unsignedLdpVPToken.verifiableCredential,

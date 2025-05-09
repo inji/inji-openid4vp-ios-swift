@@ -7,7 +7,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         return
     }
     
-    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging) async throws -> String {
+    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging, producerInfo: String, recepientInfo: String) async throws -> String {
         let requestBody: [String: String] = try authorizationResponse.toJsonEncodedMap()
         
         let response = try await networkManager.sendHTTPRequest(url: url, method: .post, bodyParams: requestBody, headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue])

@@ -7,7 +7,7 @@ public struct WalletMetadata: Codable {
     var requestObjectSigningAlgValuesSupported: [String]?
     let authorizationEncryptionAlgValuesSupported: [String]?
     let authorizationEncryptionEncValuesSupported: [String]?
-    let className = String(describing: WalletMetadata.self)
+    static let className = String(describing: WalletMetadata.self)
     
     enum CodingKeys: String, CodingKey {
         case presentationDefinitionURISupported = "presentation_definition_uri_supported"
@@ -33,7 +33,7 @@ public struct WalletMetadata: Codable {
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
         
-        try validateVpFormatsSupported(vpFormatsSupported)
+        try validateVPFormatsSupported(vpFormatsSupported)
     }
 }
 
@@ -49,12 +49,12 @@ public struct VPFormatSupported: Codable {
     }
 }
 
-private func validateVpFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws {
+private func validateVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws {
     if vpFormatsSupported.isEmpty {
         throw Logger.handleException(
             exceptionType: "InvalidData",
             message: "vp_formats_supported should at least have one supported vp_format",
-            className: className
+            className: WalletMetadata.className
         )
     }
 
@@ -62,7 +62,7 @@ private func validateVpFormatsSupported(_ vpFormatsSupported: [String: VPFormatS
         throw Logger.handleException(
             exceptionType: "InvalidData",
             message: "vp_formats_supported cannot have empty keys.",
-            className: className
+            className: WalletMetadata.className
         )
     }
 }

@@ -1,19 +1,23 @@
 import Foundation
-
 public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
     private var unsignedVPTokens: [FormatType: UnsignedVPToken] = [:]
     private var path: [FormatType: (index: Int, nestedIndex: Int)] = [:]
     private var credentialsMap: [String: [FormatType: Array<Any>]]?
+    private let walletNonce: String
     
     public static let className = String(describing: AuthorizationResponseHandler.self)
     
     public init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
+        //Nonce of entropy 16 bytes
+        self.walletNonce =  (createNonce())
     }
     
     func constructUnsignedVPToken(
-        credentialsMap: [String: [FormatType: Array<Any>]]
+        credentialsMap: [String: [FormatType: Array<Any>]],
+        authorizationRequest: AuthorizationRequest,
+        responseUri: String
     ) throws -> [FormatType: UnsignedVPToken] {
         if (credentialsMap.isEmpty) {
             throw Logger.handleException(
@@ -22,34 +26,36 @@ public class AuthorizationResponseHandler {
             )
         }
         self.credentialsMap = credentialsMap
-        self.unsignedVPTokens = try createUnsignedVPTokens(credentialsMap: credentialsMap)
+        self.unsignedVPTokens = try createUnsignedVPTokens(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri)
         return self.unsignedVPTokens
     }
     
     func shareVP(
         authorizationRequest: AuthorizationRequest,
-        vpResponsesMetadata: [FormatType: VPResponseMetadata],
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         responseUri: String
     ) async throws -> String {
         let authorizationResponse: AuthorizationResponse = try createAuthorizationResponse(
             authorizationRequest : authorizationRequest,
-            vpResponsesMetadata : vpResponsesMetadata
+            vpTokenSigningResults : vpTokenSigningResults
         )
         
         return try await sendAuthorizationResponse(
             authorizationRequest: authorizationRequest,
             authorizationResponse : authorizationResponse,
-            responseUri : responseUri
+            responseUri : responseUri,
+            producerInfo: walletNonce,
+            recepientInfo: authorizationRequest.nonce
         )
     }
     
     //Create authorization response based on response_type
-    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpResponsesMetadata : [FormatType: VPResponseMetadata]) throws -> AuthorizationResponse {
+    private func createAuthorizationResponse(authorizationRequest: AuthorizationRequest, vpTokenSigningResults : [FormatType: VPTokenSigningResult]) throws -> AuthorizationResponse {
         switch authorizationRequest.responseType {
         case ResponseType.vp_token.rawValue:
             var credentialFormatIndex: [FormatType: Int] = [:]
             let vpToken = try createVPToken(
-                vpResponsesMetadata: vpResponsesMetadata,
+                vpTokenSigningResults: vpTokenSigningResults,
                 authorizationRequest: authorizationRequest,
                 credentialFormatIndex: &credentialFormatIndex
             )
@@ -65,12 +71,13 @@ public class AuthorizationResponseHandler {
     }
     
     //Send authorization response based on response_mode
-    private func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest ,authorizationResponse: AuthorizationResponse, responseUri: String) async throws -> String {
+    private func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest ,authorizationResponse: AuthorizationResponse, responseUri: String, producerInfo: String,
+                                           recepientInfo: String) async throws -> String {
         return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
-            .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager)
+            .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager, producerInfo: producerInfo, recepientInfo: recepientInfo)
     }
     
-    private func createUnsignedVPTokens(credentialsMap: [String: [FormatType: [Any]]]) throws -> [FormatType: UnsignedVPToken] {
+    private func createUnsignedVPTokens(credentialsMap: [String: [FormatType: [Any]]], authorizationRequest: AuthorizationRequest, responseUri : String) throws -> [FormatType: UnsignedVPToken] {
         let groupedVcs: [FormatType: [Any]] = credentialsMap
             .sorted(by: { $0.key < $1.key })
             .compactMap { $0.value }
@@ -91,26 +98,44 @@ public class AuthorizationResponseHandler {
                         message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
                     )
                 }
-                result[format] = UnsignedLdpVPToken(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "")
+                result[format] = try UnsignedLdpVPTokenBuilder(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "").build()
+            case .mso_mdoc:
+                guard let stringCredentials = credentials as? [String] else {
+                    throw Logger.handleException(
+                        exceptionType : "InvalidData",
+                        message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
+                    )
+                }
+                result[format] = try UnsignedMdocVPTokenBuilder(mdocCredentials: stringCredentials, clientId: authorizationRequest.clientId, responseUri: responseUri, verifierNonce: authorizationRequest.nonce, mdocGeneratedNonce: walletNonce).build()
             }
         }
     }
     
     private func createVPToken(
-        vpResponsesMetadata: [FormatType: VPResponseMetadata],
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest,
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
+                
+        // create an map of credential format to credentials from credentialsMap
+        let groupedVcs: [FormatType: [Any]] = credentialsMap?
+            .compactMap { $0.value }
+            .reduce(into: [FormatType: [Any]]()) { result, entry in
+                for (key, value) in entry {
+                    result[key, default: []].append(contentsOf: value)
+                }
+            } ?? [:]
         
         var count = 0
-        for (credentialFormat, vpResponseMetadata) in vpResponsesMetadata {
+        for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             let vpToken = try VPTokenFactory(
-                vpResponseMetadata: vpResponseMetadata,
+                vpTokenSigningResult: vpTokenSigningResult,
                 unsignedVPToken: unsignedVPTokens[credentialFormat] ?? {
                     throw Logger.handleException(exceptionType: "InvalidData", message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map", className: AuthorizationResponseHandler.className)
                 }(),
-                nonce: authorizationRequest.nonce
+                nonce: authorizationRequest.nonce,
+                groupedVcs: groupedVcs
             ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
             
             vpTokens.append(vpToken)
@@ -133,8 +158,8 @@ public class AuthorizationResponseHandler {
         let presentationDefinitionId = (authorizationRequest.presentationDefinition ).id
         
         return PresentationSubmission(
-            definition_id: presentationDefinitionId,
-            descriptor_map: descriptorMap
+            definitionId: presentationDefinitionId,
+            descriptorMap: descriptorMap
         )
     }
     
@@ -146,7 +171,7 @@ public class AuthorizationResponseHandler {
     ) -> [DescriptorMap] {
         // In case of only single VP, presentation_submission -> path = $, path_nest = $.<credentialPathIdentifier - internalPath>[n]
         // and in case of multiple VPs, presentation_submission -> path = $[i], path_nest = $[i].<credentialPathIdentifier - internalPath>[n]
-        let multipleVpTokens = credentialFormatIndex.keys.count > 1
+        let multipleVPTokens = credentialFormatIndex.keys.count > 1
         var formatTypeToCredentialIndex: [FormatType: Int] = [:]
         
         let descriptorMappings = credentialsMap.sorted(by: { $0.key < $1.key }).flatMap { (inputDescriptorId, formatMap) in
@@ -154,22 +179,25 @@ public class AuthorizationResponseHandler {
                 let vpTokenIndex = credentialFormatIndex[credentialFormat] ?? -1
                 
                 return credentials.map { credential in
-                    let rootLevelPath = multipleVpTokens ? "$[\(vpTokenIndex)]" : "$"
+                    let rootLevelPath = multipleVPTokens ? "$[\(vpTokenIndex)]" : "$"
                     let credentialIndex = (formatTypeToCredentialIndex[credentialFormat] ?? -1) + 1
                     let vpFormat: VPFormatType
                     let pathNested: PathNested?
                     switch credentialFormat {
                     case .ldp_vc:
-                        let relativePath = "$.\(LdpVpToken.internalPath)[\(credentialIndex)]"
-                        vpFormat = VPFormatType.ldp_vp
+                        let relativePath = "$.\(LdpVPToken.internalPath)[\(credentialIndex)]"
+                        vpFormat = .ldp_vp
                         pathNested = PathNested(
                             id: inputDescriptorId,
                             format: credentialFormat,
                             path: relativePath
                         )
+                    case .mso_mdoc:
+                        // In case of mso_mdoc, path is $[i]
+                        pathNested = nil
+                        vpFormat = .mso_mdoc
                     }
                     formatTypeToCredentialIndex[credentialFormat] = credentialIndex
-                    
                     
                     return DescriptorMap(
                         id: inputDescriptorId,

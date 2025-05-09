@@ -4,11 +4,11 @@ struct AuthorizationResponse {
     let vpToken: VPTokenType
     let presentation_submission: PresentationSubmission
     let state: String?
-    let className = String(describing: AuthorizationResponse.self)
+    static let className = String(describing: AuthorizationResponse.self)
 
     func toJsonEncodedMap() throws -> [String: String] {
         let encodedVPTokenData =  vpToken.encoded ?? ""
-        let encodedPresentationSubmission = try encode(self.presentation_submission, fieldName: "presentation_submission", className: className)
+        let encodedPresentationSubmission = try encode(self.presentation_submission, fieldName: "presentation_submission", className: AuthorizationResponse.className)
         var bodyParams: [String: String] = [
             "vp_token": encodedVPTokenData,
             "presentation_submission": encodedPresentationSubmission
@@ -37,11 +37,11 @@ extension VPTokenType {
         do {
             switch self {
             case .vpTokenArray(let tokens):
-                let encodedTokens = try tokens.map { try encode($0, fieldName: "vpToken", className: className) }
-                return try encode(encodedTokens, fieldName: "vpTokenArray", className: className)
+                let encodedTokens = try tokens.map { try encode($0, fieldName: "vpToken", className: AuthorizationResponse.className) }
+                return try encode(encodedTokens, fieldName: "vpTokenArray", className: AuthorizationResponse.className)
 
             case .vpTokenElement(let token):
-                let encodedToken = try encode(token, fieldName: "vpTokenElement", className: className)
+                let encodedToken = try encode(token, fieldName: "vpTokenElement", className: AuthorizationResponse.className)
                 return encodedToken
             }
         } catch {

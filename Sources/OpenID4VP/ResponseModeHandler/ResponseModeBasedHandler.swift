@@ -7,13 +7,15 @@ protocol ResponseModeBasedHandler {
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest,
                                    authorizationResponse: AuthorizationResponse,
                                    url: String,
-                                   networkManager: NetworkManaging
-                                   ) async throws -> String
+                                   networkManager: NetworkManaging,
+                                   producerInfo: String,
+                                   recepientInfo: String
+    ) async throws -> String
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
 }
 
 extension ResponseModeBasedHandler {
-
+    
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws {
         
         try validateAttribute(AuthorizationRequestFieldConstants.responseUri.rawValue, values: authorizationRequestParameters)

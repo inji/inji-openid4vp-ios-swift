@@ -3,9 +3,9 @@ import XCTest
 
 final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     private let directPostJwtResponseModeHandler = DirectPostJwtResponseModeHandler()
-    let mockVPTokens = VPTokenType.vpTokenElement(LdpVpToken(context: ["context"], type: ["typ1"], verifiableCredential: ["VC1"], id: "identifier", holder: "holder", proof: Proof(type: "Ed25519Signature2018", created: "2021-03-19T15:30:15Z", challenge: "n-0S6_WzA2Mj", domain: "https://client.example.org/cb", jws: "eyJhbG...IAoDA", proofPurpose: .vpProofPurpose, verificationMethod: "did:example:holder#key-1")))
-
-    let mockPresentationSubmission = PresentationSubmission(definition_id: "client-identifier", descriptor_map: [DescriptorMap(id: "input_1", format: .ldp_vp, path: "$", pathNested: PathNested(id: "input_1", format: .ldp_vc, path: "$.verifiableCredential[0]"))])
+    let mockVPTokens = VPTokenType.vpTokenElement(LdpVPToken(context: ["context"], type: ["typ1"], verifiableCredential: ["VC1"], id: "identifier", holder: "holder", proof: Proof(type: "Ed25519Signature2018", created: "2021-03-19T15:30:15Z", challenge: "n-0S6_WzA2Mj", domain: "https://client.example.org/cb", jws: "eyJhbG...IAoDA", proofPurpose: .vpProofPurpose, verificationMethod: "did:example:holder#key-1")))
+    
+    let mockPresentationSubmission = PresentationSubmission(definitionId: "client-identifier", descriptorMap: [DescriptorMap(id: "input_1", format: .ldp_vp, path: "$", pathNested: PathNested(id: "input_1", format: .ldp_vc, path: "$.verifiableCredential[0]"))])
     private let mockNetworkManager = MockNetworkManager()
     private let responseUri = "https://mock-verifier.com"
     
@@ -14,8 +14,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     override func setUpWithError() throws {
         walletMetadata = try createWalletMetadata()
     }
-
-/// client metadata validation tests
+    
+    /// client metadata validation tests
     
     func testThrowErrorWhenClientMetadataIsNil() throws {
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: nil, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
@@ -54,7 +54,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                 ]
             ]
         ]
-
+        
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->authorization_encrypted_response_alg param is required", error.localizedDescription)
         }
@@ -91,7 +91,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                 ]
             ]
         ]
-
+        
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->authorization_encrypted_response_enc param is required", error.localizedDescription)
         }
@@ -119,7 +119,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                 ]
             ]
         ]
-
+        
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->jwks param is required", error.localizedDescription)
         }
@@ -157,7 +157,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                 ]
             ]
         ]
-
+        
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("No jwk matching the specified algorithm found", error.localizedDescription)
         }
@@ -225,8 +225,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         ]
         
         let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: ["ECDH-ES"], authorizationEncryptionEncValuesSupported: ["A256GCM"])
-
-
+        
+        
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("authorization_encrypted_response_alg is not supported", error.localizedDescription)
         }
@@ -258,7 +258,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                 ]
             ]
         ]
-
+        
         // Wallet metadata is nil
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: nil, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("wallet_metadata must be present", error.localizedDescription)
@@ -281,14 +281,17 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         XCTAssertNoThrow(try directPostJwtResponseModeHandler.validate(clientMetadata: mockClientMetadataObject,walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true))
     }
     
- /// Send authorization response tests
-
+    /// Send authorization response tests
+    
     func testSendAuthorizationResponseForDirectPostJwtResponseMode()  async throws {
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
         let authorizationResponse: AuthorizationResponse = AuthorizationResponse(vpToken: mockVPTokens, presentation_submission: mockPresentationSubmission, state: "state")
         
         do {
-            let result = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode.responseUri!, networkManager: mockNetworkManager)
+            let result = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode.responseUri!, networkManager: mockNetworkManager,
+                producerInfo: "wallet-nonce",
+                recepientInfo: "verifier-nonce"
+            )
             
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
             XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)

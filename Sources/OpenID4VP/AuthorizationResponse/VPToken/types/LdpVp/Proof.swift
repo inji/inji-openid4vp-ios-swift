@@ -10,7 +10,7 @@ struct Proof: Encodable {
     let verificationMethod: String
 
     static func construct(
-        from vpResponseMetadata: LdpVPResponseMetadata,
+        from vpTokenSigningResult: LdpVPTokenSigningResult,
         challenge: String
     ) -> Proof {
 
@@ -20,13 +20,13 @@ struct Proof: Encodable {
         let createdDateAndTime = formatter.string(from: Date())
 
         return Proof(
-            type: vpResponseMetadata.signatureAlgorithm,
+            type: vpTokenSigningResult.signatureAlgorithm,
             created: createdDateAndTime,
             challenge: challenge,
-            domain: vpResponseMetadata.domain,
-            jws: vpResponseMetadata.jws,
+            domain: vpTokenSigningResult.domain,
+            jws: vpTokenSigningResult.jws,
             proofPurpose: .vpProofPurpose,
-            verificationMethod: vpResponseMetadata.publicKey
+            verificationMethod: vpTokenSigningResult.publicKey
         )
     }
 }

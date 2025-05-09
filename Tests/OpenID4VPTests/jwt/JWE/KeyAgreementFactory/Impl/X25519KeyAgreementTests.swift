@@ -6,7 +6,7 @@ final class X25519KeyAgreementTests: XCTestCase {
         let mockJWK = mockClientMetadataObject.jwks?.keys[0]
         
         let keyAgreement = X25519KeyAgreement()
-        let header = keyAgreement.getJWEHeader(alg: "ECDH-ES", enc: "A256GCM", jwk: mockJWK!)
+        let header = keyAgreement.getJWEHeader(alg: "ECDH-ES", enc: "A256GCM", jwk: mockJWK!, producerInfo: "wallet-nonce", recipientInfo: "verifier-nonce")
         
         XCTAssertEqual(header["alg"] as? String, "ECDH-ES")
         XCTAssertEqual(header["enc"] as? String, "A256GCM")

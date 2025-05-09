@@ -14,7 +14,7 @@ public struct AuthorizationRequest : Encodable {
     var clientMetadata: ClientMetadata?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
-    
+
     enum CodingKeys: String, CodingKey {
         case client_id
         case client_id_scheme

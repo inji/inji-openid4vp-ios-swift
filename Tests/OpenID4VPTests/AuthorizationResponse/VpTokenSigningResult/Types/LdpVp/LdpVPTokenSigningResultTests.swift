@@ -1,21 +1,20 @@
 import XCTest
 @testable import OpenID4VP
 
-final class VpResponseMetadataTests: XCTestCase {
+final class LdpVPTokenSigningResultTests: XCTestCase {
     
     func testValidateSuccess() throws {
-    
-        let validMetadata = vpResponseMetadata
+        let validMetadata = ldpVPTokenSigningResult
         
         XCTAssertNoThrow(try validMetadata.validate())
     }
     
     func testValidateFailureEmptyString() {
-        let invalidMetadata = LdpVPResponseMetadata(
+        let invalidMetadata = LdpVPTokenSigningResult(
             jws: "",
-            signatureAlgorithm: vpResponseMetadata.signatureAlgorithm,
-            publicKey: vpResponseMetadata.publicKey,
-            domain: vpResponseMetadata.domain
+            signatureAlgorithm: ldpVPTokenSigningResult.signatureAlgorithm,
+            publicKey: ldpVPTokenSigningResult.publicKey,
+            domain: ldpVPTokenSigningResult.domain
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
@@ -24,11 +23,11 @@ final class VpResponseMetadataTests: XCTestCase {
     }
     
     func testValidateFailureNullValue() {
-        let invalidMetadata = LdpVPResponseMetadata(
+        let invalidMetadata = LdpVPTokenSigningResult(
             jws: "null",
-            signatureAlgorithm: vpResponseMetadata.signatureAlgorithm,
-            publicKey: vpResponseMetadata.publicKey,
-            domain: vpResponseMetadata.domain
+            signatureAlgorithm: ldpVPTokenSigningResult.signatureAlgorithm,
+            publicKey: ldpVPTokenSigningResult.publicKey,
+            domain: ldpVPTokenSigningResult.domain
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in

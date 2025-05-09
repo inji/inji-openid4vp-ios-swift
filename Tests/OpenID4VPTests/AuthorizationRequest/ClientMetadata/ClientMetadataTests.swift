@@ -1,0 +1,133 @@
+import XCTest
+@testable import OpenID4VP
+
+final class ClientMetadataValidationTests: XCTestCase {
+    func testThrowErrorOnValidationOfInvalidClientMetadataNew() {
+            let testCases: [TestCase] = [
+                TestCase(
+                    input: """
+                    {
+                        "client_name": null,
+                        "logo_uri": "https://example.com/logo.png",
+                        "authorization_encrypted_response_alg": "RSA-OAEP",
+                        "authorization_encrypted_response_enc": "A256GCM",
+                        "vp_formats": { "format1": { "type1": ["value1"] } },
+                        "jwks": null
+                    }
+                    """.data(using: .utf8)!,
+                    expectedError: "Invalid Input: client_metadata->client_name value cannot be empty or null"
+                ),
+                TestCase(
+                    input: """
+                    {
+                        "client_name": "Test Client",
+                        "logo_uri": null,
+                        "authorization_encrypted_response_alg": "RSA-OAEP",
+                        "authorization_encrypted_response_enc": "A256GCM",
+                        "vp_formats": { "format1": { "type1": ["value1"] } },
+                        "jwks": null
+                    }
+                    """.data(using: .utf8)!,
+                    expectedError: "Invalid Input: client_metadata->logo_uri value cannot be empty or null"
+                ),
+                TestCase(
+                    input: """
+                    {
+                        "client_name": "Test Client",
+                        "logo_uri": "https://example.com/logo.png",
+                        "authorization_encrypted_response_alg": null,
+                        "authorization_encrypted_response_enc": "A256GCM",
+                        "vp_formats": { "format1": { "type1": ["value1"] } },
+                        "jwks": null
+                    }
+                    """.data(using: .utf8)!,
+                    expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_alg value cannot be empty or null"
+                ),
+                TestCase(
+                    input: """
+                    {
+                        "client_name": "Test Client",
+                        "logo_uri": "https://example.com/logo.png",
+                        "authorization_encrypted_response_alg": "RSA-OAEP",
+                        "authorization_encrypted_response_enc": null,
+                        "vp_formats": { "format1": { "type1": ["value1"] } },
+                        "jwks": null
+                    }
+                    """.data(using: .utf8)!,
+                expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_enc value cannot be empty or null"
+                ),
+                TestCase(
+                    input: """
+                    {
+                        "client_name": "Test Client",
+                        "logo_uri": "https://example.com/logo.png",
+                        "authorization_encrypted_response_alg": "RSA-OAEP",
+                        "authorization_encrypted_response_enc": "A256GCM",
+                        "vp_formats": {},
+                        "jwks": {
+                            "keys": [
+                                {
+                                    "kty": "ES",
+                                    "use": "sig",
+                                    "alg": "RS256",
+                                    "kid": "abc123",
+                                    "x": "xqr0QcHyPyuhIzsPhchZ0QXrDI1pLx9kz0B3SAYLw1vTOpUd9qnQRgGnFoLPaKqxvX8OZlQ6DLgQ7eEK9gHe9cqB7_EYOZxJYmEKC4Gmxds2ExF3PXmtvCQRtAQ29Lv8OUU5BWfMrx6CwQwM0yiJdhWw4BMKzFUInMMWLz6-U0ky5PFeoqNNi3X9bEJmQMGb54Mp5T8JQWm3nB41Nq5G-LWdaV-NLYbdvYwYbX_tYw2kOTK_1hfu2GH0fVlOVbeCKpK5-lJXJGLhCQ7RbvZz2wGmOcUJoTGP1davTNv4B5Xww4Gh_NZRTVzLepJxai1ZkHcAFNT3n4S889p5BQ",
+                                    "crv": "P-256"
+                                }
+                            ]
+                        }
+                    }
+                    """.data(using: .utf8)!,
+                    expectedError: "Invalid Input: client_metadata->vp_formats value cannot be empty or null"
+                ),
+                TestCase(
+                    input: """
+                    {
+                        "client_name": "Test Client",
+                        "logo_uri": "https://example.com/logo.png",
+                        "authorization_encrypted_response_alg": "RSA-OAEP",
+                        "authorization_encrypted_response_enc": "A256GCM",
+                        "vp_formats": { "format1": { "type1": ["value1"] } },
+                        "jwks": null
+                    }
+                    """.data(using: .utf8)!,
+                expectedError: "Invalid Input: client_metadata->jwks value cannot be empty or null"
+                )
+            ]
+
+            for testCase in testCases {
+                XCTAssertThrowsError(try ClientMetadata.deserializeAndValidate(clientMetadata: testCase.input)) { error in
+                    XCTAssertEqual(error.localizedDescription, testCase.expectedError, "Error message doesn't match for input: \(String(data: testCase.input, encoding: .utf8) ?? "")")
+                }
+            }
+        }
+
+    func testValidationOfvalidClientMetadataBeingSuccessful() {
+        let testCases: [TestCase] = [
+            TestCase(input: """
+                {
+                    "client_name": "Valid Client",
+                    "logo_uri": "https://example.com/logo.png",
+                    "authorization_encrypted_response_alg": "RSA-OAEP",
+                    "authorization_encrypted_response_enc": "A256GCM",
+                    "vp_formats": { "format1": { "type1": ["value1"] } },
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                }
+            """.data(using: .utf8)!),
+            TestCase(input: """
+                {
+                    "client_name": "Valid Client",
+                    "logo_uri": "https://example.com/logo.png",
+                    "authorization_encrypted_response_alg": "RSA-OAEP",
+                    "authorization_encrypted_response_enc": "A256GCM",
+                    "vp_formats": { "format1": { "type1": ["value1"] } },
+                    "jwks": { "keys": [] }
+                }
+            """.data(using: .utf8)!)
+        ]
+
+        for testCase in testCases {
+            XCTAssertNoThrow(try ClientMetadata.deserializeAndValidate(clientMetadata: testCase.input))
+        }
+    }
+}
