@@ -107,7 +107,7 @@ final class ConstraintsTests: XCTestCase {
                     "limit_disclosure": ""
                 }
                 """,
-                expectedError: "Invalid Input: constraints->limit_disclosure value should be either required or preferred"
+                expectedError: "Invalid Input: constraints->limit_disclosure value cannot be empty or null"
             ),
             TestCase(
 //                Invalid limit_disclosure value
@@ -125,7 +125,7 @@ final class ConstraintsTests: XCTestCase {
                     "limit_disclosure": "optional"
                 }
                 """,
-                expectedError: "Invalid Input: constraints->limit_disclosure value should be either required or preferred"
+                expectedError: "Invalid Input: constraints->limit_disclosure value should be preferred"
             )
         ]
         
