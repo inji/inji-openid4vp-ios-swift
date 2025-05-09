@@ -9,7 +9,7 @@ final class MdocVPTokenSigningResultTests: XCTestCase {
         )
         
         let deviceAuthMap = ["org.iso.18013.5.1.mosip": validDeviceAuth]
-        let validMetadata = MdocVPTokenSigningResult(deviceAuthenticationBytesSigned: deviceAuthMap)
+        let validMetadata = MdocVPTokenSigningResult(docTypeToDeviceAuthentication: deviceAuthMap)
         
         XCTAssertNoThrow(try validMetadata.validate())
     }
@@ -21,7 +21,7 @@ final class MdocVPTokenSigningResultTests: XCTestCase {
         )
         
         let invalidMetadata = MdocVPTokenSigningResult(
-            deviceAuthenticationBytesSigned: ["org.iso.18013.5.1.mosip": invalidDeviceAuth]
+            docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mosip": invalidDeviceAuth]
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
@@ -31,11 +31,11 @@ final class MdocVPTokenSigningResultTests: XCTestCase {
     
     func testMdocVPTokenSigningResultWithEmptyInputPassed() {
         let invalidMetadata = MdocVPTokenSigningResult(
-            deviceAuthenticationBytesSigned: [:]
+            docTypeToDeviceAuthentication: [:]
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Input: MdocVPTokenSigningResult->deviceAuthenticationBytesSigned value cannot be empty or null")
+            XCTAssertEqual(error.localizedDescription, "Invalid Input: MdocVPTokenSigningResult->docTypeToDeviceAuthentication value cannot be empty or null")
         }
     }
 }

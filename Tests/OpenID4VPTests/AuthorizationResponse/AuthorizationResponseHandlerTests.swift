@@ -77,7 +77,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 domain: "testDomain"
             ),
             .mso_mdoc: MdocVPTokenSigningResult(
-                deviceAuthenticationBytesSigned: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]
+                docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]
             )
         ]
         _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: mockAuthorizationRequest, responseUri : "/response-uri")

@@ -26,8 +26,8 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             }
             let docTypeString = extractStringFromCBOR(docType)!
             
-            guard let deviceAuthSignature: DeviceAuthentication = mdocVPTokenSigningResult.deviceAuthenticationBytesSigned[docTypeString] else {
-                throw Logger.handleException(exceptionType: "MissingInput",message: "Device authentication signature not found for mdoc credential docType \(docTypeString)", fieldPath: ["mdocVPTokenSigningResult","deviceAuthenticationBytesSigned","DeviceAuthentication"], className: className)
+            guard let deviceAuthSignature: DeviceAuthentication = mdocVPTokenSigningResult.docTypeToDeviceAuthentication[docTypeString] else {
+                throw Logger.handleException(exceptionType: "MissingInput",message: "Device authentication signature not found for mdoc credential docType \(docTypeString)", fieldPath: ["mdocVPTokenSigningResult","docTypeToDeviceAuthentication","DeviceAuthentication"], className: className)
             }
             
             let deviceSignature = try createDeviceSignature(deviceAuthSignature)
