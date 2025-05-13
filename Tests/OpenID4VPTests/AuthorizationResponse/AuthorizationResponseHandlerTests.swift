@@ -138,8 +138,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 }
 """
         let authorizationResponseHandler: AuthorizationResponseHandler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(),responseUri : "/response-uri")
-        let responseUri = "https://mock-verifier.com"
+        let responseUri = "https://mock-verifier.com/response-uri"
+        _ = try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(),responseUri : responseUri)
+
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         let mockVPTokenSigningResults = [FormatType.ldp_vc : LdpVPTokenSigningResult(
             jws: "testJWS",
@@ -147,17 +148,17 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             publicKey: "testPublicKey",
             domain: "testDomain"
         )]
-        _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(), responseUri : "/response-uri")
+        _ =  try authorizationResponseHandler.constructUnsignedVPToken(credentialsMap: verifiableCredentials, authorizationRequest: getMockAuthorizationRequest(), responseUri : responseUri)
         
         let result = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpTokenSigningResults: mockVPTokenSigningResults, responseUri: responseUri)
         
         XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
-        let decodedPresentationSubmission = decodeQueryValue((recordedRequest.requestBody?["presentation_submission"])!)
-        let decodedVPToken = decodeQueryValue((recordedRequest.requestBody?["vp_token"])!)
+        let decodedVPToken = decodeQueryValue(jsonString(recordedRequest.requestBody?["vp_token"]! ?? "") ?? "")
         XCTAssertTrue(recordedRequest.requestBody?.keys.count == 3)
+        XCTAssertTrue(recordedRequest.requestBody?["presentation_submission"] != nil)
         assertJsonString(expected: expectedVPToken, actual: decodedVPToken, strict: false)
-        XCTAssertEqual("state", recordedRequest.requestBody?["state"])
+        XCTAssertEqual("state", recordedRequest.requestBody?["state"] as! String)
     }
     
     /// more than one VP format in response_type vp_token -> formats: ldp_vc, mso_mdoc
@@ -189,7 +190,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         XCTAssertTrue(recordedRequest.requestBody?.keys.count == 1)
         XCTAssertTrue(recordedRequest.requestBody?["response"] != nil)
-        XCTAssertTrue(((recordedRequest.requestBody?["response"]?.starts(with: "ey")) != nil))
+        //TODO: Cross check
+        XCTAssertTrue((((recordedRequest.requestBody?["response"] as! String).starts(with: "ey")) != nil))
     }
     
     func testShareVPThrowErrorWhenResponseTypeIsNotSupportedByLibrary() async  {
@@ -287,7 +289,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         _ = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpTokenSigningResults: mockVPTokenSigningResults, responseUri: responseUri)
         
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
-        let decodedPresentationSubmission = decodeQueryValue((recordedRequest.requestBody?["presentation_submission"])!)
+        let decodedPresentationSubmission = decodeQueryValue(jsonString(recordedRequest.requestBody?["presentation_submission"]! ?? "") ?? "")
         assertJsonString(expected: expectedPresentationSubmission, actual: decodedPresentationSubmission, strict: false)
     }
 }

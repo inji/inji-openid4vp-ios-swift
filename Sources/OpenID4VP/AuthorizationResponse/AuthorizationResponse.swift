@@ -5,13 +5,11 @@ struct AuthorizationResponse {
     let presentation_submission: PresentationSubmission
     let state: String?
     static let className = String(describing: AuthorizationResponse.self)
-
-    func toJsonEncodedMap() throws -> [String: String] {
-        let encodedVPTokenData =  vpToken.encoded ?? ""
-        let encodedPresentationSubmission = try encode(self.presentation_submission, fieldName: "presentation_submission", className: AuthorizationResponse.className)
-        var bodyParams: [String: String] = [
-            "vp_token": encodedVPTokenData,
-            "presentation_submission": encodedPresentationSubmission
+    
+    func toJsonEncodedMap() throws -> [String: Any] {
+        var bodyParams : [String: Any] = [
+            "vp_token": self.vpToken.encoded ?? [:],
+            "presentation_submission": try self.presentation_submission.jsonData()
         ]
         
         if let state = state {
@@ -25,7 +23,7 @@ struct AuthorizationResponse {
 public enum VPTokenType {
     case vpTokenArray([VPToken])
     case vpTokenElement(VPToken)
-
+    
     enum CodingKeys: String, CodingKey {
         case type
         case value
@@ -33,15 +31,15 @@ public enum VPTokenType {
 }
 
 extension VPTokenType {
-    var encoded: String? {
+    var encoded: Any? {
         do {
             switch self {
             case .vpTokenArray(let tokens):
-                let encodedTokens = try tokens.map { try encode($0, fieldName: "vpToken", className: AuthorizationResponse.className) }
-                return try encode(encodedTokens, fieldName: "vpTokenArray", className: AuthorizationResponse.className)
-
+                let encodedTokens = try tokens.map { try $0.jsonData() }
+                return encodedTokens
+                
             case .vpTokenElement(let token):
-                let encodedToken = try encode(token, fieldName: "vpTokenElement", className: AuthorizationResponse.className)
+                let encodedToken = try token.jsonData()
                 return encodedToken
             }
         } catch {
@@ -50,3 +48,14 @@ extension VPTokenType {
     }
 }
 
+extension Encodable {
+    func jsonData() throws -> Any {
+        JSON.encoder.outputFormatting = [ .withoutEscapingSlashes]
+        return try JSONSerialization.jsonObject(with: JSON.encoder.encode(self))
+    }
+}
+
+struct JSON {
+    // add pretty printed option
+    static let encoder = JSONEncoder()
+}

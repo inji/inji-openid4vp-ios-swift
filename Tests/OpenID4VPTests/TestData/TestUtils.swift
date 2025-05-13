@@ -132,6 +132,22 @@ func decodeQueryValue(_ value: String) -> String {
     return value.removingPercentEncoding ?? value
 }
 
+func jsonString(_ any: Any, prettyPrinted: Bool = false) -> String? {
+    guard JSONSerialization.isValidJSONObject(any) else {
+        print("Not a valid JSON object")
+        return nil
+    }
+    
+    do {
+        let options: JSONSerialization.WritingOptions = prettyPrinted ? [.prettyPrinted] : []
+        let data = try JSONSerialization.data(withJSONObject: any, options: options)
+        return String(data: data, encoding: .utf8)
+    } catch {
+        print("Error serializing to JSON: \(error)")
+        return nil
+    }
+}
+
 func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
     let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
     let decoder = JSONDecoder()

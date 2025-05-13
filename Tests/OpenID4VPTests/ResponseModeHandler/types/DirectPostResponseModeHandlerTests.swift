@@ -25,6 +25,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     func testSendAuthorizationResponseForDirectPostResponseMode()  async throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
         let authorizationResponse: AuthorizationResponse = AuthorizationResponse(vpToken: mockVPTokens, presentation_submission: mockPresentationSubmission, state: "state")
+        mockNetworkManager.clearMockResponses()
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
         
         do {

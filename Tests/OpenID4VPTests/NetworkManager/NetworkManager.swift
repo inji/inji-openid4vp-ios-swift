@@ -3,7 +3,7 @@ import Foundation
 
 class MockNetworkManager: NetworkManaging {
     private var mockResponses: [URL: (response: (responseBody: String, httpUrlResponse: HTTPURLResponse)?, error: Error?)] = [:]
-    var recordedRequests: [String: (requestMethod: HttpMethod,requestBody : [String: String]?, requestHeaders : [String: String]?)] = [:]
+    var recordedRequests: [String: (requestMethod: HttpMethod,requestBody : [String: Any]?, requestHeaders : [String: String]?)] = [:]
     
     func setMockResponse(for urlString: String, response: (responseBody: String, httpUrlResponse: HTTPURLResponse?)? = nil, responseBody: String? = nil, error: Error? = nil) {
         guard let url = URL(string: urlString) else {
@@ -24,11 +24,13 @@ class MockNetworkManager: NetworkManaging {
         mockResponses[url] = (finalResponse, error)
     }
     
+    //TODO: rename function to clear or clearResponses
     func clearMockResponses(){
         mockResponses = [:]
+        recordedRequests = [:]
     }
     
-    public func sendHTTPRequest(url: String, method: HttpMethod, bodyParams: [String:String]? = nil, headers: [String : String]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
+    public func sendHTTPRequest(url: String, method: HttpMethod, bodyParams: [String:Any]? = nil, headers: [String : String]? = nil) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
         
         recordedRequests[url] = (requestMethod: method,requestBody: bodyParams, requestHeaders: headers)
         
