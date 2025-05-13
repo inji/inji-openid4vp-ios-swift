@@ -1,11 +1,3 @@
-//
-//  NetworkManaging.swift
-//  OpenID4VP
-//
-//  Created by Kiruthika Jeyashankar on 13/05/25.
-//
-
-
 import Foundation
 import Alamofire
 
