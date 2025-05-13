@@ -24,8 +24,7 @@ class MockNetworkManager: NetworkManaging {
         mockResponses[url] = (finalResponse, error)
     }
     
-    //TODO: rename function to clear or clearResponses
-    func clearMockResponses(){
+    func clearResponses(){
         mockResponses = [:]
         recordedRequests = [:]
     }

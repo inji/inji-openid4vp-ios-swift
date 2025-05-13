@@ -18,7 +18,6 @@ struct PathNested : Encodable {
     let path: String
 }
 
-//TODO: use coding keys to handle modification of field names
 struct PresentationSubmission: Encodable{
     let id: String = UUIDGenerator.generateUUID()
     let definitionId: String

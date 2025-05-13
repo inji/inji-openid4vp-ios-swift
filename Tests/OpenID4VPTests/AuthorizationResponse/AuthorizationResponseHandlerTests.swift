@@ -190,8 +190,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         XCTAssertTrue(recordedRequest.requestBody?.keys.count == 1)
         XCTAssertTrue(recordedRequest.requestBody?["response"] != nil)
-        //TODO: Cross check
-        XCTAssertTrue((((recordedRequest.requestBody?["response"] as! String).starts(with: "ey")) != nil))
+        XCTAssertTrue((recordedRequest.requestBody?["response"] as! String).starts(with: "ey"))
     }
     
     func testShareVPThrowErrorWhenResponseTypeIsNotSupportedByLibrary() async  {

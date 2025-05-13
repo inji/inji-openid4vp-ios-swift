@@ -64,7 +64,7 @@ public class AuthorizationResponseHandler {
                 credentialFormatIndex: &credentialFormatIndex
             )
             
-            return AuthorizationResponse(vpToken: vpToken, presentation_submission: presentationSubmission, state: authorizationRequest.state)
+            return AuthorizationResponse(vpToken: vpToken, presentationSubmission: presentationSubmission, state: authorizationRequest.state)
         default:
             throw Logger.handleException(exceptionType: "InvalidData", message: "response type - \(authorizationRequest.responseType) is not supported", className: AuthorizationResponseHandler.className)
         }

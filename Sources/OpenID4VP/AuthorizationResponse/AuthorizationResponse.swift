@@ -2,14 +2,14 @@ import Foundation
 
 struct AuthorizationResponse {
     let vpToken: VPTokenType
-    let presentation_submission: PresentationSubmission
+    let presentationSubmission: PresentationSubmission
     let state: String?
     static let className = String(describing: AuthorizationResponse.self)
     
     func toJsonEncodedMap() throws -> [String: Any] {
         var bodyParams : [String: Any] = [
             "vp_token": self.vpToken.encoded ?? [:],
-            "presentation_submission": try self.presentation_submission.jsonData()
+            "presentation_submission": try self.presentationSubmission.jsonData()
         ]
         
         if let state = state {
@@ -46,16 +46,4 @@ extension VPTokenType {
             return nil
         }
     }
-}
-
-extension Encodable {
-    func jsonData() throws -> Any {
-        JSON.encoder.outputFormatting = [ .withoutEscapingSlashes]
-        return try JSONSerialization.jsonObject(with: JSON.encoder.encode(self))
-    }
-}
-
-struct JSON {
-    // add pretty printed option
-    static let encoder = JSONEncoder()
 }
