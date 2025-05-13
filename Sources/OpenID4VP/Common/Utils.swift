@@ -113,7 +113,7 @@ func createNonce(entropy: Int = 16) -> String {
     return Base64Encoder.encodeToBase64Url(randomData)
 }
 
-func SHA256Hash(from data: CBOR) -> [UInt8] {
+func sha256Hash(from data: CBOR) -> [UInt8] {
     let hash: SHA256.Digest = SHA256.hash(data: CBOR.encode(data))
     return ([UInt8])(Data(hash))
 }
