@@ -92,13 +92,17 @@ public class AuthorizationResponseHandler {
             let (format, credentials) = entry
             switch format {
             case .ldp_vc:
-                guard let stringCredentials = credentials as? [String] else {
-                    throw Logger.handleException(
-                        exceptionType : "InvalidData",
-                        message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
-                    )
-                }
-                result[format] = try UnsignedLdpVPTokenBuilder(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "").build()
+                let formattedCredentials = try credentials.map { credential -> [String: Any] in
+                                guard let jsonDict = credential as? [String: Any] else {
+                                    throw Logger.handleException(
+                                        exceptionType: "InvalidData",
+                                        message: "\(format) credentials are not passed in JSON format",
+                                        className: AuthorizationResponseHandler.className
+                                    )
+                                }
+                                return jsonDict
+                            }
+                result[format] = try UnsignedLdpVPTokenBuilder(verifiableCredential: formattedCredentials, id: UUIDGenerator.generateUUID(), holder: "").build()
             case .mso_mdoc:
                 guard let stringCredentials = credentials as? [String] else {
                     throw Logger.handleException(

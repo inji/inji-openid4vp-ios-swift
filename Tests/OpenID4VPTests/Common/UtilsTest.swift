@@ -147,7 +147,6 @@ class UtilsTest : XCTestCase {
         )
 
         let encodedJson = try encode(mockDataClass, fieldName: "mockDataClass", className: className)
-        print("data \(encodedJson)")
         let expectedJson = "{\"key\":\"id_credential\",\"number\":1,\"key_with_more_than_one_word\":\"ldp_vp\"}"
         
         assertJsonString(expected: expectedJson, actual: encodedJson)

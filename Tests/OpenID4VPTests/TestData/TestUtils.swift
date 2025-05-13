@@ -178,3 +178,34 @@ func createWalletMetadata(
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
     )
 }
+
+func ldpVC(credentialType : String = "IDCardCredential", context: [String] = [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://www.w3.org/2018/credentials/examples/v1"
+]) -> [String: Any] {
+    let data : [String: Any] = [
+        "@context": context,
+        "id": "https://example.com/credentials/1872",
+        "type": [
+            "VerifiableCredential",
+            credentialType
+        ],
+        "issuer": [
+            "id": "did:example:issuer"
+        ],
+        "issuanceDate": "2010-01-01T19:23:24Z",
+        "credentialSubject": [
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ],
+        "proof": [
+            "type": "Ed25519Signature2018",
+            "created": "2021-03-19T15:30:15Z",
+            "jws": "eyJhb...JQdBw",
+            "proofPurpose": "assertionMethod",
+            "verificationMethod": "did:example:issuer#keys-1"
+        ]
+    ]
+    return data
+}

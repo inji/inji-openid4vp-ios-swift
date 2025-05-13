@@ -1,7 +1,7 @@
 struct LdpVPToken: Encodable, VPToken {
     let context: [String]
     let type: [String]
-    let verifiableCredential: [String]
+    let verifiableCredential: [[String: AnyCodable]]
     let id: String
     let holder: String
     let proof: Proof
