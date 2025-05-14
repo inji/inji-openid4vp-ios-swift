@@ -21,9 +21,9 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     func build() throws ->  UnsignedVPToken {
         var docTypeToDeviceAuthenticationBytes : [String : String] = [:]
         let clientIdToHash = CBOR.array([.utf8String(clientId), .utf8String(self.mdocGeneratedNonce)])
-        let clientIdHash = CBOR.byteString(SHA256Hash(from: clientIdToHash))
+        let clientIdHash = CBOR.byteString(sha256Hash(from: clientIdToHash))
         let responseUriToHash = CBOR.array([.utf8String(responseUri), .utf8String(self.mdocGeneratedNonce)])
-        let responseUriHash = CBOR.byteString(SHA256Hash(from: responseUriToHash))
+        let responseUriHash = CBOR.byteString(sha256Hash(from: responseUriToHash))
         
         let openID4VPHandover = CBOR.array([clientIdHash, responseUriHash, .utf8String(self.mdocGeneratedNonce)])
         let sessionTranscript = CBOR.array([.null, .null, openID4VPHandover])

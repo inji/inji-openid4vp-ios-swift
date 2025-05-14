@@ -64,15 +64,14 @@ public class AuthorizationResponseHandler {
                 credentialFormatIndex: &credentialFormatIndex
             )
             
-            return AuthorizationResponse(vpToken: vpToken, presentation_submission: presentationSubmission, state: authorizationRequest.state)
+            return AuthorizationResponse(vpToken: vpToken, presentationSubmission: presentationSubmission, state: authorizationRequest.state)
         default:
             throw Logger.handleException(exceptionType: "InvalidData", message: "response type - \(authorizationRequest.responseType) is not supported", className: AuthorizationResponseHandler.className)
         }
     }
     
     //Send authorization response based on response_mode
-    private func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest ,authorizationResponse: AuthorizationResponse, responseUri: String, producerInfo: String,
-                                           recepientInfo: String) async throws -> String {
+    private func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest ,authorizationResponse: AuthorizationResponse, responseUri: String, producerInfo: String, recepientInfo: String) async throws -> String {
         return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
             .sendAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, url: responseUri, networkManager: networkManager, producerInfo: producerInfo, recepientInfo: recepientInfo)
     }
@@ -92,13 +91,17 @@ public class AuthorizationResponseHandler {
             let (format, credentials) = entry
             switch format {
             case .ldp_vc:
-                guard let stringCredentials = credentials as? [String] else {
-                    throw Logger.handleException(
-                        exceptionType : "InvalidData",
-                        message : "\(format) credentials are not passed in string format", className : AuthorizationResponseHandler.className
-                    )
+                let formattedCredentials = try credentials.map { credential -> [String: Any] in
+                    guard let jsonDict = credential as? [String: Any] else {
+                        throw Logger.handleException(
+                            exceptionType: "InvalidData",
+                            message: "\(format) credentials are not passed in JSON format",
+                            className: AuthorizationResponseHandler.className
+                        )
+                    }
+                    return jsonDict
                 }
-                result[format] = try UnsignedLdpVPTokenBuilder(verifiableCredential: stringCredentials, id: UUIDGenerator.generateUUID(), holder: "").build()
+                result[format] = try UnsignedLdpVPTokenBuilder(verifiableCredential: formattedCredentials, id: UUIDGenerator.generateUUID(), holder: "").build()
             case .mso_mdoc:
                 guard let stringCredentials = credentials as? [String] else {
                     throw Logger.handleException(
@@ -117,7 +120,7 @@ public class AuthorizationResponseHandler {
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
-                
+        
         // create an map of credential format to credentials from credentialsMap
         let groupedVcs: [FormatType: [Any]] = credentialsMap?
             .compactMap { $0.value }

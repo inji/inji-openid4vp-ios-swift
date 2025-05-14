@@ -132,6 +132,22 @@ func decodeQueryValue(_ value: String) -> String {
     return value.removingPercentEncoding ?? value
 }
 
+func jsonString(_ any: Any, prettyPrinted: Bool = false) -> String? {
+    guard JSONSerialization.isValidJSONObject(any) else {
+        print("Not a valid JSON object")
+        return nil
+    }
+    
+    do {
+        let options: JSONSerialization.WritingOptions = prettyPrinted ? [.prettyPrinted] : []
+        let data = try JSONSerialization.data(withJSONObject: any, options: options)
+        return String(data: data, encoding: .utf8)
+    } catch {
+        print("Error serializing to JSON: \(error)")
+        return nil
+    }
+}
+
 func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
     let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
     let decoder = JSONDecoder()
@@ -177,4 +193,39 @@ func createWalletMetadata(
         authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
     )
+}
+
+func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://www.w3.org/2018/credentials/examples/v1",
+    [
+        "sec": "https://w3id.org/security#"
+    ]
+    
+]) -> [String: Any] {
+    let data : [String: Any] = [
+        "@context": context,
+        "id": "https://example.com/credentials/1872",
+        "type": [
+            "VerifiableCredential",
+            credentialType
+        ],
+        "issuer": [
+            "id": "did:example:issuer"
+        ],
+        "issuanceDate": "2010-01-01T19:23:24Z",
+        "credentialSubject": [
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ],
+        "proof": [
+            "type": "Ed25519Signature2018",
+            "created": "2021-03-19T15:30:15Z",
+            "jws": "eyJhb...JQdBw",
+            "proofPurpose": "assertionMethod",
+            "verificationMethod": "did:example:issuer#keys-1"
+        ]
+    ]
+    return data
 }

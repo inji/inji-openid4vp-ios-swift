@@ -133,3 +133,13 @@ func XCTAssertNoThrowAndVerify<T>(_ expression: @autoclosure () throws -> T,
         XCTFail("Expression threw an error: \(error)", file: file, line: line)
     }
 }
+
+// Write a custom assertion for comparing two arrays
+func assertArraysEqual<T: Equatable>(expected: [T], actual: [T], file: StaticString = #file, line: UInt = #line) {
+    XCTAssertEqual(expected.count, actual.count, "Array sizes are different", file: file, line: line)
+    
+    expected.forEach { expectedElement in
+        XCTAssertTrue(actual.contains(expectedElement), "Expected element \(expectedElement) not found in actual array", file: file, line: line)
+    }
+}
+

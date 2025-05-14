@@ -62,22 +62,6 @@ func convertToInstance<T: Decodable>(_ input: String, as type: T.Type, fieldPath
     return try jsonData.toInstance(as: T.self)
 }
 
-func encode<T: Encodable>(_ data: T, fieldName: String, className: String) throws -> String {
-    do {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .withoutEscapingSlashes
-        let jsonData = try encoder.encode(data)
-        return String(decoding: jsonData, as: UTF8.self)
-    } catch {
-        throw Logger.handleException(
-            exceptionType: "JsonEncodingFailed",
-            message: error.localizedDescription,
-            fieldPath: [fieldName],
-            className: className
-        )
-    }
-}
-
 func toData(_ input: [String: Any]) throws -> Data {
     var processedInput: [String: Any] = [:]
 
@@ -113,7 +97,7 @@ func createNonce(entropy: Int = 16) -> String {
     return Base64Encoder.encodeToBase64Url(randomData)
 }
 
-func SHA256Hash(from data: CBOR) -> [UInt8] {
+func sha256Hash(from data: CBOR) -> [UInt8] {
     let hash: SHA256.Digest = SHA256.hash(data: CBOR.encode(data))
     return ([UInt8])(Data(hash))
 }

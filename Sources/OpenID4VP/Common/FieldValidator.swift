@@ -9,8 +9,7 @@ func isValidString(_ field: String) -> Bool {
 }
 
 func validateField<T>(field: T, fieldPath: [String], className: String) throws {
-    switch field {
-    case let stringValue as String:
+    if let stringValue = field as? String {
         if !isValidString(stringValue) {
             throw Logger.handleException(
                 exceptionType: "InvalidInput",
@@ -18,7 +17,5 @@ func validateField<T>(field: T, fieldPath: [String], className: String) throws {
                 className: className
             )
         }
-    default:
-        break
     }
 }

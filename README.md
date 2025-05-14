@@ -184,9 +184,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name           | Type               | Description                                                                                                                                    |
-|----------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| credentialsMap | [String: [String]] | A Map which contains input descriptor id as key and value is the map of credential format and the list of user selected verifiable credentials |
+| Name           | Type                               | Description                                                                                                                                    |
+|----------------|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| credentialsMap | [String: [FormatType: Array<Any>]] | A Map which contains input descriptor id as key and value is the map of credential format and the list of user selected verifiable credentials |
 
 ###### Example usage
 
@@ -194,7 +194,8 @@ This method will also notify the Verifier about the error by sending it to the r
 let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUnsignedVPToken(
     credentialsMap: [
         "input_descriptor_id": [
-            FormatType.LDP_VC.rawValue: ["credential1"]
+            FormatType.ldp_vc.rawValue: [["id": "uuid-1234-1234", //....]],
+            FormatType.mso_mdoc.rawValue: ["<base64-encoded-cbor-encoded-credential>"]
         ]
     ]
 )
@@ -217,8 +218,8 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name                | Type                             | Description                                                                                                                                                 |
-|---------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Name                  | Type                               | Description                                                                                                                                                   |
+|-----------------------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | vpTokenSigningResults | [FormatType: VPTokenSigningResult] | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
 
 
@@ -226,12 +227,21 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ```swift
 let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws : "ey....qweug",
+    jws : createJWS(unsignedLdpVPToken),
     signatureAlgorithm : "RsaSignature2018",
-    publicKey : publicKey,
+    publicKey : "<publicKey>",
     domain : "<domain>"
 )
-let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.LDP_VC : ldpVPTokenSigningResult]
+
+let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
+    docTypeToDeviceAuthentication: [
+        "<docType>": DeviceAuthentication(
+            signature: createSignature(unsignedMdocVPToken.docTypeToDeviceAuthenticationBytes("<docType>")), 
+            algorithm: "<mdocAuthenticationAlgorithm>",
+        )
+    ]
+  )
+let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
 val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults : vpTokenSigningResults)
 ```
 
@@ -273,3 +283,8 @@ await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedE
 ## Architecture decisions
 
 Architecture decisions are noted as ADRs [here](https://github.com/mosip/inji-openid4vp/tree/master/doc).
+
+## Also available in
+
+This library is also available in the following languages
+- [kotlin](https://github.com/mosip/inji-openid4vp/tree/master/kotlin)

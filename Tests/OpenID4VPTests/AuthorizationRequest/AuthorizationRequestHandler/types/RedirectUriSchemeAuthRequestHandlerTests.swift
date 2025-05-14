@@ -17,7 +17,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     
     func setup(){
         super.setUp()
-        mockNetworkManager.clearMockResponses()
+        mockNetworkManager.clearResponses()
     }
     
     //Fetch authorization request
