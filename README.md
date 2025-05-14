@@ -283,3 +283,8 @@ await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedE
 ## Architecture decisions
 
 Architecture decisions are noted as ADRs [here](https://github.com/mosip/inji-openid4vp/tree/master/doc).
+
+## Also available in
+
+This library is also available in the following languages
+- [kotlin](https://github.com/mosip/inji-openid4vp/tree/master/kotlin)
