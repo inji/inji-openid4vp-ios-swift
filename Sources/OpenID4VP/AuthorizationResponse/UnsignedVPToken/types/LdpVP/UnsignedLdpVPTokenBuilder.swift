@@ -17,8 +17,10 @@ struct UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         //and add it to the context
         var context = Set<String>()
         self.verifiableCredential.forEach { credential in
-            if let contextValue = credential["@context"] as? [String] {
-                context.insert(contextValue[0])
+            // @context property is an ordered set of type URL (or URI in Data model v1) or objects
+            // The base context is the first entry in the set which is VC context URL (or URI in Data model v1)
+            if let contextArray = credential["@context"] as? [Any], let contextValue = contextArray.first as? String {
+                context.insert(contextValue)
             }
         }
         

@@ -195,9 +195,13 @@ func createWalletMetadata(
     )
 }
 
-func ldpVC(credentialType : String = "IDCardCredential", context: [String] = [
+func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
     "https://www.w3.org/2018/credentials/v1",
-    "https://www.w3.org/2018/credentials/examples/v1"
+    "https://www.w3.org/2018/credentials/examples/v1",
+    [
+        "sec": "https://w3id.org/security#"
+    ]
+    
 ]) -> [String: Any] {
     let data : [String: Any] = [
         "@context": context,

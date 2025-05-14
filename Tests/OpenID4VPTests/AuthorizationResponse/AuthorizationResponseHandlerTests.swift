@@ -56,7 +56,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
       ],
       "@context": [
         "https://www.w3.org/2018/credentials/v1",
-        "https://www.w3.org/2018/credentials/examples/v1"
+        "https://www.w3.org/2018/credentials/examples/v1",
+        {
+          "sec": "https://w3id.org/security#"
+        }
       ],
       "issuer": {
         "id": "did:example:issuer"
@@ -95,7 +98,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
       ],
       "@context": [
         "https://www.w3.org/2018/credentials/v1",
-        "https://www.w3.org/2018/credentials/examples/v1"
+        "https://www.w3.org/2018/credentials/examples/v1",
+        {
+          "sec": "https://w3id.org/security#"
+        }
       ]
     },
     {
@@ -106,7 +112,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
       },
       "@context": [
         "https://www.w3.org/2018/credentials/v1",
-        "https://www.w3.org/2018/credentials/examples/v1"
+        "https://www.w3.org/2018/credentials/examples/v1",
+        {
+          "sec": "https://w3id.org/security#"
+        }
       ],
       "issuer": {
         "id": "did:example:issuer"
