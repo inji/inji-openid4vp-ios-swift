@@ -8,7 +8,13 @@ struct JSON {
 extension Encodable {
     func jsonData() throws -> Any {
         JSON.encoder.outputFormatting = [ .withoutEscapingSlashes]
-        return try JSONSerialization.jsonObject(with: JSON.encoder.encode(self))
+        let encoded = try JSON.encoder.encode(self)
+        //         In case of JSON, convert it else return encoded
+        do {
+            return try JSONSerialization.jsonObject(with: encoded)
+        } catch {
+            return try JSONDecoder().decode(String.self, from: encoded)
+        }
     }
 }
 

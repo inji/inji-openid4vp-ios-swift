@@ -16,6 +16,15 @@ final class JSONEncoderTests: XCTestCase {
         }
     }
     
+    private struct MockInput: Encodable {
+        let name: String
+        
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(name)
+        }
+    }
+    
     func testEncodableTojsonData() throws {
         // Create test object with various data types including a URL with slashes
         let testObject = TestPerson(
@@ -54,6 +63,14 @@ final class JSONEncoderTests: XCTestCase {
         } else {
             XCTFail("Array not found or not an array of strings")
         }
+    }
+    
+    func testEncodableToJsonDataForNonJsonInput() throws {
+        let testObject = MockInput(name: "mock-value")
+        
+        let result = try testObject.jsonData()
+        
+        XCTAssertEqual("mock-value", result as? String)
     }
     
     func testEncodableWithSpecialChars() throws {

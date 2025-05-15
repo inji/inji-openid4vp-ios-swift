@@ -43,6 +43,7 @@ extension VPTokenType {
                 return encodedToken
             }
         } catch {
+            print("Caught error while encoding VPTokenType: \(error)")
             return nil
         }
     }
