@@ -3,24 +3,62 @@ import Foundation
 import XCTest
 
 func assertJsonString(expected jsonString1: String, actual jsonString2: String, strict: Bool = true, file: StaticString = #file, line: UInt = #line) {
+    guard let data1 = jsonString1.data(using: .utf8),
+          let data2 = jsonString2.data(using: .utf8) else {
+        XCTFail("Invalid JSON string encoding", file: file, line: line)
+        return
+    }
+    
     do {
-        guard let data1 = jsonString1.data(using: .utf8),
-              let data2 = jsonString2.data(using: .utf8) else {
-            XCTFail("Invalid JSON string encoding", file: file, line: line)
-            return
-        }
-
-        let json1 = try JSONSerialization.jsonObject(with: data1, options: []) as? [String: Any]
-        let json2 = try JSONSerialization.jsonObject(with: data2, options: []) as? [String: Any]
-
-        XCTAssertNotNil(json1, "Failed to parse first JSON string", file: file, line: line)
-        XCTAssertNotNil(json2, "Failed to parse second JSON string", file: file, line: line)
-
-        if let json1 = json1, let json2 = json2 {
-            assertDictionariesEqual(expected: json1, actual: json2, file: file, line: line, strict: strict)
+        let json1 = try JSONSerialization.jsonObject(with: data1, options: [])
+        let json2 = try JSONSerialization.jsonObject(with: data2, options: [])
+        
+        switch json1 {
+        case let dict1 as [String: Any]:
+            guard let dict2 = json2 as? [String: Any] else {
+                XCTFail("First JSON is a dictionary but second JSON is not", file: file, line: line)
+                return
+            }
+            assertDictionariesEqual(expected: dict1, actual: dict2, file: file, line: line, strict: strict)
+            
+        case let array1 as [Any]:
+            guard let array2 = json2 as? [Any] else {
+                XCTFail("First JSON is an array but second JSON is not", file: file, line: line)
+                return
+            }
+            assertArraysEqual(expected: array1, actual: array2, file: file, line: line, strict: strict)
+            
+        default:
+            XCTFail("JSON must be either a dictionary or an array", file: file, line: line)
         }
     } catch {
         XCTFail("JSON deserialization failed with error: \(error)", file: file, line: line)
+    }
+}
+
+func assertArraysEqual(expected: [Any], actual: [Any], file: StaticString = #file, line: UInt = #line, strict: Bool = true) {
+    if strict {
+        XCTAssertEqual(expected.count, actual.count, "Array sizes are different", file: file, line: line)
+    }
+    
+    let minCount = min(expected.count, actual.count)
+    for i in 0..<minCount {
+        let expectedItem = expected[i]
+        let actualItem = actual[i]
+        
+        switch (expectedItem, actualItem) {
+        case let (expectedDict as [String: Any], actualDict as [String: Any]):
+            assertDictionariesEqual(expected: expectedDict, actual: actualDict, file: file, line: line, strict: strict)
+            
+        case let (expectedArray as [Any], actualArray as [Any]):
+            assertArraysEqual(expected: expectedArray, actual: actualArray, file: file, line: line, strict: strict)
+            
+        default:
+            // Use string representation comparison for other types
+            let expectedStr = "\(expectedItem)"
+            let actualStr = "\(actualItem)"
+            XCTAssertEqual(expectedStr, actualStr, "Array elements at index \(i) don't match", file: file, line: line)
+        }
     }
 }
 

@@ -132,7 +132,7 @@ final class ConstraintsTests: XCTestCase {
         for testCase in testCases {            
             XCTAssertThrowsError(try createConstraints(testCase.input)) { error in
                 XCTAssertTrue(error.localizedDescription.contains(testCase.expectedError!),
-                              "Test case failed - expected error containing '\(testCase.expectedError)' but got: \(error.localizedDescription)")
+                              "Test case failed - expected error containing '\(String(describing: testCase.expectedError))' but got: \(error.localizedDescription)")
             }
         }
     }

@@ -96,6 +96,18 @@ func convertToJsonString(_ data: [String: Any]) -> String {
     return jsonString!
 }
 
+func convertToJsonString(_ array: [Any]) -> String {
+    do {
+        let jsonData = try JSONSerialization.data(withJSONObject: array, options: .prettyPrinted)
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+            return jsonString
+        }
+    } catch {
+        print("Error converting array to JSON: \(error)")
+    }
+    return ""
+}
+
 func convertToDictionary<T: Encodable>(object: T) -> [String: Any]? {
     guard let data = try? JSONEncoder().encode(object) else {
         return nil
