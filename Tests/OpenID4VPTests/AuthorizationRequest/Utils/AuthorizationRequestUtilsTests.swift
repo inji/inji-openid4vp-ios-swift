@@ -116,9 +116,9 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     ///Extraction of client identifier scheme from Authorization request client_id property
     
     func testExtractClientIdSchemeWithValidInput(){
-        let result1 = try! extractClientIdScheme(clientId: "mock-client")
-        let result2 = try! extractClientIdScheme(clientId: "redirect_uri:https://mock-verifier.com")
-        let result3 = try! extractClientIdScheme(clientId: "did:example#1")
+        let result1 = try! extractClientIdScheme(authorizationRequestParams: ["client_id":"mock-client"])
+        let result2 = try! extractClientIdScheme(authorizationRequestParams: ["client_id":"redirect_uri:https://mock-verifier.com"])
+        let result3 = try! extractClientIdScheme(authorizationRequestParams: ["client_id":"did:example#1"])
 
         XCTAssertEqual(result1, "pre-registered")
         XCTAssertEqual(result2, "redirect_uri")
@@ -126,8 +126,8 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     }
     
     func testExtractClientidThrowErrorWhenClientIdIsEmpty(){
-        XCTAssertThrowsError(try extractClientIdScheme(clientId: "")){ error in
-            XCTAssertEqual("Client Identifier is empty", error.localizedDescription)
+        XCTAssertThrowsError(try extractClientIdScheme(authorizationRequestParams: ["client_id":""])){ error in
+            XCTAssertEqual("Invalid Input: client_id value cannot be empty or null", error.localizedDescription)
         }
     }
 }

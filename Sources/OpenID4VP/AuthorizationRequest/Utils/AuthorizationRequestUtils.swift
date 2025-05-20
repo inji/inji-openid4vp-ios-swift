@@ -88,14 +88,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                     setResponseUri: @escaping (String) -> Void,
                                     networkManager: NetworkManaging
                                     ) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
-    let clientIdScheme: String
-    if let scheme = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String {
-        try validateField(scheme, [AuthorizationRequestFieldConstants.clientIdScheme.rawValue], AuthorizationRequest.className)
-        clientIdScheme = scheme
-    } else {
-        try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
-        clientIdScheme = try extractClientIdScheme(clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? "")
-    }
+    let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
     
     switch clientIdScheme {
     case ClientIdScheme.preRegistered.rawValue:
@@ -165,15 +158,19 @@ func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) t
     }
 }
 
-func extractClientIdScheme(clientId: String) throws -> String {
-    if(clientId.isEmpty){
-        throw Logger.handleException(exceptionType: "InvalidData", message: "Client Identifier is empty", className: AuthorizationRequest.className)
+func extractClientIdScheme(authorizationRequestParams: [String:Any]) throws -> String {
+    if let scheme = authorizationRequestParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String {
+        try validateField(scheme, [AuthorizationRequestFieldConstants.clientIdScheme.rawValue], AuthorizationRequest.className)
+        return scheme
     }
+      
+    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParams)
+    let clientId = authorizationRequestParams[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
     
     let components = clientId.split(separator: ":", maxSplits: 1)
-    
+        
     if components.count > 1 {
-        return String(components[0])
+         return String(components[0])
     } else {
         // Fallback client_id_scheme pre-registered; pre-registered clients MUST NOT contain a : character in their Client Identifier
         return ClientIdScheme.preRegistered.rawValue
