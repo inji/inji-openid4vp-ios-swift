@@ -27,8 +27,17 @@ func validateAttribute(
 }
 
 func validateAuthorizationRequestObjectAndParameters(params: [String: String], requestUriParams: [String: Any]) throws {
+    
+    
     guard params["client_id"] == requestUriParams["client_id"] as? String else {
         throw Logger.handleException(exceptionType: "MismatchingClientIDInRequest", className: AuthorizationRequest.className)
+    }
+    
+    // If client_id_scheme is present in the authorization request, it should be present in the request_uri response as well and should be same we are assuming it follows Draft 21 specification
+    if params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] != nil {
+        guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] as? String else {
+            throw Logger.handleException(exceptionType: "MismatchingClientIdSchemeInRequest", className: AuthorizationRequest.className)
+        }
     }
 }
 

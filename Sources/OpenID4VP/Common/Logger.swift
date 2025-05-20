@@ -44,6 +44,8 @@ class Logger {
             exception = AuthorizationRequestException.invalidVerifier(message: message)
         case "MismatchingClientIDInRequest":
             exception = AuthorizationRequestException.mismatchingClientIDInRequest
+        case "MismatchingClientIdSchemeInRequest":
+            exception = AuthorizationRequestException.mismatchingClientIDSchemeInRequest
         case "InvalidLimitDisclosure":
             exception = AuthorizationRequestException.invalidLimitDisclosure
         case "UrlCreationFailed":

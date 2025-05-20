@@ -194,6 +194,21 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
+    func testFetchAuthorizationRequestThrowExceptionForValidationOfMatchingClientIdSchemeOnAuthRequestSentByReferenceForDraft21() async{
+        
+        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, [
+            "client_id": "mock-client",
+            "client_id_scheme": "did",
+        ]), applicableFields: authRequestWithPreRegisteredByValueDraft21)
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft21 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+
+        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))) { error in
+            XCTAssertTrue(error == AuthorizationRequestException.mismatchingClientIDSchemeInRequest)
+            XCTAssertEqual("Client Id scheme is mismatching in QR data and Request Uri response", error.localizedDescription)
+        }
+    }
+    
     /// Validation of authRequest params obtained via request_uri by matching with url encoded query param data
     
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsJWT() async{

@@ -93,6 +93,13 @@ let authRequestParamsByReference : [String] = [
     "request_uri_method"
 ]
 
+let authRequestParamsByReferenceDraft21 : [String] = [
+    "client_id",
+    "client_id_scheme",
+    "request_uri",
+    "request_uri_method"
+]
+
 let authRequestWithRedirectUriByValue : [String] = [
     "client_id",
     "response_uri",
@@ -117,6 +124,18 @@ let authRequestWithRedirectUriWithPresentationDefinitionUri : [String] = [
 
 let authRequestWithPreRegisteredByValue : [String] = [
     "client_id",
+    "response_mode",
+    "response_uri",
+    "presentation_definition",
+    "response_type",
+    "nonce",
+    "state",
+    "client_metadata"
+]
+
+let authRequestWithPreRegisteredByValueDraft21 : [String] = [
+    "client_id",
+    "client_id_scheme",
     "response_mode",
     "response_uri",
     "presentation_definition",
