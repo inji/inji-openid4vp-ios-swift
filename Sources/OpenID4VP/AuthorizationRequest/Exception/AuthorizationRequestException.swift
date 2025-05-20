@@ -12,6 +12,7 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
     case queryItemsRetrievalFailed
     case parameterValuesAreEmpty
     case mismatchingClientIDInRequest
+    case mismatchingClientIDSchemeInRequest
     case invalidVerifier(message: String?)
     case unsupportedHttpMethod(message: String)
     case invalidInputPattern(fieldPath: String)
@@ -36,6 +37,8 @@ enum AuthorizationRequestException: Error, Equatable, LocalizedError {
             return "Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.\(message ?? "")"
         case .mismatchingClientIDInRequest:
             return "Client Id is mismatching in QR data and Request Uri response"
+        case .mismatchingClientIDSchemeInRequest:
+            return "Client Id scheme is mismatching in QR data and Request Uri response"
         case .invalidInputPattern:
             return "Invalid Input Pattern: $fieldName pattern is not matching with OpenId4VP specification"
         case .unsupportedHttpMethod(let message):
