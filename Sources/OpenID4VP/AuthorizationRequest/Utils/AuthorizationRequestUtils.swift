@@ -79,8 +79,14 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                     setResponseUri: @escaping (String) -> Void,
                                     networkManager: NetworkManaging
                                     ) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
-    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
-    let clientIdScheme = try extractClientIdScheme(clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? "")
+    let clientIdScheme: String
+    if let scheme = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String {
+        try validateField(scheme, [AuthorizationRequestFieldConstants.clientIdScheme.rawValue], AuthorizationRequest.className)
+        clientIdScheme = scheme
+    } else {
+        try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
+        clientIdScheme = try extractClientIdScheme(clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? "")
+    }
     
     switch clientIdScheme {
     case ClientIdScheme.preRegistered.rawValue:

@@ -72,6 +72,21 @@ let preRegisteredSchemeClientId: [String: String] = [
     "client_id": "mock-client",
 ]
 
+let redirectUriSchemeClientIdDraft21: [String: String] = [
+    "client_id": "https://mock-verifier.com",
+    "client_id_scheme": "redirect_uri",
+]
+
+let DidSchemeClientIdDraft21: [String: String] = [
+    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+    "client_id_scheme": "did",
+]
+
+let preRegisteredSchemeClientIdDraft21: [String: String] = [
+    "client_id": "mock-client",
+    "client_id_scheme": "pre-registered",
+]
+
 let authRequestParamsByReference : [String] = [
     "client_id",
     "request_uri",
