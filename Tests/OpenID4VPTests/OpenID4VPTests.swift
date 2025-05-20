@@ -75,6 +75,20 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
         XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
+    
+    // client_id_scheme = pre-registered draft 21
+    func testReturnDataForValidRequestWithResponseUriDraft21() async {
+        let decoded: Any?
+
+        do {
+            decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUriDraft21, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        } catch {
+            decoded = nil
+            XCTFail("Should not get error but got error - \(error)")
+        }
+        XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+        XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
+    }
 
     //client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
