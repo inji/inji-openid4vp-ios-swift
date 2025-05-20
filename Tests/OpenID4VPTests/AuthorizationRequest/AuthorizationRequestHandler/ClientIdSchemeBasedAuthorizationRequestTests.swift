@@ -411,7 +411,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         await assertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
-            XCTAssertEqual("Client Identifier is empty", error.localizedDescription)
+            XCTAssertEqual("Invalid Input: client_id value cannot be empty or null", error.localizedDescription)
         }
     }
     
