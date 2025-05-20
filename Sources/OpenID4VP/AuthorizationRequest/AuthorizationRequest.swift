@@ -15,30 +15,6 @@ public struct AuthorizationRequest : Encodable {
     var clientMetadata: ClientMetadata?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
-    
-    public init(
-            clientId: String,
-            clientIdScheme: String? = nil,
-            presentationDefinition: PresentationDefinition,
-            responseType: String,
-            responseMode: String?,
-            nonce: String,
-            state: String?,
-            redirectUri: String?,
-            responseUri: String?,
-            clientMetadata: ClientMetadata?
-        ) {
-            self.clientId = clientId
-            self.clientIdScheme = clientIdScheme
-            self.presentationDefinition = presentationDefinition
-            self.responseType = responseType
-            self.responseMode = responseMode
-            self.nonce = nonce
-            self.state = state
-            self.redirectUri = redirectUri
-            self.responseUri = responseUri
-            self.clientMetadata = clientMetadata
-        }
 
     enum CodingKeys: String, CodingKey {
         case client_id

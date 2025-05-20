@@ -53,9 +53,9 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     func testGetAuthorizationRequestHandlerToGiveRespectiveClientIdBasedAuthorizationRequestHandler(){
         let mockSetResponseUri: (String) -> Void = { value in
         }
-        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientId, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientId, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
-        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientId, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientIdDraft23, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientIdDraft23, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientIdDraft23, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         
         XCTAssertTrue(didAuthRequestHandler is DidSchemeAuthorizationRequestHandler)
         XCTAssertTrue(preRegisteredSchemeAuthRequestHandler is PreRegisteredSchemeAuthorizationRequestHandler)
