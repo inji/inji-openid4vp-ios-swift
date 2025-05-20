@@ -4,6 +4,7 @@ import CryptoKit
 
 public struct AuthorizationRequest : Encodable {
     let clientId: String
+    let clientIdScheme: String?
     var presentationDefinition: PresentationDefinition
     let responseType: String
     let responseMode: String?
@@ -14,6 +15,30 @@ public struct AuthorizationRequest : Encodable {
     var clientMetadata: ClientMetadata?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
+    
+    public init(
+            clientId: String,
+            clientIdScheme: String? = nil,
+            presentationDefinition: PresentationDefinition,
+            responseType: String,
+            responseMode: String?,
+            nonce: String,
+            state: String?,
+            redirectUri: String?,
+            responseUri: String?,
+            clientMetadata: ClientMetadata?
+        ) {
+            self.clientId = clientId
+            self.clientIdScheme = clientIdScheme
+            self.presentationDefinition = presentationDefinition
+            self.responseType = responseType
+            self.responseMode = responseMode
+            self.nonce = nonce
+            self.state = state
+            self.redirectUri = redirectUri
+            self.responseUri = responseUri
+            self.clientMetadata = clientMetadata
+        }
 
     enum CodingKeys: String, CodingKey {
         case client_id
@@ -31,6 +56,7 @@ public struct AuthorizationRequest : Encodable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(clientId, forKey: .client_id)
+        try container.encodeIfPresent(clientIdScheme, forKey: .client_id_scheme)
         try container.encode(presentationDefinition, forKey: .presentation_definition)
         try container.encode(responseType, forKey: .response_type)
         try container.encode(responseMode, forKey: .response_mode)

@@ -80,7 +80,10 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         }
         
         let validValue = authorizationRequestParameters[validAttribute]
-        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "")
+        let clientIdValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] == nil
+        ? extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "") :
+        authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
+        
         if validValue as? String != clientIdValue {
             throw Logger.handleException(
                 exceptionType: "InvalidVerifier",

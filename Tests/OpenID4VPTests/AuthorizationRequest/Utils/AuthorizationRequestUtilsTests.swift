@@ -62,6 +62,18 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         XCTAssertTrue(redirectUriSchemeAuthRequestHandler is RedirectUriSchemeAuthorizationRequestHandler)
     }
     
+    func testGetAuthorizationRequestHandlerToGiveRespectiveClientIdBasedAuthorizationRequestHandlerForDraft21(){
+        let mockSetResponseUri: (String) -> Void = { value in
+        }
+        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientIdDraft21, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientIdDraft21, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientIdDraft21, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        
+        XCTAssertTrue(didAuthRequestHandler is DidSchemeAuthorizationRequestHandler)
+        XCTAssertTrue(preRegisteredSchemeAuthRequestHandler is PreRegisteredSchemeAuthorizationRequestHandler)
+        XCTAssertTrue(redirectUriSchemeAuthRequestHandler is RedirectUriSchemeAuthorizationRequestHandler)
+    }
+    
     func testShouldThrowErrorWhenClientIdSchemeIsNotSupported() async{
         XCTAssertThrowsError(try getAuthorizationRequestHandler( authorizationRequestParameters: ["client_id":"x509_san_dns:mock-verifier"], trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)) { error in
             XCTAssertEqual("Client id scheme in request is not supported", error.localizedDescription)
