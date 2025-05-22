@@ -20,11 +20,16 @@ func createUrlEncodedAuthorizationRequest(
     requestParams: [String: Any?],
     verifierSentAuthRequestByReference: Bool? = false,
     clientIdScheme: ClientIdScheme,
-    applicableFields: [String]? = nil
+    applicableFields: [String]? = nil,
+    draftVersion: Int = 23
 ) -> String {
     let paramList: [String]
     if verifierSentAuthRequestByReference == true {
-        paramList = authRequestParamsByReference
+        if draftVersion == 23 {
+            paramList = authRequestParamsByReferenceDraft23
+        } else {
+            paramList = authRequestParamsByReferenceDraft21
+        }
     } else {
         paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     }
@@ -178,6 +183,7 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
     let responseType = responseType ?? ResponseType.vp_token.rawValue
     return AuthorizationRequest(
         clientId: "client_id",
+        clientIdScheme: nil,
         presentationDefinition: mockPresentationDefinitionObject,
         responseType: responseType,
         responseMode: responseMode.rawValue,
