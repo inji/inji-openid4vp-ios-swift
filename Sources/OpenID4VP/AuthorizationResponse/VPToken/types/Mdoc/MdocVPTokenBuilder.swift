@@ -45,14 +45,14 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             documents.append(document)
         }
         
-        let deviceRespone = CBOR.map([
+        let deviceResponse = CBOR.map([
             .utf8String("version"): .utf8String("1.0"),
             .utf8String("documents"): .array(documents),
             .utf8String("status"): .unsignedInt(UInt64(0)), // Status = OK
         ])
         
         //base64 url encode without padding the deviceResponse
-        let encodedDeviceResponseBase64Url = Data(cborEncode(deviceRespone)).toBase64UrlEncoded()
+        let encodedDeviceResponseBase64Url = Data(cborEncode(deviceResponse)).toBase64UrlEncoded()
         return MdocVPToken(value: encodedDeviceResponseBase64Url)
     }
     
@@ -64,11 +64,11 @@ class MdocVPTokenBuilder : VPTokenBuilder {
      signature : bstr
      ]
      */
-    private func createDeviceSignature(_ vpResoonseMetadata: DeviceAuthentication) throws -> CBOR {
-        let base64DecodedSignature = try Base64Decoder.decodeBase64ToData(vpResoonseMetadata.signature)
+    private func createDeviceSignature(_ vpResponseMetadata: DeviceAuthentication) throws -> CBOR {
+        let base64DecodedSignature = try Base64Decoder.decodeBase64ToData(vpResponseMetadata.signature)
         let cborEncodedSignature = cborEncode(toCBOR(base64DecodedSignature))
         let protectedHeaders = CBOR.map([
-            .unsignedInt(1): try mapSigningAlgorithmToProtectedAlg(algorithm: vpResoonseMetadata.algorithm)
+            .unsignedInt(1): try mapSigningAlgorithmToProtectedAlg(algorithm: vpResponseMetadata.algorithm)
         ])
         let unprotectedHeaders = CBOR.map([:])
         //Payload is available as detached content
