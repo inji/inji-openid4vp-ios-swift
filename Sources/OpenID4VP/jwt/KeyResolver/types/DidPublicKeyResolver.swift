@@ -4,7 +4,6 @@ class DidPublicKeyResolver : PublicKeyResolver {
     private let didUrl: String
     private let networkManager: NetworkManaging
     static let className = String(describing: DidPublicKeyResolver.self)
-    let DID_RESOLVER = "https://resolver.identity.foundation/1.0/identifiers/"
     
     init(didUrl: String, networkManager: NetworkManaging) {
         self.didUrl = didUrl
