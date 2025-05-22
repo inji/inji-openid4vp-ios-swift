@@ -41,8 +41,41 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
    - The created JWE's header contains the `apu` (producer info) as wallet generated nonce (with entropy 16 bytes) and `apv` (recipient info) as the verifier nonce i.e., the nonce received in the authorization request.
 
 ## Specifications supported
-- The implementation follows OpenID for Verifiable Presentations - draft 23. [Specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html).
-- Below are the fields we expect in the authorization request based on the client id scheme,
+- The implementation follows OpenID for Verifiable Presentations - draft 21 and draft23 .[Specification-21](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html) [Specification-23](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html).
+- The library validates the client_id and client_id_scheme parameters in the authorization request according to the relevant specification.
+- If the client_id_scheme parameter is included in the authorization request, the request is treated as conforming to Draft 21, and validation is performed accordingly.
+- If the client_id_scheme parameter is not included, the request is interpreted as following Draft 23, and validation is applied based on that specification.
+
+- Below are the fields we expect in the authorization request based on the client id scheme as part of draft 21,
+  - Client_id_scheme is **_pre-registered_**
+    * client_id
+    * client_id_scheme
+    * presentation_definition/presentation_definition_uri
+    * response_type
+    * response_mode
+    * nonce
+    * state
+    * response_uri
+    * client_metadata (Optional)
+
+  - Client_id_scheme is **_redirect_uri_**
+    * client_id
+    * client_id_scheme
+    * presentation_definition/presentation_definition_uri
+    * response_type
+    * nonce
+    * state
+    * redirect_uri
+    * client_metadata (Optional)
+    
+  - **_Request Uri_** is also supported as part of this version.
+    - When request_uri is passed as part of the authorization request, below are the fields we expect in the authorization request,
+        * client_id
+        * client_id_scheme
+        * request_uri
+        * request_uri_method
+    
+- Below are the fields we expect in the authorization request based on the client id scheme as part of draft 23,
   - Client_id_scheme is **_pre-registered_**
     * client_id
     * presentation_definition/presentation_definition_uri
@@ -70,7 +103,6 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
    
   - The request uri can return either a jwt token/encoded if it is a jwt the signature is verified as mentioned in the specification.
   - The client id and client id scheme from the authorization request and the client id and client id scheme received from the response of the request uri should be same.
-- VC format supported is Ldp Vc as of now.
 
 **Note** : The pre-registered client id scheme validation can be toggled on/off based on the optional boolean which you can pass to the authenticateVerifier methods shouldValidateClient parameter. This is false by default.
 ## Functionalities

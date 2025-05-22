@@ -60,20 +60,42 @@ let authorizationRequestParamsWithValue: [String: Any] = [
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition"
 ]
 
-let redirectUriSchemeClientId: [String: String] = [
+let redirectUriSchemeClientIdDraft23: [String: String] = [
     "client_id": "redirect_uri:https://mock-verifier.com",
 ]
 
-let DidSchemeClientId: [String: String] = [
+let DidSchemeClientIdDraft23: [String: String] = [
     "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
 ]
 
-let preRegisteredSchemeClientId: [String: String] = [
+let preRegisteredSchemeClientIdDraft23: [String: String] = [
     "client_id": "mock-client",
 ]
 
-let authRequestParamsByReference : [String] = [
+let redirectUriSchemeClientIdDraft21: [String: String] = [
+    "client_id": "https://mock-verifier.com",
+    "client_id_scheme": "redirect_uri",
+]
+
+let DidSchemeClientIdDraft21: [String: String] = [
+    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+    "client_id_scheme": "did",
+]
+
+let preRegisteredSchemeClientIdDraft21: [String: String] = [
+    "client_id": "mock-client",
+    "client_id_scheme": "pre-registered",
+]
+
+let authRequestParamsByReferenceDraft23 : [String] = [
     "client_id",
+    "request_uri",
+    "request_uri_method"
+]
+
+let authRequestParamsByReferenceDraft21 : [String] = [
+    "client_id",
+    "client_id_scheme",
     "request_uri",
     "request_uri_method"
 ]
@@ -100,8 +122,20 @@ let authRequestWithRedirectUriWithPresentationDefinitionUri : [String] = [
     "client_metadata"
 ]
 
-let authRequestWithPreRegisteredByValue : [String] = [
+let authRequestWithPreRegisteredByValueDraft23 : [String] = [
     "client_id",
+    "response_mode",
+    "response_uri",
+    "presentation_definition",
+    "response_type",
+    "nonce",
+    "state",
+    "client_metadata"
+]
+
+let authRequestWithPreRegisteredByValueDraft21 : [String] = [
+    "client_id",
+    "client_id_scheme",
     "response_mode",
     "response_uri",
     "presentation_definition",
@@ -126,7 +160,7 @@ let authRequestWithDidByValue : [String] = [
 let authRequestClientIdSchemeMap : [ClientIdScheme: [String]] = [
     ClientIdScheme.preRegistered : authRequestWithDidByValue,
     ClientIdScheme.redirectUri : authRequestWithRedirectUriByValue,
-    ClientIdScheme.did : authRequestWithPreRegisteredByValue
+    ClientIdScheme.did : authRequestWithPreRegisteredByValueDraft23
 ]
 
 let presentationDefinition: [String: Any] = [
@@ -213,54 +247,57 @@ let authorizationRequestParamsWithRedirectUri: [String: Any] = [
 ]
 
 let urlEncodedAuthRequestWithPresentationDefinitionUri = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId),
+    requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23),
     clientIdScheme: .preRegistered,
-    applicableFields: authRequestWithPreRegisteredByValue.map {
+    applicableFields: authRequestWithPreRegisteredByValueDraft23.map {
         $0 == AuthorizationRequestFieldConstants.presentationDefinition.rawValue ? AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue : $0
     }
 )
 
 // client_id_scheme = redirect_uri
 let testValidUrlEncodedVPRequestWithRedirectUri = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId),
+    requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
     clientIdScheme: .redirectUri,
     applicableFields: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 }
 )
 
 //  client_id_scheme = redirect_uri, with response uri and response mode
-let testVPRequestWithRedirectUriAndResponseUriResponseMode = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps( redirectUriSchemeClientId,  authorizationRequestParamsWithValue), clientIdScheme: .redirectUri, applicableFields: authRequestClientIdSchemeMap[.redirectUri]! + ["response_uri","response_mode"])
+let testVPRequestWithRedirectUriAndResponseUriResponseMode = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps( redirectUriSchemeClientIdDraft23,  authorizationRequestParamsWithValue), clientIdScheme: .redirectUri, applicableFields: authRequestClientIdSchemeMap[.redirectUri]! + ["response_uri","response_mode"])
 
 //  client_id_scheme = redirect_uri, and not equal to client id
 let testVPRequestWithRedirectUriAndClientIdNotEqual = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "redirect_uri:https://mock-verifier-party.com", "redirect_uri": "https://mock-verifier.com", "response_mode": "fragment"]), clientIdScheme: .redirectUri)
 
 //client_id_scheme = pre-registered
-let testValidUrlEncodedVPRequestWithResponseUri = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId), clientIdScheme: .preRegistered)
+let testValidUrlEncodedVPRequestWithResponseUri = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23), clientIdScheme: .preRegistered)
+
+// client_id_scheme = pre-registered draft 21
+let testValidUrlEncodedVPRequestWithResponseUriDraft21 = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21), clientIdScheme: .preRegistered, draftVersion: 21)
 
 // jwt -> client_id_scheme = did
-let testValidSignedVPRequestWithDid = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
+let testValidSignedVPRequestWithDid = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
 let testInValidSignedVPRequestWithDidAndClientIdDifferent = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, [
     "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-21",
 ]), verifierSentAuthRequestByReference : true, clientIdScheme: .did)
 
 
-let testInvalidPresentationDefinitionVPRequest = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, ["presentation_definition": convertToJsonString(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
+let testInvalidPresentationDefinitionVPRequest = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, ["presentation_definition": convertToJsonString(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
 
-let urlEncodedAuthorizationRequestWithInvalidClientMetadata = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientId, ["client_metadata": "{}"]),clientIdScheme: .preRegistered)
+let urlEncodedAuthorizationRequestWithInvalidClientMetadata = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, ["client_metadata": "{}"]),clientIdScheme: .preRegistered)
 
-let validJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId))
+let validJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23))
 
-let invalidJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId), addValidSignature: false)
+let invalidJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23), addValidSignature: false)
 
-let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientId), jwsHeaderData: [
+let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23), jwsHeaderData: [
     "typ": "oauth-authz-req+jwt",
     "alg": "EdDSA"
 ])
 
-let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientId)) as [String : Any]
+let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
 
 let mockUrlEncodedVPRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientId),clientIdScheme: .preRegistered
+    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientIdDraft23),clientIdScheme: .preRegistered
 )
 
 let mockAuthorizationRequestObjectWithDirectPostResponseMode = getMockAuthorizationRequest()

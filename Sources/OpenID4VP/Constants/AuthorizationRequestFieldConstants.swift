@@ -1,5 +1,6 @@
 public enum AuthorizationRequestFieldConstants: String {
     case clientId = "client_id"
+    case clientIdScheme = "client_id_scheme"
     case responseType = "response_type"
     case responseMode = "response_mode"
     case presentationDefinition = "presentation_definition"
