@@ -159,7 +159,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         ]
         
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self),walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("No jwk matching the specified algorithm found", error.localizedDescription)
+            XCTAssertEqual("No jwk matching the specified algorithm found for encryption", error.localizedDescription)
         }
     }
     
