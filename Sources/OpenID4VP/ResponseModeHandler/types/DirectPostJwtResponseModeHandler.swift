@@ -28,8 +28,8 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                            walletMetadata: walletMetadata)
         }
         
-        if !jwks.keys.contains(where: { $0.alg == alg }) {
-            try throwInvalidDataException(message: "No jwk matching the specified algorithm found")
+        if !jwks.keys.contains(where: { $0.alg == alg && $0.use == "enc"}) {
+            try throwInvalidDataException(message: "No jwk matching the specified algorithm found for encryption")
         }
     }
     
@@ -90,6 +90,6 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     }
     
     private func getJwk(_ jwks: JWKS, _ alg: String) throws -> JWK {
-        return jwks.keys.first(where: { $0.alg == alg })!
+        return jwks.keys.first(where: { $0.alg == alg && $0.use == "enc"})!
     }
 }
