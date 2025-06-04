@@ -4,47 +4,53 @@ struct AuthorizationResponse {
     let vpToken: VPTokenType
     let presentationSubmission: PresentationSubmission
     let state: String?
+
     static let className = String(describing: AuthorizationResponse.self)
-    
-    func toJsonEncodedMap() throws -> [String: Any] {
-        var bodyParams : [String: Any] = [
-            "vp_token": self.vpToken.encoded ?? [:],
-            "presentation_submission": try self.presentationSubmission.jsonData()
-        ]
-        
+
+    func toJsonEncodedMap() throws -> [String: String] {
+        var bodyParams: [String: String] = [:]
+
+        bodyParams["vp_token"] = try vpToken.encodedString(fieldName: "vp_token", className: Self.className)
+        bodyParams["presentation_submission"] = try encode(
+            presentationSubmission,
+            fieldName: "presentation_submission",
+            className: Self.className
+        )
+
         if let state = state {
             bodyParams["state"] = state
         }
-        
+
         return bodyParams
     }
 }
 
-public enum VPTokenType {
-    case vpTokenArray([VPToken])
-    case vpTokenElement(VPToken)
-    
-    enum CodingKeys: String, CodingKey {
-        case type
-        case value
+
+public struct AnyEncodable: Encodable {
+    private let _encode: (Encoder) throws -> Void
+
+    public init<T: Encodable>(_ value: T) {
+        self._encode = value.encode
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        try _encode(encoder)
     }
 }
 
-extension VPTokenType {
-    var encoded: Any? {
-        do {
-            switch self {
-            case .vpTokenArray(let tokens):
-                let encodedTokens = try tokens.map { try $0.jsonData() }
-                return encodedTokens
-                
-            case .vpTokenElement(let token):
-                let encodedToken = try token.jsonData()
-                return encodedToken
-            }
-        } catch {
-            print("Caught error while encoding VPTokenType: \(error)")
-            return nil
+
+
+public enum VPTokenType {
+    case vpTokenArray([VPToken])
+    case vpTokenElement(VPToken)
+
+    func encodedString(fieldName: String, className: String) throws -> String {
+        switch self {
+        case .vpTokenArray(let tokens):
+            let wrapped = tokens.map { AnyEncodable($0) }
+            return try encode(wrapped, fieldName: fieldName, className: className)
+        case .vpTokenElement(let token):
+            return try encode(AnyEncodable(token), fieldName: fieldName, className: className)
         }
     }
 }
