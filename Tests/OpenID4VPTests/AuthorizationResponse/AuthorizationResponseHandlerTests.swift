@@ -163,11 +163,11 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         XCTAssertEqual("sending is success in AuthorizationResponseTests", result)
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
-        let decodedVPToken = decodeQueryValue(jsonString(recordedRequest.requestBody?["vp_token"]! ?? "") ?? "")
+        let decodedVPToken = decodeQueryValue(recordedRequest.requestBody?["vp_token"] ?? "")
         XCTAssertTrue(recordedRequest.requestBody?.keys.count == 3)
         XCTAssertTrue(recordedRequest.requestBody?["presentation_submission"] != nil)
         assertJsonString(expected: expectedVPToken, actual: decodedVPToken, strict: false)
-        XCTAssertEqual("state", recordedRequest.requestBody?["state"] as! String)
+        XCTAssertEqual("state", recordedRequest.requestBody?["state"]!)
     }
     
     /// more than one VP format in response_type vp_token -> formats: ldp_vc, mso_mdoc
@@ -297,7 +297,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         _ = try await authorizationResponseHandler.shareVP(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, vpTokenSigningResults: mockVPTokenSigningResults, responseUri: responseUri)
         
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
-        let decodedPresentationSubmission = decodeQueryValue(jsonString(recordedRequest.requestBody?["presentation_submission"]! ?? "") ?? "")
+        let decodedPresentationSubmission = decodeQueryValue(recordedRequest.requestBody?["presentation_submission"] ?? "")
         assertJsonString(expected: expectedPresentationSubmission, actual: decodedPresentationSubmission, strict: false)
     }
 }
