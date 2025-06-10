@@ -1,7 +1,7 @@
 import Foundation
 
-public struct UUIDGenerator{
-   static func generateUUID() -> String {
-        return UUID().uuidString.lowercased()
+public struct UUIDGenerator {
+    public static func generateUUID() -> String {
+        return "urn:uuid:\(UUID().uuidString.lowercased())"
     }
 }

@@ -4,7 +4,7 @@ import Foundation
     public var value: Any
      static let className = String(describing: AnyCodable.self)
     
-    init(_ value: Any) {
+    public init(_ value: Any) {
         self.value = value
     }
     

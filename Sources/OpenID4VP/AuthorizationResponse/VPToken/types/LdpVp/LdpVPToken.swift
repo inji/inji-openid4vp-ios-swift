@@ -1,14 +1,30 @@
 struct LdpVPToken: Encodable, VPToken {
     let context: [String]
     let type: [String]
-    let verifiableCredential: [[String: AnyCodable]]
+    let verifiableCredential: [AnyCodable]
     let id: String
     let holder: String
-    let proof: Proof
-    
-    static let internalPath : String = "verifiableCredential"
-    
-    public enum CodingKeys: String, CodingKey {
+    var proof: Proof?
+
+    static let internalPath: String = "verifiableCredential"
+
+    init(
+        context: [String] = ["https://www.w3.org/2018/credentials/v1"],
+        type: [String] = ["VerifiablePresentation"],
+        verifiableCredential: [AnyCodable],
+        id: String,
+        holder: String,
+        proof: Proof
+    ) {
+        self.context = context
+        self.type = type
+        self.verifiableCredential = verifiableCredential
+        self.id = id
+        self.holder = holder
+        self.proof = proof
+    }
+
+    enum CodingKeys: String, CodingKey {
         case context = "@context"
         case type
         case verifiableCredential
