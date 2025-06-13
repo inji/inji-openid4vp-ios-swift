@@ -1,29 +1,46 @@
-public struct LdpVPTokenSigningResult : VPTokenSigningResult {
-    let jws: String
+import Foundation
+
+public struct LdpVPTokenSigningResult: VPTokenSigningResult {
+    var jws: String?
+    let proofValue: String?
     let signatureAlgorithm: String
-    let publicKey: String
-    let domain: String
-    static let className = String(describing: LdpVPTokenSigningResult.self)
     
-    public init(jws: String, signatureAlgorithm: String, publicKey: String, domain: String) {
+    public init(jws: String? = nil, proofValue: String?, signatureAlgorithm: String) {
         self.jws = jws
+        self.proofValue = proofValue
         self.signatureAlgorithm = signatureAlgorithm
-        self.publicKey = publicKey
-        self.domain = domain
     }
-    
+
+    static let className = String(describing: LdpVPTokenSigningResult.self)
+
     func validate() throws {
-        let requiredParams: [String: String] = [
-            "jws": jws,
-            "signatureAlgorithm": signatureAlgorithm,
-            "publicKey": publicKey,
-            "domain": domain
-        ]
-        
-        for (_, value) in requiredParams {
-            if value.isEmpty || value == "null" {
-                throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["vp response metadata",value], className: LdpVPTokenSigningResult.className)
+        switch signatureAlgorithm {
+        case SignatureAlgorithm.ed25519Signature2020.rawValue:
+            guard let proofValue = proofValue, !proofValue.isEmpty else {
+                throw Logger.handleException(
+                    exceptionType: "InvalidInput",
+                    fieldPath: ["LdpVPTokenSigningResult", "proofValue"],
+                    className: LdpVPTokenSigningResult.className
+                )
             }
+
+        case SignatureAlgorithm.jsonWebSignature2020.rawValue,
+            SignatureAlgorithm.rsaSignature2018.rawValue,
+            SignatureAlgorithm.ed25519Signature2018.rawValue:
+            guard let jws = jws, !jws.isEmpty else {
+                throw Logger.handleException(
+                    exceptionType: "InvalidInput",
+                    fieldPath: ["LdpVPTokenSigningResult", "jws"],
+                    className: LdpVPTokenSigningResult.className
+                )
+            }
+
+        default:
+            throw Logger.handleException(
+                exceptionType: "UnsupportedSignatureAlgorithm",
+                message: "Unsupported algorithm: \(signatureAlgorithm)",
+                className: LdpVPTokenSigningResult.className
+            )
         }
     }
 }

@@ -8,8 +8,29 @@ public struct JWK: Codable {
     let alg: String
     let kid: String
     var y: String? = nil
+
     static let className = String(describing: JWK.self)
-    
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        do {
+            self.kty = try container.decode(String.self, forKey: .kty)
+            self.use = try container.decode(String.self, forKey: .use)
+            self.crv = try container.decode(String.self, forKey: .crv)
+            self.x = try container.decode(String.self, forKey: .x)
+            self.alg = try container.decode(String.self, forKey: .alg)
+            self.kid = try container.decode(String.self, forKey: .kid)
+            self.y = try? container.decodeIfPresent(String.self, forKey: .y)
+        } catch let error as DecodingError {
+            throw Logger.handleException(
+                exceptionType: "DeserializationFailure",
+                message: error.localizedDescription, fieldPath: ["jwk"],
+                className: JWK.className
+            )
+        }
+    }
+
     func validate() throws {
         let requiredFields: [(String, String)] = [
             (kty, "kty"),
@@ -25,5 +46,9 @@ public struct JWK: Codable {
         }
 
         try validateField(y, ["y"], JWK.className)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kty, use, crv, x, alg, kid, y
     }
 }

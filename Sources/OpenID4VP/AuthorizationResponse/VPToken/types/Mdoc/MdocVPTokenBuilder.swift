@@ -3,13 +3,11 @@ import SwiftCBOR
 
 class MdocVPTokenBuilder : VPTokenBuilder {
     private let mdocVPTokenSigningResult:  MdocVPTokenSigningResult
-    private let unsignedMdocVPToken:  UnsignedMdocVPToken
     private let credentials: [String]
     private let className = String(describing: MdocVPTokenBuilder.self)
     
-    init(mdocVPTokenSigningResult:  MdocVPTokenSigningResult,unsignedMdocVPToken:  UnsignedMdocVPToken, credentials: [String]) {
+    init(mdocVPTokenSigningResult:  MdocVPTokenSigningResult, credentials: [String]) {
         self.mdocVPTokenSigningResult = mdocVPTokenSigningResult
-        self.unsignedMdocVPToken = unsignedMdocVPToken
         self.credentials = credentials
     }
     
