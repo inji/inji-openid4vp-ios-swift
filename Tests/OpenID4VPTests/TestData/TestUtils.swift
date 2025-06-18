@@ -1,249 +1,249 @@
-//import Foundation
-//@testable import OpenID4VP
-//import XCTest
-//
-//func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
-//    var verifiers: [Verifier] = []
-//    
-//    for verifierData in verifierList {
-//        if let clientId = verifierData["client_id"] as? String,
-//           let responseUris = verifierData["response_uris"] as? [String] {
-//            let verifier = Verifier(clientId: clientId, responseUris: responseUris)
-//            verifiers.append(verifier)
-//        }
-//    }
-//    
-//    return verifiers
-//}
-//
-//func createUrlEncodedAuthorizationRequest(
-//    requestParams: [String: Any?],
-//    verifierSentAuthRequestByReference: Bool? = false,
-//    clientIdScheme: ClientIdScheme,
-//    applicableFields: [String]? = nil,
-//    draftVersion: Int = 23
-//) -> String {
-//    let paramList: [String]
-//    if verifierSentAuthRequestByReference == true {
-//        if draftVersion == 23 {
-//            paramList = authRequestParamsByReferenceDraft23
-//        } else {
-//            paramList = authRequestParamsByReferenceDraft21
-//        }
-//    } else {
-//        paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
-//    }
-//    
-//    let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams)
-//    let queryString = encodeToQueryParameters(authorizationRequestParam)
-//    
-//    return "OPENID4VP://authorize?\(queryString)"
-//}
-//
-//private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
-//    let queryString = parameters.compactMap { (key, value) -> String? in
-//        guard let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-//        
-//        let encodedValue: String
-//        if let stringValue = value as? String {
-//            encodedValue = stringValue
-//        } else if let jsonData = try? JSONSerialization.data(withJSONObject: value as Any, options: []),
-//                  //       stringify client_metdata and presentation defintiion
-//                  let jsonString = String(data: jsonData, encoding: .utf8) {
-//            encodedValue = jsonString
-//        } else {
-//            return nil // Skip values that can't be converted
-//        }
-//        
-//        guard let finalEncodedValue = encodedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-//        return "\(encodedKey)=\(finalEncodedValue)"
-//    }.joined(separator: "&")
-//    
-//    return queryString
-//}
-//
-//func createAuthorizationRequest(
-//    paramList: [String],
-//    requestParams: [String: Any?]
-//) -> [String: Any?] {
-//    var authorizationRequestParam: [String: Any?] = [:]
-//    for param in paramList {
-//        if let value = requestParams[param], value != nil {
-//            authorizationRequestParam[param] = value
-//        }
-//    }
-//    return authorizationRequestParam
-//}
-//
-//func createAuthorizationRequestObject(
-//    clientIdScheme: ClientIdScheme,
-//    authorizationRequestParams: [String: Any],
-//    jwsHeaderData: [String: Any]? = nil,
-//    applicableFields: [String]? = nil,
-//    addValidSignature: Bool = true
-//) -> String {
-//    
-//    let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
-//    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
-//    
-//    switch clientIdScheme {
-//    case .did:
-//        return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
-//    default:
-//        return convertToJsonString(authorizaitonRequestParameters as [String : Any])
-//    }
-//}
-//
-//
-//func convertToJsonString(_ data: [String: Any]) -> String {
-//    let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [])
-//    let jsonString = String(data: jsonData!, encoding: .utf8)
-//    return jsonString!
-//}
-//
-//func convertToJsonString(_ array: [Any]) -> String {
-//    do {
-//        let jsonData = try JSONSerialization.data(withJSONObject: array, options: .prettyPrinted)
-//        if let jsonString = String(data: jsonData, encoding: .utf8) {
-//            return jsonString
-//        }
-//    } catch {
-//        print("Error converting array to JSON: \(error)")
-//    }
-//    return ""
-//}
-//
-//func convertToDictionary<T: Encodable>(object: T) -> [String: Any]? {
-//    guard let data = try? JSONEncoder().encode(object) else {
-//        return nil
-//    }
-//    return try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-//}
-//
-//func addingPercentEncoding(_ value: String) -> String {
-//    return value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
-//}
-//
-//func mergeMaps<K, V>(_ maps: [K: V]...) -> [K: V] {
-//    return maps.reduce(into: [:]) { result, map in
-//        result.merge(map) { (_, new) in new }
-//    }
-//}
-//
-//
-//// Assert equality of errors
-//public func == (lhs: Error, rhs: Error) -> Bool {
-//    guard type(of: lhs) == type(of: rhs) else { return false }
-//    let error1 = lhs as NSError
-//    let error2 = rhs as NSError
-//    return error1.domain == error2.domain && error1.code == error2.code && "\(lhs)" == "\(rhs)"
-//}
-//
-//extension Equatable where Self : Error {
-//    public static func == (lhs: Self, rhs: Self) -> Bool {
-//        lhs as Error == rhs as Error
-//    }
-//}
-//
-//func decodeQueryValue(_ value: String) -> String {
-//    return value.removingPercentEncoding ?? value
-//}
-//
-//func jsonString(_ any: Any, prettyPrinted: Bool = false) -> String? {
-//    guard JSONSerialization.isValidJSONObject(any) else {
-//        print("Not a valid JSON object")
-//        return nil
-//    }
-//    
-//    do {
-//        let options: JSONSerialization.WritingOptions = prettyPrinted ? [.prettyPrinted] : []
-//        let data = try JSONSerialization.data(withJSONObject: any, options: options)
-//        return String(data: data, encoding: .utf8)
-//    } catch {
-//        print("Error serializing to JSON: \(error)")
-//        return nil
-//    }
-//}
-//
-//func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
-//    let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
-//    let decoder = JSONDecoder()
-//    return (try? decoder.decode(T.self, from: jsonData!))!
-//}
-//
-//func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {
-//    let url = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
-//    let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: [Header.contentType.rawValue: "application/json"])!
-//    let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
-//    
-//    return (body: body, httpUrlResponse: modifiedResponse)
-//}
-//
-//public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil) -> AuthorizationRequest {
-//    let responseType = responseType ?? ResponseType.vp_token.rawValue
-//    return AuthorizationRequest(
-//        clientId: "client_id",
-//        clientIdScheme: nil,
-//        presentationDefinition: mockPresentationDefinitionObject,
-//        responseType: responseType,
-//        responseMode: responseMode.rawValue,
-//        nonce: "nonce",
-//        state: "state",
-//        redirectUri: "1234",
-//        responseUri: "https://mock-verifier.com",
-//        clientMetadata: mockClientMetadataObject
-//    )
-//}
-//
-//func createWalletMetadata(
-//    presentationDefinitionURISupported: Bool = true,
-//    vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
-//    clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
-//    requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
-//    authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
-//    authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
-//) throws -> WalletMetadata {
-//    return try WalletMetadata(
-//        presentationDefinitionURISupported: presentationDefinitionURISupported,
-//        vpFormatsSupported: vpFormatsSupported,
-//        clientIdSchemesSupported: clientIdSchemesSupported,
-//        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
-//        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
-//        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
-//    )
-//}
-//
-//func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
-//    "https://www.w3.org/2018/credentials/v1",
-//    "https://www.w3.org/2018/credentials/examples/v1",
-//    [
-//        "sec": "https://w3id.org/security#"
-//    ]
-//    
-//]) -> [String: Any] {
-//    let data : [String: Any] = [
-//        "@context": context,
-//        "id": "https://example.com/credentials/1872",
-//        "type": [
-//            "VerifiableCredential",
-//            credentialType
-//        ],
-//        "issuer": [
-//            "id": "did:example:issuer"
-//        ],
-//        "issuanceDate": "2010-01-01T19:23:24Z",
-//        "credentialSubject": [
-//            "given_name": "MockUser",
-//            "family_name": "Mockister",
-//            "birthdate": "1949-01-22"
-//        ],
-//        "proof": [
-//            "type": "Ed25519Signature2018",
-//            "created": "2021-03-19T15:30:15Z",
-//            "jws": "eyJhb...JQdBw",
-//            "proofPurpose": "assertionMethod",
-//            "verificationMethod": "did:example:issuer#keys-1"
-//        ]
-//    ]
-//    return data
-//}
+import Foundation
+@testable import OpenID4VP
+import XCTest
+
+func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
+    var verifiers: [Verifier] = []
+    
+    for verifierData in verifierList {
+        if let clientId = verifierData["client_id"] as? String,
+           let responseUris = verifierData["response_uris"] as? [String] {
+            let verifier = Verifier(clientId: clientId, responseUris: responseUris)
+            verifiers.append(verifier)
+        }
+    }
+    
+    return verifiers
+}
+
+func createUrlEncodedAuthorizationRequest(
+    requestParams: [String: Any?],
+    verifierSentAuthRequestByReference: Bool? = false,
+    clientIdScheme: ClientIdScheme,
+    applicableFields: [String]? = nil,
+    draftVersion: Int = 23
+) -> String {
+    let paramList: [String]
+    if verifierSentAuthRequestByReference == true {
+        if draftVersion == 23 {
+            paramList = authRequestParamsByReferenceDraft23
+        } else {
+            paramList = authRequestParamsByReferenceDraft21
+        }
+    } else {
+        paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+    }
+    
+    let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams)
+    let queryString = encodeToQueryParameters(authorizationRequestParam)
+    
+    return "OPENID4VP://authorize?\(queryString)"
+}
+
+private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
+    let queryString = parameters.compactMap { (key, value) -> String? in
+        guard let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        
+        let encodedValue: String
+        if let stringValue = value as? String {
+            encodedValue = stringValue
+        } else if let jsonData = try? JSONSerialization.data(withJSONObject: value as Any, options: []),
+                  //       stringify client_metdata and presentation defintiion
+                  let jsonString = String(data: jsonData, encoding: .utf8) {
+            encodedValue = jsonString
+        } else {
+            return nil // Skip values that can't be converted
+        }
+        
+        guard let finalEncodedValue = encodedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        return "\(encodedKey)=\(finalEncodedValue)"
+    }.joined(separator: "&")
+    
+    return queryString
+}
+
+func createAuthorizationRequest(
+    paramList: [String],
+    requestParams: [String: Any?]
+) -> [String: Any?] {
+    var authorizationRequestParam: [String: Any?] = [:]
+    for param in paramList {
+        if let value = requestParams[param], value != nil {
+            authorizationRequestParam[param] = value
+        }
+    }
+    return authorizationRequestParam
+}
+
+func createAuthorizationRequestObject(
+    clientIdScheme: ClientIdScheme,
+    authorizationRequestParams: [String: Any],
+    jwsHeaderData: [String: Any]? = nil,
+    applicableFields: [String]? = nil,
+    addValidSignature: Bool = true
+) -> String {
+    
+    let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
+    
+    switch clientIdScheme {
+    case .did:
+        return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
+    default:
+        return convertToJsonString(authorizaitonRequestParameters as [String : Any])
+    }
+}
+
+
+func convertToJsonString(_ data: [String: Any]) -> String {
+    let jsonData = try? JSONSerialization.data(withJSONObject: data, options: [])
+    let jsonString = String(data: jsonData!, encoding: .utf8)
+    return jsonString!
+}
+
+func convertToJsonString(_ array: [Any]) -> String {
+    do {
+        let jsonData = try JSONSerialization.data(withJSONObject: array, options: .prettyPrinted)
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+            return jsonString
+        }
+    } catch {
+        print("Error converting array to JSON: \(error)")
+    }
+    return ""
+}
+
+func convertToDictionary<T: Encodable>(object: T) -> [String: Any]? {
+    guard let data = try? JSONEncoder().encode(object) else {
+        return nil
+    }
+    return try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+}
+
+func addingPercentEncoding(_ value: String) -> String {
+    return value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
+}
+
+func mergeMaps<K, V>(_ maps: [K: V]...) -> [K: V] {
+    return maps.reduce(into: [:]) { result, map in
+        result.merge(map) { (_, new) in new }
+    }
+}
+
+
+// Assert equality of errors
+public func == (lhs: Error, rhs: Error) -> Bool {
+    guard type(of: lhs) == type(of: rhs) else { return false }
+    let error1 = lhs as NSError
+    let error2 = rhs as NSError
+    return error1.domain == error2.domain && error1.code == error2.code && "\(lhs)" == "\(rhs)"
+}
+
+extension Equatable where Self : Error {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs as Error == rhs as Error
+    }
+}
+
+func decodeQueryValue(_ value: String) -> String {
+    return value.removingPercentEncoding ?? value
+}
+
+func jsonString(_ any: Any, prettyPrinted: Bool = false) -> String? {
+    guard JSONSerialization.isValidJSONObject(any) else {
+        print("Not a valid JSON object")
+        return nil
+    }
+    
+    do {
+        let options: JSONSerialization.WritingOptions = prettyPrinted ? [.prettyPrinted] : []
+        let data = try JSONSerialization.data(withJSONObject: any, options: options)
+        return String(data: data, encoding: .utf8)
+    } catch {
+        print("Error serializing to JSON: \(error)")
+        return nil
+    }
+}
+
+func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
+    let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
+    let decoder = JSONDecoder()
+    return (try? decoder.decode(T.self, from: jsonData!))!
+}
+
+func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {
+    let url = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
+    let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: [Header.contentType.rawValue: "application/json"])!
+    let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
+    
+    return (body: body, httpUrlResponse: modifiedResponse)
+}
+
+public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil) -> AuthorizationRequest {
+    let responseType = responseType ?? ResponseType.vp_token.rawValue
+    return AuthorizationRequest(
+        clientId: "client_id",
+        clientIdScheme: nil,
+        presentationDefinition: mockPresentationDefinitionObject,
+        responseType: responseType,
+        responseMode: responseMode.rawValue,
+        nonce: "nonce",
+        state: "state",
+        redirectUri: "1234",
+        responseUri: "https://mock-verifier.com",
+        clientMetadata: mockClientMetadataObject
+    )
+}
+
+func createWalletMetadata(
+    presentationDefinitionURISupported: Bool = true,
+    vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
+    clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
+    requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
+    authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
+    authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
+) throws -> WalletMetadata {
+    return try WalletMetadata(
+        presentationDefinitionURISupported: presentationDefinitionURISupported,
+        vpFormatsSupported: vpFormatsSupported,
+        clientIdSchemesSupported: clientIdSchemesSupported,
+        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
+        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
+        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+    )
+}
+
+func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://www.w3.org/2018/credentials/examples/v1",
+    [
+        "sec": "https://w3id.org/security#"
+    ]
+    
+]) -> [String: Any] {
+    let data : [String: Any] = [
+        "@context": context,
+        "id": "https://example.com/credentials/1872",
+        "type": [
+            "VerifiableCredential",
+            credentialType
+        ],
+        "issuer": [
+            "id": "did:example:issuer"
+        ],
+        "issuanceDate": "2010-01-01T19:23:24Z",
+        "credentialSubject": [
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ],
+        "proof": [
+            "type": "Ed25519Signature2018",
+            "created": "2021-03-19T15:30:15Z",
+            "jws": "eyJhb...JQdBw",
+            "proofPurpose": "assertionMethod",
+            "verificationMethod": "did:example:issuer#keys-1"
+        ]
+    ]
+    return data
+}

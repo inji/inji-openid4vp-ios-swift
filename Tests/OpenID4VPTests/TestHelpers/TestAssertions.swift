@@ -1,5 +1,6 @@
-import Foundation
 @testable import OpenID4VP
+import Foundation
+
 import XCTest
 
 func assertJsonString(expected jsonString1: String, actual jsonString2: String, strict: Bool = true, file: StaticString = #file, line: UInt = #line) {
@@ -123,6 +124,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
     
     for (key, expectedValue) in expected {
+        
         guard let actualValue = actualDict[key] else {
             XCTFail("Missing key '\(key)' in actual dictionary", file: file, line: line)
             continue
