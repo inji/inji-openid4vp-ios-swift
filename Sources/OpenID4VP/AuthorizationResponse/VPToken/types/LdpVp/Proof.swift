@@ -6,7 +6,7 @@ struct Proof: Encodable {
     let challenge: String
     let domain: String
     var jws: String? = nil
-    let proofPurpose: ProofPurpose? = nil
+    var proofPurpose: ProofPurpose? = nil
     var verificationMethod: String
     var proofValue: String? = nil
 
