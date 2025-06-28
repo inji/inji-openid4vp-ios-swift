@@ -115,21 +115,30 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
 
 func extractQueryParameters(_ input: String) throws -> [String: String] {
     guard input.firstIndex(of: "?") != nil else {
-        throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
+        throw Logger.handleException(
+            exceptionType: "InvalidQueryParams",
+            message: "Query parameters are missing in the Authorization request",
+            className: AuthorizationRequest.className
+        )
     }
-    let urlComponents = URLComponents(string: input)
+
+    guard let urlComponents = URLComponents(string: input),
+          let queryItems = urlComponents.queryItems else {
+        return [:]
+    }
+
     var decodedParams = [String: String]()
-    
-    if let queryItems = urlComponents?.queryItems {
-        for item in queryItems {
-            if let decodedValue = item.value?.removingPercentEncoding {
-                decodedParams[item.name] = decodedValue
-            }
+    for item in queryItems {
+        if let value = item.value {
+            let plusDecoded = value.replacingOccurrences(of: "+", with: " ")
+            let fullyDecoded = plusDecoded.removingPercentEncoding ?? plusDecoded
+            decodedParams[item.name] = fullyDecoded
         }
     }
-    
+
     return decodedParams
 }
+
 
 func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) throws {
     guard let field = field else { return }
