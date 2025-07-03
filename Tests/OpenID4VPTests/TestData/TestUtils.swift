@@ -55,7 +55,8 @@ private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
             return nil // Skip values that can't be converted
         }
         
-        guard let finalEncodedValue = encodedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        guard var finalEncodedValue = encodedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        finalEncodedValue = finalEncodedValue.replacingOccurrences(of: "+", with: "%2B")
         return "\(encodedKey)=\(finalEncodedValue)"
     }.joined(separator: "&")
     
