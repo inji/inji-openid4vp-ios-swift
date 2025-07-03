@@ -9,7 +9,8 @@ class X25519KeyAgreement: JWEKeyAgreement {
     func deriveKey(publicKey: String) throws -> SymmetricKey {
         
         guard let publicKeyData = Data(base64Encoded: makeBase64Standard(publicKey)) else {
-            throw Logger.handleException(exceptionType: "publicKeyConversionFailed", className: X25519KeyAgreement.className)
+            
+            throw PublicKeyConversionFailed(message: "Public key Data conversion from base64 failed.", className: X25519KeyAgreement.className)
         }
         
         let privateKey = Curve25519.KeyAgreement.PrivateKey()

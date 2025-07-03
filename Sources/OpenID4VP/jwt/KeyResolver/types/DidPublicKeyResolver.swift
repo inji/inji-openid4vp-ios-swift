@@ -15,12 +15,14 @@ class DidPublicKeyResolver : PublicKeyResolver {
         do {
             responseBody = try await DidWebResolver(didUrl: didUrl, networkManager: networkManager).resolve()
         } catch {
-            throw Logger.handleException(exceptionType: "PublicKeyResolutionFailed", message: error.localizedDescription, className: DidPublicKeyResolver.className)
+            throw PublicKeyResolutionFailed(
+                message: error.localizedDescription,
+                className: DidPublicKeyResolver.className
+            )
         }
         
         guard let kid = header["kid"] as? String else {
-            throw Logger.handleException(
-                exceptionType: "KidExtractionFailed",
+            throw KidExtractionFailed(
                 message: "Kid extraction from did document failed",
                 className: DidPublicKeyResolver.className
             )
@@ -38,7 +40,10 @@ class DidPublicKeyResolver : PublicKeyResolver {
             }
         }
         
-        throw Logger.handleException(exceptionType: "PublicKeyNotFound", message: "No matching public key found in did resolver with the provided key id", className: DidPublicKeyResolver.className)
+        throw PublicKeyExtractionFailed(
+            message: "No matching public key found in DID document for key ID: \(kid)",
+            className: DidPublicKeyResolver.className
+        )
     }
     
 }

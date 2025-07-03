@@ -62,11 +62,11 @@ public struct PresentationDefinition: Codable {
     
     func validate() throws {
         guard isNeitherNullNorEmpty(field: id) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","id"], className: className)
+            throw InvalidInput(fieldPath: ["presentation_definition","id"], className: className)
         }
         
         guard !inputDescriptors.isEmpty else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["presentation_definition","input_descriptors"], className: className)
+            throw InvalidInput(fieldPath: ["presentation_definition","input_descriptors"], className: className)
         }
         
         try validateField(name, ["presentation_definition","name"], className)

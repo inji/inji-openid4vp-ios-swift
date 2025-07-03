@@ -40,8 +40,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
 
         for mdocCredential in mdocCredentials {
             guard let credential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
+                throw InvalidData(
                     message: "Invalid Verifiable Credential: Error while decoding credential",
                     className: Self.className
                 )
@@ -49,16 +48,14 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
 
             guard let docType = getValueFromCBORMap(cborMap: credential, key: "docType"),
                   let docTypeString = extractStringFromCBOR(docType) else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
+                throw InvalidData(
                     message: "docType missing or invalid in credential",
                     className: Self.className
                 )
             }
 
             if docTypeToDeviceAuthenticationBytes[docTypeString] != nil {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
+                throw InvalidData(
                     message: "Duplicate Mdoc Credentials with same doctype found",
                     className: Self.className
                 )

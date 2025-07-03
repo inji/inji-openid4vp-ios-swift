@@ -35,7 +35,7 @@ func determineHttpMethod(method: String) throws -> HttpMethod {
     } else if methodValue == "post" {
         return .post
     } else {
-        throw Logger.handleException(exceptionType: "UnsupportedHttpMethod", message: method, className: AuthorizationRequest.className)
+        throw UnsupportedHttpMethod(message: method, className: AuthorizationRequest.className)
     }
 }
 
@@ -56,7 +56,7 @@ func convertToInstance<T: Decodable>(_ dictionary: [String: Any], as type: T.Typ
 
 func convertToInstance<T: Decodable>(_ input: String, as type: T.Type, fieldPath: [String] = [], className: String = "Utils") throws -> T {
     guard let jsonData = input.data(using: .utf8) else {
-        throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: fieldPath, className: className)
+        throw UTF8EncodingFailed( fieldPath: fieldPath, className: className)
     }
     
     return try jsonData.toInstance(as: T.self)
@@ -77,7 +77,11 @@ func toData(_ input: [String: Any]) throws -> Data {
         }
     }
     guard JSONSerialization.isValidJSONObject(processedInput) else {
-        throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: "Invalid JSON object", className: "utils")
+        throw JsonEncodingFailed(
+            fieldPath: "processedInput",
+            errorMessage: "Invalid JSON object",
+            className: "utils"
+        )
     }
     return try JSONSerialization.data(withJSONObject: processedInput, options: [])
 }

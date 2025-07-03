@@ -23,11 +23,8 @@ public struct JWK: Codable {
             self.kid = try container.decode(String.self, forKey: .kid)
             self.y = try? container.decodeIfPresent(String.self, forKey: .y)
         } catch let error as DecodingError {
-            throw Logger.handleException(
-                exceptionType: "DeserializationFailure",
-                message: error.localizedDescription, fieldPath: ["jwk"],
-                className: JWK.className
-            )
+            throw DeserializationFailure(fieldPath: ["jwk"], errorMessage: error.localizedDescription, className: JWK.className)
+
         }
     }
 

@@ -25,10 +25,9 @@ func encode<T: Encodable>(_ data: T, fieldName: String, className: String) throw
         let jsonData = try encoder.encode(data)
         return String(decoding: jsonData, as: UTF8.self)
     } catch {
-        throw Logger.handleException(
-            exceptionType: "JsonEncodingFailed",
-            message: error.localizedDescription,
+        throw JsonEncodingFailed(
             fieldPath: [fieldName],
+            errorMessage: error.localizedDescription,
             className: className
         )
     }

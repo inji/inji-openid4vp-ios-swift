@@ -10,11 +10,11 @@ struct ResponseModeBasedHandlerFactory {
         case ResponseMode.directPostJwt.rawValue:
             return DirectPostJwtResponseModeHandler()
         default:
-            throw Logger.handleException(
-                exceptionType : "InvalidData",
-                message : "Given response_mode - \(responseMode ?? "") is not supported",
-                className : className
-            )
+            throw InvalidData(
+                            message: "Given response_mode - \(responseMode ?? "") is not supported",
+                            className: className,
+                            code: OpenID4VPErrorCodes.invalidRequest
+                        )
         }
     }
 }

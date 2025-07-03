@@ -114,10 +114,22 @@ public class OpenID4VP {
     public func sendErrorToVerifier(error: Error) async {
         let logTag = Logger.getLogTag(String(describing: OpenID4VP.self))
 
-        let errorInfo = [
-            "error": "\(error)",
-            "traceabilityId": "\(traceabilityId)",
+        
+        var errorInfo: [String: String] = [
+            "traceabilityId": "\(traceabilityId)"
         ]
+
+        let resolvedError: OpenID4VPException
+        if let openidError = error as? OpenID4VPException {
+            resolvedError = openidError
+        } else {
+            resolvedError = GenericFailure(
+                message: "\(error)",
+                className: String(describing: OpenID4VP.self)
+            )
+        }
+
+        errorInfo.merge(resolvedError.toErrorResponse()) { _, new in new }
 
         do {
             _ = try await networkManager.sendHTTPRequest(

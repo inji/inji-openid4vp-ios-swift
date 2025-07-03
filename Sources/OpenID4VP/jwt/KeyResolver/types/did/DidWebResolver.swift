@@ -34,7 +34,7 @@ class DidWebResolver {
     func resolve() async throws -> [String: Any] {
         let parsedDid = try parse()
         guard parsedDid.method == didWebMethod else {
-            throw Logger.handleException(exceptionType: "UnsupportedDidUrl", message: "Given did url is not supported", className: DidWebResolver.className)
+            throw UnsupportedDidUrl( message: "Given did url is not supported", className: DidWebResolver.className)
         }
         let result = try await resolve(parsedDID: parsedDid)
         return result
@@ -50,7 +50,7 @@ class DidWebResolver {
             }
         }
         guard sections.first != nil else {
-            throw Logger.handleException(exceptionType: "UnsupportedDidUrl", message: "Given did url is not supported", className: DidWebResolver.className)
+            throw UnsupportedDidUrl( message: "Given did url is not supported", className: DidWebResolver.className)
         }
         var params: [String: String]? = nil
         if !sections[4].isEmpty {
@@ -79,23 +79,21 @@ class DidWebResolver {
             
             let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
             guard let responseBody = response.responseBody.data(using: .utf8) else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
-                    message: "Conversion failed",
+                throw InvalidData(
+                    message: "Conversion failed: response body could not be encoded",
                     className: DidWebResolver.className
                 )
             }
             guard let didResponse = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
-                    message: "Conversion failed",
-                    className: DidWebResolver.className
-                )
+                throw InvalidData(
+                      message: "Conversion failed: response is not a valid JSON object",
+                      className: DidWebResolver.className
+                  )
             }
 
             return didResponse
         } catch {
-            throw Logger.handleException(exceptionType: "DidResultionFailed", message: error.localizedDescription, className: DidWebResolver.className)
+            throw DidResolutionFailed(message: error.localizedDescription, className: DidWebResolver.className)
         }
     }
     

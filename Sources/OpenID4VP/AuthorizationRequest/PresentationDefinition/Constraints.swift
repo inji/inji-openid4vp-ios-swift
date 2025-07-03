@@ -42,16 +42,14 @@ struct Constraints: Codable {
 
         if let raw = rawLimitDisclosure {
             guard isNeitherNullNorEmpty(field: raw) else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidInput",
+                throw InvalidInput(
                     fieldPath: ["constraints", "limit_disclosure"],
                     className: className
                 )
             }
 
             guard LimitDisclosure(rawValue: raw) == .preferred else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidLimitDisclosure",
+                throw InvalidLimitDisclosure(
                     className: className
                 )
             }

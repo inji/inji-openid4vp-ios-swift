@@ -61,7 +61,7 @@ struct InputDescriptor: Codable {
     
     func validate() throws {
         guard isNeitherNullNorEmpty(field: id) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["input_descriptor","id"], className: className)
+            throw InvalidInput(fieldPath: ["input_descriptor","id"], className: className)
         }
         
         try validateField(name, ["input_descriptor","name"], className)

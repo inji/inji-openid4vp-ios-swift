@@ -11,7 +11,7 @@ func decodeCBOR(base64EncodedInput : String) throws -> CBOR? {
         return cborDecodedData
     }
     catch let error {
-        throw Logger.handleException(exceptionType: "InvalidData", message: "Error while decoding input - \(error)", className: String(describing: CBOR.self))
+        throw InvalidData( message: "Error while decoding input - \(error)", className: String(describing: CBOR.self))
     }
 }
 
@@ -76,8 +76,7 @@ func mapSigningAlgorithmToProtectedAlg(algorithm: String) throws -> CBOR {
     case "PS512":
         return .negativeInt(38)  // RSASSA-PSS w/ SHA-512 (-39 in COSE)
     default:
-        throw Logger.handleException(
-            exceptionType: "InvalidData",
+        throw InvalidData(
             message: "Unsupported signing algorithm: \(algorithm)",
             className: className
         )

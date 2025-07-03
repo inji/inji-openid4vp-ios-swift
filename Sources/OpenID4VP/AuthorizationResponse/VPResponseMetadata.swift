@@ -24,7 +24,7 @@ public struct VPResponseMetadata {
 
             for (key, value) in requiredParams {
                 if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || value == "null" {
-                    throw Logger.handleException(exceptionType: "", className: "VPResponseMetadata" )
+                    throw GenericFailure(className: "VPResponseMetadata" )
                 }
             }
         }

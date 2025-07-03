@@ -21,18 +21,27 @@ struct JWSHandler {
             let base64PublicKey = Base64Decoder.makeBase64Standard(publicKey)
             
             guard let publicKeyData = Data(base64Encoded: base64PublicKey) else {
-                throw Logger.handleException(exceptionType: "JsonDecodingFailed", message: "Did public key decoding failed", className: JWSHandler.className)
+                throw JsonDecodingFailed(
+                    message: "DID public key decoding failed",
+                    className: JWSHandler.className
+                )
             }
             do {
                 let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
                 
                 let jws = try JWS(jwsString: jws)
                 guard try jws.verify(key: publicKey) else {
-                    throw Logger.handleException(exceptionType: "InvalidSignature", message: "JWS proof verification failed",className: JWSHandler.className)
+                    throw InvalidSignature(
+                        message: "JWS proof verification failed",
+                        className: JWSHandler.className
+                    )
                 }
             }
         } catch {
-            throw Logger.handleException(exceptionType: "ProofVerificationFailed", message: error.localizedDescription,className: JWSHandler.className)
+            throw VerificationFailure(
+                message: error.localizedDescription,
+                className: JWSHandler.className
+            )
         }
     }
     

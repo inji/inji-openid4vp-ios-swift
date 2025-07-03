@@ -17,15 +17,18 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         
         try credentials.forEach { mdocCredential in
             guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-                throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
+                throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
             }
             guard let docType = getValueFromCBORMap(cborMap: document, key: "docType") else {
-                throw Logger.handleException(exceptionType: "InvalidData", message: "Invalid Verifiable Credential: docType not available in credential", className: className)
+                throw InvalidData( message: "Invalid Verifiable Credential: docType not available in credential", className: className)
             }
             let docTypeString = extractStringFromCBOR(docType)!
             
             guard let deviceAuthSignature: DeviceAuthentication = mdocVPTokenSigningResult.docTypeToDeviceAuthentication[docTypeString] else {
-                throw Logger.handleException(exceptionType: "MissingInput",message: "Device authentication signature not found for mdoc credential docType \(docTypeString)", fieldPath: ["mdocVPTokenSigningResult","docTypeToDeviceAuthentication","DeviceAuthentication"], className: className)
+                throw MissingInput (
+                    fieldPath: ["mdocVPTokenSigningResult","docTypeToDeviceAuthentication","DeviceAuthentication"],
+                    message: "Device authentication signature not found for mdoc credential docType \(docTypeString)",
+                                    className: className)
             }
             
             let deviceSignature = try createDeviceSignature(deviceAuthSignature)

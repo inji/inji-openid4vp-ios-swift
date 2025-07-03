@@ -22,8 +22,7 @@ public class AuthorizationResponseHandler {
         signatureSuite: String
     ) throws -> [FormatType: UnsignedVPToken] {
         if credentialsMap.isEmpty {
-            throw Logger.handleException(
-                exceptionType: "InvalidData",
+            throw InvalidData(
                 message: "Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.",
                 className: AuthorizationResponseHandler.className
             )
@@ -43,8 +42,7 @@ public class AuthorizationResponseHandler {
 
         let unsignedVPTokensExtracted: [FormatType: UnsignedVPToken] = try unsignedVPTokens.mapValues { innerMap in
             guard let token = innerMap["unsignedVPToken"] as? UnsignedVPToken else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
+                throw InvalidData(
                     message: "Missing or invalid 'unsignedVPToken' in VP token map",
                     className: AuthorizationResponseHandler.className
                 )
@@ -94,8 +92,7 @@ public class AuthorizationResponseHandler {
                 state: authorizationRequest.state
             )
         default:
-            throw Logger.handleException(
-                exceptionType: "InvalidData",
+            throw InvalidData(
                 message: "response type - \(authorizationRequest.responseType) is not supported",
                 className: AuthorizationResponseHandler.className
             )
@@ -138,8 +135,7 @@ public class AuthorizationResponseHandler {
             let token = try VPTokenFactory(
                 vpTokenSigningResult: vpTokenSigningResult,
                 vpTokenSigningPayload: unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] ?? {
-                    throw Logger.handleException(
-                        exceptionType: "InvalidData",
+                    throw InvalidData(
                         message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
                         className: AuthorizationResponseHandler.className
                     )
@@ -248,8 +244,7 @@ public class AuthorizationResponseHandler {
                 let mdocCreds = try credentialsArray
                     .map { anyCodable in
                         guard let str = anyCodable.value as? String else {
-                            throw Logger.handleException(
-                                exceptionType: "InvalidData",
+                            throw InvalidData(
                                 message: "MDOC credential is not a String",
                                 className: AuthorizationResponseHandler.className
                             )
@@ -284,10 +279,9 @@ public class AuthorizationResponseHandler {
             let jsonData = try JSONEncoder().encode(vpToken)
             encodedVPToken = String(data: jsonData, encoding: .utf8) ?? ""
         } catch {
-            throw Logger.handleException(
-                exceptionType: "JsonEncodingFailed",
-                message: error.localizedDescription,
+            throw JsonEncodingFailed(
                 fieldPath: ["vp_token"],
+                errorMessage: error.localizedDescription,
                 className: "AuthorizationResponseHandler"
             )
         }
@@ -296,10 +290,9 @@ public class AuthorizationResponseHandler {
             let jsonData = try JSONEncoder().encode(presentationSubmission)
             encodedPresentationSubmission = String(data: jsonData, encoding: .utf8) ?? ""
         } catch {
-            throw Logger.handleException(
-                exceptionType: "JsonEncodingFailed",
-                message: error.localizedDescription,
+            throw JsonEncodingFailed(
                 fieldPath: ["presentation_submission"],
+                errorMessage: error.localizedDescription,
                 className: "AuthorizationResponseHandler"
             )
         }
@@ -357,20 +350,18 @@ public class AuthorizationResponseHandler {
             let encodedData = try encoder.encode(ldpToken)
 
             guard let jsonString = String(data: encodedData, encoding: .utf8) else {
-                throw Logger.handleException(
-                    exceptionType: "JsonEncodingFailed",
-                    message: "Failed to convert encoded data to UTF-8 string",
+                throw JsonEncodingFailed(
                     fieldPath: ["unsignedLdpVPToken"],
+                    errorMessage: "Failed to convert encoded data to UTF-8 string",
                     className: "AuthorizationResponseHandler"
                 )
             }
 
             return jsonString
         } catch {
-            throw Logger.handleException(
-                exceptionType: "JsonEncodingFailed",
-                message: error.localizedDescription,
+            throw JsonEncodingFailed(
                 fieldPath: ["unsignedLdpVPToken"],
+                errorMessage: error.localizedDescription,
                 className: "AuthorizationResponseHandler"
             )
         }

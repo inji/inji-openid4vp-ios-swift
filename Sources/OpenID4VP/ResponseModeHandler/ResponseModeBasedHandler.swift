@@ -20,14 +20,17 @@ extension ResponseModeBasedHandler {
         
         try validateAttribute(AuthorizationRequestFieldConstants.responseUri.rawValue, values: authorizationRequestParameters)
         
-        guard isValidUri(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String)
-        else {
-            throw Logger.handleException(
-                exceptionType: "InvalidData",
+        let className = String(describing: ResponseModeBasedHandler.self)
+        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String
+        
+        guard isValidUri(responseUriValue) else {
+            throw InvalidData(
                 message: "response_uri data is not valid",
-                className: String(describing: ResponseModeBasedHandler.self)
+                className: className,
+                code: OpenID4VPErrorCodes.invalidRequest
             )
         }
-        setResponseUri(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String)
+        
+        setResponseUri(responseUriValue)
     }
 }
