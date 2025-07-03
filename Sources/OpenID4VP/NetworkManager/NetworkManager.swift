@@ -28,10 +28,16 @@ public struct NetworkManager: NetworkManaging {
                 headers: requestHeaders
             )
             .validate()
-            .responseString { response in
+            .response { response in
                 switch response.result {
-                case .success(let responseBody):
+                case .success:
                     if let httpResponse = response.response {
+                        let responseBody: String
+                        if let data = response.data, !data.isEmpty {
+                            responseBody = String(data: data, encoding: .utf8) ?? ""
+                        } else {
+                            responseBody = ""
+                        }
                         continuation.resume(returning: (responseBody, httpResponse))
                     } else {
                         let exception = NetworkRequestException.invalidResponse(message: "Invalid response received")
