@@ -105,13 +105,13 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                             setResponseUri: setResponseUri,
                                                             networkManager: networkManager)
     default:
-        throw InvalidData(message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
+        throw InvalidData(message: "Given client_id_scheme is not supported" ,className: AuthorizationRequest.className)
     }
 }
 
 func extractQueryParameters(_ input: String) throws -> [String: String] {
     guard input.firstIndex(of: "?") != nil else {
-        throw InvalidQueryParams( message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
+        throw InvalidQueryParams( message: "Exception occurred when extracting the query params from Authorization Request :", className: AuthorizationRequest.className)
     }
     let urlComponents = URLComponents(string: input)
     var decodedParams = [String: String]()

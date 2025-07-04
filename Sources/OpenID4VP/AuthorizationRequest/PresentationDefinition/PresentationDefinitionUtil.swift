@@ -38,13 +38,15 @@ func parseAndValidatePresentationDefinition(
             } catch {
                 throw InvalidData(
                     message: "presentation_defintion data is not valid",
-                    className: AuthorizationRequest.className
+                    className: AuthorizationRequest.className,
+                    code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
                 )
             }
         } else {
             throw InvalidData(
                 message: "presentation_defintion data is not valid",
-                className: AuthorizationRequest.className
+                className: AuthorizationRequest.className,
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
             )
         }
     } else if hasPresentationDefinitionUri, let presentationDefintionUri = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
@@ -52,7 +54,8 @@ func parseAndValidatePresentationDefinition(
         if !isPresentationDefinitionUriSupported {
             throw InvalidData(
                 message: "presentation_definition_uri is not supported",
-                className: AuthorizationRequest.className
+                className: AuthorizationRequest.className,
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
         
@@ -66,7 +69,8 @@ func parseAndValidatePresentationDefinition(
         else {
             throw InvalidData(
                 message: "presentation_defintion_uri data is not valid",
-                className: AuthorizationRequest.className
+                className: AuthorizationRequest.className,
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
         
@@ -76,7 +80,8 @@ func parseAndValidatePresentationDefinition(
         guard let data = response.responseBody.data(using: .utf8) else {
             throw InvalidData(
                 message: "presentation_defintion_uri data is not valid",
-                className: AuthorizationRequest.className
+                className: AuthorizationRequest.className,
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
         

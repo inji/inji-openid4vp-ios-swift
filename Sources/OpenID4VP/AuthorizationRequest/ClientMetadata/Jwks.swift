@@ -9,7 +9,7 @@ struct JWKS: Codable {
             do {
                 try key.validate()
             } catch {
-                throw InvalidData(message: "jwks.keys[\(index)] is invalid", fieldPath: ["jwks", "keys", "\(index)"], className: JWKS.className )
+                throw InvalidInput(fieldPath: ["jwks", "keys", "\(index)"], className: JWKS.className )
             }
         }
     }

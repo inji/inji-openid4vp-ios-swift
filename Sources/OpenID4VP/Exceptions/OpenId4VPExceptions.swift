@@ -24,6 +24,12 @@ class OpenID4VPException: Error, CustomStringConvertible {
     }
 }
 
+class InvalidQueryParams: OpenID4VPException {
+    init(message: String, className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
 // MARK: - Specific Exceptions
 
 class InvalidVerifier: OpenID4VPException {
@@ -44,7 +50,7 @@ class JsonEncodingFailed: OpenID4VPException {
     init(fieldPath: Any? = nil, errorMessage: String, className: String) {
         super.init(
             errorCode: OpenID4VPErrorCodes.invalidRequest,
-            message: "Json encoding failed for \(fieldPath) due to this error: \(errorMessage)",
+            message: "Json encoding failed for \(fieldPath ?? "") due to this error: \(errorMessage)",
             className: className
         )
     }
@@ -70,11 +76,7 @@ class InvalidLimitDisclosure: OpenID4VPException {
     }
 }
 
-class InvalidQueryParams: OpenID4VPException {
-    init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
-    }
-}
+
 
 class InvalidData: OpenID4VPException {
     init(message: String, className: String, code: String? = nil) {
@@ -149,7 +151,7 @@ class VerificationFailure: OpenID4VPException {
 class JsonDecodingFailed: OpenID4VPException {
     init(message: String, className: String) {
         super.init(
-            errorCode: OpenID4VPErrorCodes.newUnknown,
+            errorCode: OpenID4VPErrorCodes.invalidRequest,
             message: message,
             className: className
         )
@@ -158,6 +160,15 @@ class JsonDecodingFailed: OpenID4VPException {
 
 
 // MARK: - JWE
+
+
+class UnsupportedEncryptionAlgorithm: OpenID4VPException {
+    init(className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "Required Encryption algorithm is not supported", className: className)
+    }
+}
+
+
 
 class UnsupportedKeyExchangeAlgorithm: OpenID4VPException {
     init(className: String) {
@@ -170,20 +181,6 @@ class JweEncryptionFailure: OpenID4VPException {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "JWE Encryption failed", className: className)
     }
 }
-
-class InvalidResponseMode: OpenID4VPException {
-    init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
-    }
-}
-
-class GenericFailure: OpenID4VPException {
-    init(message: String = "", className: String) {
-        let message = "Unknown error occurred \(message)"
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
-    }
-}
-
 
 class UnsupportedDidUrl: OpenID4VPException {
     init(message: String, className: String) {
@@ -203,68 +200,83 @@ class PayloadConversionFailed: OpenID4VPException {
     }
 }
 
-class InvalidType: OpenID4VPException {
+class InvalidResponseMode: OpenID4VPException {
     init(message: String, className: String) {
         super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+    }
+}
+
+class GenericFailure: OpenID4VPException {
+    init(message: String = "", className: String) {
+        let message = "Unknown error occurred \(message)"
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
+
+
+
+class InvalidType: OpenID4VPException {
+    init(message: String, className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class MismatchingClientIDInRequest: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class MismatchingClientIdSchemeInRequest: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class UnsupportedKeyAgreementAlgorithm: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class PublicKeyConversionFailed: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class InvalidEncryptionKeySize: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class UnsupportedHttpMethod: OpenID4VPException {
     init(message: String, className: String) {
         let message = "Unsupported HTTP method: \(message)"
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class UnsupportedSignatureAlgorithm: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class Base64DecodingFailed: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
-
 
 
 
 class UTF8EncodingFailed: OpenID4VPException {
     init(fieldPath: Any, className: String) {
         let message = "Failed to convert \(fieldPath) string to UTF-8 data"
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 

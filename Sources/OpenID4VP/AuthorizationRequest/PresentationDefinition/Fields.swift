@@ -74,7 +74,7 @@ struct Fields: Codable {
         
         let pathPrefixArray = ["$.","$["]
         if !path.allSatisfy({ p in pathPrefixArray.contains(where: { p.hasPrefix($0) }) }) {
-            throw InvalidInput(fieldPath: ["fields","path"], className: className)
+            throw InvalidInputPattern(fieldPath: ["fields","path"], className: className)
         }
         
         try validateField(id, ["fields","id"], className)

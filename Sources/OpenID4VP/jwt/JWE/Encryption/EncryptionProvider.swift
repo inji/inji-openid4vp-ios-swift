@@ -7,7 +7,7 @@ public struct EncryptionProvider {
         case "A256GCM":
             return AESGCMEncryption(keySize: .bits256)
         default:
-            throw UnsupportedEncryptionAlgorithm(message: "Required Encryption algorithm is not supported.", className: JWEHandler.className)
+            throw UnsupportedEncryptionAlgorithm(className: JWEHandler.className)
         }
     }
 }

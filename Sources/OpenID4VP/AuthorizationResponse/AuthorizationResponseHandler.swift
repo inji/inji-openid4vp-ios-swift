@@ -94,7 +94,8 @@ public class AuthorizationResponseHandler {
         default:
             throw InvalidData(
                 message: "response type - \(authorizationRequest.responseType) is not supported",
-                className: AuthorizationResponseHandler.className
+                className: AuthorizationResponseHandler.className,
+                code: OpenID4VPErrorCodes.vpFormatsNotSupported
             )
         }
     }
