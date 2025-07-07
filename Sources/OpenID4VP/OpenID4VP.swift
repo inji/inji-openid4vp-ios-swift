@@ -7,7 +7,7 @@ public class OpenID4VP {
     private var responseUri: String?
     private var authorizationResponseHandler: AuthorizationResponseHandler
     private let walletMetadata: WalletMetadata?
-    
+
 
     public init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
@@ -25,7 +25,7 @@ public class OpenID4VP {
         trustedVerifierJSON: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
-        Logger.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
+        OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
 
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
@@ -109,12 +109,12 @@ public class OpenID4VP {
             throw error
         }
     }
-    
+
 
     public func sendErrorToVerifier(error: Error) async {
-        let logTag = Logger.getLogTag(String(describing: OpenID4VP.self))
+        let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
 
-        
+
         var errorInfo: [String: String] = [
             "traceabilityId": "\(traceabilityId)"
         ]
@@ -139,7 +139,7 @@ public class OpenID4VP {
                 headers: ["Content_Type": ContentTypes.applicationFormUrlEncoded.rawValue]
             )
         } catch {
-            Logger.error(logTag, NetworkRequestException.invalidResponse(
+            OpenID4VPException.error(logTag, NetworkRequestException.invalidResponse(
                 message: "Unexpected error occurred while sending the error to verifier: \(error)"
             ))
         }

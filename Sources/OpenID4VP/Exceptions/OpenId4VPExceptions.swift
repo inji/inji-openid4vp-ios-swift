@@ -4,6 +4,9 @@ class OpenID4VPException: Error, CustomStringConvertible, LocalizedError {
     let errorCode: String
     let message: String
     let className: String
+    
+    private static var logTag = ""
+    private static var traceabilityId: String?
 
     init(errorCode: String, message: String, className: String) {
         self.errorCode = errorCode
@@ -25,6 +28,19 @@ class OpenID4VPException: Error, CustomStringConvertible, LocalizedError {
             "error": errorCode,
             "error_description": message
         ]
+    }
+    
+    static func setTraceabilityId(className: String, traceabilityId: String? = nil) {
+        if let traceId = traceabilityId {
+            self.traceabilityId = traceId
+        }
+    }
+    static func getLogTag(_ className: String) -> String {
+        return "INJI-OpenID4VP : \(className) | traceID \(String(describing: self.traceabilityId))"
+    }
+    
+    static func error(_ logTag: String, _ exception: Error) {
+        print("\(logTag) | ERROR: \(exception.localizedDescription)")
     }
 }
 
