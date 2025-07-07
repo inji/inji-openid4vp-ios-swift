@@ -45,7 +45,6 @@ final class ConstraintsTests: XCTestCase {
     func testConstraintsDecoding_FieldsValidation() throws {
         let testCases: [TestCase<String, Void>] = [
             TestCase(
-//                param pattern not provided in filter
                 input: """
                 {
                     "fields": [
@@ -62,7 +61,6 @@ final class ConstraintsTests: XCTestCase {
                 expectedError: "Missing Input: filter->pattern param is required"
             ),
             TestCase(
-//                Invalid fields - missing path
                 input: """
                 {
                     "fields": [
@@ -81,18 +79,18 @@ final class ConstraintsTests: XCTestCase {
         
         for testCase in testCases {
             XCTAssertThrowsError(try createConstraints(testCase.input)) { error in
-                XCTAssertTrue(error.localizedDescription.contains(testCase.expectedError!),
-                              "Test case failed - expected error containing '\(String(describing: testCase.expectedError))' but got: \(error.localizedDescription)")
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: testCase.expectedError ?? "",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }
-    
-    /// LimitDisclosure Validation Tests
-    
+
     func testConstraintsDecoding_LimitDisclosureValidation() throws {
-        let testCases: [TestCase] = [
+        let testCases: [TestCase<String, Void>] = [
             TestCase(
-//                Empty limit_disclosure
                 input: """
                 {
                     "fields": [
@@ -110,7 +108,6 @@ final class ConstraintsTests: XCTestCase {
                 expectedError: "Invalid Input: constraints->limit_disclosure value cannot be empty or null"
             ),
             TestCase(
-//                Invalid limit_disclosure value
                 input: """
                 {
                     "fields": [
@@ -128,14 +125,20 @@ final class ConstraintsTests: XCTestCase {
                 expectedError: "Invalid Input: constraints->limit_disclosure value should be preferred"
             )
         ]
-        
-        for testCase in testCases {            
+
+        for testCase in testCases {
             XCTAssertThrowsError(try createConstraints(testCase.input)) { error in
-                XCTAssertTrue(error.localizedDescription.contains(testCase.expectedError!),
-                              "Test case failed - expected error containing '\(String(describing: testCase.expectedError))' but got: \(error.localizedDescription)")
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: testCase.expectedError ?? "",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }
+
+
+
     
     private func createConstraints(_ json: String) throws -> Constraints {
         let jsonData = json.data(using: .utf8)!

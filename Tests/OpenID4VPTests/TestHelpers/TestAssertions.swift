@@ -183,3 +183,19 @@ func assertArraysEqual<T: Equatable>(expected: [T], actual: [T], file: StaticStr
     }
 }
 
+func assertOpenID4VPException(
+    _ error: Error,
+    expectedMessage: String,
+    expectedCode: String,
+    file: StaticString = #file,
+    line: UInt = #line
+) {
+    guard let ex = error as? OpenID4VPException else {
+        XCTFail("Expected OpenID4VPException but got \(error)", file: file, line: line)
+        return
+    }
+    XCTAssertEqual(expectedMessage, ex.message, file: file, line: line)
+    XCTAssertEqual(expectedCode, ex.errorCode, file: file, line: line)
+}
+
+

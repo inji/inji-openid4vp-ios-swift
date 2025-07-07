@@ -60,7 +60,10 @@ final class InputDescriptorTests: XCTestCase {
         """.data(using: .utf8)!
         
         XCTAssertThrowsError(try JSONDecoder().decode(InputDescriptor.self, from: inputDescriptorWithInvalidId)) { error in
-            XCTAssertEqual("Invalid Input: input_descriptor->id value cannot be empty or null", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: input_descriptor->id value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -93,7 +96,10 @@ final class InputDescriptorTests: XCTestCase {
         """.data(using: .utf8)!
         
         XCTAssertThrowsError(try JSONDecoder().decode(InputDescriptor.self, from: inputDescriptorWithInvalidName)) { error in
-            XCTAssertEqual("Invalid Input: input_descriptor->name value cannot be empty or null", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: input_descriptor->name value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -127,7 +133,11 @@ final class InputDescriptorTests: XCTestCase {
         """.data(using: .utf8)!
         
         XCTAssertThrowsError(try JSONDecoder().decode(InputDescriptor.self, from: inputDescriptorWithInvalidPurpose)) { error in
-            XCTAssertEqual("Invalid Input: input_descriptor->purpose value cannot be empty or null", error.localizedDescription)
+            
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: input_descriptor->purpose value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -159,7 +169,10 @@ final class InputDescriptorTests: XCTestCase {
         """.data(using: .utf8)!
         
         XCTAssertThrowsError(try JSONDecoder().decode(InputDescriptor.self, from: inputDescriptorWithInvalidFormatField)) { error in
-            XCTAssertEqual("Invalid Input: input_descriptor->format->ldp_vc->proof_type value cannot be empty or null", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: input_descriptor->format->ldp_vc->proof_type value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

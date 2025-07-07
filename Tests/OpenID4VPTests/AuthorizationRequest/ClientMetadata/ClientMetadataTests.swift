@@ -15,7 +15,8 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->client_name value cannot be empty or null"
+                    expectedError: "Invalid Input: client_metadata->client_name value cannot be empty or null",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
                     input: """
@@ -28,7 +29,8 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->logo_uri value cannot be empty or null"
+                    expectedError: "Invalid Input: client_metadata->logo_uri value cannot be empty or null",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
                     input: """
@@ -41,7 +43,8 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_alg value cannot be empty or null"
+                    expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_alg value cannot be empty or null",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
                     input: """
@@ -54,7 +57,8 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_enc value cannot be empty or null"
+                expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_enc value cannot be empty or null",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
                     input: """
@@ -78,7 +82,8 @@ final class ClientMetadataValidationTests: XCTestCase {
                         }
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->vp_formats value cannot be empty or null"
+                    expectedError: "Invalid Input: client_metadata->vp_formats value cannot be empty or null",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
                     input: """
@@ -91,13 +96,18 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                expectedError: "Invalid Input: client_metadata->jwks value cannot be empty or null"
+                expectedError: "Invalid Input: client_metadata->jwks value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             ]
-
+        
             for testCase in testCases {
                 XCTAssertThrowsError(try ClientMetadata.deserializeAndValidate(clientMetadata: testCase.input)) { error in
-                    XCTAssertEqual(error.localizedDescription, testCase.expectedError, "Error message doesn't match for input: \(String(data: testCase.input, encoding: .utf8) ?? "")")
+                    assertOpenID4VPException(
+                        error,
+                        expectedMessage: testCase.expectedError ?? "Missing expected error",
+                        expectedCode: testCase.expectedCode ?? "Missing expected code"
+                    )
                 }
             }
         }

@@ -23,7 +23,10 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         let data = "client_id=https%3A%2F%2F1333-103-101-213-24.ngrok-free.app%2Fverifier%2Fvp-response&presentation_definition_uri=https%3A%2F%2F1333-103-101-213-24.ngrok-free.app%2Fverifier%2Fpresentation_definition_uri&response_type=vp_token&response_mode=direct_post&nonce=97Ls4N6OTVxeVmI73YlOjg%3D%3D&state=rU8RTzcS04e76lM0LzIvsw%3D%3D&response_uri=https%3A%2F%2F1333-103-101-213-24.ngrok-free.app%2Fverifier%2Fvp-response&client_metadata=%5Bobject+Object%5D&client_id_scheme=pre-registered"
         
         XCTAssertThrowsError( try extractQueryParameters(data)){ error in
-            XCTAssertEqual("Query parameters are missing in the Authorization request", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Exception occurred when extracting the query params from Authorization Request :",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -39,7 +42,11 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         
         for testCase in testCases {
             XCTAssertThrowsError(try validateAttribute("key1", values: testCase.input)){ error in
-                XCTAssertEqual(testCase.expectedError, error.localizedDescription)
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: testCase.expectedError!,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }
@@ -76,7 +83,10 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     
     func testShouldThrowErrorWhenClientIdSchemeIsNotSupported() async{
         XCTAssertThrowsError(try getAuthorizationRequestHandler( authorizationRequestParameters: ["client_id":"x509_san_dns:mock-verifier"], trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)) { error in
-            XCTAssertEqual("Client id scheme in request is not supported", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Given client_id_scheme is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -93,7 +103,10 @@ class AuthorizationRequestUtilsTests : XCTestCase {
             let authorizationRequestParametersWithInvalidClientId: [String : Any] = testCase.input as [String : Any]
             
             XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId, trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)){ error in
-                XCTAssertEqual(testCase.expectedError, error.localizedDescription)
+                assertOpenID4VPException(error,
+                    expectedMessage: testCase.expectedError!,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }
@@ -127,7 +140,10 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     
     func testExtractClientidThrowErrorWhenClientIdIsEmpty(){
         XCTAssertThrowsError(try extractClientIdScheme(authorizationRequestParams: ["client_id":""])){ error in
-            XCTAssertEqual("Invalid Input: client_id value cannot be empty or null", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: client_id value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

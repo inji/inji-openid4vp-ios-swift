@@ -99,22 +99,25 @@ class MissingInput: OpenID4VPException {
 }
 
 class InvalidInput: OpenID4VPException {
-    init(fieldPath: Any, fieldType: Any? = nil, className: String) {
+    init(fieldPath: Any, value: Any? = nil, className: String) {
         let path = (fieldPath as? [String])?.joined(separator: "->") ?? "\(fieldPath)"
         let message: String
 
-        switch fieldType as? String {
-        case "String":
-            message = "Invalid Input: \(path) value cannot be an empty string, null, or an integer"
-        case "Boolean":
-            message = "Invalid Input: \(path) value must be either true or false"
-        default:
+        if let str = value as? String, str.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             message = "Invalid Input: \(path) value cannot be empty or null"
+        } else if value == nil {
+            message = "Invalid Input: \(path) value cannot be empty or null"
+        } else if let boolVal = value as? Bool {
+            message = "Invalid Input: \(path) value must be either true or false"
+        } else {
+            message = "Invalid Input: \(path) value is invalid"
         }
 
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
+
+
 
 // MARK: - JWS
 

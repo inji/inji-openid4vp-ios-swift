@@ -19,8 +19,11 @@ final class JWKSTests: XCTestCase {
         let jwks = JWKS(keys: [jwk])
 
         XCTAssertThrowsError(try jwks.validate()) { error in
-            XCTAssertNotNil(error as? Exceptions)
-            XCTAssertTrue(error.localizedDescription.contains("jwks.keys[0]"))
+            assertOpenID4VPException(
+                       error,
+                       expectedMessage: "Invalid Input: jwks->keys->0 value cannot be empty or null",
+                       expectedCode: OpenID4VPErrorCodes.invalidRequest
+                   )
         }
     }
 
@@ -71,7 +74,11 @@ final class JWKSTests: XCTestCase {
         ])
 
         XCTAssertThrowsError(try jwks.validate()) { error in
-            XCTAssertTrue(error.localizedDescription.contains("jwks.keys[0]"))
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid Input: jwks->keys->0 value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 
@@ -102,9 +109,14 @@ final class JWKSTests: XCTestCase {
             try! JSONDecoder().decode(JWK.self, from: validJson),
             try! JSONDecoder().decode(JWK.self, from: invalidJson)
         ])
-    
+
         XCTAssertThrowsError(try jwks.validate()) { error in
-            XCTAssertTrue(error.localizedDescription.contains("jwks.keys[1]"))
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid Input: jwks->keys->1 value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
+
 }
