@@ -118,7 +118,11 @@ final class DidWebResolverTests: XCTestCase {
             _ = try await didWebResolver.resolve()
             XCTFail("Error - unsupportedDidUrl should be thrown but did not throw")
         } catch {
-            XCTAssertEqual(error as? DidResolverExceptions , DidResolverExceptions.unsupportedDidUrl(message: "Given did url is not supported"))
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Given did url is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -130,7 +134,11 @@ final class DidWebResolverTests: XCTestCase {
             _ = try await didWebResolver.resolve()
             XCTFail("Error - unsupportedDidUrl should be thrown but did not throw")
         } catch {
-            XCTAssertEqual(error as? DidResolverExceptions , DidResolverExceptions.unsupportedDidUrl(message: "Given did url is not supported"))
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Given did url is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -142,7 +150,11 @@ final class DidWebResolverTests: XCTestCase {
             _ = try await didWebResolver.resolve()
             XCTFail("Error - unsupportedDidUrl should be thrown but did not throw")
         } catch {
-            XCTAssertEqual(error as? DidResolverExceptions , DidResolverExceptions.unsupportedDidUrl(message: "Given did url is not supported"))
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Given did url is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -156,17 +168,21 @@ final class DidWebResolverTests: XCTestCase {
             _ = try await didWebResolver.resolve()
             XCTFail("Error - didResolutionFailed should be thrown but did not throw")
         } catch {
-            XCTAssertEqual(error as? DidResolverExceptions , DidResolverExceptions.didResolutionFailed(message: "Network request failed with error response - Network Request failed with error response: response"))
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Network request failed with error response - Network Request failed with error response: response",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
         
     }
     
     func testThrowErrorDidResolutionFailedWhenNetworkResponseToDidJsonIsInvalid() async {
-        let testCases: [TestCase] = [
+        let testCases: [TestCase<String, String>] = [
             TestCase(input: "{\"key\":\"value", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
-            TestCase(input: "\"Just a string\"" , expectedError: "The data couldn’t be read because it isn’t in the correct format."),
-            TestCase(input: "Invalid JSON" , expectedError: "The data couldn’t be read because it isn’t in the correct format."),
-            TestCase(input: "[1,2,3]" , expectedError: "Conversion failed"),
+            TestCase(input: "\"Just a string\"", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
+            TestCase(input: "Invalid JSON", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
+            TestCase(input: "[1,2,3]", expectedError: "Conversion failed: response is not a valid JSON object"),
         ]
         
         for testCase in testCases {
@@ -174,13 +190,20 @@ final class DidWebResolverTests: XCTestCase {
             
             let didWebResolver = DidWebResolver(didUrl: didUrl, networkManager: mockNetworkManager)
             
-            do{
+            do {
                 _ = try await didWebResolver.resolve()
-                XCTFail("Error - didResolutionFailed should be thrown but did not throw")
+                XCTFail("Error - DidResolutionFailed should have been thrown but did not throw")
             } catch {
-                XCTAssertEqual(error as? DidResolverExceptions , DidResolverExceptions.didResolutionFailed(message: testCase.expectedError))
-                XCTAssertEqual("Failed to resolve did due to \(testCase.expectedError!)", error.localizedDescription, "input - \(testCase.input) failed")
+               // let expectedMessage = "Failed to resolve did due to \(testCase.expectedError!)"
+                
+                // Check that error is OpenID4VPException subclass with correct message
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: testCase.expectedError!,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }
+
 }

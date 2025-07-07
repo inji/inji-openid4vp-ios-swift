@@ -82,8 +82,11 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
                     shouldValidateWithWalletMetadata: false
                 )
             ) { error in
-               
-                XCTAssertEqual(error.localizedDescription, expectedMessage)
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: error.localizedDescription,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
 }

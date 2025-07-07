@@ -1,6 +1,6 @@
 import Foundation
 
-class OpenID4VPException: Error, CustomStringConvertible {
+class OpenID4VPException: Error, CustomStringConvertible, LocalizedError {
     let errorCode: String
     let message: String
     let className: String
@@ -16,6 +16,10 @@ class OpenID4VPException: Error, CustomStringConvertible {
         return "\(errorCode) : \(message)"
     }
 
+    var errorDescription: String? {
+        return message
+    }
+
     func toErrorResponse() -> [String: String] {
         return [
             "error": errorCode,
@@ -23,6 +27,7 @@ class OpenID4VPException: Error, CustomStringConvertible {
         ]
     }
 }
+
 
 class InvalidQueryParams: OpenID4VPException {
     init(message: String, className: String) {
@@ -187,25 +192,25 @@ class JweEncryptionFailure: OpenID4VPException {
 
 class UnsupportedDidUrl: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class DidResolutionFailed: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class PayloadConversionFailed: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class InvalidResponseMode: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.newUnknown, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 

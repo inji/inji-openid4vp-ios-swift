@@ -5,7 +5,7 @@ class OpenID4VPTests: XCTestCase {
     var openID4VP: OpenID4VP!
     var mockNetworkManager: MockNetworkManager!
     var authorizationRequest: AuthorizationRequest!
-    
+
     let jws = "wemcn3234ns"
     let signatureAlgoType = "JsonWebSignature2020"
     let publicKey = "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBggvSPv73S\\nG5ToTt07NZPdKDrg9lSjetZup39oj12u0YoyRMlMhY0xYL6c8X1BexM7Wlp+c13o\\n1QIDAQAB\\n-----END PUBLIC KEY-----\\n"
@@ -40,7 +40,7 @@ class OpenID4VPTests: XCTestCase {
             let decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             let jsonData = try JSONEncoder().encode(decoded)
             let authorizationRequestJsonString = String(decoding: jsonData, as: UTF8.self)
-            
+
             assertJsonString(expected: "{\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_type\":\"vp_token\",\"redirect_uri\":null,\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"client_name\":\"Requester name\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\"]}},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"jwks\":{\"keys\":[{\"kty\":\"OKP\",\"use\":\"enc\",\"kid\":\"ed-key1\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\",\"crv\":\"X25519\"}]}},\"presentation_definition\":{\"input_descriptors\":[{\"purpose\":\"To verify identity using Linked Data Proofs\",\"id\":\"input_1\",\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"name\":\"Verifiable Credential\"}],\"id\":\"vp_presentation_definition\"},\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\"}", actual: authorizationRequestJsonString)
         } catch {
             XCTFail("Should not get error but got error - \(error)")
@@ -55,12 +55,22 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Given response_mode - fragment is not supported"
-            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+            let expectedMessage = "Given response_mode - fragment is not supported"
+            let expectedCode = OpenID4VPErrorCodes.invalidRequest
+
+            guard let openIDError = thrownError as? OpenID4VPException else {
+                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
+                return
+            }
+
+            XCTAssertEqual(openIDError.message, expectedMessage)
+            XCTAssertEqual(openIDError.errorCode, expectedCode)
+
         case .success:
-            XCTFail("Expected error - An unexpected exception occurred: exception type: invalidResponseMode but not thrown")
+            XCTFail("Expected error of type OpenID4VPException but none was thrown")
         }
     }
+
 
     // client_id_scheme = pre-registered
     func testReturnDataForValidRequestWithResponseUri() async {
@@ -75,9 +85,9 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
         XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
-    
+
     //client_id_scheme = pre-registered, validation of client via shouldValidateClient
-    
+
     func testAuthenticateVerifierWithShouldValidateClientFalse() async throws {
         await XCTAssertAsyncNoThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
@@ -85,7 +95,7 @@ class OpenID4VPTests: XCTestCase {
             shouldValidateClient: false
         ), "should not throw even though the client ID isn't in the trusted list because shouldValidateClient is false")
     }
-    
+
     func testAuthenticateVerifierWithShouldValidateClientTrue() async throws {
         await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
@@ -95,7 +105,7 @@ class OpenID4VPTests: XCTestCase {
             XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.Verifier not available in trusted list", error.localizedDescription)
         }
     }
-    
+
     func testAuthenticateVerifierWithoutShouldValidateClientParam() async throws {
         await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
@@ -104,7 +114,7 @@ class OpenID4VPTests: XCTestCase {
             XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.Verifier not available in trusted list", error.localizedDescription)
         }
     }
-    
+
     // client_id_scheme = pre-registered draft 21
     func testReturnDataForValidRequestWithResponseUriDraft21() async {
         let decoded: Any?
@@ -127,10 +137,17 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Missing Input: client_metadata->vp_formats param is required"
-            XCTAssertEqual(thrownError.localizedDescription, expectedErrorMessage)
-        case .success: break
+            if let openIDError = thrownError as? OpenID4VPException {
+                XCTAssertEqual(openIDError.localizedDescription, "Missing Input: client_metadata->vp_formats param is required")
+                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
+            } else {
+                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
+            }
+
+        case .success:
+            XCTFail("Expected failure but got success")
         }
+
     }
 
     func testShouldConstructAuthorizationRequestSuccessfullyWhenPresentationDefinitionIsSentByReference() async {
@@ -172,8 +189,13 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "JWS proof verification failed"
-            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+            if let openIDError = thrownError as? OpenID4VPException {
+                XCTAssertEqual(openIDError.localizedDescription, "JWS proof verification failed")
+                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest) // or appropriate code
+            } else {
+                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
+            }
+
         case .success:
             XCTFail("Jwt proof verification failed error should have been captured instead it succeeded")
         }
@@ -191,8 +213,13 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Client Id is mismatching in QR data and Request Uri response"
-            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+            if let openIDError = thrownError as? OpenID4VPException {
+                XCTAssertEqual(openIDError.localizedDescription, "Client Id is mismatching in QR data and Request Uri response")
+                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
+            } else {
+                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
+            }
+
         case .success: break
         }
     }
@@ -208,8 +235,13 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Kid extraction from did document failed"
-            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+            if let openIDError = thrownError as? OpenID4VPException {
+                XCTAssertEqual(openIDError.localizedDescription, "Kid extraction from did document failed")
+                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
+            } else {
+                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
+            }
+
         case .success: break
         }
     }
@@ -235,8 +267,13 @@ class OpenID4VPTests: XCTestCase {
 
         switch error {
         case .failure(let thrownError):
-            let expectedErrorMessage = "Missing Input: presentation_definition->id param is required"
-            XCTAssertEqual(thrownError.localizedDescription,expectedErrorMessage)
+            if let openIDError = thrownError as? OpenID4VPException {
+                XCTAssertEqual(openIDError.localizedDescription, "Missing Input: presentation_definition->id param is required")
+                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
+            } else {
+                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
+            }
+
         case .success: break
         }
     }
@@ -313,7 +350,7 @@ class OpenID4VPTests: XCTestCase {
         do {
             authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "", signatureSuite: "JsonWebSignature2020")
-            
+
             let _ = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
         } catch let error as NetworkRequestException {
             switch error {
@@ -326,16 +363,16 @@ class OpenID4VPTests: XCTestCase {
             XCTFail("Expected NetworkRequestException.networkRequestFailed but got \(error)")
         }
     }
-    
+
     func testShareVPSuccessWhenResponseModeIsDirectPostJwt() async throws {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
-        
+
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "", signatureSuite: "JsonWebSignature2020")
         let vpTokenSigningResults = [FormatType.ldp_vc: LdpVPTokenSigningResult(jws:"test-jws-valid",proofValue: "test", signatureAlgorithm: "JsonWebSignature2020")]
-                
+
         let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
-        
+
         XCTAssertEqual(response, "Success: Request completed successfully.")
     }
 }

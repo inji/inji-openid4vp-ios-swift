@@ -4,7 +4,11 @@ import XCTest
 final class ResponseModeBasedHandlerFactoryTests: XCTestCase {
     func testThrowErrorWhenResponseModeIsNotSupportedOnGettingResponseModeHandler() throws {
         XCTAssertThrowsError(try ResponseModeBasedHandlerFactory.get(responseMode: "fragment")) { error in
-            XCTAssertEqual("Given response_mode - fragment is not supported", error.localizedDescription)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Given response_mode - fragment is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
