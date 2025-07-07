@@ -50,7 +50,10 @@ final class FieldValidatorTests: XCTestCase {
         
         for testCase in testCases {
             XCTAssertThrowsError(try validateField(field: testCase.input, fieldPath: ["field"], className: "TestClass")) { error in
-                XCTAssertEqual(error.localizedDescription, testCase.expectedError)
+                assertOpenID4VPException(error,
+                                         expectedMessage: testCase.expectedError!,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }

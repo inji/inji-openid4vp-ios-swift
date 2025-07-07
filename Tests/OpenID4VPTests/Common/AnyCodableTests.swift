@@ -92,7 +92,10 @@ final class AnyCodableTests: XCTestCase {
         let invalidValue = AnyCodable(Date())
         
         XCTAssertThrowsError(try JSONEncoder().encode(invalidValue)) { error in
-            XCTAssertEqual("Json Encoding failed for  due to this error: Error occured while encoding response.", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Json encoding failed for  due to this error: Error occured while encoding response",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     

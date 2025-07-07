@@ -30,7 +30,10 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let builder = MdocVPTokenBuilder(mdocVPTokenSigningResult: metadata, credentials: credentials)
 
         XCTAssertThrowsError(try builder.build()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Verifiable Credential: Error while decoding credential")
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Verifiable Credential: Error while decoding credential",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 
@@ -41,7 +44,10 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let builder = MdocVPTokenBuilder(mdocVPTokenSigningResult: metadata, credentials: credentials)
 
         XCTAssertThrowsError(try builder.build()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Verifiable Credential: docType not available in credential")
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Verifiable Credential: docType not available in credential",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 
@@ -51,7 +57,10 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let builder = MdocVPTokenBuilder(mdocVPTokenSigningResult: metadata, credentials: credentials)
 
         XCTAssertThrowsError(try builder.build()) { error in
-            XCTAssertEqual(error.localizedDescription, "Missing Input: mdocVPTokenSigningResult->docTypeToDeviceAuthentication->DeviceAuthentication param is required")
+            assertOpenID4VPException(error,
+                expectedMessage: "Missing Input: mdocVPTokenSigningResult->docTypeToDeviceAuthentication->DeviceAuthentication param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 
@@ -61,7 +70,10 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let builder = MdocVPTokenBuilder(mdocVPTokenSigningResult: metadata, credentials: credentials)
 
         XCTAssertThrowsError(try builder.build()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Input: DeviceAuthentication->signature value cannot be empty or null")
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

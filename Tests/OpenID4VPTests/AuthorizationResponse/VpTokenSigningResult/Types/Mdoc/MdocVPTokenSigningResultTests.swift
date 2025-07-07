@@ -25,7 +25,10 @@ final class MdocVPTokenSigningResultTests: XCTestCase {
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Input: DeviceAuthentication->signature value cannot be empty or null")
+            assertOpenID4VPException(error,
+                 expectedMessage: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -35,7 +38,10 @@ final class MdocVPTokenSigningResultTests: XCTestCase {
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Input: MdocVPTokenSigningResult->docTypeToDeviceAuthentication value cannot be empty or null")
+            assertOpenID4VPException(error,
+                 expectedMessage: "Invalid Input: MdocVPTokenSigningResult->docTypeToDeviceAuthentication value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

@@ -20,7 +20,10 @@ class DecodrTests: XCTestCase {
         let invalidBase64 = "%%InvalidBase64%%"
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(invalidBase64)) { error in
-            XCTAssertEqual("Error occurred while decoding ", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Base64 decoding failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -28,7 +31,10 @@ class DecodrTests: XCTestCase {
         let emptyBase64 = ""
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(emptyBase64)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Decoding to json failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -37,7 +43,10 @@ class DecodrTests: XCTestCase {
         let base64String = Data(nonJSONString.utf8).base64EncodedString()
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(base64String)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Decoding to json failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -46,7 +55,10 @@ class DecodrTests: XCTestCase {
         let base64String = Data(corruptedJSON.utf8).base64EncodedString()
         
         XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(base64String)) { error in
-            XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Decoding to json failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -54,7 +66,10 @@ class DecodrTests: XCTestCase {
             let invalidJsonBase64 = Data("[1,2,3]".utf8).base64EncodedString()
 
             XCTAssertThrowsError(try Base64Decoder.decodeBase64ToJSON(invalidJsonBase64)) { error in
-                XCTAssertEqual("Json Decoding failed for  due to this error: Decoding to json failed.", error.localizedDescription)
+                assertOpenID4VPException(error,
+                    expectedMessage: "Decoding to json failed",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     

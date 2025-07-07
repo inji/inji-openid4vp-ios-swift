@@ -16,7 +16,10 @@ final class LdpVPTokenSigningResultTests: XCTestCase {
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Input: LdpVPTokenSigningResult->jws value cannot be empty or null")
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: LdpVPTokenSigningResult->jws value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -27,7 +30,10 @@ final class LdpVPTokenSigningResultTests: XCTestCase {
         )
         
         XCTAssertThrowsError(try invalidMetadata.validate()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Input: LdpVPTokenSigningResult->jws value cannot be empty or null")
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Input: LdpVPTokenSigningResult->jws value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

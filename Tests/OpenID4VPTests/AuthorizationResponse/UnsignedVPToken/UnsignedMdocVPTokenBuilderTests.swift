@@ -14,7 +14,10 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         )
 
         XCTAssertThrowsError(try builder.build()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Verifiable Credential: Error while decoding credential")
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Verifiable Credential: Error while decoding credential",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 
@@ -28,7 +31,10 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         )
 
         XCTAssertThrowsError(try builder.build()) { error in
-            XCTAssertEqual(error.localizedDescription, "Invalid Verifiable Credential: Error while decoding credential")
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Verifiable Credential: Error while decoding credential",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 

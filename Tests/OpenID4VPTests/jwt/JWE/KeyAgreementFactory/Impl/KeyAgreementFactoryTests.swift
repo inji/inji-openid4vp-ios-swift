@@ -37,7 +37,11 @@ final class KeyAgreementFactoryTests: XCTestCase {
         let invalidMockJWK = try JSONDecoder().decode(JWK.self, from: json)
 
         XCTAssertThrowsError(try KeyAgreementFactory.createKeyAgreement(for: invalidMockJWK)) { error in
-            XCTAssertEqual(error.localizedDescription, "Required Key Agreement algorithm is not supported.")
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Required Key Agreement algorithm is not supported.",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }
