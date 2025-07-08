@@ -115,9 +115,8 @@ public class OpenID4VP {
         let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
 
 
-        var errorInfo: [String: String] = [
-            "traceabilityId": "\(traceabilityId)"
-        ]
+        var errorInfo: [String: String] = [:]
+
 
         let resolvedError: OpenID4VPException
         if let openidError = error as? OpenID4VPException {
