@@ -1,5 +1,5 @@
 
-enum OpenID4VPErrorCodes {
+public enum OpenID4VPErrorCodes {
     static let newUnknown = "new_unknown"
     static let invalidRequest = "invalid_request"
     static let invalidClient = "invalid_client"
