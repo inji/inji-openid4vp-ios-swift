@@ -8,6 +8,6 @@ public enum OpenID4VPErrorCodes {
     static let vpFormatsNotSupported = "vp_formats_not_supported"
     static let invalidPresentationDefinitionReference = "invalid_presentation_definition_reference"
     static let invalidRequestUriMethod = "invalid_request_uri_method"
-    static let invalidTransactionData = "invalid_transaction_data"
-    static let accessDenied = "access_denied"
+    public static let invalidTransactionData = "invalid_transaction_data"
+    public static let accessDenied = "access_denied"
 }
