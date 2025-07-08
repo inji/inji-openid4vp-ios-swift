@@ -10,7 +10,7 @@ class X25519KeyAgreement: JWEKeyAgreement {
         
         guard let publicKeyData = Data(base64Encoded: makeBase64Standard(publicKey)) else {
             
-            throw PublicKeyConversionFailed(message: "Public key Data conversion from base64 failed.", className: X25519KeyAgreement.className)
+            throw PublicKeyConversionFailed(className: X25519KeyAgreement.className)
         }
         
         let privateKey = Curve25519.KeyAgreement.PrivateKey()

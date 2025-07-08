@@ -34,7 +34,7 @@ class DidWebResolver {
     func resolve() async throws -> [String: Any] {
         let parsedDid = try parse()
         guard parsedDid.method == didWebMethod else {
-            throw UnsupportedDidUrl( message: "Given did url is not supported", className: DidWebResolver.className)
+            throw UnsupportedDidUrl(className: DidWebResolver.className)
         }
         let result = try await resolve(parsedDID: parsedDid)
         return result
@@ -50,7 +50,7 @@ class DidWebResolver {
             }
         }
         guard sections.first != nil else {
-            throw UnsupportedDidUrl( message: "Given did url is not supported", className: DidWebResolver.className)
+            throw UnsupportedDidUrl( className: DidWebResolver.className)
         }
         var params: [String: String]? = nil
         if !sections[4].isEmpty {

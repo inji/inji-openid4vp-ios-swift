@@ -28,13 +28,13 @@ func validateAuthorizationRequestObjectAndParameters(params: [String: String], r
     
     
     guard params["client_id"] == requestUriParams["client_id"] as? String else {
-        throw MismatchingClientIDInRequest(message: "Client Id is mismatching in QR data and Request Uri response", className: AuthorizationRequest.className)
+        throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }
     
     // If client_id_scheme is present in the authorization request, it should be present in the request_uri response as well and should be same we are assuming it follows Draft 21 specification
     if params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] != nil {
         guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] as? String else {
-            throw MismatchingClientIdSchemeInRequest(message: "Client Id scheme is mismatching in QR data and Request Uri response", className: AuthorizationRequest.className)
+            throw MismatchingClientIdSchemeInRequest(className: AuthorizationRequest.className)
         }
     }
 }

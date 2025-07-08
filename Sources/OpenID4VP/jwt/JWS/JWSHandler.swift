@@ -32,7 +32,6 @@ struct JWSHandler {
                 let jws = try JWS(jwsString: jws)
                 guard try jws.verify(key: publicKey) else {
                     throw InvalidSignature(
-                        message: "JWS proof verification failed",
                         className: JWSHandler.className
                     )
                 }

@@ -23,7 +23,6 @@ class DidPublicKeyResolver : PublicKeyResolver {
         
         guard let kid = header["kid"] as? String else {
             throw KidExtractionFailed(
-                message: "Kid extraction from did document failed",
                 className: DidPublicKeyResolver.className
             )
         }

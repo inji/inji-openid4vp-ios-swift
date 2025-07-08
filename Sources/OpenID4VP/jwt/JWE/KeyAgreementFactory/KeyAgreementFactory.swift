@@ -6,7 +6,7 @@ class KeyAgreementFactory {
         case ("OKP", "X25519"):
             return X25519KeyAgreement()
         default:
-            throw UnsupportedKeyAgreementAlgorithm(message: "Required Key Agreement algorithm is not supported.",className: KeyAgreementFactory.className)
+            throw UnsupportedKeyAgreementAlgorithm(className: KeyAgreementFactory.className)
         }
     }
 }

@@ -51,8 +51,6 @@ class InvalidQueryParams: OpenID4VPException {
     }
 }
 
-// MARK: - Specific Exceptions
-
 class InvalidVerifier: OpenID4VPException {
     init(message: String, className: String) {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
@@ -149,7 +147,8 @@ class PublicKeyExtractionFailed: OpenID4VPException {
 }
 
 class KidExtractionFailed: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "Kid extraction from did document failed"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
@@ -161,7 +160,8 @@ class PublicKeyResolutionFailed: OpenID4VPException {
 }
 
 class InvalidSignature: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "JWS proof verification failed"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
@@ -193,21 +193,9 @@ class UnsupportedEncryptionAlgorithm: OpenID4VPException {
 }
 
 
-
-class UnsupportedKeyExchangeAlgorithm: OpenID4VPException {
-    init(className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "Required Key exchange algorithm is not supported", className: className)
-    }
-}
-
-class JweEncryptionFailure: OpenID4VPException {
-    init(className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "JWE Encryption failed", className: className)
-    }
-}
-
 class UnsupportedDidUrl: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "Given did url is not supported"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
@@ -219,7 +207,8 @@ class DidResolutionFailed: OpenID4VPException {
 }
 
 class PayloadConversionFailed: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message =  "Failed to convert payload to Data"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
@@ -247,31 +236,36 @@ class InvalidType: OpenID4VPException {
 }
 
 class MismatchingClientIDInRequest: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "Client Id is mismatching in QR data and Request Uri response"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class MismatchingClientIdSchemeInRequest: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "Client Id scheme is mismatching in QR data and Request Uri response"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class UnsupportedKeyAgreementAlgorithm: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "Required Key Agreement algorithm is not supported."
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class PublicKeyConversionFailed: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "Public key Data conversion from base64 failed."
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class InvalidEncryptionKeySize: OpenID4VPException {
-    init(message: String, className: String) {
+    init(className: String) {
+        let message = "Invalid Key size provided for encryption."
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }

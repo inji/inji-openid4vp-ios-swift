@@ -5,6 +5,7 @@ public struct VPResponseMetadata {
     public let signatureAlgorithm: String
     public let publicKey: String
     public let domain: String
+    static let className = String(describing: VPResponseMetadata.self)
 
     public init(jws: String, signatureAlgorithm: String, publicKey: String, domain: String) {
         self.jws = jws
@@ -24,7 +25,7 @@ public struct VPResponseMetadata {
 
             for (key, value) in requiredParams {
                 if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || value == "null" {
-                    throw GenericFailure(className: "VPResponseMetadata" )
+                    throw InvalidInput(fieldPath: ["vp response metadata",value], className: VPResponseMetadata.className)
                 }
             }
         }

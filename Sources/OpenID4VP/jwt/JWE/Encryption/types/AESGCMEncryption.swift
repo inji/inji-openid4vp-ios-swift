@@ -13,7 +13,7 @@ class AESGCMEncryption: JWEEncryption {
         
         guard key.bitCount == keySize.bitCount else {
             
-            throw InvalidEncryptionKeySize(message: "Invalid Key size provided for encryption.", className: AESGCMEncryption.className)
+            throw InvalidEncryptionKeySize(className: AESGCMEncryption.className)
         }
         
         let nonce = AES.GCM.Nonce()
