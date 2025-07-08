@@ -1,25 +1,25 @@
 import Foundation
 
-class OpenID4VPException: Error, CustomStringConvertible, LocalizedError {
-    let errorCode: String
-    let message: String
-    let className: String
+public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError {
+    public let errorCode: String
+    public let message: String
+    public let className: String
     
     private static var logTag = ""
     private static var traceabilityId: String?
 
-    init(errorCode: String, message: String, className: String) {
+    public init(errorCode: String, message: String, className: String) {
         self.errorCode = errorCode
         self.message = message
         self.className = className
         print("ERROR [\(errorCode)] - \(message) | Class: \(className)")
     }
 
-    var description: String {
+    public var description: String {
         return "\(errorCode) : \(message)"
     }
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         return message
     }
 
@@ -297,6 +297,20 @@ class UTF8EncodingFailed: OpenID4VPException {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
+
+public class AccessDenied: OpenID4VPException {
+    public init(message: String, className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
+public class InvalidTransactionData: OpenID4VPException {
+    public init(message: String, className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
+
 
 
 
