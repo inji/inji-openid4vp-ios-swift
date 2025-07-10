@@ -200,7 +200,7 @@ func createWalletMetadata(
     presentationDefinitionURISupported: Bool = true,
     vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
     clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .did, .redirectUri],
-    requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
+    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
     authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
     authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
 ) throws -> WalletMetadata {

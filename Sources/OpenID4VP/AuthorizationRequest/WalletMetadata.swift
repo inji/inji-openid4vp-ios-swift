@@ -4,7 +4,7 @@ public struct WalletMetadata: Codable {
     let presentationDefinitionURISupported: Bool
     let vpFormatsSupported: [String: VPFormatSupported]
     let clientIdSchemesSupported: [ClientIdScheme]
-    var requestObjectSigningAlgValuesSupported: [String]?
+    var requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]?
     let authorizationEncryptionAlgValuesSupported: [String]?
     let authorizationEncryptionEncValuesSupported: [String]?
     static let className = String(describing: WalletMetadata.self)
@@ -22,7 +22,7 @@ public struct WalletMetadata: Codable {
         presentationDefinitionURISupported: Bool?,
         vpFormatsSupported: [String: VPFormatSupported],
         clientIdSchemesSupported: [ClientIdScheme]?,
-        requestObjectSigningAlgValuesSupported: [String]? = nil,
+        requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = nil,
         authorizationEncryptionAlgValuesSupported: [String]? = nil,
         authorizationEncryptionEncValuesSupported: [String]? = nil
     ) throws {

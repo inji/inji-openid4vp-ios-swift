@@ -6,5 +6,5 @@ public enum SignatureAlgorithm: String {
 }
 
 public enum RequestSigningAlgorithm : String, Codable {
-    case eddsa = "EdDSA"
+    case edDsa = "EdDSA"
 }
