@@ -6,44 +6,20 @@ public class OpenID4VP {
     var authorizationRequest: AuthorizationRequest!
     private var responseUri: String?
     private var authorizationResponseHandler: AuthorizationResponseHandler
+    private let walletMetadata: WalletMetadata?
     
 
-    public init(traceabilityId: String, networkManager: NetworkManaging? = nil) {
+    public init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
         self.networkManager = networkManager ?? NetworkManager.shared
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
-        
+        self.walletMetadata = walletMetadata
     }
 
     public func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
     }
 
-    public func authenticateVerifier(
-        urlEncodedAuthorizationRequest: String,
-        trustedVerifierJSON: [Verifier],
-        shouldValidateClient: Bool = true,
-        walletMetadata: WalletMetadata? = nil
-    ) async throws -> AuthorizationRequest {
-        Logger.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
-
-        do {
-            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
-                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifierJSON,
-                walletMetadata: walletMetadata,
-                setResponseUri: setResponseUri,
-                shouldValidateClient: shouldValidateClient,
-                networkManager: networkManager
-            )
-            return authorizationRequest
-        } catch let exception {
-            await sendErrorToVerifier(error: exception)
-            throw exception
-        }
-    }
-
-    @available(*, deprecated, message: "Use authenticateVerifier with WalletMetadata instead")
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
         trustedVerifierJSON: [Verifier],
@@ -55,7 +31,7 @@ public class OpenID4VP {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                 trustedVerifierJSON: trustedVerifierJSON,
-                walletMetadata: nil,
+                walletMetadata: self.walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
                 networkManager: networkManager
