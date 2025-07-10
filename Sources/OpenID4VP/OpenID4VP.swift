@@ -22,7 +22,7 @@ public class OpenID4VP {
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
         trustedVerifierJSON: [Verifier],
-        shouldValidateClient: Bool = false,
+        shouldValidateClient: Bool = true,
         walletMetadata: WalletMetadata? = nil
     ) async throws -> AuthorizationRequest {
         Logger.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
@@ -47,7 +47,7 @@ public class OpenID4VP {
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
         trustedVerifierJSON: [Verifier],
-        shouldValidateClient: Bool = false
+        shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
         Logger.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
 

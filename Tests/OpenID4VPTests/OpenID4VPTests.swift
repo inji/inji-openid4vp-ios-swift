@@ -76,6 +76,35 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
     
+    //client_id_scheme = pre-registered, validation of client via shouldValidateClient
+    
+    func testAuthenticateVerifierWithShouldValidateClientFalse() async throws {
+        await XCTAssertAsyncNoThrowsError(try await openID4VP.authenticateVerifier(
+            urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
+            trustedVerifierJSON: preRegisteredVerifiers,
+            shouldValidateClient: false
+        ), "should not throw even though the client ID isn't in the trusted list because shouldValidateClient is false")
+    }
+    
+    func testAuthenticateVerifierWithShouldValidateClientTrue() async throws {
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+            urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
+            trustedVerifierJSON: preRegisteredVerifiers,
+            shouldValidateClient: true
+        )) { error in
+            XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.Verifier not available in trusted list", error.localizedDescription)
+        }
+    }
+    
+    func testAuthenticateVerifierWithoutShouldValidateClientParam() async throws {
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+            urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
+            trustedVerifierJSON: preRegisteredVerifiers
+        )) { error in
+            XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.Verifier not available in trusted list", error.localizedDescription)
+        }
+    }
+    
     // client_id_scheme = pre-registered draft 21
     func testReturnDataForValidRequestWithResponseUriDraft21() async {
         let decoded: Any?
