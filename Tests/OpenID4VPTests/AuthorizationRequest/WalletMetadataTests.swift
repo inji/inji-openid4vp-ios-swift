@@ -13,7 +13,7 @@ final class WalletMetadataTests: XCTestCase {
             vpFormatsSupported: vpFormats,
             clientIdSchemesSupported: [ClientIdScheme.redirectUri],
             requestObjectSigningAlgValuesSupported: [.edDsa],
-            authorizationEncryptionAlgValuesSupported: ["ECDH-ES"],
+            authorizationEncryptionAlgValuesSupported: [.ecdhEs],
             authorizationEncryptionEncValuesSupported: ["A256GCM"]
         )
         

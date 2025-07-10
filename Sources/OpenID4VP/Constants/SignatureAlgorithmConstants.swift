@@ -8,3 +8,7 @@ public enum SignatureAlgorithm: String {
 public enum RequestSigningAlgorithm : String, Codable {
     case edDsa = "EdDSA"
 }
+
+public enum KeyManagementAlgorithm : String, Codable {
+    case ecdhEs = "ECDH-ES"
+}

@@ -190,7 +190,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
         
-        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: ["ECDH-ES"], authorizationEncryptionEncValuesSupported: ["A256GCM"])
+        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: [.ecdhEs], authorizationEncryptionEncValuesSupported: ["A256GCM"])
         
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("authorization_encrypted_response_enc is not supported", error.localizedDescription)
@@ -224,7 +224,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
         
-        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: ["ECDH-ES"], authorizationEncryptionEncValuesSupported: ["A256GCM"])
+        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: [.ecdhEs], authorizationEncryptionEncValuesSupported: ["A256GCM"])
         
         
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
@@ -271,7 +271,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
         
         // Enc values are nil
-        invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: ["ECDH-ES"], authorizationEncryptionEncValuesSupported: nil)
+        invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: [.ecdhEs], authorizationEncryptionEncValuesSupported: nil)
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("authorization_encryption_enc_values_supported must be present in wallet_metadata", error.localizedDescription)
         }
