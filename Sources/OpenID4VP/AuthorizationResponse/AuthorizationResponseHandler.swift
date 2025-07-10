@@ -6,13 +6,12 @@ public class AuthorizationResponseHandler {
     private var unsignedVPTokens: [FormatType: [String:Any]] = [:]
     private var path: [FormatType: (index: Int, nestedIndex: Int)] = [:]
     private var credentialsMap: [String: [FormatType: Array<Any>]]?
-    private let walletNonce: String
+    private var walletNonce: String = ""
 
     public static let className = String(describing: AuthorizationResponseHandler.self)
 
     public init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
-        walletNonce = createNonce()
     }
 
     func constructUnsignedVPToken(
@@ -31,8 +30,10 @@ public class AuthorizationResponseHandler {
         }
 
         self.credentialsMap = credentialsMap
+        // Create wallet nonce for every transaction
+        self.walletNonce = createNonce()
 
-           unsignedVPTokens = try createUnsignedVPTokens(
+        unsignedVPTokens = try createUnsignedVPTokens(
             credentialsMap: credentialsMap,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
