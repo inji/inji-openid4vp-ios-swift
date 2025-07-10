@@ -49,7 +49,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             return try throwInvalidDataException(message: "authorization_encrypted_response_alg is not supported")
         }
         
-        guard let supportedEncryptions = walletMetadata.authorizationEncryptionEncValuesSupported else {
+        guard let supportedEncryptions = walletMetadata.authorizationEncryptionEncValuesSupported?.compactMap({$0.rawValue}) else {
             return try throwInvalidDataException(message: "authorization_encryption_enc_values_supported must be present in wallet_metadata")
         }
         

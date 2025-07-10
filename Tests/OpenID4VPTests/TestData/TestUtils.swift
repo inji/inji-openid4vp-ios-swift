@@ -202,7 +202,7 @@ func createWalletMetadata(
     clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .did, .redirectUri],
     requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
     authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
-    authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
+    authorizationEncryptionEncValuesSupported: [ContentEncrytionAlgorithm]? = [.A256GCM]
 ) throws -> WalletMetadata {
     return try WalletMetadata(
         presentationDefinitionURISupported: presentationDefinitionURISupported,

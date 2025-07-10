@@ -14,7 +14,7 @@ final class WalletMetadataTests: XCTestCase {
             clientIdSchemesSupported: [ClientIdScheme.redirectUri],
             requestObjectSigningAlgValuesSupported: [.edDsa],
             authorizationEncryptionAlgValuesSupported: [.ecdhEs],
-            authorizationEncryptionEncValuesSupported: ["A256GCM"]
+            authorizationEncryptionEncValuesSupported: [.A256GCM]
         )
         
         XCTAssertTrue(metadata.presentationDefinitionURISupported)

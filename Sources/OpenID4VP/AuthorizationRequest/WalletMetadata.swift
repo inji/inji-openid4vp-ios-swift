@@ -6,7 +6,7 @@ public struct WalletMetadata: Codable {
     let clientIdSchemesSupported: [ClientIdScheme]
     var requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]?
     let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]?
-    let authorizationEncryptionEncValuesSupported: [String]?
+    let authorizationEncryptionEncValuesSupported: [ContentEncrytionAlgorithm]?
     static let className = String(describing: WalletMetadata.self)
     
     enum CodingKeys: String, CodingKey {
@@ -24,7 +24,7 @@ public struct WalletMetadata: Codable {
         clientIdSchemesSupported: [ClientIdScheme]?,
         requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = nil,
         authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = nil,
-        authorizationEncryptionEncValuesSupported: [String]? = nil
+        authorizationEncryptionEncValuesSupported: [ContentEncrytionAlgorithm]? = nil
     ) throws {
         self.presentationDefinitionURISupported = presentationDefinitionURISupported ?? true
         self.vpFormatsSupported = vpFormatsSupported
