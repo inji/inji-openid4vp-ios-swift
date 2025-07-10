@@ -3,7 +3,7 @@ import Foundation
 public struct WalletMetadata: Codable {
     let presentationDefinitionURISupported: Bool
     let vpFormatsSupported: [String: VPFormatSupported]
-    let clientIdSchemesSupported: [String]
+    let clientIdSchemesSupported: [ClientIdScheme]
     var requestObjectSigningAlgValuesSupported: [String]?
     let authorizationEncryptionAlgValuesSupported: [String]?
     let authorizationEncryptionEncValuesSupported: [String]?
@@ -21,14 +21,14 @@ public struct WalletMetadata: Codable {
     public init(
         presentationDefinitionURISupported: Bool?,
         vpFormatsSupported: [String: VPFormatSupported],
-        clientIdSchemesSupported: [String]?,
+        clientIdSchemesSupported: [ClientIdScheme]?,
         requestObjectSigningAlgValuesSupported: [String]? = nil,
         authorizationEncryptionAlgValuesSupported: [String]? = nil,
         authorizationEncryptionEncValuesSupported: [String]? = nil
     ) throws {
         self.presentationDefinitionURISupported = presentationDefinitionURISupported ?? true
         self.vpFormatsSupported = vpFormatsSupported
-        self.clientIdSchemesSupported = clientIdSchemesSupported ?? [ClientIdScheme.preRegistered.rawValue]
+        self.clientIdSchemesSupported = clientIdSchemesSupported ?? [ClientIdScheme.preRegistered]
         self.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported

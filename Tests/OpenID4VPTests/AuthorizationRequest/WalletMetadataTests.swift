@@ -11,7 +11,7 @@ final class WalletMetadataTests: XCTestCase {
         let metadata = try WalletMetadata(
             presentationDefinitionURISupported: true,
             vpFormatsSupported: vpFormats,
-            clientIdSchemesSupported: ["redirect_uri"],
+            clientIdSchemesSupported: [ClientIdScheme.redirectUri],
             requestObjectSigningAlgValuesSupported: ["EdDSA"],
             authorizationEncryptionAlgValuesSupported: ["ECDH-ES"],
             authorizationEncryptionEncValuesSupported: ["A256GCM"]
@@ -56,7 +56,7 @@ final class WalletMetadataTests: XCTestCase {
             clientIdSchemesSupported: nil
         )
         let walletMetadata = try createWalletMetadata(presentationDefinitionURISupported: true, vpFormatsSupported: vpFormats,
-                                                      clientIdSchemesSupported: ["pre-registered"], requestObjectSigningAlgValuesSupported: nil, authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: nil)
+                                                      clientIdSchemesSupported: [.preRegistered], requestObjectSigningAlgValuesSupported: nil, authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: nil)
         
         assertDictionariesEqual(expected: convertToDictionary(object: walletMetadata)!, actual: convertToDictionary(object: metadata))
         XCTAssertNil(metadata.requestObjectSigningAlgValuesSupported)

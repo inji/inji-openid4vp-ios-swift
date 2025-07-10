@@ -5,3 +5,6 @@ public enum SignatureAlgorithm: String {
     case rsaSignature2018 = "RSASignature2018"
 }
 
+public enum RequestSigningAlgorithm : String, Codable {
+    case eddsa = "EdDSA"
+}

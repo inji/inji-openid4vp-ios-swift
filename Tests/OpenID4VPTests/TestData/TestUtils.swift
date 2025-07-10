@@ -199,7 +199,7 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
 func createWalletMetadata(
     presentationDefinitionURISupported: Bool = true,
     vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
-    clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
+    clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .did, .redirectUri],
     requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
     authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
     authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
