@@ -134,7 +134,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
 }
 
-func assertAsyncThrowsError<T>(
+func XCTAssertAsyncThrowsError<T>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
     file: StaticString = #filePath,
@@ -149,7 +149,7 @@ func assertAsyncThrowsError<T>(
     }
 }
 
-func assertAsyncNoThrowsError<T>(
+func XCTAssertAsyncNoThrowsError<T>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
     file: StaticString = #filePath,
