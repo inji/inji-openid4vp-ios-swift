@@ -119,6 +119,54 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 - In your swift application go to file > add package dependency > add the  https://github.com/mosip/inji-openid4vp-ios-swift.git in git search bar> add package
 - Import the library and use
 
+## 🚨 Breaking Changes
+
+From Version release-0.4.x onward:
+
+### API contract changes
+This library has undergone some changes in its API contract. 
+
+#### 1. Instantiation of OpenID4VP
+- The OpenID4VP class is now initialized with `traceabilityId` and `walletMetadata` parameter, which is used to track the traceability of the requests and responses.
+
+```swift
+let openID4VP = OpenID4VP(traceabilityId: "trace-id", walletMetadata: WalletMetadata)
+```
+
+#### 2. Construction of WalletMetadata
+- The WalletMetdata construction has now been simplified. You can create a WalletMetadata object with the required parameters exposed as constants.
+- In detail,
+- `WalletMetadata` is now a struct that contains the following properties:
+  - `presentationDefinitionURISupported`: Bool
+  - `vpFormatsSupported`: [String: VPFormatSupported]
+  - `clientIdSchemesSupported`: [ClientIdScheme]
+  - `requestObjectSigningAlgValuesSupported`: [RequestSigningAlgorithm]?
+  - `authorizationEncryptionAlgValuesSupported`: [KeyManagementAlgorithm]?
+  - `authorizationEncryptionEncValuesSupported`: [ContentEncryptionAlgorithm]?
+
+```swift
+let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true,
+                                        vpFormatsSupported: [
+                                            .ldp_vc: VPFormatSupported(
+                                                algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"]
+                                            ),
+                                            .mso_mdoc: VPFormatSupported(
+                                                algValuesSupported: ["ES256"]
+                                            )
+                                        ],
+                                        clientIdSchemesSupported: [.preRegistered, .redirectUri, .did],
+                                        requestObjectSigningAlgValuesSupported: [.edDsa],
+                                        authorizationEncryptionAlgValuesSupported: [.ecdhEs],
+                                        authorizationEncryptionEncValuesSupported: [.A256GCM])
+```
+
+3. The shouldValidateClient parameter in authenticateVerifier now defaults to true.
+- If your integration previously relied on it being false, you must now explicitly pass false to preserve the old behavior.
+- Example (updated usage)
+```swift
+authenticateVerifier(traceabilityId: "traceId", shouldValidateClient = false)
+```
+
 ## APIs
 
 ### authenticateVerifier
@@ -135,14 +183,14 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 #### WalletMetadata Parameters
 
-| Parameter                                 | Type                        | Required   | Default Value      | Description                                                                                      |
-|-------------------------------------------|-----------------------------|------------|--------------------|--------------------------------------------------------------------------------------------------|
-| presentationDefinitionURISupported        | Bool                        | No         | true               | Indicates whether the wallet supports `presentation_definition_uri`.                             |
-| vpFormatsSupported                        | [String: VPFormatSupported] | Yes        | N/A                | A dictionary specifying the supported verifiable presentation formats and their algorithms.      |
-| clientIdSchemesSupported                  | [String]                    | No         | ["pre-registered"] | A list of supported client ID schemes.                                                           |
-| requestObjectSigningAlgValuesSupported    | [String]?                   | No         | nil                | A list of supported algorithms for signing request objects.                                      |
-| authorizationEncryptionAlgValuesSupported | [String]?                   | No         | nil                | A list of supported algorithms for encrypting authorization responses.                           |
-| authorizationEncryptionEncValuesSupported | [String]?                   | No         | nil                | A list of supported encryption methods for authorization responses.                              |
+| Parameter                                 | Type                          | Required | Default Value                  | Description                                                                                 |
+|-------------------------------------------|-------------------------------|----------|--------------------------------|---------------------------------------------------------------------------------------------|
+| presentationDefinitionURISupported        | Bool                          | No       | true                           | Indicates whether the wallet supports `presentation_definition_uri`.                        |
+| vpFormatsSupported                        | [String: VPFormatSupported]   | Yes      | N/A                            | A dictionary specifying the supported verifiable presentation formats and their algorithms. |
+| clientIdSchemesSupported                  | [ClientIdScheme]              | No       | [ClientIdScheme.preRegistered] | A list of supported client ID schemes.                                                      |
+| requestObjectSigningAlgValuesSupported    | [RequestSigningAlgorithm]?    | No       | nil                            | A list of supported algorithms for signing request objects.                                 |
+| authorizationEncryptionAlgValuesSupported | [KeyManagementAlgorithm]?     | No       | nil                            | A list of supported algorithms for encrypting authorization responses.                      |
+| authorizationEncryptionEncValuesSupported | [ContentEncryptionAlgorithm]? | No       | nil                            | A list of supported encryption methods for authorization responses.                         |
 
 
 
@@ -165,14 +213,20 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 ```swift
 
- let walletMetadata = WalletMetadata(
-    presentationDefinitionURISupported: true,
-    vpFormatsSupported: ["ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"])],
-    clientIdSchemesSupported: ["pre-registered", "redirect_uri", "did"],
-    requestObjectSigningAlgValuesSupported: ["EdDSA"],
-    authorizationEncryptionAlgValuesSupported: ["ECDH-ES"],
-    authorizationEncryptionEncValuesSupported: ["A256GCM"]
-)
+ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true,
+                          vpFormatsSupported: [
+                              .ldp_vc: VPFormatSupported(
+                                  algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"]
+                              ),
+                              .mso_mdoc: VPFormatSupported(
+                                  algValuesSupported: ["ES256"]
+                              )
+                          ],
+                          clientIdSchemesSupported: [.preRegistered, .redirectUri, .did],
+                          requestObjectSigningAlgValuesSupported: [.edDsa],
+                          authorizationEncryptionAlgValuesSupported: [.ecdhEs],
+                          authorizationEncryptionEncValuesSupported: [.A256GCM]
+                      )
 
  let trustedVerifiers: [Verifier] = [Verifier(clientId: "https://mock-verifier.com", responseUris:["https://mock-verifier.com/response"]
 
