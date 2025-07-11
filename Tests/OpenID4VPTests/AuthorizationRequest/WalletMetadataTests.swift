@@ -4,8 +4,8 @@ import XCTest
 final class WalletMetadataTests: XCTestCase {
     
     func testValidWalletMetadataInitialization() throws {
-        let vpFormats: [String: VPFormatSupported] = [
-            "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
+        let vpFormats: [FormatType: VPFormatSupported] = [
+            .ldp_vc : VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
         ]
         
         let metadata = try WalletMetadata(
@@ -31,23 +31,9 @@ final class WalletMetadataTests: XCTestCase {
         }
     }
     
-    func testWalletMetadataThrowsForEmptyKeyInVPFormatsSupported() {
-        let badVPFormat: [String: VPFormatSupported] = [
-            "": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
-        ]
-        
-        XCTAssertThrowsError(try WalletMetadata(
-            presentationDefinitionURISupported: nil,
-            vpFormatsSupported: badVPFormat,
-            clientIdSchemesSupported: nil
-        )) { error in
-            XCTAssertEqual(error.localizedDescription, "vp_formats_supported cannot have empty keys.")
-        }
-    }
-    
     func testWalletMetadataWithNilOptionals() throws {
-        let vpFormats: [String: VPFormatSupported] = [
-            "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
+        let vpFormats: [FormatType: VPFormatSupported] = [
+            .ldp_vc: VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
         ]
         
         let metadata = try WalletMetadata(

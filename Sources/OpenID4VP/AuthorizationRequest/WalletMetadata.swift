@@ -2,7 +2,7 @@ import Foundation
 
 public struct WalletMetadata: Codable {
     let presentationDefinitionURISupported: Bool
-    let vpFormatsSupported: [String: VPFormatSupported]
+    let vpFormatsSupported: [FormatType: VPFormatSupported]
     let clientIdSchemesSupported: [ClientIdScheme]
     var requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]?
     let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]?
@@ -20,7 +20,7 @@ public struct WalletMetadata: Codable {
     
     public init(
         presentationDefinitionURISupported: Bool?,
-        vpFormatsSupported: [String: VPFormatSupported],
+        vpFormatsSupported: [FormatType: VPFormatSupported],
         clientIdSchemesSupported: [ClientIdScheme]?,
         requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = nil,
         authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = nil,
@@ -49,7 +49,7 @@ public struct VPFormatSupported: Codable {
     }
 }
 
-private func validateVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws {
+private func validateVPFormatsSupported(_ vpFormatsSupported: [FormatType: VPFormatSupported]) throws {
     if vpFormatsSupported.isEmpty {
         throw Logger.handleException(
             exceptionType: "InvalidData",
@@ -58,7 +58,7 @@ private func validateVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatS
         )
     }
 
-    if vpFormatsSupported.keys.contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
+    if (vpFormatsSupported.keys.compactMap({$0.rawValue})).contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
         throw Logger.handleException(
             exceptionType: "InvalidData",
             message: "vp_formats_supported cannot have empty keys.",
