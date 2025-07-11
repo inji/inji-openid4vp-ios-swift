@@ -1,3 +1,3 @@
-public enum ContentEncrytionAlgorithm : String, Codable {
+public enum ContentEncryptionAlgorithm : String, Codable {
     case A256GCM
 }
