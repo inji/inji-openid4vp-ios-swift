@@ -77,7 +77,7 @@ class UtilsTest : XCTestCase {
         XCTAssertThrowsError(try determineHttpMethod(method: "head")) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Unsupported HTTP method: head",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequestUriMethod
             )
         }
     }

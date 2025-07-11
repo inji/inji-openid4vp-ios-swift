@@ -273,7 +273,7 @@ class InvalidEncryptionKeySize: OpenID4VPException {
 class UnsupportedHttpMethod: OpenID4VPException {
     init(message: String, className: String) {
         let message = "Unsupported HTTP method: \(message)"
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequestUriMethod, message: message, className: className)
     }
 }
 
