@@ -69,21 +69,6 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
     }
 
-
-    private func throwMissingInputException(fieldName: String) throws {
-        throw MissingInput(
-            fieldPath: ["client_metadata", fieldName],
-            className: className
-        )
-    }
-
-    private func throwInvalidDataException(message: String) throws {
-        throw InvalidData(
-            message: message,
-            className: className
-        )
-    }
-
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging, producerInfo: String,
     recepientInfo: String) async throws -> String {
         let bodyParams = try authorizationResponse.toJsonEncodedMap()

@@ -182,7 +182,7 @@ final class DidWebResolverTests: XCTestCase {
             TestCase(input: "{\"key\":\"value", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
             TestCase(input: "\"Just a string\"", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
             TestCase(input: "Invalid JSON", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
-            TestCase(input: "[1,2,3]", expectedError: "Conversion failed: response is not a valid JSON object"),
+            TestCase(input: "[1,2,3]", expectedError: "Conversion failed: resolved DID response is not a valid JSON object"),
         ]
         
         for testCase in testCases {

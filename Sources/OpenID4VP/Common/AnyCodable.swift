@@ -25,7 +25,10 @@ import Foundation
         } else if container.decodeNil() {
             value = Optional<Any>.none as Any
         } else {
-            throw Base64DecodingFailed(message: "Error occured while decoding response", className: AnyCodable.className)
+            throw UnsupportedJSONTypeDecoding(
+                message: "Unsupported JSON type encountered while decoding response in AnyCodable",
+                className: AnyCodable.className
+            )
         }
     }
     

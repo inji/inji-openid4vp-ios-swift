@@ -289,6 +289,12 @@ class Base64DecodingFailed: OpenID4VPException {
     }
 }
 
+class UnsupportedJSONTypeDecoding: OpenID4VPException {
+    init(message: String, className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
 
 
 class UTF8EncodingFailed: OpenID4VPException {
@@ -300,13 +306,13 @@ class UTF8EncodingFailed: OpenID4VPException {
 
 public class AccessDenied: OpenID4VPException {
     public init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.accessDenied, message: message, className: className)
     }
 }
 
 public class InvalidTransactionData: OpenID4VPException {
     public init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidTransactionData, message: message, className: className)
     }
 }
 

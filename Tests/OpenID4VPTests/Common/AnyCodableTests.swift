@@ -108,4 +108,29 @@ final class AnyCodableTests: XCTestCase {
         let decoded = try JSONDecoder().decode(AnyCodable.self, from: jsonData)
         XCTAssertTrue(decoded.value is Optional<Any>)
     }
+    
+    func testUnsupportedJSONTypeDecoding() {
+        struct UnsupportedType: Decodable {
+            init(from decoder: Decoder) throws {
+                throw UnsupportedJSONTypeDecoding(
+                    message: "Unsupported JSON type encountered while decoding response in AnyCodable",
+                    className: AnyCodable.className
+                )
+            }
+        }
+
+        let data = """
+        {
+          "unsupported": "value"
+        }
+        """.data(using: .utf8)!
+
+        XCTAssertThrowsError(try JSONDecoder().decode(UnsupportedType.self, from: data)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported JSON type encountered while decoding response in AnyCodable",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
 }

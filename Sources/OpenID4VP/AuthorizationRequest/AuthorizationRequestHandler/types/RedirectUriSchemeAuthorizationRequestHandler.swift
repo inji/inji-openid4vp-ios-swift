@@ -68,9 +68,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     
     private func validateUriCombinations(authorizationRequestParameters: [String: Any], validAttribute: String, inValidAttribute: String) throws {
         if authorizationRequestParameters.keys.contains(inValidAttribute) {
-            throw InvalidInput(
-                fieldPath: inValidAttribute, className: className
-            )
+            throw InvalidData(message: "\(inValidAttribute) should not be present for given response_mode", className: className)
         } else {
             try validateAttribute(validAttribute, values: self.authorizationRequestParameters)
         }
@@ -88,4 +86,5 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
             )
         }
     }
+    
 }

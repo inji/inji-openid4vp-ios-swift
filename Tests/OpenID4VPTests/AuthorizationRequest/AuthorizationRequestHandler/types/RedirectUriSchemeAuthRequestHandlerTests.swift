@@ -130,4 +130,43 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         assertDictionariesEqual(expected: expectedHeader, actual: header)
     }
+    
+    func testShouldThrowErrorWhenResponseUriNotEqualToClientId() async {
+        let mockClientId = "http://mock-client.com"
+        let invalidResponseUri = "http://invalid-mock-client.com"
+
+        let authParams: [String: Any] = createAuthorizationRequest(
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                redirectUriSchemeClientIdDraft23,
+                [
+                    "client_id": mockClientId,
+                    "client_id_scheme": "redirect_uri",
+                    "response_mode": "direct_post",
+                    "response_uri": invalidResponseUri,
+                    "scope": "openid",
+                    "response_type": "vp_token",
+                    "nonce": "123456"
+                ]
+            )
+        )
+
+        let redirectUriSchemeHandler = RedirectUriSchemeAuthorizationRequestHandler(
+            authorizationRequestParameters: authParams,
+            walletMetadata: walletMetadata,
+            setResponseUri: mockSetResponseUri,
+            networkManager: mockNetworkManager
+        )
+
+        await assertAsyncThrowsError(
+            try await redirectUriSchemeHandler.validateAndParseRequestFields()
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "response_uri should be equal to client_id for given client_id_scheme",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
 }

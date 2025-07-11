@@ -80,13 +80,13 @@ class DidWebResolver {
             let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
             guard let responseBody = response.responseBody.data(using: .utf8) else {
                 throw InvalidData(
-                    message: "Conversion failed: response body could not be encoded",
+                    message: "Conversion failed: resolved DID response body could not be encoded",
                     className: DidWebResolver.className
                 )
             }
             guard let didResponse = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
                 throw InvalidData(
-                      message: "Conversion failed: response is not a valid JSON object",
+                      message: "Conversion failed: resolved DID response is not a valid JSON object",
                       className: DidWebResolver.className
                   )
             }
