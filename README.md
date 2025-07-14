@@ -127,14 +127,16 @@ From Version release-0.4.x onward:
 This library has undergone some changes in its API contract. 
 
 #### 1. Instantiation of OpenID4VP
-- The OpenID4VP class is now initialized with `traceabilityId` and `walletMetadata` parameter, which is used to track the traceability of the requests and responses.
+- The OpenID4VP class is now initialized with `traceabilityId` and `walletMetadata` parameters.
+  - traceabilityId: Used to track the traceability of the requests and responses.
+  - walletMetadata: Metadata which wallet supports, such that client-id-scheme support, vp format support, proof type support, etc. (See [walletMetadata construction](#walletmetadata-construction) below for details)
 
 ```swift
 let openID4VP = OpenID4VP(traceabilityId: "trace-id", walletMetadata: WalletMetadata)
 ```
 
 #### 2. Construction of WalletMetadata
-- The WalletMetdata construction has now been simplified. You can create a WalletMetadata object with the required parameters exposed as constants.
+- The WalletMetadata construction has now been simplified. You can create a WalletMetadata object with the required parameters exposed as constants.
 - In detail,
 - `WalletMetadata` is now a struct that contains the following properties:
   - `presentationDefinitionURISupported`: Bool
@@ -167,21 +169,42 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
 authenticateVerifier(traceabilityId: "traceId", shouldValidateClient = false)
 ```
 
-## APIs
+## Construction of OpenID4VP instance
 
-### authenticateVerifier
- - Receives a list of trusted verifiers & Verifier's encoded Authorization request from consumer app(mobile wallet).
- - Optionally it also receives wallet metadata to be shared with the verifier.
- - Takes an optional boolean to toggle the client validation.
- - Decodes and parse the request, extracts the clientId and verifies it against trusted verifier's list clientId.
- - If the data contains request_uri and request_uri_method as post, then the wallet metadata is shared in the request body while making an api call to request_uri for fetching authorization request.
- - The library also validates the incoming authorization request with the wallet metadata
- - Returns the validated Authorization request object
+- The OpenID4VP class is initialized with `traceabilityId` and `walletMetadata` parameters.
 
-**Notes**
-- Wallet can send the entire metadata, library will customize it as per authorization request client_id_scheme. Eg - in case pre-registered, library modifies wallet metadata to be sent without request object signing info properties as specified in the specification.
+```swift
+let openID4VP = OpenID4VP(traceabilityId: "trace-id", walletMetadata: WalletMetadata)
+```
 
-#### WalletMetadata Parameters
+###### Parameters
+| Name           | Type           | Description                                                                                                                                                                                                     |
+|----------------|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| traceabilityId | String         | Unique identifier for tracking requests and responses.                                                                                                                                                          |
+| walletMetadata | WalletMetadata | Metadata which wallet supports, such that client-id-scheme support, vp format support, proof type support, etc. (See [below](#walletmetadata-construction) for more details on construction of wallet metadata) |
+
+### WalletMetadata construction
+- The WalletMetadata is a struct that contains metadata about the wallet's capabilities and supported features.
+- It is used to inform the Verifier about the wallet's capabilities when processing authorization requests.
+- The WalletMetadata will be sent to the verifier while making a POST request to the `request_uri` endpoint if the authorization request contains `request_uri` and `request_uri_method` as `post`.
+
+```swift
+let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true,
+                                        vpFormatsSupported: [
+                                            .ldp_vc: VPFormatSupported(
+                                                algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"]
+                                            ),
+                                            .mso_mdoc: VPFormatSupported(
+                                                algValuesSupported: ["ES256"]
+                                            )
+                                        ],
+                                        clientIdSchemesSupported: [.preRegistered, .redirectUri, .did],
+                                        requestObjectSigningAlgValuesSupported: [.edDsa],
+                                        authorizationEncryptionAlgValuesSupported: [.ecdhEs],
+                                        authorizationEncryptionEncValuesSupported: [.A256GCM])
+```
+
+#### Parameters
 
 | Parameter                                 | Type                          | Required | Default Value                  | Description                                                                                 |
 |-------------------------------------------|-------------------------------|----------|--------------------------------|---------------------------------------------------------------------------------------------|
@@ -192,7 +215,18 @@ authenticateVerifier(traceabilityId: "traceId", shouldValidateClient = false)
 | authorizationEncryptionAlgValuesSupported | [KeyManagementAlgorithm]?     | No       | nil                            | A list of supported algorithms for encrypting authorization responses.                      |
 | authorizationEncryptionEncValuesSupported | [ContentEncryptionAlgorithm]? | No       | nil                            | A list of supported encryption methods for authorization responses.                         |
 
+**Notes**
+- Wallet can send the entire metadata, library will customize it as per authorization request client_id_scheme. Eg - in case pre-registered, library modifies wallet metadata to be sent without request object signing info properties as specified in the specification.
 
+## APIs
+
+### authenticateVerifier
+ - Receives a list of trusted verifiers & Verifier's encoded Authorization request from consumer app(mobile wallet).
+ - Takes an optional boolean to toggle the client validation.
+ - Decodes and parse the request, extracts the clientId and verifies it against trusted verifier's list clientId.
+ - If the data contains request_uri and request_uri_method as post, then the wallet metadata is shared in the request body while making an api call to request_uri for fetching authorization request.
+ - The library also validates the incoming authorization request with the wallet metadata
+ - Returns the validated Authorization request object
 
 
 ```swift
@@ -212,22 +246,6 @@ authenticateVerifier(traceabilityId: "traceId", shouldValidateClient = false)
 ###### Example usage
 
 ```swift
-
- let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true,
-                          vpFormatsSupported: [
-                              .ldp_vc: VPFormatSupported(
-                                  algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"]
-                              ),
-                              .mso_mdoc: VPFormatSupported(
-                                  algValuesSupported: ["ES256"]
-                              )
-                          ],
-                          clientIdSchemesSupported: [.preRegistered, .redirectUri, .did],
-                          requestObjectSigningAlgValuesSupported: [.edDsa],
-                          authorizationEncryptionAlgValuesSupported: [.ecdhEs],
-                          authorizationEncryptionEncValuesSupported: [.A256GCM]
-                      )
-
  let trustedVerifiers: [Verifier] = [Verifier(clientId: "https://mock-verifier.com", responseUris:["https://mock-verifier.com/response"]
 
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
