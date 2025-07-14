@@ -74,18 +74,35 @@ func parseAndValidatePresentationDefinition(
             )
         }
         
-        let response = try await networkManager.sendHTTPRequest(
-            url: valueStr, method: .get, bodyParams: nil, headers: nil
-        )
-        guard let data = response.responseBody.data(using: .utf8) else {
+        do {
+            let response = try await networkManager.sendHTTPRequest(
+                url: valueStr, method: .get, bodyParams: nil, headers: nil
+            )
+            
+            guard let data = response.responseBody.data(using: .utf8) else {
+                throw InvalidData(
+                    message: "presentation_definition_uri data is not valid",
+                    className: AuthorizationRequest.className,
+                    code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
+                )
+            }
+            
+            finalPresentationDefinition = try data.toInstance(as: PresentationDefinition.self)
+            
+        } catch let error as NetworkRequestException {
             throw InvalidData(
-                message: "presentation_defintion_uri data is not valid",
+                message: "presentation_definition_uri data is not valid \(valueStr)",
+                className: AuthorizationRequest.className,
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
+            )
+        } catch {
+            throw InvalidData(
+                message: "presentation_definition_uri did not contain valid presentation_definition",
                 className: AuthorizationRequest.className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
-        
-        finalPresentationDefinition = try data.toInstance(as: PresentationDefinition.self)
+
         
     } else {
         throw InvalidData(
