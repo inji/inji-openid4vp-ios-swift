@@ -12,10 +12,10 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
     }
     
-    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?) async throws {
+    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
         if let requestUriResponse = requestUriResponse {
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
-            if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
+            if (!isMismatchedAcceptableType && isContentTypeJWT && isJWS(requestUriResponse.body)) {
                 let clienId: String = authorizationRequestParameters["client_id"] as! String
                 
                 let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clienId, networkManager: networkManager)

@@ -12,10 +12,10 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
     
-    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?) async throws {
+    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
         if let requestUriResponse = requestUriResponse {
             let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
-            if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {
+            if (isContentTypeNotJson || isJWS(requestUriResponse.body) || isMismatchedAcceptableType) {
                 throw InvalidData(
                     message: "Authorization Request must not be signed for given client_id_scheme",
                     className: className

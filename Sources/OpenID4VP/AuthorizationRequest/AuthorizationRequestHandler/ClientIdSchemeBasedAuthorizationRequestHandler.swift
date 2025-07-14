@@ -2,7 +2,7 @@ import Foundation
 
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?) async throws
+    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
 }
@@ -31,6 +31,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
 
     func fetchAuthorizationRequest() async throws{
+        var isMismatchedAcceptableType : Bool = false
         var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
             if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
@@ -59,13 +60,15 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     shouldValidateWithWalletMetadata = true
                 }
             }
+          do{
+                let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
 
-            let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-
-            requestUriResponse = (response.responseBody, response.httpUrlResponse)
-
+                requestUriResponse = (response.responseBody, response.httpUrlResponse)
+            } catch let error as NetworkRequestException {
+                isMismatchedAcceptableType = error.localizedDescription.contains("does not match any acceptable types")
+            }
         }
-        try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse)
+        try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, isMismatchedAcceptableType: isMismatchedAcceptableType)
     }
 
     func validateAndParseRequestFields() async throws {
