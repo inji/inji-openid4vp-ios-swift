@@ -53,7 +53,7 @@ class InvalidQueryParams: OpenID4VPException {
 
 class InvalidVerifier: OpenID4VPException {
     init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidClient, message: message, className: className)
     }
 }
 

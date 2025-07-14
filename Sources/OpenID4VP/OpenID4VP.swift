@@ -14,6 +14,7 @@ public class OpenID4VP {
         self.networkManager = networkManager ?? NetworkManager.shared
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
         self.walletMetadata = walletMetadata
+        OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
 
     public func setResponseUri(_ responseUri: String) {
@@ -25,8 +26,6 @@ public class OpenID4VP {
         trustedVerifierJSON: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
-        OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
-
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,

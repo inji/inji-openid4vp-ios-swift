@@ -23,7 +23,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     override func validateClientId() throws {
         if shouldValidateClient {
             guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String }) else {
-                throw InvalidVerifier(message: "Verifier not available in trusted list", className: AuthorizationRequest.className)
+                throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: AuthorizationRequest.className)
             }
         }
     }
