@@ -49,27 +49,22 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = redirect_uri, response_mode = fragment
     func testInvalidResponseModeWithRedirectUriScheme() async {
-        let error = await Task {
+        let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testVPRequestWithRedirectUriAndClientIdNotEqual, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
 
-        switch error {
-        case .failure(let thrownError):
-            let expectedMessage = "Given response_mode - fragment is not supported"
-            let expectedCode = OpenID4VPErrorCodes.invalidRequest
-
-            guard let openIDError = thrownError as? OpenID4VPException else {
-                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
-                return
-            }
-
-            XCTAssertEqual(openIDError.message, expectedMessage)
-            XCTAssertEqual(openIDError.errorCode, expectedCode)
-
+        switch result {
+        case .failure(let error):
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Given response_mode - fragment is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         case .success:
-            XCTFail("Expected error of type OpenID4VPException but none was thrown")
+            XCTFail("Expected error for unsupported response_mode but got success")
         }
     }
+
 
 
     // client_id_scheme = pre-registered
@@ -135,20 +130,18 @@ class OpenID4VPTests: XCTestCase {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
 
-        switch error {
-        case .failure(let thrownError):
-            if let openIDError = thrownError as? OpenID4VPException {
-                XCTAssertEqual(openIDError.localizedDescription, "Missing Input: client_metadata->vp_formats param is required")
-                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
-            } else {
-                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
-            }
-
+        switch result {
+        case .failure(let error):
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: client_metadata->vp_formats param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         case .success:
             XCTFail("Expected failure but got success")
         }
-
     }
+
 
     func testShouldConstructAuthorizationRequestSuccessfullyWhenPresentationDefinitionIsSentByReference() async {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition", responseBody: convertToJsonString(presentationDefinition))
@@ -180,71 +173,77 @@ class OpenID4VPTests: XCTestCase {
 
     // jwt -> client_id_scheme = did, Invalid did
     func testThrowErrorForInValidSignatureInRequest() async {
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (invalidJwtResponse, httpUrlResponseForJWS))
-        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        mockNetworkManager.setMockResponse(
+            for: "https://mock-verifier.com/verifier/get-auth-request-obj",
+            response: (invalidJwtResponse, httpUrlResponseForJWS)
+        )
+        mockNetworkManager.setMockResponse(
+            for: didDocumentUrl,
+            responseBody: didResponse
+        )
 
-        let error = await Task {
+        let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
-
-        switch error {
-        case .failure(let thrownError):
-            if let openIDError = thrownError as? OpenID4VPException {
-                XCTAssertEqual(openIDError.localizedDescription, "JWS proof verification failed")
-                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest) // or appropriate code
-            } else {
-                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
-            }
-
+        switch result {
+        case .failure(let error):
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "JWS proof verification failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         case .success:
-            XCTFail("Jwt proof verification failed error should have been captured instead it succeeded")
+            XCTFail("Expected proof verification failure, but got success")
         }
     }
+
 
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
-        //"did:other:123#1" clienId is used in QR code
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (validJwtResponse, httpUrlResponseForJWS))
-        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+               mockNetworkManager.setMockResponse(
+                   for: "https://mock-verifier.com/verifier/get-auth-request-obj",
+                   response: (validJwtResponse, httpUrlResponseForJWS)
+               )
+               mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
 
-        let error = await Task {
+        let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInValidSignedVPRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
 
-        switch error {
-        case .failure(let thrownError):
-            if let openIDError = thrownError as? OpenID4VPException {
-                XCTAssertEqual(openIDError.localizedDescription, "Client Id is mismatching in QR data and Request Uri response")
-                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
-            } else {
-                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
-            }
-
-        case .success: break
+        switch result {
+        case .failure(let error):
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Client Id is mismatching in QR data and Request Uri response",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        case .success:
+            XCTFail("Expected client_id mismatch error but got success")
         }
     }
+
 
     // jwt -> client_id_scheme = did, Kid is empty in the JWT header
     func testThrowErrorIfKidExtractionFailedFromJws() async {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
-        let error = await Task {
+        let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
 
-        switch error {
-        case .failure(let thrownError):
-            if let openIDError = thrownError as? OpenID4VPException {
-                XCTAssertEqual(openIDError.localizedDescription, "Kid extraction from did document failed")
-                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
-            } else {
-                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
-            }
-
-        case .success: break
+        switch result {
+        case .failure(let error):
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Kid extraction from did document failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        case .success:
+            XCTFail("Expected OpenID4VPException but got success response")
         }
     }
+
 
     //client_id_scheme = redirect_uri, Client id validation is false
     func testReturnDataForValidRequestWhenClientValidationIsFalse() async {
@@ -265,18 +264,18 @@ class OpenID4VPTests: XCTestCase {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInvalidPresentationDefinitionVPRequest, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
 
-        switch error {
-        case .failure(let thrownError):
-            if let openIDError = thrownError as? OpenID4VPException {
-                XCTAssertEqual(openIDError.localizedDescription, "Missing Input: presentation_definition->id param is required")
-                XCTAssertEqual(openIDError.errorCode, OpenID4VPErrorCodes.invalidRequest)
-            } else {
-                XCTFail("Expected OpenID4VPException but got \(type(of: thrownError))")
-            }
-
-        case .success: break
+        switch result {
+        case .failure(let error):
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: presentation_definition->id param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        case .success:
+            XCTFail("Expected OpenID4VPException but got success response")
         }
     }
+
 
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async {
