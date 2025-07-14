@@ -94,7 +94,7 @@ func createNonce(entropy: Int = 16) -> String {
         SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!)
     }
     
-    return Base64Encoder.encodeToBase64Url(randomData)
+    return randomData.toBase64UrlEncoded()
 }
 
 func sha256Hash(from data: CBOR) -> [UInt8] {
