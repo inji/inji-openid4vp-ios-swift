@@ -13,9 +13,15 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     }
     
     func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
+        if (isMismatchedAcceptableType) {
+            throw InvalidData(
+                message: "Authorization Request must not be signed for given client_id_scheme",
+                className: className
+            )
+        }
         if let requestUriResponse = requestUriResponse {
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
-            if (!isMismatchedAcceptableType && isContentTypeJWT && isJWS(requestUriResponse.body)) {
+            if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
                 let clienId: String = authorizationRequestParameters["client_id"] as! String
                 
                 let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clienId, networkManager: networkManager)
