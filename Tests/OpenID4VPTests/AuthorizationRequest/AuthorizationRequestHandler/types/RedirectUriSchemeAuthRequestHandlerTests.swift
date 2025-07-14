@@ -26,7 +26,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String:Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
 
-        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse))) { error in
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), isMismatchedAcceptableType: true)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -39,7 +39,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         let requestUriResponse = createNetworkResponse("string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
 
-        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)) { error in
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse, isMismatchedAcceptableType: true)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -52,7 +52,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         let requestUriResponse = createNetworkResponse("string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
 
-        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse)) { error in
+        await assertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,isMismatchedAcceptableType: true)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -99,7 +99,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String:Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
 
-        await assertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse)))
+        await assertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), isMismatchedAcceptableType: false))
     }
 
     func testProcessingWalletMetadataSuccessfully() async{
@@ -130,7 +130,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         assertDictionariesEqual(expected: expectedHeader, actual: header)
     }
-    
+
     func testShouldThrowErrorWhenResponseUriNotEqualToClientId() async {
         let mockClientId = "http://mock-client.com"
         let invalidResponseUri = "http://invalid-mock-client.com"

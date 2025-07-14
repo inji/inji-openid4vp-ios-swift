@@ -23,7 +23,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                     "accept": ContentTypes.applicationJson.rawValue]
         }
 
-        func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?) async throws {
+        func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
             capturedRequestUriResponse = requestUriResponse
             wasMethodCalled = true
         }
