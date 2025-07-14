@@ -37,19 +37,19 @@ func parseAndValidatePresentationDefinition(
                 finalPresentationDefinition = try convertToInstance(presentationDefinitionJson, as: PresentationDefinition.self)
             } catch {
                 throw InvalidData(
-                    message: "presentation_defintion data is not valid",
+                    message: "presentation_definition data is not valid",
                     className: AuthorizationRequest.className,
-                    code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
+                    code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
                 )
             }
         } else {
             throw InvalidData(
-                message: "presentation_defintion data is not valid",
+                message: "presentation_definition data is not valid",
                 className: AuthorizationRequest.className,
-                code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
-    } else if hasPresentationDefinitionUri, let presentationDefintionUri = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+    } else if hasPresentationDefinitionUri, let uriValue = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
         
         if !isPresentationDefinitionUriSupported {
             throw InvalidData(
@@ -59,42 +59,46 @@ func parseAndValidatePresentationDefinition(
             )
         }
         
-        guard let valueStr = getStringValue(presentationDefintionUri), isNeitherNullNorEmpty(field: valueStr), valueStr != "null" else {
+        guard let uriString = getStringValue(uriValue),
+              isNeitherNullNorEmpty(field: uriString),
+              uriString != "null" else {
             throw InvalidInput(
                 fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue],
                 className: AuthorizationRequest.className
             )
         }
-        guard isValidUri(presentationDefintionUri as! String)
-        else {
+        
+        guard isValidUri(uriString) else {
             throw InvalidData(
-                message: "presentation_defintion_uri data is not valid",
+                message: "presentation_definition_uri is not valid",
+                className: AuthorizationRequest.className,
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
+            )
+        }
+        
+        let response: (responseBody: String, httpUrlResponse: HTTPURLResponse)
+        do {
+            response = try await networkManager.sendHTTPRequest(
+                url: uriString, method: .get, bodyParams: nil, headers: nil
+            )
+        } catch {
+            throw InvalidData(
+                message: "presentation_definition_uri could not be reached: \(uriString)",
+                className: AuthorizationRequest.className,
+                code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
+            )
+        }
+        
+        guard let data = response.responseBody.data(using: .utf8) else {
+            throw InvalidData(
+                message: "presentation_definition_uri response body is not valid",
                 className: AuthorizationRequest.className,
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
         
         do {
-            let response = try await networkManager.sendHTTPRequest(
-                url: valueStr, method: .get, bodyParams: nil, headers: nil
-            )
-            
-            guard let data = response.responseBody.data(using: .utf8) else {
-                throw InvalidData(
-                    message: "presentation_definition_uri data is not valid",
-                    className: AuthorizationRequest.className,
-                    code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
-                )
-            }
-            
             finalPresentationDefinition = try data.toInstance(as: PresentationDefinition.self)
-            
-        } catch let error as NetworkRequestException {
-            throw InvalidData(
-                message: "presentation_definition_uri data is not valid \(valueStr)",
-                className: AuthorizationRequest.className,
-                code: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
-            )
         } catch {
             throw InvalidData(
                 message: "presentation_definition_uri did not contain valid presentation_definition",
