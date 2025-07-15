@@ -113,7 +113,7 @@ final class AnyCodableTests: XCTestCase {
         struct UnsupportedType: Decodable {
             init(from decoder: Decoder) throws {
                 throw UnsupportedJSONTypeDecoding(
-                    message: "Unsupported JSON type encountered while decoding response in AnyCodable",
+                    message: "Unsupported type encountered while decoding response in AnyCodable",
                     className: AnyCodable.className
                 )
             }
@@ -128,7 +128,7 @@ final class AnyCodableTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(UnsupportedType.self, from: data)) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Unsupported JSON type encountered while decoding response in AnyCodable",
+                expectedMessage: "Unsupported type encountered while decoding response in AnyCodable",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

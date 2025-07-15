@@ -15,7 +15,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(
-                message: "Authorization Request must not be signed for given client_id_scheme",
+                message: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
                 className: className
             )
         }

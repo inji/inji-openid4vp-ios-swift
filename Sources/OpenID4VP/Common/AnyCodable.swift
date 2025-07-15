@@ -26,7 +26,7 @@ import Foundation
             value = Optional<Any>.none as Any
         } else {
             throw UnsupportedJSONTypeDecoding(
-                message: "Unsupported JSON type encountered while decoding response in AnyCodable",
+                message: "Unsupported type encountered while decoding response in AnyCodable",
                 className: AnyCodable.className
             )
         }

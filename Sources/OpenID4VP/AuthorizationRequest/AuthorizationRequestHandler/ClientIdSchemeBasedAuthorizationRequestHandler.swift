@@ -16,6 +16,8 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     var shouldValidateWithWalletMetadata: Bool = false
     var className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
 
+    let errorMessageForMismatchedAcceptableType: String = "does not match any acceptable types"
+
     init(authorizationRequestParameters: [String: Any],
          walletMetadata: WalletMetadata?,
          setResponseUri: @escaping (String) -> Void,
@@ -65,7 +67,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
 
                 requestUriResponse = (response.responseBody, response.httpUrlResponse)
             } catch let error as NetworkRequestException {
-                isMismatchedAcceptableType = error.localizedDescription.contains("does not match any acceptable types")
+                isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
             }
         }
         try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, isMismatchedAcceptableType: isMismatchedAcceptableType)
