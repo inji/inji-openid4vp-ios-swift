@@ -84,7 +84,7 @@ class OpenID4VPTests: XCTestCase {
     //client_id_scheme = pre-registered, validation of client via shouldValidateClient
 
     func testAuthenticateVerifierWithShouldValidateClientFalse() async throws {
-        await XCTAssertAsyncNoThrowsError(try await openID4VP.authenticateVerifier(
+        await assertAsyncNoThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: preRegisteredVerifiers,
             shouldValidateClient: false
@@ -92,21 +92,30 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testAuthenticateVerifierWithShouldValidateClientTrue() async throws {
-        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+        await assertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: preRegisteredVerifiers,
             shouldValidateClient: true
         )) { error in
-            XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.Verifier not available in trusted list", error.localizedDescription)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Verifier is not trusted by the wallet",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
+        
         }
     }
 
     func testAuthenticateVerifierWithoutShouldValidateClientParam() async throws {
-        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+        await assertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: preRegisteredVerifiers
         )) { error in
-            XCTAssertEqual("Invalid Verifier: VP sharing failed: Verifier authentication was unsuccessful.Verifier not available in trusted list", error.localizedDescription)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Verifier is not trusted by the wallet",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
         }
     }
 
@@ -126,7 +135,7 @@ class OpenID4VPTests: XCTestCase {
 
     //client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
-        let error = await Task {
+        let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
 
@@ -260,7 +269,7 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testMissingPresentationDefinitionFields() async {
-        let error = await Task {
+        let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInvalidPresentationDefinitionVPRequest, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         }.result
 

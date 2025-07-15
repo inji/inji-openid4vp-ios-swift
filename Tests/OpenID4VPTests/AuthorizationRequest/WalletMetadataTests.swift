@@ -34,22 +34,6 @@ final class WalletMetadataTests: XCTestCase {
         }
     }
 
-    func testWalletMetadataThrowsForEmptyKeyInVPFormatsSupported() {
-        let badVPFormat: [String: VPFormatSupported] = [
-            "": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
-        ]
-
-        XCTAssertThrowsError(try WalletMetadata(
-            presentationDefinitionURISupported: nil,
-            vpFormatsSupported: badVPFormat,
-            clientIdSchemesSupported: nil
-        )) { error in
-                        assertOpenID4VPException(error,
-                            expectedMessage: "vp_formats_supported cannot have empty keys.",
-                                                 expectedCode: OpenID4VPErrorCodes.invalidRequest
-                        )
-        }
-    }
 
     func testWalletMetadataWithNilOptionals() throws {
         let vpFormats: [FormatType: VPFormatSupported] = [
