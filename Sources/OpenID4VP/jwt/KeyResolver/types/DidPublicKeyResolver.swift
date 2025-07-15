@@ -4,6 +4,8 @@ class DidPublicKeyResolver : PublicKeyResolver {
     private let didUrl: String
     private let networkManager: NetworkManaging
     static let className = String(describing: DidPublicKeyResolver.self)
+    private static let publicKeyTypes = ["publicKey", "publicKeyJwk", "publicKeyPem", "publicKeyHex"]
+
     
     init(didUrl: String, networkManager: NetworkManaging) {
         self.didUrl = didUrl
@@ -30,19 +32,28 @@ class DidPublicKeyResolver : PublicKeyResolver {
     }
     
     private func extractPublicKeyMultibase(for kid: String, from didDoc: [String: Any]) throws -> String? {
-        if let verificationMethod = didDoc["verificationMethod"] as? [[String: Any]] {
-            for method in verificationMethod {
-                if let id = method["id"] as? String, id == kid,
-                   let publicKeyMultibase = method["publicKey"] as? String {
-                    return publicKeyMultibase
+        if let verificationMethods = didDoc["verificationMethod"] as? [[String: Any]] {
+            for method in verificationMethods {
+                if let id = method["id"] as? String, id == kid {
+                    if let publicKeyMultibase = method["publicKeyMultibase"] as? String,
+                       !publicKeyMultibase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        return publicKeyMultibase
+                    }
+
+                    for unsupportedKey in Self.publicKeyTypes {
+                        if method[unsupportedKey] != nil {
+                            throw UnsupportedPublicKeyType(className: DidPublicKeyResolver.className)
+                        }
+                    }
                 }
             }
         }
-        
+
         throw PublicKeyExtractionFailed(
             message: "Public key extraction failed for kid: \(kid)",
             className: DidPublicKeyResolver.className
         )
     }
+    
     
 }

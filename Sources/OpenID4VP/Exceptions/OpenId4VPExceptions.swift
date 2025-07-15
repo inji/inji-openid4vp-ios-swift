@@ -146,6 +146,13 @@ class PublicKeyExtractionFailed: OpenID4VPException {
     }
 }
 
+class UnsupportedPublicKeyType: OpenID4VPException {
+    init(className: String) {
+        let message = "Unsupported Public Key type. Must be 'publicKeyMultibase'"
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
 class KidExtractionFailed: OpenID4VPException {
     init(className: String) {
         let message = "Kid extraction from did document failed"
