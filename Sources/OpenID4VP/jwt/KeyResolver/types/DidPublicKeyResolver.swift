@@ -40,7 +40,7 @@ class DidPublicKeyResolver : PublicKeyResolver {
         }
         
         throw PublicKeyExtractionFailed(
-            message: "No matching public key found in DID document for key ID: \(kid)",
+            message: "Public key extraction failed for kid: \(kid)",
             className: DidPublicKeyResolver.className
         )
     }

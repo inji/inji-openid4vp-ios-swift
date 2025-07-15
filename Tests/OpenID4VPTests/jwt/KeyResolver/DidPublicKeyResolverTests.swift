@@ -41,7 +41,7 @@ class DidPublicKeyResolverTests : XCTestCase {
                 ])
                 XCTFail("Error should have been thrown but wasn't for input - '\(testCase.input)'")
             } catch {
-                let expectedMessage = "No matching public key found in DID document for key ID: \(testCase.input)"
+                let expectedMessage = "Public key extraction failed for kid: \(testCase.input)"
                 assertOpenID4VPException(
                     error,
                     expectedMessage: expectedMessage,
