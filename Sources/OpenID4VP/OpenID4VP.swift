@@ -8,19 +8,26 @@ public class OpenID4VP {
     private var authorizationResponseHandler: AuthorizationResponseHandler
     private let walletMetadata: WalletMetadata?
 
-
-    public init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil) {
+    public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
+        self.traceabilityId = traceabilityId
+        self.networkManager = NetworkManager.shared
+        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
+        self.walletMetadata = walletMetadata
+        OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
+    }
+    
+    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
         self.networkManager = networkManager ?? NetworkManager.shared
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
-
+    
     public func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
     }
-
+    
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
         trustedVerifierJSON: [Verifier],
@@ -41,7 +48,7 @@ public class OpenID4VP {
             throw exception
         }
     }
-
+    
     public func constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [AnyCodable]]],
         holderId: String,
@@ -60,7 +67,7 @@ public class OpenID4VP {
             throw error
         }
     }
-
+    
     @available(*, deprecated, message: "Use constructUnsignedVPToken with [String: [FormatType: [Any]]] instead")
     public func constructVerifiablePresentationToken(
         verifiableCredentials: [String: [String]]
@@ -76,7 +83,7 @@ public class OpenID4VP {
             throw error
         }
     }
-
+    
     public func shareVerifiablePresentation(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) async throws -> String {
@@ -91,7 +98,7 @@ public class OpenID4VP {
             throw error
         }
     }
-
+    
     @available(*, deprecated, message: "Use shareVerifiablePresentation with VPTokenSigningResult instead")
     public func shareVerifiablePresentation(
         vpResponseMetadata: VPResponseMetadata
@@ -108,15 +115,15 @@ public class OpenID4VP {
             throw error
         }
     }
-
-
+    
+    
     public func sendErrorToVerifier(error: Error) async {
         let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
-
-
+        
+        
         var errorInfo: [String: String] = [:]
-
-
+        
+        
         let resolvedError: OpenID4VPException
         if let openidError = error as? OpenID4VPException {
             resolvedError = openidError
@@ -126,9 +133,9 @@ public class OpenID4VP {
                 className: String(describing: OpenID4VP.self)
             )
         }
-
+        
         errorInfo.merge(resolvedError.toErrorResponse()) { _, new in new }
-
+        
         do {
             _ = try await networkManager.sendHTTPRequest(
                 url: responseUri ?? "",
