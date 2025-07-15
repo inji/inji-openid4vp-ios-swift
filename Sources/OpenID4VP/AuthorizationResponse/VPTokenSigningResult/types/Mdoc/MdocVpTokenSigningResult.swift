@@ -9,7 +9,7 @@ public struct MdocVPTokenSigningResult : VPTokenSigningResult {
     
     func validate() throws {
         if(docTypeToDeviceAuthentication.isEmpty) {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["MdocVPTokenSigningResult","docTypeToDeviceAuthentication"], className: MdocVPTokenSigningResult.className)
+            throw InvalidInput(fieldPath: ["MdocVPTokenSigningResult","docTypeToDeviceAuthentication"], className: MdocVPTokenSigningResult.className)
         }
         for (_, deviceAuthentication) in docTypeToDeviceAuthentication {
             try deviceAuthentication.validate()

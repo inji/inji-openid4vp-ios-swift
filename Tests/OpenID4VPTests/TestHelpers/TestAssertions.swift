@@ -134,7 +134,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
 }
 
-func XCTAssertAsyncThrowsError<T>(
+func assertAsyncThrowsError<T>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
     file: StaticString = #filePath,
@@ -149,7 +149,7 @@ func XCTAssertAsyncThrowsError<T>(
     }
 }
 
-func XCTAssertAsyncNoThrowsError<T>(
+func assertAsyncNoThrowsError<T>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
     file: StaticString = #filePath,
@@ -182,4 +182,20 @@ func assertArraysEqual<T: Equatable>(expected: [T], actual: [T], file: StaticStr
         XCTAssertTrue(actual.contains(expectedElement), "Expected element \(expectedElement) not found in actual array", file: file, line: line)
     }
 }
+
+func assertOpenID4VPException(
+    _ error: Error,
+    expectedMessage: String,
+    expectedCode: String,
+    file: StaticString = #file,
+    line: UInt = #line
+) {
+    guard let ex = error as? OpenID4VPException else {
+        XCTFail("Expected OpenID4VPException but got \(error)", file: file, line: line)
+        return
+    }
+    XCTAssertEqual(expectedMessage, ex.message, file: file, line: line)
+    XCTAssertEqual(expectedCode, ex.errorCode, file: file, line: line)
+}
+
 

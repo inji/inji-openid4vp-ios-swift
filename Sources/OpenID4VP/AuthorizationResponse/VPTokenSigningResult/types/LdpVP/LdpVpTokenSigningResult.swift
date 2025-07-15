@@ -17,8 +17,7 @@ public struct LdpVPTokenSigningResult: VPTokenSigningResult {
         switch signatureAlgorithm {
         case SignatureAlgorithm.ed25519Signature2020.rawValue:
             guard let proofValue = proofValue, !proofValue.isEmpty else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidInput",
+                throw InvalidInput(
                     fieldPath: ["LdpVPTokenSigningResult", "proofValue"],
                     className: LdpVPTokenSigningResult.className
                 )
@@ -28,16 +27,14 @@ public struct LdpVPTokenSigningResult: VPTokenSigningResult {
             SignatureAlgorithm.rsaSignature2018.rawValue,
             SignatureAlgorithm.ed25519Signature2018.rawValue:
             guard let jws = jws, !jws.isEmpty else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidInput",
+                throw InvalidInput(
                     fieldPath: ["LdpVPTokenSigningResult", "jws"],
                     className: LdpVPTokenSigningResult.className
                 )
             }
 
         default:
-            throw Logger.handleException(
-                exceptionType: "UnsupportedSignatureAlgorithm",
+            throw UnsupportedSignatureAlgorithm(
                 message: "Unsupported algorithm: \(signatureAlgorithm)",
                 className: LdpVPTokenSigningResult.className
             )

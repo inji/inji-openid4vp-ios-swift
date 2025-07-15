@@ -89,11 +89,15 @@ final class PresentationDefinitionUtilTests: XCTestCase {
                 "response_mode": "direct_post"
             ])
         ]
-        
+
         for testCase in testCases {
-            await XCTAssertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
-                XCTAssertEqual(error.localizedDescription, "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt")
+            await assertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
+                assertOpenID4VPException(error,
+                    expectedMessage: "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
+
         }
     }
 }

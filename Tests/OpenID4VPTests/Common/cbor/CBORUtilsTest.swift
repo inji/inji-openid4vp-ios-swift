@@ -28,7 +28,10 @@ final class CBORUtilsTests: XCTestCase {
         let invalidBase64 = "abc!@#123+"
         
         XCTAssertThrowsError(try decodeCBOR(base64EncodedInput: invalidBase64)) { error in
-            XCTAssertEqual(error.localizedDescription, "Error while decoding input - decodingException(fieldPath: \"\")")
+            assertOpenID4VPException(error,
+                expectedMessage:"Error while decoding input - invalid_request : Base64 decoding failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -37,7 +40,10 @@ final class CBORUtilsTests: XCTestCase {
         let invalidCBOR = "dGhpcyBpcyBub3QgQ0JPUg==" // "this is not CBOR"
         
         XCTAssertThrowsError(try decodeCBOR(base64EncodedInput: invalidCBOR)) { error in
-            XCTAssertTrue(error.localizedDescription.contains("Error while decoding input"))
+            assertOpenID4VPException(error,
+                expectedMessage:"Error while decoding input - unfinishedSequence",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -173,7 +179,10 @@ final class CBORUtilsTests: XCTestCase {
     
     func testMapSigningAlgorithmToProtectedAlg_UnsupportedAlgorithm() {
         XCTAssertThrowsError(try mapSigningAlgorithmToProtectedAlg(algorithm: "RS256")) { error in
-            XCTAssertEqual(error.localizedDescription, "Unsupported signing algorithm: RS256")
+            assertOpenID4VPException(error,
+                expectedMessage: "Unsupported signing algorithm: RS256",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

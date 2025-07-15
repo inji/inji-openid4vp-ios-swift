@@ -21,8 +21,7 @@ class VPTokenFactory {
         case .ldp_vc:
             guard let ldpToken = vpTokenSigningPayload as? LdpVPToken,
                   let ldpResult = vpTokenSigningResult as? LdpVPTokenSigningResult else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidType",
+                throw InvalidType(
                     message: "Invalid LDP token or signing result type",
                     className: VPTokenFactory.className
                 )
@@ -36,8 +35,7 @@ class VPTokenFactory {
         case .mso_mdoc:
             guard let credentialList = vpTokenSigningPayload as? [String],
                   let mdocResult = vpTokenSigningResult as? MdocVPTokenSigningResult else {
-                throw Logger.handleException(
-                    exceptionType: "InvalidType",
+                throw InvalidType(
                     message: "Invalid MSO-MDOC token or signing result type",
                     className: VPTokenFactory.className
                 )

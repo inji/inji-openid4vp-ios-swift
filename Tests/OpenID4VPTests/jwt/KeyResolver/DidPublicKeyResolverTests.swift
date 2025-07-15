@@ -29,38 +29,48 @@ class DidPublicKeyResolverTests : XCTestCase {
         
         for testCase in testCases {
             let did = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"
-            mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+            mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
             let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
             
-            do{
-    //        kid = \(testcase.input) is not available in didResponse
-                let _ = try await didKeyResolver.resolveKey(header: [
+            do {
+                // kid = \(testCase.input) is not available in didResponse
+                _ = try await didKeyResolver.resolveKey(header: [
                     "typ": "oauth-authz-req+jwt",
                     "alg": "EdDSA",
                     "kid": testCase.input
                 ])
-                XCTFail("error should been thrown but its not thrown for input - '\(testCase.input)'")
-            }
-            catch{
-                XCTAssertEqual("No matching public key found in did resolver with the provided key id", error.localizedDescription)
+                XCTFail("Error should have been thrown but wasn't for input - '\(testCase.input)'")
+            } catch {
+                let expectedMessage = "No matching public key found in DID document for key ID: \(testCase.input)"
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: expectedMessage,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }
+
     
     func testThrowErrorWhenPublicKeyResolutionFailed() async {
         let did = "did:jwk:eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6ImFjYklRaXVNczNpOF91c3pFakoydHBUdFJNNEVVM3l6OTFQSDZDZEgyVjAiLCJ5IjoiX0tjeUxqOXZXTXB0bm1LdG00NkdxRHo4d2Y3NEk1TEtncmwyR3pIM25TRSJ9"
         let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
         
-        do{
-            let _ = try await didKeyResolver.resolveKey(header: [
+        do {
+            _ = try await didKeyResolver.resolveKey(header: [
                 "typ": "oauth-authz-req+jwt",
                 "alg": "EdDSA",
                 "kid": "did:example:123#2"
             ])
-            XCTFail("error should been thrown but its not thrown")
-        }
-        catch{
-            XCTAssertEqual(JWSException.publicKeyResolutionFailed(message: "Given did url is not supported"), error as? JWSException)
+            XCTFail("Error should have been thrown but was not")
+        } catch {
+
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Given did url is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
+
 }

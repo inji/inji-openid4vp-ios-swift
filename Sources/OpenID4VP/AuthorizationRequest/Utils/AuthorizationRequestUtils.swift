@@ -6,8 +6,7 @@ func validateAttribute(
     values: [String: Any]
 ) throws {
     guard let value = values[attribute] else {
-        throw Logger.handleException(
-            exceptionType: "MissingInput",
+        throw MissingInput(
             fieldPath: [attribute],
             className: AuthorizationRequest.className
         )
@@ -17,8 +16,7 @@ func validateAttribute(
         if stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
             stringValue.lowercased() == "nil" ||
             stringValue.lowercased() == "null" {
-            throw Logger.handleException(
-                exceptionType: "InvalidInput",
+            throw InvalidInput(
                 fieldPath: [attribute],
                 className: AuthorizationRequest.className
             )
@@ -30,13 +28,13 @@ func validateAuthorizationRequestObjectAndParameters(params: [String: String], r
     
     
     guard params["client_id"] == requestUriParams["client_id"] as? String else {
-        throw Logger.handleException(exceptionType: "MismatchingClientIDInRequest", className: AuthorizationRequest.className)
+        throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }
     
     // If client_id_scheme is present in the authorization request, it should be present in the request_uri response as well and should be same we are assuming it follows Draft 21 specification
     if params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] != nil {
         guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] as? String else {
-            throw Logger.handleException(exceptionType: "MismatchingClientIdSchemeInRequest", className: AuthorizationRequest.className)
+            throw MismatchingClientIdSchemeInRequest(className: AuthorizationRequest.className)
         }
     }
 }
@@ -58,8 +56,7 @@ extension KeyedDecodingContainer {
     ) throws -> T? where T: Decodable {
         if isMandatory {
             guard contains(key) else {
-                throw Logger.handleException(
-                    exceptionType: "MissingInput",
+                throw MissingInput(
                     fieldPath: fieldPath,
                     className: className
                 )
@@ -68,8 +65,7 @@ extension KeyedDecodingContainer {
         if contains(key) {
             let rawValue = try decodeIfPresent(T?.self, forKey: key)
             if rawValue == nil {
-                throw Logger.handleException(
-                    exceptionType: "InvalidInput",
+                throw InvalidInput(
                     fieldPath: fieldPath,
                     className: className
                 )
@@ -109,13 +105,13 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                             setResponseUri: setResponseUri,
                                                             networkManager: networkManager)
     default:
-        throw Logger.handleException(exceptionType: "InvalidData",message: "Client id scheme in request is not supported" ,className: AuthorizationRequest.className)
+        throw InvalidData(message: "Given client_id_scheme is not supported" ,className: AuthorizationRequest.className)
     }
 }
 
 func extractQueryParameters(_ input: String) throws -> [String: String] {
     guard input.firstIndex(of: "?") != nil else {
-        throw Logger.handleException(exceptionType: "InvalidQueryParams", message: "Query parameters are missing in the Authorization request", className: AuthorizationRequest.className)
+        throw InvalidQueryParams( message: "Exception occurred when extracting the query params from Authorization Request :", className: AuthorizationRequest.className)
     }
     let urlComponents = URLComponents(string: input)
     var decodedParams = [String: String]()
@@ -137,18 +133,18 @@ func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) t
     switch field {
     case let stringValue as String:
         guard isNeitherNullNorEmpty(field: stringValue) else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
+            throw InvalidInput(fieldPath: fieldPath, className: className)
         }
     case let dictValue as [String: Any]:
         guard !dictValue.isEmpty else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
+            throw InvalidInput(fieldPath: fieldPath, className: className)
         }
         try dictValue.forEach { key, value in
             try validateField(value, fieldPath + [key], className)
         }
     case let arrayValue as [Any]:
         guard !arrayValue.isEmpty else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: fieldPath, className: className)
+            throw InvalidInput(fieldPath: fieldPath, className: className)
         }
         for (index, value) in arrayValue.enumerated() {
             try validateField(value, fieldPath + ["\(index)"], className)

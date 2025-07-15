@@ -69,12 +69,12 @@ struct Fields: Codable {
     
     func validate() throws {
         guard !path.isEmpty else {
-            throw Logger.handleException(exceptionType: "InvalidInput", fieldPath: ["fields","path"], className: className)
+            throw InvalidInput(fieldPath: ["fields","path"], className: className)
         }
         
         let pathPrefixArray = ["$.","$["]
         if !path.allSatisfy({ p in pathPrefixArray.contains(where: { p.hasPrefix($0) }) }) {
-            throw Logger.handleException(exceptionType: "InvalidInputPattern", fieldPath: ["fields","path"], className: className)
+            throw InvalidInputPattern(fieldPath: ["fields","path"], className: className)
         }
         
         try validateField(id, ["fields","id"], className)

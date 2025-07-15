@@ -25,7 +25,10 @@ import Foundation
         } else if container.decodeNil() {
             value = Optional<Any>.none as Any
         } else {
-            throw Logger.handleException(exceptionType: "Decoding", message: "Error occured while decoding response", className: AnyCodable.className)
+            throw UnsupportedTypeDecoding(
+                message: "Unsupported type encountered while decoding response in AnyCodable",
+                className: AnyCodable.className
+            )
         }
     }
     
@@ -44,7 +47,7 @@ import Foundation
         } else if let nestedArray = value as? [Any] {
             try container.encode(nestedArray.map { AnyCodable($0) })
         } else {
-            throw Logger.handleException(exceptionType: "JsonEncodingFailed", message: "Error occured while encoding response", className: AnyCodable.className)
+            throw JsonEncodingFailed( errorMessage: "Error occured while encoding response", className: AnyCodable.className)
         }
     }
 }

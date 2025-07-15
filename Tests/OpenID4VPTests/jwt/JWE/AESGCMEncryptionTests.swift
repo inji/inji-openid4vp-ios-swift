@@ -38,8 +38,11 @@ final class AESGCMEncryptionTests: XCTestCase {
         let invalidKey = SymmetricKey(size: .bits128)
         
         XCTAssertThrowsError(try AESGCMEncryption(keySize: .bits256).encrypt(data, with: invalidKey)) { error in
-            XCTAssertEqual("Invalid Key size provided for encryption.", error.localizedDescription)
-            XCTAssertTrue(JWEException.invalidEncryptionKeySize == error)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid Key size provided for encryption.",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

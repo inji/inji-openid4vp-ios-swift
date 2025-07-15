@@ -126,7 +126,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             )
             XCTFail("Expected error not thrown")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "response type - fragment is not supported")
+            assertOpenID4VPException(error,
+                expectedMessage: "response type - fragment is not supported",
+                expectedCode: OpenID4VPErrorCodes.vpFormatsNotSupported
+            )
         }
     }
 
@@ -149,7 +152,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             )
             XCTFail("Expected error not thrown")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "unable to find the related credential format - ldp_vc in the unsignedVPTokens map")
+            assertOpenID4VPException(error,
+                expectedMessage: "unable to find the related credential format - ldp_vc in the unsignedVPTokens map",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 

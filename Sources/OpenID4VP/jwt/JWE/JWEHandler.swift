@@ -15,7 +15,7 @@ public struct JWEHandler {
         do {
             payloadData = try toData(payload)
         } catch {
-            throw Logger.handleException(exceptionType: "PayloadConversionFailed", className: JWEHandler.className)
+            throw PayloadConversionFailed(className: JWEHandler.className)
         }
 
         //TODO: Perform key agreement based on keyEncryptionAlgorithm

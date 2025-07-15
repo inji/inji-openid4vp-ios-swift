@@ -48,7 +48,11 @@ final class X25519KeyAgreementTests: XCTestCase {
         let keyAgreement = X25519KeyAgreement()
         
         XCTAssertThrowsError(try keyAgreement.deriveKey(publicKey: "some-invalid-data%^&")) { error in
-            XCTAssertEqual(error.localizedDescription, "An unexpected exception occurred: exception type: publicKeyConversionFailed")
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Public key Data conversion from base64 failed.",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

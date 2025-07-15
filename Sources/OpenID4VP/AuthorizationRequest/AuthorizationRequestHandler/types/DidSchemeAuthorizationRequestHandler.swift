@@ -12,7 +12,13 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
     }
     
-    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?) async throws {
+    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
+        if (isMismatchedAcceptableType) {
+            throw InvalidData(
+                message: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
+                className: className
+            )
+        }
         if let requestUriResponse = requestUriResponse {
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
             if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
@@ -33,21 +39,17 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
                 self.authorizationRequestParameters = authorizationRequestObject
             }
             else {
-                throw Logger.handleException(exceptionType: "InvalidData", message: "Authorization Request must be signed and contain JWT for given client_id_scheme - did", className: className)
+                throw InvalidData(message: "Authorization Request must be signed and contain JWT for given client_id_scheme - did", className: className)
             }
         } else {
-            throw Logger.handleException(
-                exceptionType: "MissingInput",
-                message : "request_uri must be present for given client_id_scheme", fieldPath: ["request_uri"],
+            throw MissingInput(fieldPath: ["request_uri"], message : "request_uri must be present for given client_id_scheme",
                 className: className)
         }
     }
     
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
         if(walletMetadata.requestObjectSigningAlgValuesSupported == nil) {
-            throw Logger.handleException(
-                exceptionType: "InvalidData",
-                message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
+            throw InvalidData(message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
                 className: className)
         }
         return walletMetadata
@@ -63,8 +65,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
             if let alg = header["alg"] as? String,
                let supportedAlgs = walletMetadata.requestObjectSigningAlgValuesSupported?.compactMap({$0.rawValue}) ,
                !supportedAlgs.contains(alg) {
-                throw Logger.handleException(
-                    exceptionType: "InvalidData",
+                throw InvalidData(
                     message: "request_object_signing_alg is not supported by wallet",
                     className: className
                 )

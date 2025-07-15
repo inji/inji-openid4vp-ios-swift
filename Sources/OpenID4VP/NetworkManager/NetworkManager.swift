@@ -3,7 +3,7 @@ import Alamofire
 
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
-    static let logTag = Logger.getLogTag(String(describing: NetworkManager.self))
+    static let logTag = OpenID4VPException.getLogTag(String(describing: NetworkManager.self))
     
     public func sendHTTPRequest(
         url: String,
@@ -41,17 +41,17 @@ public struct NetworkManager: NetworkManaging {
                         continuation.resume(returning: (responseBody, httpResponse))
                     } else {
                         let exception = NetworkRequestException.invalidResponse(message: "Invalid response received")
-                        Logger.error(NetworkManager.logTag, exception)
+                        OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
                     }
                 case .failure(let error):
                     if let urlError = error.asAFError?.underlyingError as? URLError, urlError.code == .timedOut {
                         let exception = NetworkRequestException.networkRequestTimeout
-                        Logger.error(NetworkManager.logTag, exception)
+                        OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
                     } else {
                         let exception = NetworkRequestException.networkRequestFailed(message: "\(error.localizedDescription)")
-                        Logger.error(NetworkManager.logTag, exception)
+                        OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
                     }
                 }

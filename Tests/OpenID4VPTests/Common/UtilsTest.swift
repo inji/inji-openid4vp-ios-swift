@@ -75,8 +75,10 @@ class UtilsTest : XCTestCase {
     
     func testDetermineHttpMethodToThrowErrorIfInputIsNotValid(){
         XCTAssertThrowsError(try determineHttpMethod(method: "head")) { error in
-            XCTAssertEqual(AuthorizationRequestException.unsupportedHttpMethod(message: "head"), error as! AuthorizationRequestException)
-            XCTAssertEqual("Unsupported HTTP method: head", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Unsupported HTTP method: head",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequestUriMethod
+            )
         }
     }
     
@@ -112,7 +114,10 @@ class UtilsTest : XCTestCase {
         let input: [String: Any] = ["timestamp": Date()]
         
         XCTAssertThrowsError(try toData(input), "Expected error for invalid JSON input") { error in
-            XCTAssertEqual("Json Encoding failed for  due to this error: Invalid JSON object.", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Json encoding failed for processedInput due to this error: Invalid JSON object",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -154,11 +159,15 @@ class UtilsTest : XCTestCase {
 
     
     func testEncodeFailure() {
-        
         let failingObject = MockFailingEncodable()
         
-        XCTAssertThrowsError(try encode(failingObject, fieldName: "failingObject", className: testClassName)) {error in
-            XCTAssertEqual(error.localizedDescription, "Json Encoding failed for failingObject due to this error: The operation couldn’t be completed. (EncodingError error 0.).")
+        XCTAssertThrowsError(try encode(failingObject, fieldName: "failingObject", className: testClassName)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Json encoding failed for [\"failingObject\"] due to this error: The operation couldn’t be completed. (EncodingError error 0.)",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
+
 }

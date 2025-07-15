@@ -11,8 +11,7 @@ func isValidString(_ field: String) -> Bool {
 func validateField<T>(field: T, fieldPath: [String], className: String) throws {
     if let stringValue = field as? String {
         if !isValidString(stringValue) {
-            throw Logger.handleException(
-                exceptionType: "InvalidInput",
+            throw InvalidInput(
                 fieldPath: fieldPath,
                 className: className
             )

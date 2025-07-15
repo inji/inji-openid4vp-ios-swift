@@ -76,11 +76,11 @@ public struct ClientMetadata: Codable {
             return try toClientMetadata(encodedData)
         } else if let data = clientMetadata as? String {
             guard let encodedData = data.data(using: .utf8) else {
-                throw Logger.handleException(exceptionType: "UTF8Encoding", fieldPath: ["client_metadata"], className: ClientMetadata.className)
+                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadata.className)
             }
             return try toClientMetadata(encodedData)
         } else {
-            throw Logger.handleException(exceptionType: "InvalidInput", message: "parsing of client_metadata failed", fieldPath: ["client_metadata"], className: ClientMetadata.className)
+            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadata.className)
         }
     }
     

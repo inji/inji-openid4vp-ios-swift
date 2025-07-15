@@ -11,7 +11,11 @@ final class EncryptionProviderTests: XCTestCase {
 
     func testGetEncryptorFailureUnsupportedAlgorithm() throws {
         XCTAssertThrowsError(try EncryptionProvider.getEncrypter("UNSUPPORTED")) { error in
-            XCTAssertEqual(error.localizedDescription, "Required Encryption algorithm is not supported.")
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Required Encryption algorithm is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

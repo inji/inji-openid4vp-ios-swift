@@ -267,9 +267,9 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
     - both presentation_definition and presentation_definition_uri are not present in Request
 3. MissingInput exception is thrown if any of required params are not present in Request
 4. InvalidInput exception is thrown if any of required params value is empty
-5. InvalidVerifier exception is thrown if the received request client_id & response_uri are not matching with any of the trusted verifiers
-6. JWTVerification exception is thrown if there is any error in extracting public key, kid or signature verification failure.
-7. InvalidData exception is thrown if 
+5. JWTVerification exception is thrown if there is any error in extracting public key, kid or signature verification failure.
+6. InvalidData exception is thrown if 
+   - the received request client_id & response_uri are not matching with any of the trusted verifiers
    - `response_mode` is not supported
    - For `direct_post.jwt` response mode
      - client_metadata is not available
@@ -352,9 +352,10 @@ val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenS
 ###### Exceptions
 
 1. JsonEncodingFailed exception is thrown if there is any issue while serializing the generating vp_token or presentation_submission class instances.
-2. InterruptedIOException is thrown if the connection is timed out when network call is made.
-3. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
-4. InvalidData exception is thrown if the response_type in the authorization request is not supported
+2. UnsupportedTypeDecoding exception is thrown when there is any issue in decoding the unsupported type.
+3. InterruptedIOException is thrown if the connection is timed out when network call is made.
+4. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
+5. InvalidData exception is thrown if the response_type in the authorization request is not supported
 
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
@@ -383,6 +384,10 @@ await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedE
 
 1. InterruptedIOException is thrown if the connection is timed out when network call is made.
 2. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
+
+###### Exception Handling Enhancement
+
+- The library has been enhanced to handle exceptions more gracefully. Library is throwing `OpenID4VPException` now which gives both Error Code and Message to the consumer app. This allows the consumer app to handle exceptions more effectively and provide better user experience.
 
 ## Architecture decisions
 

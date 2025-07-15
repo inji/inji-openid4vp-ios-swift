@@ -7,13 +7,14 @@ public class OpenID4VP {
     private var responseUri: String?
     private var authorizationResponseHandler: AuthorizationResponseHandler
     private let walletMetadata: WalletMetadata?
-    
+
 
     public init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
         self.networkManager = networkManager ?? NetworkManager.shared
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
         self.walletMetadata = walletMetadata
+        OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
 
     public func setResponseUri(_ responseUri: String) {
@@ -25,8 +26,6 @@ public class OpenID4VP {
         trustedVerifierJSON: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
-        Logger.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
-
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
@@ -109,15 +108,26 @@ public class OpenID4VP {
             throw error
         }
     }
-    
+
 
     public func sendErrorToVerifier(error: Error) async {
-        let logTag = Logger.getLogTag(String(describing: OpenID4VP.self))
+        let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
 
-        let errorInfo = [
-            "error": "\(error)",
-            "traceabilityId": "\(traceabilityId)",
-        ]
+
+        var errorInfo: [String: String] = [:]
+
+
+        let resolvedError: OpenID4VPException
+        if let openidError = error as? OpenID4VPException {
+            resolvedError = openidError
+        } else {
+            resolvedError = GenericFailure(
+                message: "\(error)",
+                className: String(describing: OpenID4VP.self)
+            )
+        }
+
+        errorInfo.merge(resolvedError.toErrorResponse()) { _, new in new }
 
         do {
             _ = try await networkManager.sendHTTPRequest(
@@ -127,7 +137,7 @@ public class OpenID4VP {
                 headers: ["Content_Type": ContentTypes.applicationFormUrlEncoded.rawValue]
             )
         } catch {
-            Logger.error(logTag, NetworkRequestException.invalidResponse(
+            OpenID4VPException.error(logTag, NetworkRequestException.invalidResponse(
                 message: "Unexpected error occurred while sending the error to verifier: \(error)"
             ))
         }

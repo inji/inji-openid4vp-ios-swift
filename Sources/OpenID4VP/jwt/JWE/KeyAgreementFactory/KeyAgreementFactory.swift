@@ -6,7 +6,7 @@ class KeyAgreementFactory {
         case ("OKP", "X25519"):
             return X25519KeyAgreement()
         default:
-            throw Logger.handleException(exceptionType: "UnsupportedKeyAgreementAlgorithm", className: KeyAgreementFactory.className)
+            throw UnsupportedKeyAgreementAlgorithm(className: KeyAgreementFactory.className)
         }
     }
 }

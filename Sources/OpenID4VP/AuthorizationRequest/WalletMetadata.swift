@@ -8,7 +8,7 @@ public struct WalletMetadata: Codable {
     let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]?
     let authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]?
     static let className = String(describing: WalletMetadata.self)
-    
+
     enum CodingKeys: String, CodingKey {
         case presentationDefinitionURISupported = "presentation_definition_uri_supported"
         case vpFormatsSupported = "vp_formats_supported"
@@ -17,7 +17,7 @@ public struct WalletMetadata: Codable {
         case authorizationEncryptionAlgValuesSupported = "authorization_encryption_alg_values_supported"
         case authorizationEncryptionEncValuesSupported = "authorization_encryption_enc_values_supported"
     }
-    
+
     public init(
         presentationDefinitionURISupported: Bool?,
         vpFormatsSupported: [FormatType: VPFormatSupported],
@@ -32,18 +32,18 @@ public struct WalletMetadata: Codable {
         self.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
-        
+
         try validateVPFormatsSupported(vpFormatsSupported)
     }
 }
 
 public struct VPFormatSupported: Codable {
     let algValuesSupported: [String]?
-    
+
     enum CodingKeys: String, CodingKey {
         case algValuesSupported = "alg_values_supported"
     }
-    
+
     public init(algValuesSupported: [String]? = nil) {
         self.algValuesSupported = algValuesSupported
     }
@@ -51,16 +51,14 @@ public struct VPFormatSupported: Codable {
 
 private func validateVPFormatsSupported(_ vpFormatsSupported: [FormatType: VPFormatSupported]) throws {
     if vpFormatsSupported.isEmpty {
-        throw Logger.handleException(
-            exceptionType: "InvalidData",
+        throw InvalidData(
             message: "vp_formats_supported should at least have one supported vp_format",
             className: WalletMetadata.className
         )
     }
 
     if (vpFormatsSupported.keys.compactMap({$0.rawValue})).contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
-        throw Logger.handleException(
-            exceptionType: "InvalidData",
+        throw InvalidData(
             message: "vp_formats_supported cannot have empty keys.",
             className: WalletMetadata.className
         )

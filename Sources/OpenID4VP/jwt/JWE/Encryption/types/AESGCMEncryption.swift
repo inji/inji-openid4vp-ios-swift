@@ -12,7 +12,8 @@ class AESGCMEncryption: JWEEncryption {
     func encrypt(_ data: Data, with key: SymmetricKey) throws -> (ciphertext: Data, nonce: Data, tag: Data) {
         
         guard key.bitCount == keySize.bitCount else {
-            throw Logger.handleException(exceptionType: "InvalidEncryptionKeySize", className: AESGCMEncryption.className)
+            
+            throw InvalidEncryptionKeySize(className: AESGCMEncryption.className)
         }
         
         let nonce = AES.GCM.Nonce()

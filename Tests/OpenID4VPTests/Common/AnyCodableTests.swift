@@ -92,7 +92,10 @@ final class AnyCodableTests: XCTestCase {
         let invalidValue = AnyCodable(Date())
         
         XCTAssertThrowsError(try JSONEncoder().encode(invalidValue)) { error in
-            XCTAssertEqual("Json Encoding failed for  due to this error: Error occured while encoding response.", error.localizedDescription)
+            assertOpenID4VPException(error,
+                expectedMessage: "Json encoding failed for  due to this error: Error occured while encoding response",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -104,5 +107,30 @@ final class AnyCodableTests: XCTestCase {
         
         let decoded = try JSONDecoder().decode(AnyCodable.self, from: jsonData)
         XCTAssertTrue(decoded.value is Optional<Any>)
+    }
+    
+    func testUnsupportedTypeDecoding() {
+        struct UnsupportedType: Decodable {
+            init(from decoder: Decoder) throws {
+                throw UnsupportedTypeDecoding(
+                    message: "Unsupported type encountered while decoding response in AnyCodable",
+                    className: AnyCodable.className
+                )
+            }
+        }
+
+        let data = """
+        {
+          "unsupported": "value"
+        }
+        """.data(using: .utf8)!
+
+        XCTAssertThrowsError(try JSONDecoder().decode(UnsupportedType.self, from: data)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported type encountered while decoding response in AnyCodable",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
     }
 }

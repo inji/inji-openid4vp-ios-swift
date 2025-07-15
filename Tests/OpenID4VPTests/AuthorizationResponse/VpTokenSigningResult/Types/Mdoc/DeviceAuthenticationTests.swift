@@ -27,7 +27,10 @@ final class DeviceAuthenticationTests: XCTestCase {
             let deviceAuth = DeviceAuthentication(signature: testCase.input, algorithm: validAlgorithm)
             
             XCTAssertThrowsError(try deviceAuth.validate()) { error in
-                XCTAssertEqual(error.localizedDescription, testCase.expectedError)
+                assertOpenID4VPException(error,
+                     expectedMessage: testCase.expectedError!,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }
@@ -45,7 +48,10 @@ final class DeviceAuthenticationTests: XCTestCase {
             let deviceAuth = DeviceAuthentication(signature: validSignature, algorithm: testCase.input)
             
             XCTAssertThrowsError(try deviceAuth.validate()) { error in
-                XCTAssertEqual(error.localizedDescription, testCase.expectedError)
+                assertOpenID4VPException(error,
+                     expectedMessage: testCase.expectedError!,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
             }
         }
     }

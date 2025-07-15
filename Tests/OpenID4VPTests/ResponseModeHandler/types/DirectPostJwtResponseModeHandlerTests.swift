@@ -261,19 +261,31 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         
         // Wallet metadata is nil
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: nil, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("wallet_metadata must be present", error.localizedDescription)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "wallet_metadata must be present",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
         
         // Alg values are nil
         var invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: [.A256GCM])
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("authorization_encryption_alg_values_supported must be present in wallet_metadata", error.localizedDescription)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "authorization_encryption_alg_values_supported must be present in wallet_metadata",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
         
         // Enc values are nil
         invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: [.ecdhEs], authorizationEncryptionEncValuesSupported: nil)
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("authorization_encryption_enc_values_supported must be present in wallet_metadata", error.localizedDescription)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "authorization_encryption_enc_values_supported must be present in wallet_metadata",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
