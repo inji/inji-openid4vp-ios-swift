@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/beatt83/jose-swift.git", .upToNextMinor(from: "4.0.2")),
         .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMajor(from: "5.10.0")),
         .package(url: "https://github.com/valpackett/SwiftCBOR.git",  .upToNextMajor(from: "0.5.0")),
-        .package(url: "https://github.com/heckj/Base58Swift.git", .upToNextMajor(from: "2.1.15"))
+        .package(url: "https://github.com/keefertaylor/Base58Swift.git", from: "2.1.0")
     ],
     targets: [
         .target(
