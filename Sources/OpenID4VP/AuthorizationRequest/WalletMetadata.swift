@@ -2,11 +2,11 @@ import Foundation
 
 public struct WalletMetadata: Codable {
     let presentationDefinitionURISupported: Bool
-    let vpFormatsSupported: [String: VPFormatSupported]
-    let clientIdSchemesSupported: [String]
-    var requestObjectSigningAlgValuesSupported: [String]?
-    let authorizationEncryptionAlgValuesSupported: [String]?
-    let authorizationEncryptionEncValuesSupported: [String]?
+    let vpFormatsSupported: [FormatType: VPFormatSupported]
+    let clientIdSchemesSupported: [ClientIdScheme]
+    var requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]?
+    let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]?
+    let authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]?
     static let className = String(describing: WalletMetadata.self)
     
     enum CodingKeys: String, CodingKey {
@@ -20,15 +20,15 @@ public struct WalletMetadata: Codable {
     
     public init(
         presentationDefinitionURISupported: Bool?,
-        vpFormatsSupported: [String: VPFormatSupported],
-        clientIdSchemesSupported: [String]?,
-        requestObjectSigningAlgValuesSupported: [String]? = nil,
-        authorizationEncryptionAlgValuesSupported: [String]? = nil,
-        authorizationEncryptionEncValuesSupported: [String]? = nil
+        vpFormatsSupported: [FormatType: VPFormatSupported],
+        clientIdSchemesSupported: [ClientIdScheme]?,
+        requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = nil,
+        authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = nil,
+        authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = nil
     ) throws {
         self.presentationDefinitionURISupported = presentationDefinitionURISupported ?? true
         self.vpFormatsSupported = vpFormatsSupported
-        self.clientIdSchemesSupported = clientIdSchemesSupported ?? [ClientIdScheme.preRegistered.rawValue]
+        self.clientIdSchemesSupported = clientIdSchemesSupported ?? [ClientIdScheme.preRegistered]
         self.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
@@ -49,7 +49,7 @@ public struct VPFormatSupported: Codable {
     }
 }
 
-private func validateVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws {
+private func validateVPFormatsSupported(_ vpFormatsSupported: [FormatType: VPFormatSupported]) throws {
     if vpFormatsSupported.isEmpty {
         throw Logger.handleException(
             exceptionType: "InvalidData",
@@ -58,7 +58,7 @@ private func validateVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatS
         )
     }
 
-    if vpFormatsSupported.keys.contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
+    if (vpFormatsSupported.keys.compactMap({$0.rawValue})).contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
         throw Logger.handleException(
             exceptionType: "InvalidData",
             message: "vp_formats_supported cannot have empty keys.",

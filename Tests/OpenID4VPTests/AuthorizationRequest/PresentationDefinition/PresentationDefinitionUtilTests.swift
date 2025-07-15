@@ -91,7 +91,7 @@ final class PresentationDefinitionUtilTests: XCTestCase {
         ]
         
         for testCase in testCases {
-            await assertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
+            await XCTAssertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
                 XCTAssertEqual(error.localizedDescription, "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt")
             }
         }

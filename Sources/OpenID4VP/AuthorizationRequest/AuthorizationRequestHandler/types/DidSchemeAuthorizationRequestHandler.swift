@@ -25,7 +25,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
                 try validateAuthorizationRequestSigningAlgorithm(header: header)
                 
                 try await jwsHandler.verify()
-
+                
                 let authorizationRequestObject =  try jwsHandler.extractDataJsonFromJws(jwsPart: .payload)
                 
                 try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
@@ -61,7 +61,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     private func validateAuthorizationRequestSigningAlgorithm(header: [String: Any]) throws {
         if shouldValidateWithWalletMetadata, let walletMetadata = walletMetadata {
             if let alg = header["alg"] as? String,
-               let supportedAlgs = walletMetadata.requestObjectSigningAlgValuesSupported,
+               let supportedAlgs = walletMetadata.requestObjectSigningAlgValuesSupported?.compactMap({$0.rawValue}) ,
                !supportedAlgs.contains(alg) {
                 throw Logger.handleException(
                     exceptionType: "InvalidData",

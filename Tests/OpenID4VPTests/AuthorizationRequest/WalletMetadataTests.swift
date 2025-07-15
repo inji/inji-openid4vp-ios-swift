@@ -4,17 +4,17 @@ import XCTest
 final class WalletMetadataTests: XCTestCase {
     
     func testValidWalletMetadataInitialization() throws {
-        let vpFormats: [String: VPFormatSupported] = [
-            "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
+        let vpFormats: [FormatType: VPFormatSupported] = [
+            .ldp_vc : VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
         ]
         
         let metadata = try WalletMetadata(
             presentationDefinitionURISupported: true,
             vpFormatsSupported: vpFormats,
-            clientIdSchemesSupported: ["redirect_uri"],
-            requestObjectSigningAlgValuesSupported: ["EdDSA"],
-            authorizationEncryptionAlgValuesSupported: ["ECDH-ES"],
-            authorizationEncryptionEncValuesSupported: ["A256GCM"]
+            clientIdSchemesSupported: [ClientIdScheme.redirectUri],
+            requestObjectSigningAlgValuesSupported: [.edDsa],
+            authorizationEncryptionAlgValuesSupported: [.ecdhEs],
+            authorizationEncryptionEncValuesSupported: [.A256GCM]
         )
         
         XCTAssertTrue(metadata.presentationDefinitionURISupported)
@@ -31,23 +31,9 @@ final class WalletMetadataTests: XCTestCase {
         }
     }
     
-    func testWalletMetadataThrowsForEmptyKeyInVPFormatsSupported() {
-        let badVPFormat: [String: VPFormatSupported] = [
-            "": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
-        ]
-        
-        XCTAssertThrowsError(try WalletMetadata(
-            presentationDefinitionURISupported: nil,
-            vpFormatsSupported: badVPFormat,
-            clientIdSchemesSupported: nil
-        )) { error in
-            XCTAssertEqual(error.localizedDescription, "vp_formats_supported cannot have empty keys.")
-        }
-    }
-    
     func testWalletMetadataWithNilOptionals() throws {
-        let vpFormats: [String: VPFormatSupported] = [
-            "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
+        let vpFormats: [FormatType: VPFormatSupported] = [
+            .ldp_vc: VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
         ]
         
         let metadata = try WalletMetadata(
@@ -56,7 +42,7 @@ final class WalletMetadataTests: XCTestCase {
             clientIdSchemesSupported: nil
         )
         let walletMetadata = try createWalletMetadata(presentationDefinitionURISupported: true, vpFormatsSupported: vpFormats,
-                                                      clientIdSchemesSupported: ["pre-registered"], requestObjectSigningAlgValuesSupported: nil, authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: nil)
+                                                      clientIdSchemesSupported: [.preRegistered], requestObjectSigningAlgValuesSupported: nil, authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: nil)
         
         assertDictionariesEqual(expected: convertToDictionary(object: walletMetadata)!, actual: convertToDictionary(object: metadata))
         XCTAssertNil(metadata.requestObjectSigningAlgValuesSupported)
