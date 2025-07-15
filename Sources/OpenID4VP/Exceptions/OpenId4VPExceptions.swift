@@ -289,7 +289,7 @@ class Base64DecodingFailed: OpenID4VPException {
     }
 }
 
-class UnsupportedJSONTypeDecoding: OpenID4VPException {
+class UnsupportedTypeDecoding: OpenID4VPException {
     init(message: String, className: String) {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }

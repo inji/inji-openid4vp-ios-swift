@@ -25,7 +25,7 @@ import Foundation
         } else if container.decodeNil() {
             value = Optional<Any>.none as Any
         } else {
-            throw UnsupportedJSONTypeDecoding(
+            throw UnsupportedTypeDecoding(
                 message: "Unsupported type encountered while decoding response in AnyCodable",
                 className: AnyCodable.className
             )

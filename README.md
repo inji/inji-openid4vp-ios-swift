@@ -352,7 +352,7 @@ val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenS
 ###### Exceptions
 
 1. JsonEncodingFailed exception is thrown if there is any issue while serializing the generating vp_token or presentation_submission class instances.
-2. UnsupportedJSONTypeDecoding exception is thrown when there is any issue in decoding the unsupported JSON.
+2. UnsupportedTypeDecoding exception is thrown when there is any issue in decoding the unsupported type.
 3. InterruptedIOException is thrown if the connection is timed out when network call is made.
 4. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
 5. InvalidData exception is thrown if the response_type in the authorization request is not supported

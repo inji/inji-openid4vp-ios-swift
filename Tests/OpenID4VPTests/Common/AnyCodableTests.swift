@@ -109,10 +109,10 @@ final class AnyCodableTests: XCTestCase {
         XCTAssertTrue(decoded.value is Optional<Any>)
     }
     
-    func testUnsupportedJSONTypeDecoding() {
+    func testUnsupportedTypeDecoding() {
         struct UnsupportedType: Decodable {
             init(from decoder: Decoder) throws {
-                throw UnsupportedJSONTypeDecoding(
+                throw UnsupportedTypeDecoding(
                     message: "Unsupported type encountered while decoding response in AnyCodable",
                     className: AnyCodable.className
                 )
