@@ -4,7 +4,7 @@ class DidPublicKeyResolver : PublicKeyResolver {
     private let didUrl: String
     private let networkManager: NetworkManaging
     static let className = String(describing: DidPublicKeyResolver.self)
-    private static let publicKeyTypes = ["publicKey", "publicKeyJwk", "publicKeyPem", "publicKeyHex"]
+    private static let supportedPublicKeyTypes = ["publicKeyMultibase"]
 
     
     init(didUrl: String, networkManager: NetworkManaging) {
@@ -35,16 +35,19 @@ class DidPublicKeyResolver : PublicKeyResolver {
         if let verificationMethods = didDoc["verificationMethod"] as? [[String: Any]] {
             for method in verificationMethods {
                 if let id = method["id"] as? String, id == kid {
-                    if let publicKeyMultibase = method["publicKeyMultibase"] as? String,
-                       !publicKeyMultibase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        return publicKeyMultibase
+
+                    if !Self.supportedPublicKeyTypes.contains(where: { method[$0] != nil }) {
+                        throw UnsupportedPublicKeyType(className: DidPublicKeyResolver.className)
                     }
 
-                    for unsupportedKey in Self.publicKeyTypes {
-                        if method[unsupportedKey] != nil {
-                            throw UnsupportedPublicKeyType(className: DidPublicKeyResolver.className)
-                        }
+                    let publicKeyMultibase = method["publicKeyMultibase"] as? String
+                    if publicKeyMultibase?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
+                        throw InvalidData(
+                            message: "publicKeyMultibase cannot be null or empty",
+                            className: DidPublicKeyResolver.className
+                        )
                     }
+                    return publicKeyMultibase!
                 }
             }
         }

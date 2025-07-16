@@ -135,7 +135,10 @@ public class OpenID4VP {
         }
 
         errorInfo.merge(resolvedError.toErrorResponse()) { _, new in new }
-        errorInfo["state"] = authorizationRequest?.state ?? ""
+        
+        if let state = authorizationRequest?.state, !state.isEmpty {
+            errorInfo["state"] = state
+        }
 
 
         do {
