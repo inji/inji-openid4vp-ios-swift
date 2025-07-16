@@ -56,12 +56,5 @@ private func validateVPFormatsSupported(_ vpFormatsSupported: [FormatType: VPFor
             className: WalletMetadata.className
         )
     }
-
-    if (vpFormatsSupported.keys.compactMap({$0.rawValue})).contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
-        throw InvalidData(
-            message: "vp_formats_supported cannot have empty keys.",
-            className: WalletMetadata.className
-        )
-    }
 }
 

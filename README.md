@@ -162,11 +162,17 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
                                         authorizationEncryptionEncValuesSupported: [.A256GCM])
 ```
 
-3. The shouldValidateClient parameter in authenticateVerifier now defaults to true.
+3. The `shouldValidateClient` parameter in `authenticateVerifier` now defaults to true.
 - If your integration previously relied on it being false, you must now explicitly pass false to preserve the old behavior.
 - Example (updated usage)
+
 ```swift
-authenticateVerifier(traceabilityId: "traceId", shouldValidateClient = false)
+ let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
+                urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri,
+                trustedVerifierJSON: trustedVerifiers),
+                walletMetadata: walletMetadata,
+                shouldValidateClient: false // explicitly set to false if you want to skip client validation
+            )
 ```
 
 ## Construction of OpenID4VP instance
@@ -178,10 +184,10 @@ let openID4VP = OpenID4VP(traceabilityId: "trace-id", walletMetadata: WalletMeta
 ```
 
 ###### Parameters
-| Name           | Type           | Description                                                                                                                                                                                                     |
-|----------------|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| traceabilityId | String         | Unique identifier for tracking requests and responses.                                                                                                                                                          |
-| walletMetadata | WalletMetadata | Metadata which wallet supports, such that client-id-scheme support, vp format support, proof type support, etc. (See [below](#walletmetadata-construction) for more details on construction of wallet metadata) |
+| Name           | Type            | Required | Default Value                                                            | Description                                                                                                                                                                                                     |
+|----------------|-----------------|:---------|:-------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| traceabilityId | String          | Yes      | N/A                                                                      | Unique identifier for tracking requests and responses.                                                                                                                                                          |
+| walletMetadata | WalletMetadata  | No       | nil                                                                      | Metadata which wallet supports, such that client-id-scheme support, vp format support, proof type support, etc. (See [below](#walletmetadata-construction) for more details on construction of wallet metadata) |
 
 ### WalletMetadata construction
 - The WalletMetadata is a struct that contains metadata about the wallet's capabilities and supported features.
@@ -206,14 +212,14 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
 
 #### Parameters
 
-| Parameter                                 | Type                          | Required | Default Value                  | Description                                                                                 |
-|-------------------------------------------|-------------------------------|----------|--------------------------------|---------------------------------------------------------------------------------------------|
-| presentationDefinitionURISupported        | Bool                          | No       | true                           | Indicates whether the wallet supports `presentation_definition_uri`.                        |
-| vpFormatsSupported                        | [String: VPFormatSupported]   | Yes      | N/A                            | A dictionary specifying the supported verifiable presentation formats and their algorithms. |
-| clientIdSchemesSupported                  | [ClientIdScheme]              | No       | [ClientIdScheme.preRegistered] | A list of supported client ID schemes.                                                      |
-| requestObjectSigningAlgValuesSupported    | [RequestSigningAlgorithm]?    | No       | nil                            | A list of supported algorithms for signing request objects.                                 |
-| authorizationEncryptionAlgValuesSupported | [KeyManagementAlgorithm]?     | No       | nil                            | A list of supported algorithms for encrypting authorization responses.                      |
-| authorizationEncryptionEncValuesSupported | [ContentEncryptionAlgorithm]? | No       | nil                            | A list of supported encryption methods for authorization responses.                         |
+| Parameter                                 | Type                            | Required | Default Value                  | Description                                                                                 |
+|-------------------------------------------|---------------------------------|----------|--------------------------------|---------------------------------------------------------------------------------------------|
+| presentationDefinitionURISupported        | Bool                            | No       | true                           | Indicates whether the wallet supports `presentation_definition_uri`.                        |
+| vpFormatsSupported                        | [FormatType: VPFormatSupported] | Yes      | N/A                            | A dictionary specifying the supported verifiable presentation formats and their algorithms. |
+| clientIdSchemesSupported                  | [ClientIdScheme]                | No       | [ClientIdScheme.preRegistered] | A list of supported client ID schemes.                                                      |
+| requestObjectSigningAlgValuesSupported    | [RequestSigningAlgorithm]?      | No       | nil                            | A list of supported algorithms for signing request objects.                                 |
+| authorizationEncryptionAlgValuesSupported | [KeyManagementAlgorithm]?       | No       | nil                            | A list of supported algorithms for encrypting authorization responses.                      |
+| authorizationEncryptionEncValuesSupported | [ContentEncryptionAlgorithm]?   | No       | nil                            | A list of supported encryption methods for authorization responses.                         |
 
 **Notes**
 - Wallet can send the entire metadata, library will customize it as per authorization request client_id_scheme. Eg - in case pre-registered, library modifies wallet metadata to be sent without request object signing info properties as specified in the specification.
@@ -230,17 +236,17 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
 
 
 ```swift
-    let authorizationRequest : AuthorizationRequest = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier],walletMetadata: WalletMetadata, shouldValidateClient: Bool)
+    let authorizationRequest : AuthorizationRequest = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier], shouldValidateClient: Bool)
 ```
 
 ###### Parameters
 
-| Name                           | Type             | Description                                                                      |
-|--------------------------------|------------------|----------------------------------------------------------------------------------|
-| urlEncodedAuthorizationRequest | String           | URL Encoded authorization request.                                               |
-| trustedVerifierJSON            | [Verifier]       | Array of verifiers to verify the client id of the verifier.                      |
-| walletMetadata                 | WalletMetadata?  | Optional WalletMetadata to be shared with Verifier                               |
-| shouldValidateClient           | Bool             | Optional Boolean to toggle client validation for pre-registered client id scheme |
+| Name                           | Type             | Required | Default Value | Description                                                                      |
+|--------------------------------|------------------|:---------|:--------------|----------------------------------------------------------------------------------|
+| urlEncodedAuthorizationRequest | String           | Yes      | N/A           | URL Encoded authorization request.                                               |
+| trustedVerifierJSON            | [Verifier]       | Yes      | N/A           | Array of verifiers to verify the client id of the verifier.                      |
+| walletMetadata                 | WalletMetadata?  | Yes      | N/A           | Optional WalletMetadata to be shared with Verifier                               |
+| shouldValidateClient           | Bool             | No       | true          | Optional Boolean to toggle client validation for pre-registered client id scheme |
 
 
 ###### Example usage
@@ -288,9 +294,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name           | Type                               | Description                                                                                                                                    |
-|----------------|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| credentialsMap | [String: [FormatType: Array<Any>]] | A Map which contains input descriptor id as key and value is the map of credential format and the list of user selected verifiable credentials |
+| Name           | Type                               | Required | Default Value | Description                                                                                                                                    |
+|----------------|------------------------------------|:--------:|:--------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| credentialsMap | [String: [FormatType: Array<Any>]] |   Yes    | N/A           | A Map which contains input descriptor id as key and value is the map of credential format and the list of user selected verifiable credentials |
 
 ###### Example usage
 
@@ -322,9 +328,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name                  | Type                               | Description                                                                                                                                                   |
-|-----------------------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
+| Name                  | Type                               | Required | Default Value | Description                                                                                                                                                   |
+|-----------------------|------------------------------------|:---------|:--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | Yes      | N/A           | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
 
 
 ###### Example usage
@@ -370,9 +376,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ###### Parameters
 
-| Name  | Type  | Description                   | Sample                                                                            |
-|-------|-------|-------------------------------|-----------------------------------------------------------------------------------|
-| error | Error | Contains the exception object | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
+| Name  | Type  | Description                   | Required | Default Value | Sample                                                                            |
+|-------|-------|-------------------------------|:---------|:--------------|-----------------------------------------------------------------------------------|
+| error | Error | Contains the exception object | Yes      | N/A           | `AuthorizationConsent.consentRejectedError(message: "User rejected the consent")` |
 
 ###### Example usage
 

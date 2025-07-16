@@ -4,14 +4,8 @@ public enum ClientIdScheme: String, Codable, CaseIterable {
     case preRegistered = "pre-registered"
     case redirectUri = "redirect_uri"
     case did = "did"
-}
-
-public enum ResponseMode: String {
-    case directPost = "direct_post"
-    case directPostJwt = "direct_post.jwt"
-}
-
-
-enum ResponseType: String {
-    case vp_token = "vp_token"
+    
+    public static func fromValue(_ value: String) -> ClientIdScheme? {
+        return ClientIdScheme(rawValue: value)
+    }
 }
