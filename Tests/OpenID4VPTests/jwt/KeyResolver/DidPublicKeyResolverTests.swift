@@ -125,11 +125,71 @@ class DidPublicKeyResolverTests: XCTestCase {
             } catch {
                 assertOpenID4VPException(
                     error,
-                    expectedMessage: "Unsupported Public Key type. Must be 'publicKeyMultibase'",
+                    expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             }
         }
     }
+    
+    func testThrowsErrorWhenPublicKeyMultibaseIsNil() async {
+        let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
+        
+        let didDoc = """
+        {
+          "verificationMethod": [
+            {
+              "id": "\(kid)",
+              "publicKeyMultibase": null
+            }
+          ]
+        }
+        """
+        
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDoc)
+        let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
+        
+        do {
+            _ = try await resolver.resolveKey(header: ["kid": kid])
+            XCTFail("Expected error for nil publicKeyMultibase but none was thrown.")
+        } catch {
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "publicKeyMultibase cannot be null or empty",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    
+    func testThrowsErrorWhenPublicKeyMultibaseIsEmpty() async {
+        let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
+        
+        let didDoc = """
+        {
+          "verificationMethod": [
+            {
+              "id": "\(kid)",
+              "publicKeyMultibase": ""
+            }
+          ]
+        }
+        """
+        
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDoc)
+        let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
+        
+        do {
+            _ = try await resolver.resolveKey(header: ["kid": kid])
+            XCTFail("Expected error for empty publicKeyMultibase but none was thrown.")
+        } catch {
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "publicKeyMultibase cannot be null or empty",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
 
 }
