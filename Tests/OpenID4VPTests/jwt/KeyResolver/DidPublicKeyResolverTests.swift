@@ -57,21 +57,19 @@ class DidPublicKeyResolverTests: XCTestCase {
             mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
             let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
 
-            do {
-                _ = try await didKeyResolver.resolveKey(header: [
-                    "typ": "oauth-authz-req+jwt",
-                    "alg": "EdDSA",
-                    "kid": testCase.input
-                ])
-                XCTFail("Error should have been thrown but wasn't for input - '\(testCase.input)'")
-            } catch {
-                let expectedMessage = "Public key extraction failed for kid: \(testCase.input)"
-                assertOpenID4VPException(
-                    error,
-                    expectedMessage: expectedMessage,
-                    expectedCode: OpenID4VPErrorCodes.invalidRequest
-                )
-            }
+            await assertAsyncThrowsError(
+                        try await didKeyResolver.resolveKey(header: [
+                            "typ": "oauth-authz-req+jwt",
+                            "alg": "EdDSA",
+                            "kid": testCase.input
+                        ])
+                    ) { error in
+                    assertOpenID4VPException(
+                        error,
+                        expectedMessage: "Public key extraction failed for kid: \(testCase.input)",
+                        expectedCode: OpenID4VPErrorCodes.invalidRequest
+                    )
+                }
         }
     }
 
@@ -79,20 +77,19 @@ class DidPublicKeyResolverTests: XCTestCase {
         let invalidDid = "did:jwk:xyz"
         let didKeyResolver = DidPublicKeyResolver(didUrl: invalidDid, networkManager: mockNetworkManager)
 
-        do {
-            _ = try await didKeyResolver.resolveKey(header: [
-                "typ": "oauth-authz-req+jwt",
-                "alg": "EdDSA",
-                "kid": "did:example:123#2"
-            ])
-            XCTFail("Error should have been thrown but was not")
-        } catch {
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Given did url is not supported",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
+        await assertAsyncThrowsError(
+                try await didKeyResolver.resolveKey(header: [
+                    "typ": "oauth-authz-req+jwt",
+                    "alg": "EdDSA",
+                    "kid": "did:example:123#2"
+                ])
+            ) { error in
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: "Given did url is not supported",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
+            }
     }
     
     func testUnsupportedPublicKeyTypesThrowError() async {
@@ -119,22 +116,21 @@ class DidPublicKeyResolverTests: XCTestCase {
 
             let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
 
-            do {
-                _ = try await resolver.resolveKey(header: ["kid": kid])
-                XCTFail("Expected UnsupportedPublicKeyType error for key: \(key)")
-            } catch {
-                assertOpenID4VPException(
-                    error,
-                    expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase",
-                    expectedCode: OpenID4VPErrorCodes.invalidRequest
-                )
-            }
+            await assertAsyncThrowsError(
+                        try await resolver.resolveKey(header: ["kid": kid])
+                    ) { error in
+                    assertOpenID4VPException(
+                        error,
+                        expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase",
+                        expectedCode: OpenID4VPErrorCodes.invalidRequest
+                    )
+                }
         }
     }
     
     func testThrowsErrorWhenPublicKeyMultibaseIsNil() async {
         let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-        
+
         let didDoc = """
         {
           "verificationMethod": [
@@ -145,14 +141,13 @@ class DidPublicKeyResolverTests: XCTestCase {
           ]
         }
         """
-        
+
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDoc)
         let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-        
-        do {
-            _ = try await resolver.resolveKey(header: ["kid": kid])
-            XCTFail("Expected error for nil publicKeyMultibase but none was thrown.")
-        } catch {
+
+        await assertAsyncThrowsError(
+            try await resolver.resolveKey(header: ["kid": kid])
+        ) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "publicKeyMultibase cannot be null or empty",
@@ -161,10 +156,11 @@ class DidPublicKeyResolverTests: XCTestCase {
         }
     }
 
+
     
     func testThrowsErrorWhenPublicKeyMultibaseIsEmpty() async {
         let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-        
+
         let didDoc = """
         {
           "verificationMethod": [
@@ -175,14 +171,13 @@ class DidPublicKeyResolverTests: XCTestCase {
           ]
         }
         """
-        
+
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDoc)
         let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-        
-        do {
-            _ = try await resolver.resolveKey(header: ["kid": kid])
-            XCTFail("Expected error for empty publicKeyMultibase but none was thrown.")
-        } catch {
+
+        await assertAsyncThrowsError(
+            try await resolver.resolveKey(header: ["kid": kid])
+        ) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "publicKeyMultibase cannot be null or empty",
@@ -190,6 +185,7 @@ class DidPublicKeyResolverTests: XCTestCase {
             )
         }
     }
+
 
 
 }
