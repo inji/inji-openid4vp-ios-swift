@@ -283,6 +283,7 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
    - `publicKeyMultibase` is null or empty 
 7. UnsupportedPublicKeyType exception is thrown when the public key type is not `publicKeyMultibase`.
 8. PublicKeyExtractionFailed exception is thrown when there are any errors in extracting the public key from verification method
+9. InvalidVerifier exception is thrown if the received request client_iD & response_uri are not matching with any of the trusted verifiers
      
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
