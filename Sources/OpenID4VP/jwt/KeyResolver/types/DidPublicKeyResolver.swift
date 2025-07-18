@@ -4,6 +4,8 @@ class DidPublicKeyResolver : PublicKeyResolver {
     private let didUrl: String
     private let networkManager: NetworkManaging
     static let className = String(describing: DidPublicKeyResolver.self)
+    private static let supportedPublicKeyTypes = ["publicKeyMultibase"]
+
     
     init(didUrl: String, networkManager: NetworkManaging) {
         self.didUrl = didUrl
@@ -30,19 +32,31 @@ class DidPublicKeyResolver : PublicKeyResolver {
     }
     
     private func extractPublicKeyMultibase(for kid: String, from didDoc: [String: Any]) throws -> String? {
-        if let verificationMethod = didDoc["verificationMethod"] as? [[String: Any]] {
-            for method in verificationMethod {
-                if let id = method["id"] as? String, id == kid,
-                   let publicKeyMultibase = method["publicKey"] as? String {
-                    return publicKeyMultibase
+        if let verificationMethods = didDoc["verificationMethod"] as? [[String: Any]] {
+            for method in verificationMethods {
+                if let id = method["id"] as? String, id == kid {
+
+                    if !Self.supportedPublicKeyTypes.contains(where: { method[$0] != nil }) {
+                        throw UnsupportedPublicKeyType(className: DidPublicKeyResolver.className)
+                    }
+
+                    let publicKeyMultibase = method["publicKeyMultibase"] as? String
+                    if publicKeyMultibase?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
+                        throw InvalidData(
+                            message: "publicKeyMultibase cannot be null or empty",
+                            className: DidPublicKeyResolver.className
+                        )
+                    }
+                    return publicKeyMultibase!
                 }
             }
         }
-        
+
         throw PublicKeyExtractionFailed(
-            message: "No matching public key found in DID document for key ID: \(kid)",
+            message: "Public key extraction failed for kid: \(kid)",
             className: DidPublicKeyResolver.className
         )
     }
+    
     
 }

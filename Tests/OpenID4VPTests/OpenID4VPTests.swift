@@ -383,4 +383,57 @@ class OpenID4VPTests: XCTestCase {
 
         XCTAssertEqual(response, "Success: Request completed successfully.")
     }
+
+    func testSendErrorToVerifier_withoutState() async {
+        openID4VP.setResponseUri("https://mock-verifier.com")
+
+        
+        let expectedError = InvalidData(message: "Some Error Message",className:  "test")
+
+        await openID4VP.sendErrorToVerifier(error: expectedError)
+
+        guard let recorded = mockNetworkManager.recordedRequests["https://mock-verifier.com"] else {
+            return XCTFail("No request recorded")
+        }
+
+        let requestBody = recorded.requestBody ?? [:]
+
+        XCTAssertEqual(requestBody["error"], "invalid_request")
+        XCTAssertEqual(requestBody["error_description"], "Some Error Message")
+        XCTAssertNil(requestBody["state"], "State should not be present in the request body")
+    }
+    
+    
+    func testSendErrorToVerifier_withState() async throws {
+        openID4VP.setResponseUri("https://mock-verifier.com")
+        let authorizationRequest = try await openID4VP.authenticateVerifier(
+            urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt,
+            trustedVerifierJSON: preRegisteredVerifiers,
+            shouldValidateClient: true
+        )
+        openID4VP.authorizationRequest = authorizationRequest
+
+        
+        let expectedError = InvalidData(message: "Some Error Message",className:  "test")
+        
+        await openID4VP.sendErrorToVerifier(error: expectedError)
+        
+        guard let recorded = mockNetworkManager.recordedRequests["https://mock-verifier.com"] else {
+            return XCTFail("No request recorded")
+        }
+
+        let requestBody = recorded.requestBody ?? [:]
+
+        XCTAssertEqual(requestBody["error"], "invalid_request")
+        XCTAssertEqual(requestBody["error_description"], "Some Error Message")
+        XCTAssertNotNil(requestBody["state"], "Expected 'state' to be present in the request body")
+        XCTAssertEqual(requestBody["state"], "+mRQe1d6pBoJqF6Ab28klg==")
+    }
+    
+
+
+
+    
+    
+
 }

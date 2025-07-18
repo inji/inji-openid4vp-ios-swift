@@ -280,6 +280,11 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
    - For `direct_post.jwt` response mode
      - client_metadata is not available
      - unable to find the public key JWK from the `jwks` of `client_metadata` as per the provided algorithm in `client_metadata`
+   - `publicKeyMultibase` is null or empty 
+7. UnsupportedPublicKeyType exception is thrown when the public key type is not `publicKeyMultibase`.
+8. PublicKeyExtractionFailed exception is thrown when there are any errors in extracting the public key from verification method
+9. InvalidVerifier exception is thrown if the received request client_iD & response_uri are not matching with any of the trusted verifiers
+     
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
@@ -393,7 +398,7 @@ await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedE
 
 ###### Exception Handling Enhancement
 
-- The library has been enhanced to handle exceptions more gracefully. Library is throwing `OpenID4VPException` now which gives both Error Code and Message to the consumer app. This allows the consumer app to handle exceptions more effectively and provide better user experience.
+- The library has been enhanced to handle exceptions more gracefully. Library is throwing `OpenID4VPException` now which gives both Error Code, Message and optional state to the consumer app. The `state` value is extracted from the authorization request and is included in the error response only if it is present and non-empty. This allows the consumer app to handle exceptions more effectively and provide better user experience.
 
 ## Architecture decisions
 

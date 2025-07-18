@@ -10,6 +10,24 @@
       }
     },
     {
+      "identity" : "base58swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/keefertaylor/Base58Swift.git",
+      "state" : {
+        "revision" : "ce8ba8aa893f7e209e9c99c35ee61d6f1235881d",
+        "version" : "2.1.7"
+      }
+    },
+    {
+      "identity" : "bigint",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/attaswift/BigInt.git",
+      "state" : {
+        "revision" : "018a5925f60f9e0523edd261de394a0898fe95b7",
+        "version" : "3.1.0"
+      }
+    },
+    {
       "identity" : "cryptoswift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/CryptoSwift.git",
@@ -34,6 +52,15 @@
       "state" : {
         "revision" : "4c77c7384768acf1093d66ccaacf298d322b10b7",
         "version" : "0.15.0"
+      }
+    },
+    {
+      "identity" : "siphash",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/attaswift/SipHash",
+      "state" : {
+        "revision" : "e325083424688055363bbfcb7f1a440d7d7a1bae",
+        "version" : "1.2.2"
       }
     },
     {

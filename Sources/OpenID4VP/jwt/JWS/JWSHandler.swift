@@ -1,6 +1,7 @@
 import Foundation
 import CryptoKit
 import JSONWebSignature
+import Base58Swift
 
 struct JWSHandler {
     static let className = String(describing: JWSHandler.self)
@@ -18,9 +19,8 @@ struct JWSHandler {
             // TODO: keyResolver.resolveKey should return publicKey instead of String once multiple signature support is added
             let publicKey = try await publicKeyResolver.resolveKey(header: try extractDataJsonFromJws(jwsPart: .header))
             
-            let base64PublicKey = Base64Decoder.makeBase64Standard(publicKey)
-            
-            guard let publicKeyData = Data(base64Encoded: base64PublicKey) else {
+            let base58Key = String(publicKey.dropFirst())
+            guard let publicKeyData = Base58.base58Decode(base58Key) else {
                 throw JsonDecodingFailed(
                     message: "DID public key decoding failed",
                     className: JWSHandler.className
@@ -43,6 +43,7 @@ struct JWSHandler {
             )
         }
     }
+    
     
     func extractDataJsonFromJws(jwsPart: JWSPart) throws -> [String:Any] {
         let components = jws.split(separator: ".")
