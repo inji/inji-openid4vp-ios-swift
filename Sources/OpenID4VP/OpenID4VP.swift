@@ -27,6 +27,30 @@ public class OpenID4VP {
     public func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
     }
+    
+    @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")
+    public func authenticateVerifier(
+            urlEncodedAuthorizationRequest: String,
+            trustedVerifierJSON: [Verifier],
+            shouldValidateClient: Bool = false,
+            walletMetadata: WalletMetadata? = nil
+        ) async throws -> AuthorizationRequest {
+            do {
+                authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+                    urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
+                    trustedVerifierJSON: trustedVerifierJSON,
+                    walletMetadata: walletMetadata,
+                    setResponseUri: setResponseUri,
+                    shouldValidateClient: shouldValidateClient,
+                    networkManager: networkManager
+                )
+                return authorizationRequest
+            } catch let exception {
+                await sendErrorToVerifier(error: exception)
+                throw exception
+            }
+        }
+
 
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
