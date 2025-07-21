@@ -100,4 +100,85 @@ final class PresentationDefinitionUtilTests: XCTestCase {
 
         }
     }
+    
+    func testShouldThrowErrorWhenBothPresenentationDefinitionAndPresenentationDefinitionUriArePresent() async throws {
+        let testCase =
+            TestCase(input: [
+                "presentation_definition": [
+                    "id": "id card credential",
+                    "input_descriptors": [
+                        [
+                            "id": "input descriptor id",
+                            "format": [
+                                "mso_mdoc": [
+                                    "alg": ["ES256"]
+                                ]
+                            ],
+                            "constraints": [
+                                "fields": [
+                                    [
+                                        "path": ["$['org.iso.18013.5.1:mosip']['document_number']"],
+                                        "intent_to_retain": true
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    "format": [
+                        "mso_mdoc": [
+                            "alg": ["ES256"]
+                        ]
+                    ]
+                ],
+                "response_mode": "direct_post",
+                "presentation_definition_uri": "mock-url"
+            ]
+        )
+            await assertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
+                assertOpenID4VPException(error,
+                    expectedMessage: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
+            }
+    }
+    
+    func testShouldThrowErrorWhenBothPresenentationDefinitionAndPresenentationDefinitionUriAreNotPresent() async throws {
+        let testCase =
+            TestCase(input: [
+                "definition": [
+                    "id": "id card credential",
+                    "input_descriptors": [
+                        [
+                            "id": "input descriptor id",
+                            "format": [
+                                "mso_mdoc": [
+                                    "alg": ["ES256"]
+                                ]
+                            ],
+                            "constraints": [
+                                "fields": [
+                                    [
+                                        "path": ["$['org.iso.18013.5.1:mosip']['document_number']"],
+                                        "intent_to_retain": true
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    "format": [
+                        "mso_mdoc": [
+                            "alg": ["ES256"]
+                        ]
+                    ]
+                ],
+                "response_mode": "direct_post"
+            ]
+        )
+            await assertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
+                assertOpenID4VPException(error,
+                    expectedMessage: "Either presentation_definition or presentation_definition_uri request param must be present",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
+            }
+    }
 }
