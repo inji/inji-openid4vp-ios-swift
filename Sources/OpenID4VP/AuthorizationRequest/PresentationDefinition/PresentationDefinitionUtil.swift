@@ -11,10 +11,17 @@ func parseAndValidatePresentationDefinition(
     let hasPresentationDefinition = authorizationRequest.keys.contains("presentation_definition")
     let hasPresentationDefinitionUri = authorizationRequest.keys.contains("presentation_definition_uri")
     var finalPresentationDefinition: PresentationDefinition
-    
-    guard hasPresentationDefinition != hasPresentationDefinitionUri else {
+
+    if hasPresentationDefinition && hasPresentationDefinitionUri {
         throw InvalidData(
             message: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
+            className: AuthorizationRequest.className
+        )
+    }
+
+    if !hasPresentationDefinition && !hasPresentationDefinitionUri {
+        throw InvalidData(
+            message: "Either presentation_definition or presentation_definition_uri request param must be present",
             className: AuthorizationRequest.className
         )
     }
