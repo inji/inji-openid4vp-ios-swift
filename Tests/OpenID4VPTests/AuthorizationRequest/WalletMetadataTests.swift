@@ -4,7 +4,7 @@ import XCTest
 final class WalletMetadataTests: XCTestCase {
 
     func testValidWalletMetadataInitialization() throws {
-        let vpFormats: [FormatType: VPFormatSupported] = [
+        let vpFormats: [VPFormatType: VPFormatSupported] = [
             .ldp_vc : VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
         ]
 
@@ -36,7 +36,7 @@ final class WalletMetadataTests: XCTestCase {
 
 
     func testWalletMetadataWithNilOptionals() throws {
-        let vpFormats: [FormatType: VPFormatSupported] = [
+        let vpFormats: [VPFormatType: VPFormatSupported] = [
             .ldp_vc: VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
         ]
 

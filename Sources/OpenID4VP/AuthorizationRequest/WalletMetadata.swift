@@ -3,8 +3,9 @@ import Foundation
 @usableFromInline
 struct WalletMetadataDefaults: Codable {
     @usableFromInline static let presentationDefinitionURISupported: Bool = true
-    @usableFromInline static let vpFormatsSupported: [FormatType: VPFormatSupported] = [
+    @usableFromInline static let vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
         .ldp_vc: VPFormatSupported(algValuesSupported: []),
+        .ldp_vp: VPFormatSupported(algValuesSupported: []),
         .mso_mdoc: VPFormatSupported(algValuesSupported: []),
     ]
     @usableFromInline static let clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did]
@@ -15,7 +16,7 @@ struct WalletMetadataDefaults: Codable {
 
 public struct WalletMetadata: Codable {
     let presentationDefinitionURISupported: Bool
-    let vpFormatsSupported: [FormatType: VPFormatSupported]
+    let vpFormatsSupported: [VPFormatType: VPFormatSupported]
     let clientIdSchemesSupported: [ClientIdScheme]
     var requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]?
     let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]?
@@ -33,7 +34,7 @@ public struct WalletMetadata: Codable {
 
     public init(
         presentationDefinitionURISupported: Bool?,
-        vpFormatsSupported: [FormatType: VPFormatSupported],
+        vpFormatsSupported: [VPFormatType: VPFormatSupported],
         clientIdSchemesSupported: [ClientIdScheme]?,
         requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = nil,
         authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = nil,
@@ -51,7 +52,7 @@ public struct WalletMetadata: Codable {
     
     public init(
         presentationDefinitionURISupported: Bool = WalletMetadataDefaults.presentationDefinitionURISupported,
-        vpFormatsSupported: [FormatType: VPFormatSupported] = WalletMetadataDefaults.vpFormatsSupported,
+        vpFormatsSupported: [VPFormatType: VPFormatSupported] = WalletMetadataDefaults.vpFormatsSupported,
         clientIdSchemesSupported: [ClientIdScheme] = WalletMetadataDefaults.clientIdSchemesSupported,
         requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = WalletMetadataDefaults.requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm] = WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported,
@@ -80,7 +81,7 @@ public struct VPFormatSupported: Codable {
     }
 }
 
-private func validateVPFormatsSupported(_ vpFormatsSupported: [FormatType: VPFormatSupported]) throws {
+private func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VPFormatSupported]) throws {
     if vpFormatsSupported.isEmpty {
         throw InvalidData(
             message: "vp_formats_supported should at least have one supported vp_format",
