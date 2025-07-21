@@ -1,5 +1,18 @@
 import Foundation
 
+@usableFromInline
+struct WalletMetadataDefaults: Codable {
+    @usableFromInline static let presentationDefinitionURISupported: Bool = true
+    @usableFromInline static let vpFormatsSupported: [FormatType: VPFormatSupported] = [
+        .ldp_vc: VPFormatSupported(algValuesSupported: []),
+        .mso_mdoc: VPFormatSupported(algValuesSupported: []),
+    ]
+    @usableFromInline static let clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did]
+    @usableFromInline static let requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = [.edDsa]
+    @usableFromInline static let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm] = [.ecdhEs]
+    @usableFromInline static let authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm] = [.A256GCM]
+}
+
 public struct WalletMetadata: Codable {
     let presentationDefinitionURISupported: Bool
     let vpFormatsSupported: [FormatType: VPFormatSupported]
@@ -29,6 +42,24 @@ public struct WalletMetadata: Codable {
         self.presentationDefinitionURISupported = presentationDefinitionURISupported ?? true
         self.vpFormatsSupported = vpFormatsSupported
         self.clientIdSchemesSupported = clientIdSchemesSupported ?? [ClientIdScheme.preRegistered]
+        self.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported
+        self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
+        self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
+
+        try validateVPFormatsSupported(vpFormatsSupported)
+    }
+    
+    public init(
+        presentationDefinitionURISupported: Bool = WalletMetadataDefaults.presentationDefinitionURISupported,
+        vpFormatsSupported: [FormatType: VPFormatSupported] = WalletMetadataDefaults.vpFormatsSupported,
+        clientIdSchemesSupported: [ClientIdScheme] = WalletMetadataDefaults.clientIdSchemesSupported,
+        requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = WalletMetadataDefaults.requestObjectSigningAlgValuesSupported,
+        authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm] = WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported,
+        authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm] = WalletMetadataDefaults.authorizationEncryptionEncValuesSupported
+    ) throws {
+        self.presentationDefinitionURISupported = presentationDefinitionURISupported
+        self.vpFormatsSupported = vpFormatsSupported
+        self.clientIdSchemesSupported = clientIdSchemesSupported
         self.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
