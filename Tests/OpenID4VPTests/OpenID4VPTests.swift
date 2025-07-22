@@ -4,6 +4,7 @@ import XCTest
 class OpenID4VPTests: XCTestCase {
     var openID4VP: OpenID4VP!
     var mockNetworkManager: MockNetworkManager!
+    var mockNonceProvider: NonceProvider!
     var authorizationRequest: AuthorizationRequest!
 
     let jws = "wemcn3234ns"
@@ -23,7 +24,9 @@ class OpenID4VPTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockNetworkManager = MockNetworkManager()
-        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager)
+        mockNonceProvider = MockNonceProvider()
+        
+        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider())
         openID4VP.setResponseUri("https://mock-verifier.com")
         openID4VP.authorizationRequest = authorizationRequest
     }
@@ -31,6 +34,7 @@ class OpenID4VPTests: XCTestCase {
     override func tearDown() {
         openID4VP = nil
         mockNetworkManager = nil
+        mockNonceProvider = nil
         super.tearDown()
     }
     

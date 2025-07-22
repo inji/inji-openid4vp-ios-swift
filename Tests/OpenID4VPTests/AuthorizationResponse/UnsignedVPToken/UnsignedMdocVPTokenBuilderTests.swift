@@ -10,7 +10,7 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
             clientId: "client-id",
             responseUri: "response-uri",
             verifierNonce: "verifier-nonce",
-            mdocGeneratedNonce: "wallet-nonce"
+            mdocGeneratedNonce: "mock-nonce"
         )
 
         XCTAssertThrowsError(try builder.build()) { error in
@@ -27,7 +27,7 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
             clientId: "client-id",
             responseUri: "response-uri",
             verifierNonce: "verifier-nonce",
-            mdocGeneratedNonce: "wallet-nonce"
+            mdocGeneratedNonce: "mock-nonce"
         )
 
         XCTAssertThrowsError(try builder.build()) { error in

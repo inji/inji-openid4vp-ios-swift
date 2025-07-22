@@ -301,7 +301,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         
         do {
             let result = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode.responseUri!, networkManager: mockNetworkManager,
-                producerInfo: "wallet-nonce",
+                producerInfo: "mock-nonce",
                 recepientInfo: "verifier-nonce"
             )
             

@@ -29,7 +29,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
 
         do {
             let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager,
-                                                                                                        producerInfo: "wallet-nonce",
+                                                                                                        producerInfo: "mock-nonce",
                                                                                                         recepientInfo: "verifier-nonce")
 
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]

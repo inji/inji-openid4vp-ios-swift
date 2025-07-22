@@ -20,7 +20,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,
-                walletNonce: "wallet-nonce",
+                walletNonce: "mock-nonce",
                 holderId: holderId,
                 signatureSuite: "JsonWebSignature2020"
             )) { error in
@@ -47,7 +47,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,
-                walletNonce: "wallet-nonce",
+                walletNonce: "mock-nonce",
                 holderId: "wallet-holder-id",
                 signatureSuite: invalidSignatureSuite
             )) { error in
@@ -72,7 +72,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
-            walletNonce: "wallet-nonce",
+            walletNonce: "mock-nonce",
             holderId: "wallet-holder-id",
             signatureSuite: "JsonWebSignature2020"
         )
@@ -118,7 +118,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             credentialsMap: verifiableCredentials,
             authorizationRequest: mockAuthorizationRequest,
             responseUri: "/response-uri",
-            walletNonce: "wallet-nonce",
+            walletNonce: "mock-nonce",
             holderId: "wallet-holder-id",
             signatureSuite: "ES256"
         )
@@ -161,7 +161,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             credentialsMap: [:],
             authorizationRequest: authorizationRequest,
             responseUri: "/response-uri",
-            walletNonce: "wallet-nonce",
+            walletNonce: "mock-nonce",
             holderId: "",
             signatureSuite: "ES256"
         )
@@ -218,7 +218,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             credentialsMap: verifiableCredentials,
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
             responseUri: responseUri,
-            walletNonce: "wallet-nonce",
+            walletNonce: "mock-nonce",
             holderId: "wallet-holder-id",
             signatureSuite: "JsonWebSignature2020"
         )

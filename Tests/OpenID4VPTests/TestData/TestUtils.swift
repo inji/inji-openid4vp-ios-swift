@@ -86,7 +86,7 @@ func createAuthorizationRequestObject(
     
     let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     var authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
-    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "wallet-nonce"
+    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
     
     switch clientIdScheme {
     case .did:
@@ -249,3 +249,4 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
     ]
     return data
 }
+

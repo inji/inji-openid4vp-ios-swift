@@ -8,6 +8,7 @@ public class OpenID4VP {
     private var authorizationResponseHandler: AuthorizationResponseHandler
     private let walletMetadata: WalletMetadata?
     private var walletNonce: String = ""
+    private let nonceProvider: NonceProvider
 
     public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
@@ -15,11 +16,14 @@ public class OpenID4VP {
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
+        nonceProvider = NonceProvider()
     }
 
-    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil) {
-        self.traceabilityId = traceabilityId
+    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil, nonceProvider: NonceProvider = NonceProvider()) {
         self.networkManager = networkManager ?? NetworkManager.shared
+        self.nonceProvider = nonceProvider
+        
+        self.traceabilityId = traceabilityId
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
@@ -37,7 +41,7 @@ public class OpenID4VP {
             walletMetadata: WalletMetadata? = nil
         ) async throws -> AuthorizationRequest {
             // Create a new wallet nonce for each request
-            self.walletNonce = createNonce()
+            self.walletNonce = nonceProvider.generateNonce()
             do {
                 authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                     urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
@@ -62,7 +66,7 @@ public class OpenID4VP {
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
         // Create a new wallet nonce for each request
-        walletNonce = createNonce()
+        self.walletNonce = nonceProvider.generateNonce()
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
