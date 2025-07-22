@@ -357,7 +357,7 @@ class OpenID4VPTests: XCTestCase {
 
         do {
             authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-            _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "", signatureSuite: "JsonWebSignature2020")
+            _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "wallet-holder-id", signatureSuite: "JsonWebSignature2020")
 
             let _ = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
         } catch let error as NetworkRequestException {
@@ -376,7 +376,7 @@ class OpenID4VPTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
 
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "", signatureSuite: "JsonWebSignature2020")
+        _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "wallet-holder-id", signatureSuite: "JsonWebSignature2020")
         let vpTokenSigningResults = [FormatType.ldp_vc: LdpVPTokenSigningResult(jws:"test-jws-valid",proofValue: "test", signatureAlgorithm: "JsonWebSignature2020")]
 
         let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)

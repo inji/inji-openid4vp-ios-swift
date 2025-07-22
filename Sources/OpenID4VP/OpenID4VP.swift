@@ -7,6 +7,7 @@ public class OpenID4VP {
     private var responseUri: String?
     private var authorizationResponseHandler: AuthorizationResponseHandler
     private let walletMetadata: WalletMetadata?
+    private var walletNonce: String = ""
 
     public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
@@ -35,6 +36,8 @@ public class OpenID4VP {
             shouldValidateClient: Bool = false,
             walletMetadata: WalletMetadata? = nil
         ) async throws -> AuthorizationRequest {
+            // Create a new wallet nonce for each request
+            walletNonce = createNonce()
             do {
                 authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                     urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
@@ -42,6 +45,7 @@ public class OpenID4VP {
                     walletMetadata: walletMetadata,
                     setResponseUri: setResponseUri,
                     shouldValidateClient: shouldValidateClient,
+                    walletNonce: walletNonce,
                     networkManager: networkManager
                 )
                 return authorizationRequest
@@ -57,6 +61,8 @@ public class OpenID4VP {
         trustedVerifierJSON: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
+        // Create a new wallet nonce for each request
+        walletNonce = createNonce()
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
@@ -64,6 +70,7 @@ public class OpenID4VP {
                 walletMetadata: self.walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
+                walletNonce: walletNonce,
                 networkManager: networkManager
             )
             return authorizationRequest
@@ -75,14 +82,15 @@ public class OpenID4VP {
 
     public func constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [AnyCodable]]],
-        holderId: String,
-        signatureSuite: String
+        holderId: String? = nil,
+        signatureSuite: String? = nil
     ) async throws -> [FormatType: UnsignedVPToken] {
         do {
-            return try authorizationResponseHandler.constructUnsignedVPToken(
+            return try authorizationResponseHandler.createUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri!,
+                walletNonce: self.walletNonce,
                 holderId: holderId,
                 signatureSuite: signatureSuite
             )
@@ -100,7 +108,8 @@ public class OpenID4VP {
             return try authorizationResponseHandler.constructUnsignedVPTokenV1(
                 verifiableCredentials: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
-                responseUri: responseUri!
+                responseUri: responseUri!,
+                walletNonce: self.walletNonce
             )
         } catch {
             await sendErrorToVerifier(error: error)

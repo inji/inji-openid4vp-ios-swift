@@ -2,7 +2,7 @@ import Foundation
 
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws
+    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
 }
@@ -32,7 +32,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         return
     }
 
-    func fetchAuthorizationRequest() async throws{
+    func fetchAuthorizationRequest(walletNonce: String) async throws{
         var isMismatchedAcceptableType : Bool = false
         var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
@@ -54,10 +54,11 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             var headers: [String: String]? = nil
 
             if httpMethod == .post {
+                body?["wallet_nonce"] = walletNonce
                 if let walletMetadata = walletMetadata {
                     try isClientIdSchemeSupported(walletMetadata: walletMetadata)
                     let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
-                    body = ["wallet_metadata": try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)]
+                    body?["wallet_metadata"] = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
                     headers = delegate.getHeadersForAuthorizationRequestUri()
                     shouldValidateWithWalletMetadata = true
                 }
@@ -70,7 +71,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                 isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
             }
         }
-        try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, isMismatchedAcceptableType: isMismatchedAcceptableType)
+        try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, walletNonce: walletNonce, isMismatchedAcceptableType: isMismatchedAcceptableType)
     }
 
     func validateAndParseRequestFields() async throws {

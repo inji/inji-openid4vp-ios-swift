@@ -49,6 +49,7 @@ public struct AuthorizationRequest : Encodable {
                                                       walletMetadata: WalletMetadata?,
                                                       setResponseUri: @escaping (String) -> Void,
                                                       shouldValidateClient: Bool,
+                                                      walletNonce: String,
                                                       networkManager: NetworkManaging
                                                       ) async throws -> AuthorizationRequest {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
@@ -58,6 +59,7 @@ public struct AuthorizationRequest : Encodable {
                                                  walletMetadata: walletMetadata,
                                                  setResponseUri: setResponseUri,
                                                  shouldValidateClient: shouldValidateClient,
+                                                 walletNonce: walletNonce,
                                                  networkManager: networkManager)
     }
     
@@ -66,6 +68,7 @@ public struct AuthorizationRequest : Encodable {
                                                 walletMetadata: WalletMetadata?,
                                                 setResponseUri: @escaping (String) -> Void,
                                                 shouldValidateClient: Bool,
+                                                walletNonce: String,
                                                 networkManager: NetworkManaging
                                                 ) async throws -> AuthorizationRequest{
         let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,                                                                                     trustedVerifiers: trustedVerifiers,
@@ -74,14 +77,14 @@ public struct AuthorizationRequest : Encodable {
                                                                              setResponseUri: setResponseUri,
                                                                              networkManager: networkManager)
         
-        try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler)
+        try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler, walletNonce: walletNonce)
         
         return authorizationRequestHandler.createAuthorizationRequest()
     }
     
-    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler)async throws {
+    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler, walletNonce: String)async throws {
         try authorizationRequestHandler.validateClientId()
-        try await authorizationRequestHandler.fetchAuthorizationRequest()
+        try await authorizationRequestHandler.fetchAuthorizationRequest(walletNonce: walletNonce)
         try authorizationRequestHandler.setResponseUrl()
         try await authorizationRequestHandler.validateAndParseRequestFields()
     }

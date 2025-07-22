@@ -12,7 +12,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
     }
     
-    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
+    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(
                 message: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
@@ -36,6 +36,12 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
                 
                 try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
                 
+                // if the Wallet passed a wallet_nonce in the POST request, the Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
+                let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
+                if walletNonce != walletNonceFromAuthorizationRequest {
+                    throw InvalidData(message: "wallet_nonce in the request_uri response does not match the wallet_nonce provided in the request.", className: className)
+                }
+                
                 self.authorizationRequestParameters = authorizationRequestObject
             }
             else {
@@ -43,14 +49,14 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
             }
         } else {
             throw MissingInput(fieldPath: ["request_uri"], message : "request_uri must be present for given client_id_scheme",
-                className: className)
+                               className: className)
         }
     }
     
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
         if(walletMetadata.requestObjectSigningAlgValuesSupported == nil) {
             throw InvalidData(message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
-                className: className)
+                              className: className)
         }
         return walletMetadata
     }

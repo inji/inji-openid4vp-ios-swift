@@ -39,7 +39,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                 Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
     }
     
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
+    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(
                 message: "Authorization Request must not be signed for given client_id_scheme",
@@ -49,7 +49,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         
         if let requestUriResponse = requestUriResponse {
             let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
-
+            
             if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {
                 throw InvalidData(
                     message: "Authorization Request must not be signed for given client_id_scheme",
@@ -69,7 +69,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                     className: className
                 )
             }
-
+            
             try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
             
             authorizationRequestParameters = authorizationRequestObject

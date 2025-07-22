@@ -13,13 +13,44 @@ public class AuthorizationResponseHandler {
     public init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
     }
+    
+    func createUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
+                               authorizationRequest: AuthorizationRequest,
+                               responseUri: String,
+                               walletNonce: String,
+                               holderId: String?,
+                               signatureSuite: String?
+    ) throws -> [FormatType: UnsignedVPToken] {
+        let hasLdpVc = credentialsMap.values.contains { formatMap in
+            formatMap.keys.contains(.ldp_vc)
+        }
+        if(hasLdpVc){
+            // In case of Ldp_vp, the Verifiable presentation created will have the info of holder and signature suite
+            if (isNullOrEmpty(holderId)) {
+                throw InvalidData(
+                    message: "Holder ID cannot be null or empty for ldp_vc format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+            if(isNullOrEmpty(signatureSuite)){
+                throw InvalidData(
+                    message: "Signature Suite cannot be null or empty for ldp_vc format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+        }
+        
+        return try constructUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
+        
+    }
 
-    func constructUnsignedVPToken(
+    private func constructUnsignedVPToken(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
-        holderId: String,
-        signatureSuite: String
+        walletNonce: String,
+        holderId: String?,
+        signatureSuite: String?
     ) throws -> [FormatType: UnsignedVPToken] {
         if credentialsMap.isEmpty {
             throw InvalidData(
@@ -29,8 +60,7 @@ public class AuthorizationResponseHandler {
         }
 
         self.credentialsMap = credentialsMap
-        // Create wallet nonce for every transaction
-        self.walletNonce = createNonce()
+        self.walletNonce = walletNonce
 
         unsignedVPTokens = try createUnsignedVPTokens(
             credentialsMap: credentialsMap,
@@ -216,8 +246,8 @@ public class AuthorizationResponseHandler {
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
-        holderId: String,
-        signatureSuite: String
+        holderId: String?,
+        signatureSuite: String?
     ) throws -> [FormatType: [String: Any]] {
         let groupedVcs: [FormatType: [AnyCodable]] = credentialsMap
             .compactMap { $0.value }
@@ -235,10 +265,10 @@ public class AuthorizationResponseHandler {
                 let token = UnsignedLdpVPTokenBuilder(
                     verifiableCredential: credentialsArray,
                     id: UUIDGenerator.generateUUID(),
-                    holder: holderId,
+                    holder: holderId!,
                     challenge: authorizationRequest.nonce,
                     domain: authorizationRequest.clientId,
-                    signatureSuite: signatureSuite
+                    signatureSuite: signatureSuite!
                 ).build()
                 result[format] = token
             case .mso_mdoc:
@@ -325,7 +355,8 @@ public class AuthorizationResponseHandler {
     func constructUnsignedVPTokenV1(
         verifiableCredentials: [String: [String]],
         authorizationRequest: AuthorizationRequest,
-        responseUri: String
+        responseUri: String,
+        walletNonce: String
     ) throws -> String {
         let transformedCredentials: [String: [FormatType: [AnyCodable]]] = verifiableCredentials.mapValues { credentials in
             let wrapped = credentials.map { AnyCodable($0) }
@@ -336,6 +367,7 @@ public class AuthorizationResponseHandler {
             credentialsMap: transformedCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
+            walletNonce: walletNonce,
             holderId: "",
             signatureSuite: "Ed25519Signature2020"
         )

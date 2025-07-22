@@ -61,7 +61,7 @@ final class WalletMetadataTests: XCTestCase {
         XCTAssertEqual(metadata.requestObjectSigningAlgValuesSupported, [.edDsa])
         XCTAssertEqual(metadata.authorizationEncryptionAlgValuesSupported, [.ecdhEs])
         XCTAssertEqual(metadata.authorizationEncryptionEncValuesSupported, [.A256GCM])
-//        assertEqualByMirror(metadata.clientIdSchemesSupported, [ClientIdScheme.preRegistered, ClientIdScheme.did, ClientIdScheme.redirectUri])
+//        XCTAssert(metadata.clientIdSchemesSupported, [ClientIdScheme.preRegistered, ClientIdScheme.did, ClientIdScheme.redirectUri])
 //        assertEqualByMirror(metadata.vpFormatsSupported, [FormatType.ldp_vc : VPFormatSupported(algValuesSupported: []), FormatType.mso_mdoc : VPFormatSupported(algValuesSupported: [])])
     }
 }
