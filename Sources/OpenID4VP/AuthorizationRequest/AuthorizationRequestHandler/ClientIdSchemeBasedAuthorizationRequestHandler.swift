@@ -54,11 +54,14 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             var headers: [String: String]? = nil
 
             if httpMethod == .post {
+                body = [:]
                 body?["wallet_nonce"] = walletNonce
                 if let walletMetadata = walletMetadata {
                     try isClientIdSchemeSupported(walletMetadata: walletMetadata)
                     let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
-                    body?["wallet_metadata"] = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
+                    let extractedExpr: String = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
+                    body?["wallet_metadata"] = extractedExpr
+                    print("Wallet Metadata post processing and about to send: \(extractedExpr)")
                     headers = delegate.getHeadersForAuthorizationRequestUri()
                     shouldValidateWithWalletMetadata = true
                 }

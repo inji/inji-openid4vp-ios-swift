@@ -37,7 +37,7 @@ public class OpenID4VP {
             walletMetadata: WalletMetadata? = nil
         ) async throws -> AuthorizationRequest {
             // Create a new wallet nonce for each request
-            walletNonce = createNonce()
+            self.walletNonce = createNonce()
             do {
                 authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                     urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,

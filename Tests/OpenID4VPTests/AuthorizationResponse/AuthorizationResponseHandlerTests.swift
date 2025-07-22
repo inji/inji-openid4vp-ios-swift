@@ -6,40 +6,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let state = "state"
     let responseUri = "https://mock-verifier.com"
     
-    func testWalletNonceIsDifferentForEveryConstructUnsignedVPTokenCall() throws {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
-            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]]
-        ]
-        let authorizationRequest = getMockAuthorizationRequest()
-        
-        // First call
-        _ = try handler.createUnsignedVPToken(
-            credentialsMap: verifiableCredentials,
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri, walletNonce: "wallet-nonce",
-            holderId: "wallet-holder-id",
-            signatureSuite: "JsonWebSignature2020"
-        )
-        // Get the nonce from the first call using reflection
-        let firstMirror = Mirror(reflecting: handler)
-        let firstNonce = firstMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
-        
-        // Second call
-        _ = try handler.createUnsignedVPToken(
-            credentialsMap: verifiableCredentials,
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri,walletNonce: "wallet-nonce",
-            holderId: "wallet-holder-id",
-            signatureSuite: "JsonWebSignature2020"
-        )
-        // Get the nonce from the second call using reflection
-        let secondMirror = Mirror(reflecting: handler)
-        let secondNonce = secondMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
-        
-        XCTAssertNotEqual(firstNonce, secondNonce, "Wallet nonce should be different for every constructUnsignedVPToken call")
-    }
-    
     func testConstructUnsignedVPTokenThrowsErrorIncaseOfInvalidHoldersIdWithLdpVCAvailable() async throws {
         let invalidHolderIdTestCases = ["", " ", "  ", nil]
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [

@@ -33,6 +33,19 @@ class OpenID4VPTests: XCTestCase {
         mockNetworkManager = nil
         super.tearDown()
     }
+    
+    func testWalletNonceIsDifferentForEveryAuthenticateVerifierCall() async {
+        let openID4VP = OpenID4VP(traceabilityId: "trace-id")
+        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        let firstMirror = Mirror(reflecting: openID4VP as Any)
+        let firstNonce = firstMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
+        
+        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        let secondMirror = Mirror(reflecting: openID4VP as Any)
+        let secondNonce = secondMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
+        
+        XCTAssertNotEqual(firstNonce, secondNonce, "Wallet nonce should be different for every authenticateVerifier call")
+    }
 
     //client_id_scheme = redirect_uri
     func testAuthorizationRequestJsonStringConversion() async {

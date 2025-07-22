@@ -12,7 +12,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletMetadata = try createWalletMetadataV1()
     }
     
     func setup(){

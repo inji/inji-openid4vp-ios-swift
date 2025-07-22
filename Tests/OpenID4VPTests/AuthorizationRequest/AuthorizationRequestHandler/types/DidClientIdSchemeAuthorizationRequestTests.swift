@@ -10,7 +10,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
 
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletMetadata = try createWalletMetadataV1()
     }
 
     func testShouldThrowErrorWhenRequestUriIsNotAvailableInAuthorizationRequest() async {
@@ -102,7 +102,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
             "client_id": "mock-client",
         ])) as [String : Any]
 
-        let walletMetadata = try createWalletMetadata(requestObjectSigningAlgValuesSupported: nil)
+        let walletMetadata = try createWalletMetadataV1(requestObjectSigningAlgValuesSupported: nil)
 
         let didScheme = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
 

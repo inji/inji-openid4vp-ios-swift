@@ -13,7 +13,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
 
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletMetadata = try createWalletMetadataV1()
     }
 
     ///    Fetch authorization request
@@ -86,8 +86,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             XCTAssertTrue(mockAuthHandler.wasMethodCalled)
 
             let recordedBody = mockNetworkManager.recordedRequests["https://mock-verifier.com/verifier/get-auth-request-obj"]?.requestBody
-            XCTAssertNotNil(recordedBody!["wallet_metadata"], "Expected wallet_metadata to be present in the request body")
-
+            XCTAssertNotNil(recordedBody?["wallet_metadata"], "Expected wallet_metadata to be present in the request body")
+            XCTAssertNotNil(recordedBody?["wallet_nonce"], "Expected wallet_nonce to be present in the request body")
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
         }
@@ -471,7 +471,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let requestUriResponse: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriWithPresentationDefinitionUri , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
         let authorizationRequestParameters: [String : Any] = mergeMaps(requestUriResponse,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition"])
 
-        let walletMetadata = try createWalletMetadata(presentationDefinitionURISupported: false)
+        let walletMetadata = try createWalletMetadataV1(presentationDefinitionURISupported: false)
 
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
         clientIdSchemeBasedAuthorizationRequestHandler.shouldValidateWithWalletMetadata = true
