@@ -12,7 +12,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     private var walletMetadata: WalletMetadata!
 
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadataV1()
+        walletMetadata = try createWalletMetadataV2()
     }
 
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
@@ -84,7 +84,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             ) { error in
                 assertOpenID4VPException(
                     error,
-                    expectedMessage: error.localizedDescription,
+                    expectedMessage: expectedMessage,
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             }

@@ -153,14 +153,6 @@ public class AuthorizationResponseHandler {
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
 
-        let groupedVcs: [FormatType: [Any]] = credentialsMap?
-            .compactMap { $0.value }
-            .reduce(into: [FormatType: [Any]]()) { result, entry in
-                for (key, value) in entry {
-                    result[key, default: []].append(contentsOf: value)
-                }
-            } ?? [:]
-
         var count = 0
         for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             let token = try VPTokenFactory(

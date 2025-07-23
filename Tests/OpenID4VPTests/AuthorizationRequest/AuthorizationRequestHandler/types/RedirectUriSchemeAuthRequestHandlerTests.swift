@@ -12,7 +12,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadataV1()
+        walletMetadata = try createWalletMetadataV2()
     }
     
     func setup(){
@@ -150,7 +150,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                     "nonce": "123456"
                 ]
             )
-        )
+        ) as [String : Any]
         
         let redirectUriSchemeHandler = RedirectUriSchemeAuthorizationRequestHandler(
             authorizationRequestParameters: authParams,

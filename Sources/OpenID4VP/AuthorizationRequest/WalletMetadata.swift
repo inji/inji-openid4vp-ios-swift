@@ -1,7 +1,7 @@
 import Foundation
 
 @usableFromInline
-struct WalletMetadataDefaults: Codable {
+internal struct WalletMetadataDefaults: Codable {
     @usableFromInline static let presentationDefinitionURISupported: Bool = true
     @usableFromInline static let vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
         .ldp_vc: VPFormatSupported(algValuesSupported: []),
@@ -59,9 +59,9 @@ public struct WalletMetadata: Codable {
         presentationDefinitionURISupported: Bool = WalletMetadataDefaults.presentationDefinitionURISupported,
         vpFormatsSupported: [VPFormatType: VPFormatSupported] = WalletMetadataDefaults.vpFormatsSupported,
         clientIdSchemesSupported: [ClientIdScheme] = WalletMetadataDefaults.clientIdSchemesSupported,
-        requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = WalletMetadataDefaults.requestObjectSigningAlgValuesSupported,
-        authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm] = WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported,
-        authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm] = WalletMetadataDefaults.authorizationEncryptionEncValuesSupported,
+        requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = WalletMetadataDefaults.requestObjectSigningAlgValuesSupported,
+        authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported,
+        authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = WalletMetadataDefaults.authorizationEncryptionEncValuesSupported,
         responseTypeSupported: [ResponseType] = WalletMetadataDefaults.responseTypesSupported
     ) throws {
         self.presentationDefinitionURISupported = presentationDefinitionURISupported

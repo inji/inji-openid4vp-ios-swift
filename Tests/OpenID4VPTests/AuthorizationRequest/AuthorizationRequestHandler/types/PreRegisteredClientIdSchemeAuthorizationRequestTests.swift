@@ -15,7 +15,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadataV1()
+        walletMetadata = try createWalletMetadataV2()
     }
     
     // Validate client tests

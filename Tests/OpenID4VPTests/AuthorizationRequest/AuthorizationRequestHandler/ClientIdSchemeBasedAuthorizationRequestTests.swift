@@ -13,7 +13,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadataV1()
+        walletMetadata = try createWalletMetadataV2()
     }
     
     ///    Fetch authorization request
@@ -321,7 +321,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testInvalidRequestFieldThrowErrorForResponseTypeField() async {
-        let testCases: [TestCase<[String: Any], Void>] = [
+        let testCases: [TestCase<[String: Any?], Void>] = [
             TestCase(input: ["response_type": "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: ["response_type": ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: ["response_type": "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
@@ -406,7 +406,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     
     func testInvalidRequestFieldErrorForNonceField() async {
-        let testCases: [TestCase<[String: Any], Void>] = [
+        let testCases: [TestCase<[String: Any?], Void>] = [
             TestCase(input: ["nonce": "null"], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: ["nonce": ""], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: ["nonce": "nil"], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
@@ -478,7 +478,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let requestUriResponse: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriWithPresentationDefinitionUri , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
         let authorizationRequestParameters: [String : Any] = mergeMaps(requestUriResponse,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition"])
         
-        let walletMetadata = try createWalletMetadataV1(presentationDefinitionURISupported: false)
+        let walletMetadata = try createWalletMetadataV2(presentationDefinitionURISupported: false)
         
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         clientIdSchemeBasedAuthorizationRequestHandler.shouldValidateWithWalletMetadata = true

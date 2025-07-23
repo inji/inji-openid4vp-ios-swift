@@ -108,7 +108,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
 
     private func isClientIdSchemeSupported(walletMetadata: WalletMetadata) throws {
-        let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])
         let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
         let walletSupportedClientIdSchemes = walletMetadata.clientIdSchemesSupported.compactMap { $0.rawValue }
         if !walletSupportedClientIdSchemes.contains(clientIdScheme) {

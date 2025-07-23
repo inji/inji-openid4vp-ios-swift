@@ -85,7 +85,7 @@ func createAuthorizationRequestObject(
 ) -> String {
     
     let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
-    var authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
+    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
 //    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
     
     switch clientIdScheme {
@@ -198,6 +198,7 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
     )
 }
 
+@available(*, deprecated, renamed: "createWalletMetadataV2", message: "This uses deprecated WalletMetadata initializer. Use `createWalletMetadataV2` instead")
 func createWalletMetadataV1(
     presentationDefinitionURISupported: Bool = true,
         vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
@@ -225,9 +226,9 @@ func createWalletMetadataV2(
         .mso_mdoc: VPFormatSupported(algValuesSupported: ["EdDSA"])
     ],
     clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did],
-    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = [.edDsa],
-    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm] = [.ecdhEs],
-    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm] = [.A256GCM]
+    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
+    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
+    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM]
 ) throws -> WalletMetadata {
     return try WalletMetadata(
         presentationDefinitionURISupported: presentationDefinitionURISupported,
