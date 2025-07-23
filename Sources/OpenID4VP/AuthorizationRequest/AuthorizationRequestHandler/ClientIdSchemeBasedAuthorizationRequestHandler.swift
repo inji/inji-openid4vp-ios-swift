@@ -32,6 +32,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         return
     }
 
+    // TODO: extract walletNonce from fetchAuthorizationRequest
     func fetchAuthorizationRequest(walletNonce: String) async throws{
         var isMismatchedAcceptableType : Bool = false
         var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
@@ -127,6 +128,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             state: getStringValue(authorizationRequestParameters["state"]),
             redirectUri: getStringValue(authorizationRequestParameters["redirect_uri"]),
             responseUri: getStringValue(authorizationRequestParameters["response_uri"]),
+            walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue]),
             clientMetadata: authorizationRequestParameters["client_metadata"] as? ClientMetadata
         )
     }

@@ -86,7 +86,7 @@ func createAuthorizationRequestObject(
     
     let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     var authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
-    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
+//    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
     
     switch clientIdScheme {
     case .did:
@@ -193,6 +193,7 @@ public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost
         state: "state",
         redirectUri: "1234",
         responseUri: "https://mock-verifier.com",
+        walletNonce: nil,
         clientMetadata: mockClientMetadataObject
     )
 }
@@ -214,6 +215,29 @@ func createWalletMetadataV1(
             authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
         )
     }
+
+
+func createWalletMetadataV2(
+    presentationDefinitionURISupported: Bool = true,
+    vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
+        .ldp_vc: VPFormatSupported(algValuesSupported: ["EdDSA"]),
+        .ldp_vp: VPFormatSupported(algValuesSupported: ["EdDSA"]),
+        .mso_mdoc: VPFormatSupported(algValuesSupported: ["EdDSA"])
+    ],
+    clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did],
+    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = [.edDsa],
+    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm] = [.ecdhEs],
+    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm] = [.A256GCM]
+) throws -> WalletMetadata {
+    return try WalletMetadata(
+        presentationDefinitionURISupported: presentationDefinitionURISupported,
+        vpFormatsSupported: vpFormatsSupported,
+        clientIdSchemesSupported: clientIdSchemesSupported,
+        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
+        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
+        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+    )
+}
 
 func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
     "https://www.w3.org/2018/credentials/v1",

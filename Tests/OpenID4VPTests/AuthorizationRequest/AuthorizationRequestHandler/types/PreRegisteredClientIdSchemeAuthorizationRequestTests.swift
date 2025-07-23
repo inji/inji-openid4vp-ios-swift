@@ -133,7 +133,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestOnValidPreRegisteredSchemeAuthRequestSentByReference() async{
         let expectedAuthorizationRequestParameters: [String : Any] = [
             "client_id": "mock-client",
-            "wallet_nonce": "mock-nonce",
             "state": "+mRQe1d6pBoJqF6Ab28klg==",
             "client_metadata": [
                 "vp_formats": [

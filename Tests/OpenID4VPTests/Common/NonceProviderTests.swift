@@ -19,8 +19,7 @@ final class NonceProviderTests: XCTestCase {
         let nonce = nonceProvider.generateNonce()
         
         XCTAssertFalse(nonce.isEmpty)
-        assertNotBase64Url(nonce)
-        // Verify the length is as expected (approximately)
+        assertBase64UrlEncoded(nonce)
         // Base64 encoding expands 16 bytes to ~22 characters
         XCTAssertEqual(nonce.count, 22, "Nonce should be about 22 characters for 16 bytes of entropy")
     }
@@ -32,7 +31,7 @@ final class NonceProviderTests: XCTestCase {
             let nonce = nonceProvider.generateNonce(entropy: entropy)
             
             XCTAssertFalse(nonce.isEmpty)
-            assertNotBase64Url(nonce)
+            assertBase64UrlEncoded(nonce)
             // Base64 encoding: 4 characters per 3 bytes
             // For URL-safe base64 without padding: ceil(entropy * 8 / 6) characters
             let expectedLength = Int(ceil(Double(entropy) * 8.0 / 6.0))
@@ -58,8 +57,7 @@ final class NonceProviderTests: XCTestCase {
         XCTAssertEqual(nonce, "")
     }
     
-    fileprivate func assertNotBase64Url(_ input: String) {
-        // Verify it's a valid base64url string
+    fileprivate func assertBase64UrlEncoded(_ input: String) {
         XCTAssertFalse(input.contains("+"))
         XCTAssertFalse(input.contains("/"))
         XCTAssertFalse(input.contains("="))

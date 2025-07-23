@@ -34,13 +34,15 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
                 
                 let authorizationRequestObject =  try jwsHandler.extractDataJsonFromJws(jwsPart: .payload)
                 
-                try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
-                
-                // if the Wallet passed a wallet_nonce in the POST request, the Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
-                let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
-                if walletNonce != walletNonceFromAuthorizationRequest {
-                    throw InvalidData(message: "wallet_nonce in the request_uri response does not match the wallet_nonce provided in the request.", className: className)
+                // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
+                if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String == "post") {
+                    let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
+                    if walletNonce != walletNonceFromAuthorizationRequest {
+                        throw InvalidData(message: "wallet_nonce in the request_uri response does not match the wallet_nonce provided in the request.", className: className)
+                    }
                 }
+                
+                try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
                 
                 self.authorizationRequestParameters = authorizationRequestObject
             }
