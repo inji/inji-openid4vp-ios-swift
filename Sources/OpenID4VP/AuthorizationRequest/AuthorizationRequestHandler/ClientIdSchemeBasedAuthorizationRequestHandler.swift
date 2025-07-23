@@ -39,7 +39,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         var isMismatchedAcceptableType : Bool = false
         var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
-            if !isNeitherNullNorEmpty(field: requestUri) || !(requestUri != "null") {
+            if !isNeitherNullNorEmpty(field: requestUri) || (requestUri == "null") {
                 throw InvalidInput(fieldPath: ["requestUri"], className: className)
             }
             guard isValidUri(requestUri)

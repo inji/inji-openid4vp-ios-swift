@@ -62,7 +62,7 @@ public struct WalletMetadata: Codable {
         requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = WalletMetadataDefaults.requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = WalletMetadataDefaults.authorizationEncryptionEncValuesSupported,
-        responseTypeSupported: [ResponseType] = WalletMetadataDefaults.responseTypesSupported
+        responseTypesSupported: [ResponseType] = WalletMetadataDefaults.responseTypesSupported
     ) throws {
         self.presentationDefinitionURISupported = presentationDefinitionURISupported
         self.vpFormatsSupported = vpFormatsSupported
@@ -70,7 +70,7 @@ public struct WalletMetadata: Codable {
         self.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
-        self.responseTypesSupported = responseTypeSupported
+        self.responseTypesSupported = responseTypesSupported
 
         try validateVPFormatsSupported(vpFormatsSupported)
     }
