@@ -195,8 +195,9 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdSchemeAttached: String
 func validateResponseTypeSupported(_ responseType: String) throws {
     guard ResponseType(rawValue: responseType) != nil else {
         throw InvalidData(
-            message: "Response type \(responseType) is not supported",
-            className: AuthorizationRequest.className
+            message: "response type - \(responseType) is not supported",
+            className: AuthorizationRequest.className,
+            code: OpenID4VPErrorCodes.vpFormatsNotSupported
         )
     }
 }

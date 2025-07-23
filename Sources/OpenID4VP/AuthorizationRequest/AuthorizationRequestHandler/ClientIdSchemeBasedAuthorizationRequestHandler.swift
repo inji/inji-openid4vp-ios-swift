@@ -86,6 +86,8 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         for field in mandatoryFields {
             try validateAttribute(field, values: authorizationRequestParameters)
         }
+        
+        try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue] as? String)!)
 
         let optionalFields = [AuthorizationRequestFieldConstants.state.rawValue, AuthorizationRequestFieldConstants.responseMode.rawValue]
         for field in optionalFields {

@@ -433,6 +433,22 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
+    func testShouldThrowInvalidDataErrorWhenResponseTypeInAuthorizationRequestIsNotSupported() async {
+        decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
+        decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
+        let presentationDefinition = convertToJsonString(presentationDefinition)
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, ["response_type": "vp_token id_token"])) as [String : Any]
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
+        
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await mockAuthHandler.validateAndParseRequestFields()) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "response type - vp_token id_token is not supported",
+                                     expectedCode: OpenID4VPErrorCodes.vpFormatsNotSupported
+            )
+        }
+    }
     
     func testShouldThrowErrorWhenInvalidClientMetadataIsProvided() async{
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["client_metadata": "{}"])
