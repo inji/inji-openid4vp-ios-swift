@@ -24,7 +24,7 @@ public struct WalletMetadata: Codable {
     let authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]?
     let responseTypesSupported: [ResponseType]
     static let className = String(describing: WalletMetadata.self)
-
+    
     enum CodingKeys: String, CodingKey {
         case presentationDefinitionURISupported = "presentation_definition_uri_supported"
         case vpFormatsSupported = "vp_formats_supported"
@@ -34,26 +34,26 @@ public struct WalletMetadata: Codable {
         case authorizationEncryptionEncValuesSupported = "authorization_encryption_enc_values_supported"
         case responseTypesSupported = "response_types_supported"
     }
-
+    
     @available(*, deprecated, message: "Use the initializer with explicit parameters instead.")
     public init(
-            presentationDefinitionURISupported: Bool?,
-            vpFormatsSupported: [String: VPFormatSupported],
-            clientIdSchemesSupported: [String]?,
-            requestObjectSigningAlgValuesSupported: [String]? = nil,
-            authorizationEncryptionAlgValuesSupported: [String]? = nil,
-            authorizationEncryptionEncValuesSupported: [String]? = nil
-        ) throws {
-            self.presentationDefinitionURISupported = presentationDefinitionURISupported ?? true
-            self.vpFormatsSupported = parseVPFormatsSupported(vpFormatsSupported)
-            self.clientIdSchemesSupported = parseClientIdSchemesSupported(clientIdSchemesSupported)
-            self.requestObjectSigningAlgValuesSupported = parseRequestObjectSigningAlgValuesSupported(requestObjectSigningAlgValuesSupported)
-            self.authorizationEncryptionAlgValuesSupported = parseAuthorizationEncryptionAlgValuesSupported(authorizationEncryptionAlgValuesSupported)
-            self.authorizationEncryptionEncValuesSupported = parseAuthorizationEncryptionEncValuesSupported(authorizationEncryptionEncValuesSupported)
-            self.responseTypesSupported = WalletMetadataDefaults.responseTypesSupported
-            
-            try validateVPFormatsSupported(self.vpFormatsSupported)
-        }
+        presentationDefinitionURISupported: Bool?,
+        vpFormatsSupported: [String: VPFormatSupported],
+        clientIdSchemesSupported: [String]?,
+        requestObjectSigningAlgValuesSupported: [String]? = nil,
+        authorizationEncryptionAlgValuesSupported: [String]? = nil,
+        authorizationEncryptionEncValuesSupported: [String]? = nil
+    ) throws {
+        self.presentationDefinitionURISupported = presentationDefinitionURISupported ?? true
+        self.vpFormatsSupported = try parseVPFormatsSupported(vpFormatsSupported)
+        self.clientIdSchemesSupported = try parseClientIdSchemesSupported(clientIdSchemesSupported)
+        self.requestObjectSigningAlgValuesSupported = try parseRequestObjectSigningAlgValuesSupported(requestObjectSigningAlgValuesSupported)
+        self.authorizationEncryptionAlgValuesSupported = try parseAuthorizationEncryptionAlgValuesSupported(authorizationEncryptionAlgValuesSupported)
+        self.authorizationEncryptionEncValuesSupported = try parseAuthorizationEncryptionEncValuesSupported(authorizationEncryptionEncValuesSupported)
+        self.responseTypesSupported = WalletMetadataDefaults.responseTypesSupported
+        
+        try validateVPFormatsSupported(self.vpFormatsSupported)
+    }
     
     public init(
         presentationDefinitionURISupported: Bool = WalletMetadataDefaults.presentationDefinitionURISupported,
@@ -71,54 +71,73 @@ public struct WalletMetadata: Codable {
         self.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
         self.responseTypesSupported = responseTypesSupported
-
+        
         try validateVPFormatsSupported(vpFormatsSupported)
     }
 }
 
-private func parseClientIdSchemesSupported(_ clientIdSchemesSupported: [String]?) -> [ClientIdScheme] {
+private func parseClientIdSchemesSupported(_ clientIdSchemesSupported: [String]?) throws -> [ClientIdScheme] {
     guard let schemes = clientIdSchemesSupported else {
         return [.preRegistered]
     }
-    return schemes.compactMap { ClientIdScheme(rawValue: $0) }
+    return try schemes.compactMap { try parseEnum(valueName: "ClientIdScheme", $0, as: ClientIdScheme.self) }
 }
 
-private func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) -> [VPFormatType: VPFormatSupported] {
-    return vpFormatsSupported.reduce(into: [VPFormatType: VPFormatSupported]()) { result, entry in
-        if let type = VPFormatType(rawValue: entry.key) {
-            result[type] = entry.value
-        }
+private func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws -> [VPFormatType: VPFormatSupported] {
+    if vpFormatsSupported.keys.contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
+        throw InvalidData(
+            message: "vp_formats_supported cannot have empty keys.",
+            className: WalletMetadata.className
+        )
+    }
+    
+    
+    return try vpFormatsSupported.reduce(into: [VPFormatType: VPFormatSupported]()) { result, entry in
+        let parsedVPFormatType = try parseEnum(valueName: "VPFormatType", entry.key, as: VPFormatType.self)
+        result[parsedVPFormatType] = entry.value
     }
 }
 
-private func parseRequestObjectSigningAlgValuesSupported(_ requestObjectSigningAlgValuesSupported: [String]?) -> [RequestSigningAlgorithm]? {
+func parseEnum<E: RawRepresentable>(valueName: String, _ value: E.RawValue, as type: E.Type) throws -> E {
+    guard let enumCase = E(rawValue: value) else {
+        throw InvalidData(
+            message: "Invalid \(valueName) value: \(value). Its is not supported by the library.",
+            className: WalletMetadata.className
+        )
+    }
+    
+    return enumCase
+}
+
+
+private func parseRequestObjectSigningAlgValuesSupported(_ requestObjectSigningAlgValuesSupported: [String]?) throws -> [RequestSigningAlgorithm]? {
     guard let algs = requestObjectSigningAlgValuesSupported else {
         return nil
     }
-    return algs.compactMap { RequestSigningAlgorithm(rawValue: $0) }
+    return try algs.compactMap { try parseEnum(valueName: "RequestSigningAlgorithm", $0, as: RequestSigningAlgorithm.self) }
 }
 
-private func parseAuthorizationEncryptionAlgValuesSupported(_ authorizationEncryptionAlgValuesSupported: [String]?) -> [KeyManagementAlgorithm]? {
+private func parseAuthorizationEncryptionAlgValuesSupported(_ authorizationEncryptionAlgValuesSupported: [String]?) throws -> [KeyManagementAlgorithm]? {
     guard let algs = authorizationEncryptionAlgValuesSupported else {
         return nil
     }
-    return algs.compactMap { KeyManagementAlgorithm(rawValue: $0) }
+    return try algs.compactMap { try parseEnum(valueName: "KeyManagementAlgorithm", $0, as: KeyManagementAlgorithm.self) }
 }
 
-private func parseAuthorizationEncryptionEncValuesSupported(_ authorizationEncryptionEncValuesSupported: [String]?) -> [ContentEncryptionAlgorithm]? {
+private func parseAuthorizationEncryptionEncValuesSupported(_ authorizationEncryptionEncValuesSupported: [String]?) throws -> [ContentEncryptionAlgorithm]? {
     guard let encs = authorizationEncryptionEncValuesSupported else {
         return nil
     }
-    return encs.compactMap { ContentEncryptionAlgorithm(rawValue: $0) }
+    return try encs.compactMap { try parseEnum(valueName: "ContentEncryptionAlgorithm", $0, as: ContentEncryptionAlgorithm.self) }
 }
 
 public struct VPFormatSupported: Codable {
     let algValuesSupported: [String]?
-
+    
     enum CodingKeys: String, CodingKey {
         case algValuesSupported = "alg_values_supported"
     }
-
+    
     public init(algValuesSupported: [String]? = nil) {
         self.algValuesSupported = algValuesSupported
     }
@@ -132,4 +151,3 @@ private func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VPF
         )
     }
 }
-

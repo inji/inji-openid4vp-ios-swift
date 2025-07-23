@@ -9,28 +9,31 @@ final class WalletMetadataTests: XCTestCase {
         .ldp_vc : VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])
     ]
     let clientIdSchemesSupportedRaw: [String] = [
-        "pre_registered",
+        "pre-registered",
         "redirect_uri",
         "did"
     ]
-    let requestObjectSigningAlgValuesSupportedRaw: [String] = ["ed_dsa"]
-    let authorizationEncryptionAlgValuesSupportedRaw: [String] = ["ecdh_es"]
+    let requestObjectSigningAlgValuesSupportedRaw: [String] = ["EdDSA"]
+    let authorizationEncryptionAlgValuesSupportedRaw: [String] = ["ECDH-ES"]
     let authorizationEncryptionEncValuesSupportedRaw: [String] = ["A256GCM"]
     
     func testValidWalletMetadataInitialization() throws {
-        
-        
-        let metadata = try WalletMetadata(
-            presentationDefinitionURISupported: true,
-            vpFormatsSupported: vpFormatsRaw,
-            clientIdSchemesSupported: clientIdSchemesSupportedRaw,
-            requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupportedRaw,
-            authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupportedRaw,
-            authorizationEncryptionEncValuesSupported: authorizationEncryptionAlgValuesSupportedRaw
-        )
-        
-        XCTAssertTrue(metadata.presentationDefinitionURISupported)
-        XCTAssertEqual(metadata.vpFormatsSupported.count, 1)
+        do{
+            let metadata = try WalletMetadata(
+                presentationDefinitionURISupported: true,
+                vpFormatsSupported: vpFormatsRaw,
+                clientIdSchemesSupported: clientIdSchemesSupportedRaw,
+                requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupportedRaw,
+                authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupportedRaw,
+                authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupportedRaw
+            )
+            
+            XCTAssertTrue(metadata.presentationDefinitionURISupported)
+            XCTAssertEqual(metadata.vpFormatsSupported.count, 1)
+
+        } catch {
+            XCTFail("WalletMetadata initialization failed with error: \(error)")
+        }
     }
     
     func testWalletMetadataThrowsForEmptyVPFormatsSupported() {
@@ -41,6 +44,90 @@ final class WalletMetadataTests: XCTestCase {
         )) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "vp_formats_supported should at least have one supported vp_format",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testWalletMetadataThrowsErrorForVPFOrmatsSupportedWithEmptyKey() {
+        XCTAssertThrowsError(try WalletMetadata(
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: ["": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])],
+            clientIdSchemesSupported: nil
+        )) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "vp_formats_supported cannot have empty keys.",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testWalletMetadataThrowsErrorForVPFormatsSupportedPassingWithNotSupportedLibraryVPFormat() {
+        XCTAssertThrowsError(try WalletMetadata(
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: ["sd-jwt": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018"])],
+            clientIdSchemesSupported: nil
+        )) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Invalid VPFormatType value: sd-jwt. Its is not supported by the library.",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testWalletMetadataThrowsErrorForClientIdSchemesWithUnsupportedValue() {
+        XCTAssertThrowsError(try WalletMetadata(
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: vpFormatsRaw,
+            clientIdSchemesSupported: ["https"]
+        )) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Invalid ClientIdScheme value: https. Its is not supported by the library.",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testWalletMetadataThrowsErrorForRequestObjectSigningAlgWithUnsupportedValue() {
+        XCTAssertThrowsError(try WalletMetadata(
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: vpFormatsRaw,
+            clientIdSchemesSupported: nil,
+            requestObjectSigningAlgValuesSupported: ["EdDSA", "ES256"]
+        )) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Invalid RequestSigningAlgorithm value: ES256. Its is not supported by the library.",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testWalletMetadataThrowsErrorForAuthorizationEncryptionAlgWithUnsupportedValue() {
+        XCTAssertThrowsError(try WalletMetadata(
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: vpFormatsRaw,
+            clientIdSchemesSupported: nil,
+            requestObjectSigningAlgValuesSupported: nil,
+            authorizationEncryptionAlgValuesSupported: ["ECDH-ES", "ECDH-ES+A128"]
+        )) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Invalid KeyManagementAlgorithm value: ECDH-ES+A128. Its is not supported by the library.",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testWalletMetadataThrowsErrorForAuthorizationEncryptionEncWithUnsupportedValue() {
+        XCTAssertThrowsError(try WalletMetadata(
+            presentationDefinitionURISupported: nil,
+            vpFormatsSupported: vpFormatsRaw,
+            clientIdSchemesSupported: nil,
+            requestObjectSigningAlgValuesSupported: nil,
+            authorizationEncryptionAlgValuesSupported: nil,
+            authorizationEncryptionEncValuesSupported: ["A128GCM", "A256GCM"]
+        )) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Invalid ContentEncryptionAlgorithm value: A128GCM. Its is not supported by the library.",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -90,6 +177,6 @@ final class WalletMetadataTests: XCTestCase {
         XCTAssertEqual(metadata.requestObjectSigningAlgValuesSupported, [.edDsa])
         XCTAssertEqual(metadata.authorizationEncryptionAlgValuesSupported, [.ecdhEs])
         XCTAssertEqual(metadata.authorizationEncryptionEncValuesSupported, [.A256GCM])
-
+        
     }
 }

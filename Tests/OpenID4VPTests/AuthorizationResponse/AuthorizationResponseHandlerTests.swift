@@ -28,7 +28,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 walletNonce: "mock-nonce"
             )) { error in
                 assertOpenID4VPException(error,
-                                         expectedMessage: "Holder ID cannot be null or empty for ldp_vc format",
+                                         expectedMessage: "Holder ID cannot be null or empty for LDP VC format",
                                          expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             }
@@ -55,7 +55,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 walletNonce: walletNonce
             )) { error in
                 assertOpenID4VPException(error,
-                                         expectedMessage: "Signature Suite cannot be null or empty for ldp_vc format",
+                                         expectedMessage: "Signature Suite cannot be null or empty for LDP VC format",
                                          expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             }

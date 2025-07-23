@@ -28,13 +28,13 @@ public class AuthorizationResponseHandler {
             // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
             if (isNullOrEmpty(holderId)) {
                 throw InvalidData(
-                    message: "Holder ID cannot be null or empty for ldp_vc format",
+                    message: "Holder ID cannot be null or empty for LDP VC format",
                     className: AuthorizationResponseHandler.className
                 )
             }
             if(isNullOrEmpty(signatureSuite)){
                 throw InvalidData(
-                    message: "Signature Suite cannot be null or empty for ldp_vc format",
+                    message: "Signature Suite cannot be null or empty for LDP VC format",
                     className: AuthorizationResponseHandler.className
                 )
             }
