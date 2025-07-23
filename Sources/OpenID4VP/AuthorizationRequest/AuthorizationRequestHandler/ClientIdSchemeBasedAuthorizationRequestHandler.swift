@@ -50,7 +50,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                 )
             }
 
-            let requestUriMethod = authorizationRequestParameters["request_uri_method"] as? String ?? HttpMethod.get.rawValue
+            let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
             let httpMethod = try determineHttpMethod(method: requestUriMethod)
 
             var body: [String: String]? = nil
@@ -120,17 +120,17 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
 
     final func createAuthorizationRequest() -> AuthorizationRequest {
         return AuthorizationRequest(
-            clientId: getStringValue(authorizationRequestParameters["client_id"])!,
-            clientIdScheme: getStringValue(authorizationRequestParameters["client_id_scheme"]),
-            presentationDefinition: authorizationRequestParameters["presentation_definition"]! as! PresentationDefinition,
-            responseType: getStringValue(authorizationRequestParameters["response_type"])!,
-            responseMode: getStringValue(authorizationRequestParameters["response_mode"]),
-            nonce: getStringValue(authorizationRequestParameters["nonce"])!,
-            state: getStringValue(authorizationRequestParameters["state"]),
-            redirectUri: getStringValue(authorizationRequestParameters["redirect_uri"]),
-            responseUri: getStringValue(authorizationRequestParameters["response_uri"]),
+            clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,
+            clientIdScheme: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue]),
+            presentationDefinition: authorizationRequestParameters[AuthorizationRequestFieldConstants.presentationDefinition.rawValue]! as! PresentationDefinition,
+            responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue])!,
+            responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue]),
+            nonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce.rawValue])!,
+            state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]),
+            redirectUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri.rawValue]),
+            responseUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]),
             walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue]),
-            clientMetadata: authorizationRequestParameters["client_metadata"] as? ClientMetadata
+            clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadata
         )
     }
 }

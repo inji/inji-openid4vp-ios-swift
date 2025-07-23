@@ -103,7 +103,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
     func testProcessingWalletMetadataSuccessfully() async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            "client_id": "mock-client",
+            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
         ])) as [String : Any]
         let didScheme = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
 
@@ -114,7 +114,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
     func testShouldThrowErrorForWalletMetadataProcessingWhenRequestObjectSigningAlgValuesSupportedisNil() async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            "client_id": "mock-client",
+            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
         ])) as [String : Any]
 
         let walletMetadata = try createWalletMetadataV2(requestObjectSigningAlgValuesSupported: nil)
@@ -131,7 +131,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
     func testFetchingHeadersForDIDClientIdSchemeSuccessfully() async {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithDidByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            "client_id": "mock-client",
+            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
         ])) as [String : Any]
         let preRegistered = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
 

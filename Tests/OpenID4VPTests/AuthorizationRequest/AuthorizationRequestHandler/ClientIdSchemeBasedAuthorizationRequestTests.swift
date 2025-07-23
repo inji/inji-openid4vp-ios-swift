@@ -71,7 +71,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     func testFetchAuthorizationRequestByReferenceAndRequestUriMethodIsPost() async{
         
         var authorizationRequestWithPostRequestUriMethod = authorizationRequestParamsWithValue
-        authorizationRequestWithPostRequestUriMethod["request_uri_method"] = "post"
+        authorizationRequestWithPostRequestUriMethod[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] = "post"
         
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdScheme: .preRegistered,
@@ -100,7 +100,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
             applicableFields: authRequestWithRedirectUriByValue
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: ["client_id", "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: [AuthorizationRequestFieldConstants.clientId.rawValue, "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         do{
@@ -233,11 +233,11 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
         let testCases: [TestCase<[String: String?], Void>] = [
-            TestCase(input: ["response_mode": "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_mode": ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_mode": "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_mode": "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_mode": nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -322,10 +322,10 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testInvalidRequestFieldThrowErrorForResponseTypeField() async {
         let testCases: [TestCase<[String: Any?], Void>] = [
-            TestCase(input: ["response_type": "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_type": ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_type": "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_type": nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -379,9 +379,9 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testInvalidRequestFieldErrorForResponseModeField() async {
         let testCases: [TestCase<[String: Any], Void>] = [
-            TestCase(input: ["response_mode": "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_mode": ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["response_mode": "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -493,8 +493,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorForFetchAuthorizationRequestByReferenceForInvalidClientIdAndResponseUriMethodIsPost() async {
         var authorizationRequestParamsWithValueUpdated = authorizationRequestParamsWithValue
-        authorizationRequestParamsWithValueUpdated["request_uri_method"] = "post"
-        authorizationRequestParamsWithValueUpdated["client_id"] = ""
+        authorizationRequestParamsWithValueUpdated[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] = "post"
+        authorizationRequestParamsWithValueUpdated[AuthorizationRequestFieldConstants.clientId.rawValue] = ""
         
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdScheme: .preRegistered,

@@ -24,9 +24,9 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         if let requestUriResponse = requestUriResponse {
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
             if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
-                let clienId: String = authorizationRequestParameters["client_id"] as! String
+                let clientId: String = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
                 
-                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clienId, networkManager: networkManager)
+                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clientId, networkManager: networkManager)
                 let jwsHandler = JWSHandler(jws: requestUriResponse.body , publicKeyResolver: keyResolver)
                 
                 let header = try jwsHandler.extractDataJsonFromJws(jwsPart: .header)

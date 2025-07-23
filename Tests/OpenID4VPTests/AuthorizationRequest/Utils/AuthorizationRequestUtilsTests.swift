@@ -82,7 +82,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenClientIdSchemeIsNotSupported() async{
-        XCTAssertThrowsError(try getAuthorizationRequestHandler( authorizationRequestParameters: ["client_id":"x509_san_dns:mock-verifier"], trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)) { error in
+        XCTAssertThrowsError(try getAuthorizationRequestHandler( authorizationRequestParameters: [AuthorizationRequestFieldConstants.clientId.rawValue:"x509_san_dns:mock-verifier"], trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Given client_id_scheme is not supported",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -93,9 +93,9 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     // Validate client tests
     func testThrowInvalidRequestFieldErrorForClientIdFieldWhenGettingAuthRequestHandler() {
         let testCases: [TestCase] = [
-            TestCase(input: ["client_id": "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: ["client_id": ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: ["client_id": "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
             TestCase(input: [:], expectedError: "Missing Input: client_id param is required")
         ]
         
@@ -129,9 +129,9 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     ///Extraction of client identifier scheme from Authorization request client_id property
     
     func testExtractClientIdSchemeWithValidInput(){
-        let result1 = try! extractClientIdScheme(authorizationRequestParams: ["client_id":"mock-client"])
-        let result2 = try! extractClientIdScheme(authorizationRequestParams: ["client_id":"redirect_uri:https://mock-verifier.com"])
-        let result3 = try! extractClientIdScheme(authorizationRequestParams: ["client_id":"did:example#1"])
+        let result1 = try! extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"mock-client"])
+        let result2 = try! extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"redirect_uri:https://mock-verifier.com"])
+        let result3 = try! extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"did:example#1"])
         
         XCTAssertEqual(result1, "pre-registered")
         XCTAssertEqual(result2, "redirect_uri")
@@ -139,7 +139,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     }
     
     func testExtractClientidThrowErrorWhenClientIdIsEmpty(){
-        XCTAssertThrowsError(try extractClientIdScheme(authorizationRequestParams: ["client_id":""])){ error in
+        XCTAssertThrowsError(try extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:""])){ error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Invalid Input: client_id value cannot be empty or null",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
