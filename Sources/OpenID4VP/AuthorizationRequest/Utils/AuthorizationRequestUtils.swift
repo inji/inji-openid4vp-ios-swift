@@ -82,6 +82,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                     walletMetadata: WalletMetadata?,
                                     shouldValidateClient: Bool,
                                     setResponseUri: @escaping (String) -> Void,
+                                    walletNonce: String,
                                     networkManager: NetworkManaging
                                     ) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
     let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
@@ -93,16 +94,19 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               walletMetadata: walletMetadata,
                                                               shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
+                                                              walletNonce: walletNonce,
                                                               networkManager: networkManager)
     case ClientIdScheme.did.rawValue:
         return DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
                                                     walletMetadata: walletMetadata,
                                                     setResponseUri: setResponseUri,
+                                                    walletNonce: walletNonce,
                                                     networkManager: networkManager)
     case ClientIdScheme.redirectUri.rawValue:
         return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
                                                             walletMetadata: walletMetadata,
                                                             setResponseUri: setResponseUri,
+                                                            walletNonce: walletNonce,
                                                             networkManager: networkManager)
     default:
         throw InvalidData(message: "Given client_id_scheme is not supported" ,className: AuthorizationRequest.className)

@@ -77,16 +77,17 @@ public struct AuthorizationRequest : Encodable {
                                                                              walletMetadata: walletMetadata,
                                                                              shouldValidateClient: shouldValidateClient,
                                                                              setResponseUri: setResponseUri,
+                                                                             walletNonce: walletNonce,
                                                                              networkManager: networkManager)
         
-        try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler, walletNonce: walletNonce)
+        try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler)
         
         return authorizationRequestHandler.createAuthorizationRequest()
     }
     
-    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler, walletNonce: String)async throws {
+    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler)async throws {
         try authorizationRequestHandler.validateClientId()
-        try await authorizationRequestHandler.fetchAuthorizationRequest(walletNonce: walletNonce)
+        try await authorizationRequestHandler.fetchAuthorizationRequest()
         try authorizationRequestHandler.setResponseUrl()
         try await authorizationRequestHandler.validateAndParseRequestFields()
     }

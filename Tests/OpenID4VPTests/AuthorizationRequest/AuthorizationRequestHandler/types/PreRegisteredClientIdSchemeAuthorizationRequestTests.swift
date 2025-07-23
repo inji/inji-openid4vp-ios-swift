@@ -24,7 +24,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "untrusted-mock-client",
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.validateClientId()) { error in
             assertOpenID4VPException(
@@ -38,7 +38,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     
     func testThrowExceptionWhenTrustedVerifiersListIsEmpty(){
         let authorizationRequestParameters: [String : Any] = ["client_id": "other-mock-client","response_uri": "https://mock-verifier.com"]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.validateClientId()) { error in
             assertOpenID4VPException(
@@ -55,7 +55,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id": "mock-client",
             "response_uri": "https://some-other-url.com"
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await assertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()){ error in
             assertOpenID4VPException(error,
@@ -123,9 +123,9 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "mock-client",
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        try? await preRegistered.fetchAuthorizationRequest(walletNonce: "mock-nonce")
+        try? await preRegistered.fetchAuthorizationRequest()
         
         assertDictionariesEqual(expected: expectedAuthorizationRequestParameters, actual: preRegistered.authorizationRequestParameters)
     }
@@ -184,7 +184,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         ]
         let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdDraft23), applicableFields: authRequestWithPreRegisteredByValueDraft23)
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         try? await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), walletNonce: "mock-nonce", isMismatchedAcceptableType: false)
         
@@ -196,7 +196,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id": "some-mock-client",
         ]), applicableFields: authRequestWithPreRegisteredByValueDraft23)
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         
         await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
@@ -215,7 +215,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "client_id_scheme": "did",
         ]), applicableFields: authRequestWithPreRegisteredByValueDraft21)
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft21 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
@@ -230,7 +230,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsJWT() async{
         let requestUriResponse: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce",isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
@@ -243,7 +243,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedIsNotJsonContentType() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
         
         await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
@@ -257,7 +257,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testFetchAuthorizationRequestThrowExceptionWhenAuthRequestObjectObtainedDoesNotContainContentTypeFieldInHeader() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
         
@@ -273,7 +273,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "mock-client",
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
         var expectedWalletMetadata: WalletMetadata = walletMetadata
         expectedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
@@ -287,7 +287,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "mock-client",
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, networkManager: mockNetworkManager!)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
         let expectedHeader =
         [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,

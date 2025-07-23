@@ -3,10 +3,12 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     override init(authorizationRequestParameters: [String: Any],
                   walletMetadata: WalletMetadata? = nil,
                   setResponseUri: @escaping (String) -> Void,
+                  walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
+                   walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)

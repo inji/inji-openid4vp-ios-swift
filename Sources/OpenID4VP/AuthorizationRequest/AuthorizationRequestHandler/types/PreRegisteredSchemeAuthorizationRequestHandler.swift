@@ -9,12 +9,14 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
          walletMetadata: WalletMetadata?,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
+         walletNonce: String,
          networkManager: NetworkManaging) {
         self.trustedVerifiers = trustedVerifiers
         self.shouldValidateClient = shouldValidateClient
         super.init(authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
+                   walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
         super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
