@@ -200,3 +200,10 @@ func validateResponseTypeSupported(_ responseType: String) throws {
         )
     }
 }
+
+func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
+    let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
+    if walletNonce != walletNonceFromAuthorizationRequest {
+        throw InvalidData(message: "wallet_nonce in the request_uri response does not match the wallet_nonce provided in the request.", className: AuthorizationRequest.className)
+    }
+}
