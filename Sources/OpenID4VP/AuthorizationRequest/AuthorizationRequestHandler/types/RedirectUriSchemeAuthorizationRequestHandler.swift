@@ -42,12 +42,12 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
                 )
             }
             
-            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
-            
             // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
             if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String == HttpMethod.post.rawValue.lowercased()) {
                 try validateWalletNonce(authorizationRequestObject, walletNonce)
             }
+
+            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
             
             self.authorizationRequestParameters = authorizationRequestObject
         }

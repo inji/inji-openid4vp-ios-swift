@@ -297,4 +297,18 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         assertDictionariesEqual(expected: expectedHeader, actual: header)
     }
+    
+    func testShouldThrowErrorWhenRequestUriResponseWalletNonceDoesNotMatchWithTheWalletNonceSentDuringRequest() async{
+        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.walletNonce.rawValue: "hacker-nonce"]), applicableFields: authRequestWithPreRegisteredByValueDraft23)
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23,[AuthorizationRequestFieldConstants.requestUriMethod.rawValue: "post"])) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "wallet_nonce in the request_uri response does not match the wallet_nonce provided in the request.",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
 }
