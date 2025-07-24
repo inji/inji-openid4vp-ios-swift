@@ -64,7 +64,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
                     let extractedExpr: String = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
                     body?["wallet_metadata"] = extractedExpr
-                    print("Wallet Metadata post processing and about to send: \(extractedExpr)")
                     headers = delegate.getHeadersForAuthorizationRequestUri()
                     shouldValidateWithWalletMetadata = true
                 }
