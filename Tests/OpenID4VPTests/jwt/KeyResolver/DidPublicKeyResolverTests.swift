@@ -25,7 +25,7 @@ class DidPublicKeyResolverTests: XCTestCase {
           "id": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0",
           "type": "Ed25519VerificationKey2020",
           "controller": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs",
-          "publicKeyMultibase": "z3CSkXmF1DmgVuqPFKMTuJgn846mEuVB9rNoyP9hXribo"
+          "publicKeyMultibase": "z6MkwAm9tLpXZNfeEAqj9jcccFhjdiTwxVD32GhcjyeqGYSo"
         }
       ]
     }
@@ -41,7 +41,7 @@ class DidPublicKeyResolverTests: XCTestCase {
                 "alg": "EdDSA",
                 "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
             ])
-            XCTAssertEqual(result, "z3CSkXmF1DmgVuqPFKMTuJgn846mEuVB9rNoyP9hXribo")
+            XCTAssertEqual(result, "z6MkwAm9tLpXZNfeEAqj9jcccFhjdiTwxVD32GhcjyeqGYSo")
         } catch {
             XCTFail("Expected success but got error: \(error)")
         }

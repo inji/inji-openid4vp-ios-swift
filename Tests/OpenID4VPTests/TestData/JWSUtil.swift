@@ -4,7 +4,7 @@ import OpenID4VP
 import JSONWebSignature
 
 struct JWSUtil {
-    private static let ed25519PrivateKey = "vlo/0lVUn4oCEFo/PiPi3FyqSBSdZ2JDSBJJcvbf6o0="
+    private static let ed25519PrivateKey = "7JGq310it2uq1_KZ3kARpoUB36KaVO2Ki5VeqQ_856A"
     private static let baseUrl = "https://mock-verifier.com"
     private static let responseUri = "\(baseUrl)/verifier/vp-response"
     private static let publicKeyId = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
@@ -31,7 +31,8 @@ struct JWSUtil {
     }
 
     static func create(header: [String:Any]? = nil,payload: [String:Any],addValidSignature: Bool = true) -> String{
-        let privateKeyData = Data(base64Encoded: ed25519PrivateKey)
+        let base64 = ed25519PrivateKey.base64URLToBase64()
+        let privateKeyData = Data(base64Encoded: base64)
         let jwsHeader = header == nil ? self.jwsHeader : header
         let headerData = try? JSONSerialization.data(withJSONObject: jwsHeader as Any)
         let header64 = base64UrlEncode(headerData!)
@@ -48,4 +49,20 @@ struct JWSUtil {
         return "\(header64).\(payload64).\(signature64)"
     }
 }
+
+extension String {
+    func base64URLToBase64() -> String {
+        var base64 = self
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+
+        let paddingLength = 4 - (base64.count % 4)
+        if paddingLength < 4 {
+            base64 += String(repeating: "=", count: paddingLength)
+        }
+
+        return base64
+    }
+}
+
 
