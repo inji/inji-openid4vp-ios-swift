@@ -3,16 +3,18 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     override init(authorizationRequestParameters: [String: Any],
                   walletMetadata: WalletMetadata?,
                   setResponseUri: @escaping (String) -> Void,
+                  walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
+                   walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
         super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
     
-    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
+    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(
                 message: "Authorization Request must not be signed for given client_id_scheme",
@@ -39,8 +41,14 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
                     className: className
                 )
             }
+            
+            // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
+            let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
+            if( requestUriMethod == .post) {
+                try validateWalletNonce(authorizationRequestObject, walletNonce)
+            }
 
-            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)    
+            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
             
             self.authorizationRequestParameters = authorizationRequestObject
         }

@@ -86,23 +86,7 @@ func toData(_ input: [String: Any]) throws -> Data {
     return try JSONSerialization.data(withJSONObject: processedInput, options: [])
 }
 
-
-
-/**
- accept entropy size in bytes, default = 16
- */
-func createNonce(entropy: Int = 16) -> String {
-    var randomData = Data(count: entropy)
-    
-    _ = randomData.withUnsafeMutableBytes {
-        SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!)
-    }
-    
-    return randomData.toBase64UrlEncoded()
-}
-
 func sha256Hash(from data: CBOR) -> [UInt8] {
     let hash: SHA256.Digest = SHA256.hash(data: CBOR.encode(data))
     return ([UInt8])(Data(hash))
 }
-

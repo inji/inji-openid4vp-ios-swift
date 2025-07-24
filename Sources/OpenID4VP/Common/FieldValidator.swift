@@ -18,3 +18,8 @@ func validateField<T>(field: T, fieldPath: [String], className: String) throws {
         }
     }
 }
+
+func isNullOrEmpty(_ field: String?) -> Bool {
+    guard let field = field else { return true }
+    return field.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || field == "nil" || field == "null"
+}

@@ -26,7 +26,7 @@ final class X25519KeyAgreementTests: XCTestCase {
             alg: "ECDH-ES",
             enc: "A256GCM",
             jwk: mockJWK,
-            producerInfo: "wallet-nonce",
+            producerInfo: "mock-nonce",
             recipientInfo: "verifier-nonce"
         )
         

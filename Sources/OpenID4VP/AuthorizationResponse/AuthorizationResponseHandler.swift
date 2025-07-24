@@ -13,13 +13,44 @@ public class AuthorizationResponseHandler {
     public init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
     }
+    
+    func constructUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
+                               authorizationRequest: AuthorizationRequest,
+                               responseUri: String,
+                               holderId: String?,
+                               signatureSuite: String?,
+                               walletNonce: String
+    ) throws -> [FormatType: UnsignedVPToken] {
+        let hasLdpVc = credentialsMap.values.contains { formatMap in
+            formatMap.keys.contains(.ldp_vc)
+        }
+        if(hasLdpVc){
+            // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
+            if (isNullOrEmpty(holderId)) {
+                throw InvalidData(
+                    message: "Holder ID cannot be null or empty for LDP VC format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+            if(isNullOrEmpty(signatureSuite)){
+                throw InvalidData(
+                    message: "Signature Suite cannot be null or empty for LDP VC format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+        }
+        
+        return try createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
+        
+    }
 
-    func constructUnsignedVPToken(
+    private func createUnsignedVPToken(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
-        holderId: String,
-        signatureSuite: String
+        walletNonce: String,
+        holderId: String?,
+        signatureSuite: String?
     ) throws -> [FormatType: UnsignedVPToken] {
         if credentialsMap.isEmpty {
             throw InvalidData(
@@ -29,8 +60,7 @@ public class AuthorizationResponseHandler {
         }
 
         self.credentialsMap = credentialsMap
-        // Create wallet nonce for every transaction
-        self.walletNonce = createNonce()
+        self.walletNonce = walletNonce
 
         unsignedVPTokens = try createUnsignedVPTokens(
             credentialsMap: credentialsMap,
@@ -94,8 +124,7 @@ public class AuthorizationResponseHandler {
         default:
             throw InvalidData(
                 message: "response type - \(authorizationRequest.responseType) is not supported",
-                className: AuthorizationResponseHandler.className,
-                code: OpenID4VPErrorCodes.vpFormatsNotSupported
+                className: AuthorizationResponseHandler.className
             )
         }
     }
@@ -122,14 +151,6 @@ public class AuthorizationResponseHandler {
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
-
-        let groupedVcs: [FormatType: [Any]] = credentialsMap?
-            .compactMap { $0.value }
-            .reduce(into: [FormatType: [Any]]()) { result, entry in
-                for (key, value) in entry {
-                    result[key, default: []].append(contentsOf: value)
-                }
-            } ?? [:]
 
         var count = 0
         for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
@@ -216,8 +237,8 @@ public class AuthorizationResponseHandler {
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
-        holderId: String,
-        signatureSuite: String
+        holderId: String?,
+        signatureSuite: String?
     ) throws -> [FormatType: [String: Any]] {
         let groupedVcs: [FormatType: [AnyCodable]] = credentialsMap
             .compactMap { $0.value }
@@ -235,10 +256,10 @@ public class AuthorizationResponseHandler {
                 let token = UnsignedLdpVPTokenBuilder(
                     verifiableCredential: credentialsArray,
                     id: UUIDGenerator.generateUUID(),
-                    holder: holderId,
+                    holder: holderId!,
                     challenge: authorizationRequest.nonce,
                     domain: authorizationRequest.clientId,
-                    signatureSuite: signatureSuite
+                    signatureSuite: signatureSuite!
                 ).build()
                 result[format] = token
             case .mso_mdoc:
@@ -266,76 +287,23 @@ public class AuthorizationResponseHandler {
         return result
     }
 
-    @available(*, deprecated, message: "Use constructUnsignedVPToken instead")
-    private func constructHttpRequestBody(
-        vpToken: VPToken,
-        presentationSubmission: PresentationSubmission,
-        responseUri: String,
-        state: String?
-    ) async throws -> String {
-        let encodedVPToken: String
-        let encodedPresentationSubmission: String
-
-        do {
-            let jsonData = try JSONEncoder().encode(vpToken)
-            encodedVPToken = String(data: jsonData, encoding: .utf8) ?? ""
-        } catch {
-            throw JsonEncodingFailed(
-                fieldPath: ["vp_token"],
-                errorMessage: error.localizedDescription,
-                className: "AuthorizationResponseHandler"
-            )
-        }
-
-        do {
-            let jsonData = try JSONEncoder().encode(presentationSubmission)
-            encodedPresentationSubmission = String(data: jsonData, encoding: .utf8) ?? ""
-        } catch {
-            throw JsonEncodingFailed(
-                fieldPath: ["presentation_submission"],
-                errorMessage: error.localizedDescription,
-                className: "AuthorizationResponseHandler"
-            )
-        }
-
-        do {
-            var bodyParams: [String: String] = [
-                "vp_token": encodedVPToken,
-                "presentation_submission": encodedPresentationSubmission,
-            ]
-
-            if let state = state {
-                bodyParams["state"] = state
-            }
-
-            let response = try await networkManager.sendHTTPRequest(
-                url: responseUri,
-                method: .post,
-                bodyParams: bodyParams,
-                headers: ["content-type": "application/x-www-form-urlencoded"]
-            )
-
-            return response.responseBody
-        } catch {
-            throw error
-        }
-    }
-
-    @available(*, deprecated, message: "This method supports constructing VP token for LDP VC without canonicalization of the data sent for signing")
+    @available(*, deprecated, message: "This method supports constructing VP token for LDP VC without canonicalization of the data sent for signing. use constructUnsignedVPToken instead")
     func constructUnsignedVPTokenV1(
         verifiableCredentials: [String: [String]],
         authorizationRequest: AuthorizationRequest,
-        responseUri: String
+        responseUri: String,
+        walletNonce: String
     ) throws -> String {
         let transformedCredentials: [String: [FormatType: [AnyCodable]]] = verifiableCredentials.mapValues { credentials in
             let wrapped = credentials.map { AnyCodable($0) }
             return [.ldp_vc: wrapped]
         }
 
-        let unsignedVPToken = try constructUnsignedVPToken(
+        let unsignedVPToken = try createUnsignedVPToken(
             credentialsMap: transformedCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
+            walletNonce: walletNonce,
             holderId: "",
             signatureSuite: "Ed25519Signature2020"
         )
@@ -369,7 +337,7 @@ public class AuthorizationResponseHandler {
     }
 
     
-    @available(*, deprecated, message: "Use constructUnsignedVPToken instead")
+    @available(*, deprecated, message: "Use shareVP instead")
     func shareVPV1(
         vpResponseMetadata: VPResponseMetadata,
         nonce: String,
@@ -423,6 +391,61 @@ public class AuthorizationResponseHandler {
                 state: state
             )
 
+        } catch {
+            throw error
+        }
+    }
+    
+    @available(*, deprecated, message: "This is a private method used by shareVPV1 and should not be used directly.")
+    private func constructHttpRequestBody(
+        vpToken: VPToken,
+        presentationSubmission: PresentationSubmission,
+        responseUri: String,
+        state: String?
+    ) async throws -> String {
+        let encodedVPToken: String
+        let encodedPresentationSubmission: String
+
+        do {
+            let jsonData = try JSONEncoder().encode(vpToken)
+            encodedVPToken = String(data: jsonData, encoding: .utf8) ?? ""
+        } catch {
+            throw JsonEncodingFailed(
+                fieldPath: ["vp_token"],
+                errorMessage: error.localizedDescription,
+                className: "AuthorizationResponseHandler"
+            )
+        }
+
+        do {
+            let jsonData = try JSONEncoder().encode(presentationSubmission)
+            encodedPresentationSubmission = String(data: jsonData, encoding: .utf8) ?? ""
+        } catch {
+            throw JsonEncodingFailed(
+                fieldPath: ["presentation_submission"],
+                errorMessage: error.localizedDescription,
+                className: "AuthorizationResponseHandler"
+            )
+        }
+
+        do {
+            var bodyParams: [String: String] = [
+                "vp_token": encodedVPToken,
+                "presentation_submission": encodedPresentationSubmission,
+            ]
+
+            if let state = state {
+                bodyParams["state"] = state
+            }
+
+            let response = try await networkManager.sendHTTPRequest(
+                url: responseUri,
+                method: .post,
+                bodyParams: bodyParams,
+                headers: ["content-type": "application/x-www-form-urlencoded"]
+            )
+
+            return response.responseBody
         } catch {
             throw error
         }

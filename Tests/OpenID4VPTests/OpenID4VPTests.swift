@@ -4,6 +4,7 @@ import XCTest
 class OpenID4VPTests: XCTestCase {
     var openID4VP: OpenID4VP!
     var mockNetworkManager: MockNetworkManager!
+    var mockNonceProvider: NonceProvider!
     var authorizationRequest: AuthorizationRequest!
 
     let jws = "wemcn3234ns"
@@ -23,7 +24,9 @@ class OpenID4VPTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockNetworkManager = MockNetworkManager()
-        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager)
+        mockNonceProvider = MockNonceProvider()
+        
+        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider())
         openID4VP.setResponseUri("https://mock-verifier.com")
         openID4VP.authorizationRequest = authorizationRequest
     }
@@ -31,7 +34,21 @@ class OpenID4VPTests: XCTestCase {
     override func tearDown() {
         openID4VP = nil
         mockNetworkManager = nil
+        mockNonceProvider = nil
         super.tearDown()
+    }
+    
+    func testWalletNonceIsDifferentForEveryAuthenticateVerifierCall() async {
+        let openID4VP = OpenID4VP(traceabilityId: "trace-id")
+        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        let firstMirror = Mirror(reflecting: openID4VP as Any)
+        let firstNonce = firstMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
+        
+        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        let secondMirror = Mirror(reflecting: openID4VP as Any)
+        let secondNonce = secondMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
+        
+        XCTAssertNotEqual(firstNonce, secondNonce, "Wallet nonce should be different for every authenticateVerifier call")
     }
 
     //client_id_scheme = redirect_uri
@@ -357,7 +374,7 @@ class OpenID4VPTests: XCTestCase {
 
         do {
             authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-            _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "", signatureSuite: "JsonWebSignature2020")
+            _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "wallet-holder-id", signatureSuite: "JsonWebSignature2020")
 
             let _ = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
         } catch let error as NetworkRequestException {
@@ -376,7 +393,7 @@ class OpenID4VPTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
 
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "", signatureSuite: "JsonWebSignature2020")
+        _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "wallet-holder-id", signatureSuite: "JsonWebSignature2020")
         let vpTokenSigningResults = [FormatType.ldp_vc: LdpVPTokenSigningResult(jws:"test-jws-valid",proofValue: "test", signatureAlgorithm: "JsonWebSignature2020")]
 
         let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)

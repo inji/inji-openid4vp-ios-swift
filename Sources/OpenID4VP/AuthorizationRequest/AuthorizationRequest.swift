@@ -12,6 +12,8 @@ public struct AuthorizationRequest : Encodable {
     let state: String?
     let redirectUri: String?
     let responseUri: String?
+    //As per spec, walletNonce is available if post call to request_uri is made with wallet_nonce (optional) in the request body. Library will add wallet_nonce to the request body in case of post call to request_uri.
+    let walletNonce: String?
     var clientMetadata: ClientMetadata?
     static let className = String(describing: AuthorizationRequest.self)
     static var authorizationRequest: AuthorizationRequest?
@@ -49,6 +51,7 @@ public struct AuthorizationRequest : Encodable {
                                                       walletMetadata: WalletMetadata?,
                                                       setResponseUri: @escaping (String) -> Void,
                                                       shouldValidateClient: Bool,
+                                                      walletNonce: String,
                                                       networkManager: NetworkManaging
                                                       ) async throws -> AuthorizationRequest {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
@@ -58,6 +61,7 @@ public struct AuthorizationRequest : Encodable {
                                                  walletMetadata: walletMetadata,
                                                  setResponseUri: setResponseUri,
                                                  shouldValidateClient: shouldValidateClient,
+                                                 walletNonce: walletNonce,
                                                  networkManager: networkManager)
     }
     
@@ -66,12 +70,14 @@ public struct AuthorizationRequest : Encodable {
                                                 walletMetadata: WalletMetadata?,
                                                 setResponseUri: @escaping (String) -> Void,
                                                 shouldValidateClient: Bool,
+                                                walletNonce: String,
                                                 networkManager: NetworkManaging
                                                 ) async throws -> AuthorizationRequest{
         let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,                                                                                     trustedVerifiers: trustedVerifiers,
                                                                              walletMetadata: walletMetadata,
                                                                              shouldValidateClient: shouldValidateClient,
                                                                              setResponseUri: setResponseUri,
+                                                                             walletNonce: walletNonce,
                                                                              networkManager: networkManager)
         
         try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler)

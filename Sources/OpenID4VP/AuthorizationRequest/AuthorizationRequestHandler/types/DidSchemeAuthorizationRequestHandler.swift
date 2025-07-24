@@ -3,16 +3,18 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     override init(authorizationRequestParameters: [String: Any],
                   walletMetadata: WalletMetadata? = nil,
                   setResponseUri: @escaping (String) -> Void,
+                  walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
+                   walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
     }
     
-    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
+    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(
                 message: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
@@ -22,9 +24,9 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         if let requestUriResponse = requestUriResponse {
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
             if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
-                let clienId: String = authorizationRequestParameters["client_id"] as! String
+                let clientId: String = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
                 
-                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clienId, networkManager: networkManager)
+                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clientId, networkManager: networkManager)
                 let jwsHandler = JWSHandler(jws: requestUriResponse.body , publicKeyResolver: keyResolver)
                 
                 let header = try jwsHandler.extractDataJsonFromJws(jwsPart: .header)
@@ -33,6 +35,12 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
                 try await jwsHandler.verify()
                 
                 let authorizationRequestObject =  try jwsHandler.extractDataJsonFromJws(jwsPart: .payload)
+                
+                // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
+                let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
+                if( requestUriMethod == .post) {
+                    try validateWalletNonce(authorizationRequestObject, walletNonce)
+                }
                 
                 try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
                 
@@ -43,14 +51,14 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
             }
         } else {
             throw MissingInput(fieldPath: ["request_uri"], message : "request_uri must be present for given client_id_scheme",
-                className: className)
+                               className: className)
         }
     }
     
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
         if(walletMetadata.requestObjectSigningAlgValuesSupported == nil) {
             throw InvalidData(message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
-                className: className)
+                              className: className)
         }
         return walletMetadata
     }

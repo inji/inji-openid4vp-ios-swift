@@ -23,7 +23,7 @@ public struct VPResponseMetadata {
                 "domain": domain
             ]
 
-            for (key, value) in requiredParams {
+            for (_, value) in requiredParams {
                 if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || value == "null" {
                     throw InvalidInput(fieldPath: ["vp response metadata",value], className: VPResponseMetadata.className)
                 }

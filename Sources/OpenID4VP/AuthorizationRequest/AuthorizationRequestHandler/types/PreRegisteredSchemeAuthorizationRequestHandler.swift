@@ -9,12 +9,14 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
          walletMetadata: WalletMetadata?,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
+         walletNonce: String,
          networkManager: NetworkManaging) {
         self.trustedVerifiers = trustedVerifiers
         self.shouldValidateClient = shouldValidateClient
         super.init(authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
+                   walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
         super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
@@ -39,7 +41,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                 Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
     }
     
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?, isMismatchedAcceptableType: Bool) async throws {
+    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(
                 message: "Authorization Request must not be signed for given client_id_scheme",
@@ -49,7 +51,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         
         if let requestUriResponse = requestUriResponse {
             let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
-
+            
             if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {
                 throw InvalidData(
                     message: "Authorization Request must not be signed for given client_id_scheme",
@@ -69,7 +71,13 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                     className: className
                 )
             }
-
+            
+            // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
+            let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
+            if( requestUriMethod == .post) {
+                try validateWalletNonce(authorizationRequestObject, walletNonce)
+            }
+            
             try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
             
             authorizationRequestParameters = authorizationRequestObject

@@ -12,7 +12,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     private var walletMetadata: WalletMetadata!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletMetadata = try createWalletMetadataV2()
     }
     
     /// client metadata validation tests
@@ -190,7 +190,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
         
-        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: [.ecdhEs], authorizationEncryptionEncValuesSupported: [.A256GCM])
+        let mismatchingWalletMetadata = try createWalletMetadataV2()
         
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("authorization_encrypted_response_enc is not supported", error.localizedDescription)
@@ -224,7 +224,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
         
-        let mismatchingWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: [.ecdhEs], authorizationEncryptionEncValuesSupported: [.A256GCM])
+        let mismatchingWalletMetadata = try createWalletMetadataV2()
         
         
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
@@ -269,7 +269,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
         
         // Alg values are nil
-        var invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: nil, authorizationEncryptionEncValuesSupported: [.A256GCM])
+        var invalidWalletMetadata = try createWalletMetadataV2(authorizationEncryptionAlgValuesSupported: nil)
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(
                 error,
@@ -279,7 +279,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
         
         // Enc values are nil
-        invalidWalletMetadata = try createWalletMetadata(authorizationEncryptionAlgValuesSupported: [.ecdhEs], authorizationEncryptionEncValuesSupported: nil)
+        invalidWalletMetadata = try createWalletMetadataV2(authorizationEncryptionEncValuesSupported: nil)
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(
                 error,
@@ -301,8 +301,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         
         do {
             let result = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode.responseUri!, networkManager: mockNetworkManager,
-                producerInfo: "wallet-nonce",
-                recepientInfo: "verifier-nonce"
+                                                                                              producerInfo: "mock-nonce",
+                                                                                              recepientInfo: "verifier-nonce"
             )
             
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]

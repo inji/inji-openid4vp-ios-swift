@@ -27,13 +27,13 @@ func validateAttribute(
 func validateAuthorizationRequestObjectAndParameters(params: [String: String], requestUriParams: [String: Any]) throws {
     
     
-    guard params["client_id"] == requestUriParams["client_id"] as? String else {
+    guard params[AuthorizationRequestFieldConstants.clientId.rawValue] == requestUriParams[AuthorizationRequestFieldConstants.clientId.rawValue] as? String else {
         throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }
     
     // If client_id_scheme is present in the authorization request, it should be present in the request_uri response as well and should be same we are assuming it follows Draft 21 specification
     if params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] != nil {
-        guard params["client_id_scheme"] == requestUriParams["client_id_scheme"] as? String else {
+        guard params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] == requestUriParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String else {
             throw MismatchingClientIdSchemeInRequest(className: AuthorizationRequest.className)
         }
     }
@@ -82,6 +82,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                     walletMetadata: WalletMetadata?,
                                     shouldValidateClient: Bool,
                                     setResponseUri: @escaping (String) -> Void,
+                                    walletNonce: String,
                                     networkManager: NetworkManaging
                                     ) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
     let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
@@ -93,16 +94,19 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               walletMetadata: walletMetadata,
                                                               shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
+                                                              walletNonce: walletNonce,
                                                               networkManager: networkManager)
     case ClientIdScheme.did.rawValue:
         return DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
                                                     walletMetadata: walletMetadata,
                                                     setResponseUri: setResponseUri,
+                                                    walletNonce: walletNonce,
                                                     networkManager: networkManager)
     case ClientIdScheme.redirectUri.rawValue:
         return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
                                                             walletMetadata: walletMetadata,
                                                             setResponseUri: setResponseUri,
+                                                            walletNonce: walletNonce,
                                                             networkManager: networkManager)
     default:
         throw InvalidData(message: "Given client_id_scheme is not supported" ,className: AuthorizationRequest.className)
@@ -185,5 +189,21 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdSchemeAttached: String
     } else {
         // client_id_scheme is optional (Fallback client_id_scheme - pre-registered) i.e., a : character is not present in the Client Identifier
         return clientIdWithClientIdSchemeAttached
+    }
+}
+
+func validateResponseTypeSupported(_ responseType: String) throws {
+    guard ResponseType(rawValue: responseType) != nil else {
+        throw InvalidData(
+            message: "response type - \(responseType) is not supported",
+            className: AuthorizationRequest.className
+        )
+    }
+}
+
+func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
+    let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
+    if walletNonce != walletNonceFromAuthorizationRequest {
+        throw InvalidData(message: "wallet_nonce provided in the authorization request is not the same as shared by wallet", className: AuthorizationRequest.className)
     }
 }
