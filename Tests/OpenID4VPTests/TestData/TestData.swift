@@ -30,7 +30,7 @@ let didResponse = convertToJsonString([
     "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
     "verificationMethod": [
         [
-            "publicKeyMultibase": "z3CSkXmF1DmgVuqPFKMTuJgn846mEuVB9rNoyP9hXribo",
+            "publicKeyMultibase": "z6MkwAm9tLpXZNfeEAqj9jcccFhjdiTwxVD32GhcjyeqGYSo",
             "controller": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
             "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
             "type": "Ed25519VerificationKey2020",
