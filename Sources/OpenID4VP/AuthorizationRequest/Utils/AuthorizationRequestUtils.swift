@@ -196,8 +196,7 @@ func validateResponseTypeSupported(_ responseType: String) throws {
     guard ResponseType(rawValue: responseType) != nil else {
         throw InvalidData(
             message: "response type - \(responseType) is not supported",
-            className: AuthorizationRequest.className,
-            code: OpenID4VPErrorCodes.vpFormatsNotSupported
+            className: AuthorizationRequest.className
         )
     }
 }
@@ -205,6 +204,6 @@ func validateResponseTypeSupported(_ responseType: String) throws {
 func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
     let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
     if walletNonce != walletNonceFromAuthorizationRequest {
-        throw InvalidData(message: "wallet_nonce in the request_uri response does not match the wallet_nonce provided in the request.", className: AuthorizationRequest.className)
+        throw InvalidData(message: "wallet_nonce provided in the authorization request is not the same as shared by wallet", className: AuthorizationRequest.className)
     }
 }

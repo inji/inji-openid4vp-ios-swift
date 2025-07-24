@@ -52,7 +52,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
         await assertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "wallet_nonce in the request_uri response does not match the wallet_nonce provided in the request.",
+                expectedMessage: "wallet_nonce provided in the authorization request is not the same as shared by wallet",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

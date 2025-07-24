@@ -195,7 +195,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         } catch {
             assertOpenID4VPException(error,
                                      expectedMessage: "response type - fragment is not supported",
-                                     expectedCode: OpenID4VPErrorCodes.vpFormatsNotSupported
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
     }

@@ -445,7 +445,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         await assertAsyncThrowsError(try await mockAuthHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "response type - vp_token id_token is not supported",
-                                     expectedCode: OpenID4VPErrorCodes.vpFormatsNotSupported
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
     }
