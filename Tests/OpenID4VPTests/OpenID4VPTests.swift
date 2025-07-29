@@ -193,7 +193,7 @@ class OpenID4VPTests: XCTestCase {
             XCTFail("Should not get error but got error - \(error)")
         }
 
-        XCTAssertTrue(decodedAuthorizationRequest is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
+        XCTAssertTrue(decodedAuthorizationRequest is AuthorizationRequest, "decodedResponse should be an instance of AuthorizationRequest")
         XCTAssertTrue(decodedAuthorizationRequest != nil, "decodedResponse should not be null")
     }
 

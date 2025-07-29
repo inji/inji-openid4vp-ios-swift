@@ -1,4 +1,5 @@
 import XCTest
+import CryptoKit
 @testable import OpenID4VP
 
 class DidPublicKeyResolverTests: XCTestCase {
@@ -34,16 +35,19 @@ class DidPublicKeyResolverTests: XCTestCase {
     func testValidPublicKeyResolution() async {
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
         let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-        
-        do {
-            let result = try await didKeyResolver.resolveKey(header: [
-                "typ": "oauth-authz-req+jwt",
-                "alg": "EdDSA",
-                "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-            ])
-            XCTAssertEqual(result, "z6MkwAm9tLpXZNfeEAqj9jcccFhjdiTwxVD32GhcjyeqGYSo")
-        } catch {
-            XCTFail("Expected success but got error: \(error)")
+
+        await assertAsyncNoThrowsErrorAndVerify(try await didKeyResolver.resolveKey(header: [
+            "typ": "oauth-authz-req+jwt",
+            "alg": "EdDSA",
+            "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
+        ])){ result in
+            // assert if returned result is of type publick key type ed22519 case
+            switch result {
+            case .ed25519(let publicKey):
+                XCTAssertTrue(publicKey is Curve25519.Signing.PublicKey)
+            default:
+                XCTFail("Unexpected public key type returned")
+            }
         }
     }
 

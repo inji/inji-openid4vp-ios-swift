@@ -17,25 +17,25 @@ struct JWSHandler {
     func verify() async throws {
         do {
             // TODO: keyResolver.resolveKey should return publicKey instead of String once multiple signature support is added
-            let publicKeyMultibase = try await publicKeyResolver.resolveKey(header: try extractDataJsonFromJws(jwsPart: .header))
-
-            let base58Key = String(publicKeyMultibase.dropFirst())
-            guard let publicKeyData = Base58.base58Decode(base58Key) else {
-                throw JsonDecodingFailed(
-                    message: "DID public key decoding failed",
-                    className: JWSHandler.className
-                )
-            }
-
-            let rawPublicKey = publicKeyData.dropFirst(2)
-            guard rawPublicKey.count == 32 else {
-                throw JsonDecodingFailed(
-                    message: "Invalid Ed25519 raw public key length",
-                    className: JWSHandler.className
-                )
-            }
-
-            let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: rawPublicKey)
+            let publicKey = try await publicKeyResolver.resolveKey(header: try extractDataJsonFromJws(jwsPart: .header))
+//
+//            let base58Key = String(publicKeyMultibase.dropFirst())
+//            guard let publicKeyData = Base58.base58Decode(base58Key) else {
+//                throw JsonDecodingFailed(
+//                    message: "DID public key decoding failed",
+//                    className: JWSHandler.className
+//                )
+//            }
+//
+//            let rawPublicKey = publicKeyData.dropFirst(2)
+//            guard rawPublicKey.count == 32 else {
+//                throw JsonDecodingFailed(
+//                    message: "Invalid Ed25519 raw public key length",
+//                    className: JWSHandler.className
+//                )
+//            }
+//
+//            let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: rawPublicKey)
 
             let jws = try JWS(jwsString: jws)
             guard try jws.verify(key: publicKey) else {
