@@ -48,10 +48,12 @@ public struct NetworkManager: NetworkManaging {
                     if let urlError = error.asAFError?.underlyingError as? URLError, urlError.code == .timedOut {
                         let exception = NetworkRequestException.networkRequestTimeout
                         OpenID4VPException.error(NetworkManager.logTag, exception)
+                        print("url failure: \(url)")
                         continuation.resume(throwing: exception)
                     } else {
                         let exception = NetworkRequestException.networkRequestFailed(message: "\(error.localizedDescription)")
                         OpenID4VPException.error(NetworkManager.logTag, exception)
+                        print("url failure: \(url)")
                         continuation.resume(throwing: exception)
                     }
                 }

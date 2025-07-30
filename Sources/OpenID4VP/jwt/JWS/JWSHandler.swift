@@ -36,12 +36,21 @@ struct JWSHandler {
 //            }
 //
 //            let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: rawPublicKey)
-
             let jws = try JWS(jwsString: jws)
-            guard try jws.verify(key: publicKey) else {
-                throw InvalidSignature(
-                    className: JWSHandler.className
-                )
+
+            switch publicKey {
+            case .ed25519(let edKey):
+                guard try jws.verify(key: edKey) else {
+                    throw InvalidSignature(
+                        className: JWSHandler.className
+                    )
+                }
+            case .secKey(let secKey):
+                guard try jws.verify(key: secKey) else {
+                    throw InvalidSignature(
+                        className: JWSHandler.className
+                    )
+                }
             }
         } catch {
             throw VerificationFailure(
