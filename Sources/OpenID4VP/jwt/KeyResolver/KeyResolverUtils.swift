@@ -94,56 +94,56 @@ func parsePublicKey(from publicKeyMultibase: String) throws -> PublicKeyType {
         
     default:
         throw JsonDecodingFailed(
-            message: "DID public key decoding failed",
+            message: "DID public key decoding failed. Unsupported public key format",
             className: JWSHandler.className
         )
     }
 }
 
-//func createSecKeyFromJWK(_ jwk: [String: Any]) throws -> PublicKeyType {
-//    guard let kty = jwk["kty"] as? String, kty == "OKP" else {
-//        throw PublicKeyResolutionFailed(
-//            message: "JWKError.unsupportedKeyType",
-//            className: JWSHandler.className
-//        )
-//    }
-//    
-//    guard let crv = jwk["crv"] as? String, crv == "Ed25519" else {
-//        throw PublicKeyResolutionFailed(
-//            message: "JWKError.unsupportedKeyType",
-//            className: JWSHandler.className
-//        )
-//    }
-//    
-//    guard let x = jwk["x"] as? String else {
-//        throw PublicKeyResolutionFailed(
-//            message: "JWKError.missingKeyData",
-//            className: JWSHandler.className
-//        )
-//    }
-//    
-//    guard let keyData = Data(base64Encoded: x) else {
-//        throw PublicKeyResolutionFailed(
-//            message: "JWKError.invalidBase64",
-//            className: JWSHandler.className
-//        )
-//    }
-//    
-//    let attributes: [String: Any] = [
-//        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom, // placeholder; overridden below
-//        kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
-//        kSecAttrKeySizeInBits as String: 256,
-//        kSecAttrIsPermanent as String: false
-//    ]
-//    
-//    guard let secKey = SecKeyCreateWithData(keyData as CFData,
-//                                            attributes as CFDictionary,
-//                                            nil) else {
-//        throw JsonDecodingFailed(
-//            message: "JWKError.secKeyCreationFailed",
-//            className: JWSHandler.className
-//        )
-//    }
-//    
-//    return .secKey(secKey)
-//}
+func createSecKeyFromJWK(_ jwk: [String: Any]) throws -> PublicKeyType {
+    guard let kty = jwk["kty"] as? String, kty == "OKP" else {
+        throw PublicKeyResolutionFailed(
+            message: "JWKError.unsupportedKeyType",
+            className: JWSHandler.className
+        )
+    }
+    
+    guard let crv = jwk["crv"] as? String, crv == "Ed25519" else {
+        throw PublicKeyResolutionFailed(
+            message: "JWKError.unsupportedKeyType",
+            className: JWSHandler.className
+        )
+    }
+    
+    guard let x = jwk["x"] as? String else {
+        throw PublicKeyResolutionFailed(
+            message: "JWKError.missingKeyData",
+            className: JWSHandler.className
+        )
+    }
+    
+    guard let keyData = Data(base64Encoded: x) else {
+        throw PublicKeyResolutionFailed(
+            message: "JWKError.invalidBase64",
+            className: JWSHandler.className
+        )
+    }
+    
+    let attributes: [String: Any] = [
+        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom, // placeholder; overridden below
+        kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+        kSecAttrKeySizeInBits as String: 256,
+        kSecAttrIsPermanent as String: false
+    ]
+    
+    guard let secKey = SecKeyCreateWithData(keyData as CFData,
+                                            attributes as CFDictionary,
+                                            nil) else {
+        throw JsonDecodingFailed(
+            message: "JWKError.secKeyCreationFailed",
+            className: JWSHandler.className
+        )
+    }
+    
+    return .secKey(secKey)
+}

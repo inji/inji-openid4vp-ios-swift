@@ -264,8 +264,7 @@ class UnsupportedKeyAgreementAlgorithm: OpenID4VPException {
 }
 
 class PublicKeyConversionFailed: OpenID4VPException {
-    init(className: String) {
-        let message = "Public key Data conversion from base64 failed."
+    init(message : String = "Public key Data conversion from base64 failed.", className: String) {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }

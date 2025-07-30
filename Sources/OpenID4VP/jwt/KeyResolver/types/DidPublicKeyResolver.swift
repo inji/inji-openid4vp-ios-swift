@@ -41,17 +41,19 @@ class DidPublicKeyResolver : PublicKeyResolver {
                         throw UnsupportedPublicKeyType(className: DidPublicKeyResolver.className)
                     }
                     
-                    let publicKeyMultibase = method["publicKeyMultibase"] as? String
-                    if publicKeyMultibase?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
-                        throw InvalidData(
-                            message: "publicKeyMultibase cannot be null or empty",
-                            className: DidPublicKeyResolver.className
-                        )
+                    if let publicKeyMultibase = method["publicKeyMultibase"] as? String{
+                        if publicKeyMultibase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            throw InvalidData(
+                                message: "publicKeyMultibase cannot be null or empty",
+                                className: DidPublicKeyResolver.className
+                            )
+                        }
+                        return try parsePublicKey(from: publicKeyMultibase)
                     }
-                    return try parsePublicKey(from: publicKeyMultibase!)
-                    //                    if let jwk = method["publicKeyJwk"] as? [String: Any] {
-                    //                        return try createSecKeyFromJWK(jwk)
-                    //                    }
+                    
+                    if let jwk = method["publicKeyJwk"] as? [String: Any] {
+                        return try createSecKeyFromJWK(jwk)
+                    }
                 }
             }
         }
