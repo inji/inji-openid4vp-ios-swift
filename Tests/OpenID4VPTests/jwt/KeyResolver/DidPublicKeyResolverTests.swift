@@ -31,6 +31,40 @@ class DidPublicKeyResolverTests: XCTestCase {
       ]
     }
     """
+    
+    let didResponseWithPublicKeyJwk = """
+    {
+      "@context": ["https://www.w3.org/ns/did/v1"],
+      "id": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs",
+      "alsoKnownAs": [],
+      "authentication": [
+        "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
+      ],
+      "assertionMethod": [
+        "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
+      ],
+      "service": [],
+      "verificationMethod": [
+        {
+          "@context": "https://w3id.org/security/suites/ed25519-2020/v1",
+          "id": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0",
+          "type": "Ed25519VerificationKey2020",
+          "controller": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs",
+          "publicKeyJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "5Gkh7kcvir1nKUxZSbZIfa-CMJ-7K4F8NGamMhRr8B4",
+            "alg": "EdDSA",
+            "key_ops": [
+              "sign",
+              "verify"
+            ],
+            "use": "sig"
+          }
+        }
+      ]
+    }
+    """
 
     func testValidPublicKeyResolution() async {
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
@@ -49,6 +83,26 @@ class DidPublicKeyResolverTests: XCTestCase {
                 XCTFail("Unexpected public key type returned")
             }
         }
+    }
+    
+    func testValidPublicKeyResolutionWithPublicKeyJwk() async {
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponseWithPublicKeyJwk)
+        let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
+        
+        await assertAsyncNoThrowsErrorAndVerify(try await didKeyResolver.resolveKey(header: [
+            "typ": "oauth-authz-req+jwt",
+            "alg": "EdDSA",
+            "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
+        ])){ result in
+            // assert if returned result is of type publick key type ed22519 case
+            switch result {
+            case .ed25519(let publicKey):
+                XCTAssertTrue(publicKey is Curve25519.Signing.PublicKey)
+            default:
+                XCTFail("Unexpected public key type returned")
+            }
+        }
+
     }
 
     func testThrowErrorWhenKeyIdIsNotMatchingAnyOfTheKeysInDidDocumentResponse() async {

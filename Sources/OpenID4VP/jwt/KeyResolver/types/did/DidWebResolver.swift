@@ -18,28 +18,46 @@ class DidWebResolver {
     private let didMatcher = "^did:\(method):\(methodId)\(params)\(path)\(query)\(fragment)$"
     private let docPath = "/did.json"
     private let wellKnownPath = ".well-known"
+    private static let supportedPublicKeyTypes = ["publicKeyMultibase", "publicKeyJwk"]
 
     
     private let didWebMethod = "web"
     
     let didUrl: String
+    let parsedDid: ParsedDID
     let networkManager: NetworkManaging
     
-    init(didUrl: String, networkManager: NetworkManaging) {
-        self.didUrl = didUrl
+    init(parsedDid: ParsedDID, networkManager: NetworkManaging) {
+        self.parsedDid = parsedDid
+        self.didUrl = parsedDid.didUrl
         self.networkManager = networkManager
     }
     
-    // Throws UnsupportedDidUrl or DidResultionFailed with error description
-    func resolve() async throws -> [String: Any] {
-        let parsedDid = try parse()
-        guard parsedDid.method == didWebMethod else {
-            throw UnsupportedDidUrl(className: DidWebResolver.className)
+    func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
+        do {
+            
+            let urlString = constructDIDUrl(from: self.parsedDid)
+            
+            let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
+            guard let responseBody = response.responseBody.data(using: .utf8) else {
+                throw InvalidData(
+                    message: "Conversion failed: resolved DID response body could not be encoded",
+                    className: DidWebResolver.className
+                )
+            }
+            guard let didResponse = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
+                throw InvalidData(
+                    message: "Conversion failed: resolved DID response is not a valid JSON object",
+                    className: DidWebResolver.className
+                )
+            }
+            
+            return try self.extractPublicKey(for: kid, from: didResponse)!
+        } catch {
+            throw DidResolutionFailed(message: error.localizedDescription, className: DidWebResolver.className)
         }
-        let result = try await resolve(parsedDID: parsedDid)
-        return result
     }
-    
+
     private func parse() throws -> ParsedDID {
         let didUrlPattern = try! NSRegularExpression(pattern: didMatcher, options: [])
         let nsString = didUrl as NSString
@@ -105,16 +123,41 @@ class DidWebResolver {
         
         return "https://\(baseDomain)/\(urlPath)"
     }
-}
-
-
-fileprivate struct ParsedDID : Equatable {
-    let did: String
-    let method: String
-    let id: String
-    let didUrl: String
-    var params: [String: String]?
-    var path: String?
-    var query: String?
-    var fragment: String?
+    
+    private func extractPublicKey(for kid: String, from didDoc: [String: Any]) throws -> PublicKeyType? {
+        if let verificationMethods = didDoc["verificationMethod"] as? [[String: Any]] {
+            for method in verificationMethods {
+                if let id = method["id"] as? String, id == kid {
+                    
+                    if !Self.supportedPublicKeyTypes.contains(where: { method[$0] != nil }) {
+                        throw UnsupportedPublicKeyType(className: DidPublicKeyResolver.className)
+                    }
+                    
+                    if let publicKeyMultibase = method["publicKeyMultibase"] as? String{
+                        if publicKeyMultibase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            throw InvalidData(
+                                message: "publicKeyMultibase cannot be null or empty",
+                                className: DidPublicKeyResolver.className
+                            )
+                        }
+                        return try parsePublicKey(from: publicKeyMultibase)
+                    }
+                    
+                    if let jwk = method["publicKeyJwk"] as? [String: Any] {
+                        return try createSecKeyFromJWK(jwk)
+                    }
+                    
+                    throw PublicKeyExtractionFailed(
+                        message: "unsupported verification material or no publicKeyMultibase or publicKeyJwk",
+                        className: DidPublicKeyResolver.className
+                    )
+                }
+            }
+        }
+        
+        throw PublicKeyExtractionFailed(
+            message: "Public key extraction failed for kid: \(kid)",
+            className: DidPublicKeyResolver.className
+        )
+    }
 }

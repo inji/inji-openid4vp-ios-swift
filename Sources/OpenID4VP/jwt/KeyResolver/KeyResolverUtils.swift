@@ -122,28 +122,58 @@ func createSecKeyFromJWK(_ jwk: [String: Any]) throws -> PublicKeyType {
         )
     }
     
-    guard let keyData = Data(base64Encoded: x) else {
+    guard let keyData = Data(base64UrlEncoded: x) else {
         throw PublicKeyResolutionFailed(
             message: "JWKError.invalidBase64",
             className: JWSHandler.className
         )
     }
+    let edPublicKey = try Curve25519.Signing.PublicKey(rawRepresentation: keyData)
     
-    let attributes: [String: Any] = [
-        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom, // placeholder; overridden below
+    return .ed25519(edPublicKey)
+}
+
+func stripPEMHeader(pemString: String) -> Data? {
+    let lines = pemString.components(separatedBy: .newlines)
+    let base64String = lines
+        .filter { !$0.contains("-----") && !$0.isEmpty }
+        .joined()
+    return Data(base64Encoded: base64String)
+}
+
+func publicKeyFromPEM(_ pemString: String) -> SecKey? {
+    guard let keyData = stripPEMHeader(pemString: pemString) else { return nil }
+
+    let options: [String: Any] = [
+        kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
         kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
-        kSecAttrKeySizeInBits as String: 256,
-        kSecAttrIsPermanent as String: false
+        kSecAttrKeySizeInBits as String: keyData.count * 8,
+        kSecReturnPersistentRef as String: true
     ]
-    
-    guard let secKey = SecKeyCreateWithData(keyData as CFData,
-                                            attributes as CFDictionary,
-                                            nil) else {
-        throw JsonDecodingFailed(
-            message: "JWKError.secKeyCreationFailed",
-            className: JWSHandler.className
-        )
+
+    return SecKeyCreateWithData(keyData as CFData, options as CFDictionary, nil)
+}
+
+func hexStringToData(_ hex: String) -> Data? {
+    var data = Data()
+    var temp = ""
+    for char in hex {
+        temp.append(char)
+        if temp.count == 2 {
+            if let byte = UInt8(temp, radix: 16) {
+                data.append(byte)
+                temp = ""
+            } else {
+                return nil
+            }
+        }
     }
-    
-    return .secKey(secKey)
+    return data
+}
+
+
+func publicKeyFromHex(_ hexKey: String) -> PublicKeyType? {
+    let hexData = hexStringToData(hexKey)!
+    let publicKey = try! Curve25519.Signing.PublicKey(rawRepresentation: hexData)
+    return .ed25519(publicKey)
 }
