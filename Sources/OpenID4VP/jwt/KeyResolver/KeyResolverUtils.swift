@@ -100,7 +100,7 @@ func parsePublicKey(from publicKeyMultibase: String) throws -> PublicKeyType {
     }
 }
 
-func createSecKeyFromJWK(_ jwk: [String: Any]) throws -> PublicKeyType {
+func publicKeyFromJWK(_ jwk: [String: Any]) throws -> PublicKeyType {
     guard let kty = jwk["kty"] as? String, kty == "OKP" else {
         throw PublicKeyResolutionFailed(
             message: "JWKError.unsupportedKeyType",
@@ -177,3 +177,81 @@ func publicKeyFromHex(_ hexKey: String) -> PublicKeyType? {
     let publicKey = try! Curve25519.Signing.PublicKey(rawRepresentation: hexData)
     return .ed25519(publicKey)
 }
+
+func publicKeyFromPEM(_ pem: String) throws -> PublicKeyType {
+    let base64Key = pem
+        .replacingOccurrences(of: "-----BEGIN PUBLIC KEY-----", with: "") // PEM header
+        .replacingOccurrences(of: "-----END PUBLIC KEY-----", with: "") // PEMM footer
+        .replacingOccurrences(of: "\n", with: "") // Extra newlines
+        .replacingOccurrences(of: "\r", with: "") // Carriage returns
+
+    guard let derData = Data(base64Encoded: base64Key) else {
+        //PEM format will have the key in base64 encoded format
+        throw PublicKeyResolutionFailed(
+            message: "Invalid PEM format",
+            className: JWSHandler.className
+        )
+    }
+
+    // Strip ASN.1 header to get raw Ed25519 key (32 bytes)
+    // Ed25519 DER prefix is always 12 bytes (for SubjectPublicKeyInfo)
+    // You may need to adjust this if you’re dealing with a different key format
+    let expectedHeader: [UInt8] = [
+        0x30, 0x2a,             // SEQUENCE
+        0x30, 0x05,             // SEQUENCE (AlgorithmIdentifier)
+        0x06, 0x03, 0x2b, 0x65, 0x70, // OID: 1.3.101.112 (Ed25519)
+        0x03                    // BIT STRING
+    ]
+
+    // Find start of actual key
+    var offset = 0
+    for i in 0..<derData.count {
+        if derData[i...].starts(with: expectedHeader) {
+            offset = i + 12
+            break
+        }
+    }
+
+    guard offset > 0, derData.count >= offset + 32 else {
+        throw PublicKeyResolutionFailed(
+            message: "Invalid Ed25519 public key format",
+            className: JWSHandler.className
+        )
+    }
+
+    let publicKeyBytes = derData[offset..<offset + 32]
+
+    do {
+        let edKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyBytes)
+        return .ed25519(edKey)
+    } catch {
+        throw error
+    }
+}
+
+
+//func publicKeyFromHex(_ hex: String) throws -> PublicKeyType {
+//    guard let rawData = Data(hexString: hex) else {
+//        throw PublicKeyResolutionFailed(
+//            message: "Invalid hex string",
+//            className: JWSHandler.className
+//        )
+//    }
+//    
+//    guard rawData.count == 32 else {
+//        throw PublicKeyResolutionFailed(
+//            message: "Invalid Ed25519 public key length. Expected 32 bytes, got \(rawData.count).",
+//            className: JWSHandler.className
+//        )
+//    }
+//    
+//    do {
+//        let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: rawData)
+//        return .ed25519(publicKey)
+//    } catch {
+//        throw PublicKeyResolutionFailed(
+//            message: "Failed to create Ed25519 public key from hex string",
+//            className: JWSHandler.className
+//        )
+//    }
+//}

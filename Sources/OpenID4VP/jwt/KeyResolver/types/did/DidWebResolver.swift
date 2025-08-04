@@ -144,8 +144,17 @@ class DidWebResolver {
                     }
                     
                     if let jwk = method["publicKeyJwk"] as? [String: Any] {
-                        return try createSecKeyFromJWK(jwk)
+                        return try publicKeyFromJWK(jwk)
                     }
+                    
+                    if let publicKeyPem = method["publicKeyPem"] as? String {
+                        return try publicKeyFromPEM(publicKeyPem)
+                    }
+                    
+                    if let publicKeyHex = method["publicKeyHex"] as? String {
+                        return publicKeyFromHex(publicKeyHex)
+                    }
+                        
                     
                     throw PublicKeyExtractionFailed(
                         message: "unsupported verification material or no publicKeyMultibase or publicKeyJwk",
