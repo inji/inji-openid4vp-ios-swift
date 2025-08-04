@@ -18,7 +18,7 @@ class DidWebResolver {
     private let didMatcher = "^did:\(method):\(methodId)\(params)\(path)\(query)\(fragment)$"
     private let docPath = "/did.json"
     private let wellKnownPath = ".well-known"
-    private static let supportedPublicKeyTypes = ["publicKeyMultibase", "publicKeyJwk"]
+    private static let supportedPublicKeyTypes = ["publicKeyMultibase", "publicKeyJwk", "publicKeyPem", "publicKeyHex"]
 
     
     private let didWebMethod = "web"
