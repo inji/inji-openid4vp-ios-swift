@@ -3,10 +3,11 @@ import Foundation
 public struct JWK: Codable {
     let kty: String
     let use: String
+    let keyOps: [String]?
     let crv: String
     let x: String
     let alg: String
-    let kid: String
+    let kid: String?
     var y: String? = nil
 
     static let className = String(describing: JWK.self)
@@ -20,8 +21,9 @@ public struct JWK: Codable {
             self.crv = try container.decode(String.self, forKey: .crv)
             self.x = try container.decode(String.self, forKey: .x)
             self.alg = try container.decode(String.self, forKey: .alg)
-            self.kid = try container.decode(String.self, forKey: .kid)
+            self.kid = try? container.decode(String.self, forKey: .kid)
             self.y = try? container.decodeIfPresent(String.self, forKey: .y)
+            self.keyOps = try? container.decodeIfPresent([String].self, forKey: .keyOps)
         } catch let error as DecodingError {
             throw DeserializationFailure(fieldPath: ["jwk"], errorMessage: error.localizedDescription, className: JWK.className)
 
@@ -34,8 +36,7 @@ public struct JWK: Codable {
             (use, "use"),
             (crv, "crv"),
             (x, "x"),
-            (alg, "alg"),
-            (kid, "kid")
+            (alg, "alg")
         ]
 
         for (value, fieldName) in requiredFields {
@@ -47,5 +48,6 @@ public struct JWK: Codable {
 
     enum CodingKeys: String, CodingKey {
         case kty, use, crv, x, alg, kid, y
+        case keyOps = "key_ops"
     }
 }
