@@ -26,11 +26,11 @@ final class DidWebResolverTests: XCTestCase {
         // Create the resolver with a parsed DID
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         // Resolve the verification method
         let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
@@ -71,11 +71,11 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
         
@@ -108,11 +108,11 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
         
@@ -144,11 +144,11 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
         
@@ -175,11 +175,11 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:sub.example.com",
-            method: "web",
+            method: .web,
             id: "sub.example.com",
             didUrl: "did:web:sub.example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         // This should construct the URL with the subdomain correctly
         let key = try await resolver.resolve(verificationaMethodUri: "did:web:sub.example.com#key1")
@@ -208,11 +208,11 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com:path:to:identity",
-            method: "web",
+            method: .web,
             id: "example.com:path:to:identity",
             didUrl: "did:web:example.com:path:to:identity#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com:path:to:identity#key1")
         
@@ -229,19 +229,14 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
-            if let didError = error as? DidResolutionFailed {
-                XCTAssertEqual(DidWebResolver.className, didError.className)
-                XCTAssertTrue(didError.message.contains("Not Found"))
-            } else {
-                XCTFail("Expected DidResolutionFailed, got \(error)")
-            }
+            assertOpenID4VPException(error, expectedMessage: "Network request failed with error response - Not Found", expectedCode: "invalid_request")
         }
     }
     
@@ -254,18 +249,14 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
-            if let didError = error as? DidResolutionFailed {
-                XCTAssertEqual(DidWebResolver.className, didError.className)
-            } else {
-                XCTFail("Expected DidResolutionFailed, got \(error)")
-            }
+            assertOpenID4VPException(error, expectedMessage: "The data couldn’t be read because it isn’t in the correct format.", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
     
@@ -289,19 +280,14 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
-            if let extractionError = error as? DidResolutionFailed {
-                XCTAssertEqual(DidWebResolver.className, extractionError.className)
-                XCTAssertTrue(extractionError.message.contains("Public key extraction failed for kid"))
-            } else {
-                XCTFail("Expected PublicKeyExtractionFailed, got \(type(of: error))")
-            }
+            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for kid: did:web:example.com#key1", expectedCode: "invalid_request")
         }
     }
     
@@ -325,11 +311,11 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "publicKeyMultibase cannot be null or empty", expectedCode: "invalid_request")
@@ -356,11 +342,11 @@ final class DidWebResolverTests: XCTestCase {
         
         let parsedDid = ParsedDID(
             did: "did:web:example.com",
-            method: "web",
+            method: .web,
             id: "example.com",
             didUrl: "did:web:example.com#key1"
         )
-        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem", expectedCode: "invalid_request")
         }

@@ -2,26 +2,19 @@ import Foundation
 import CryptoKit
 import Base58Swift
 
-class DidKeyResolver {
-    private let didUrl: String
-    private let networkManager: NetworkManaging
-    static let className = String(describing: DidKeyResolver.self)
+class DidKeyResolver : BaseDidPublicKeyResolver{
+    private static let className = String(describing: DidKeyResolver.self)
+    let parsedDid: ParsedDID
+    let networkManager: NetworkManaging
     
-    init(parsedDid: ParsedDID, networkManager: NetworkManaging) {
-        self.didUrl = parsedDid.didUrl
+    init(networkManager: NetworkManaging, parsedDID: ParsedDID) {
         self.networkManager = networkManager
+        self.parsedDid = parsedDID
     }
     
     func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
-        guard let didKey = didUrl.components(separatedBy: "#").first?
-            .components(separatedBy: "did:key:")
-                .filter({ !$0.isEmpty })
-                .first else {
-            throw PublicKeyResolutionFailed(message: "invalidDID", className: Self.className)
-        }
-        
-        let base58Part = String(didKey.dropFirst())
-        guard let decodedBytes = Base58.base58Decode(base58Part) else {
+        let base58KeyPart = String(self.parsedDid.id.dropFirst())
+        guard let decodedBytes = Base58.base58Decode(base58KeyPart) else {
             throw PublicKeyResolutionFailed(message: "keyDecodingFailed", className: Self.className)
         }
         

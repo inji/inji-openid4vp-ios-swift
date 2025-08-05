@@ -2,18 +2,18 @@ import Foundation
 import CryptoKit
 import Base58Swift
 
-class DidJwkResolver {
-    private let didUrl: String
-    private let networkManager: NetworkManaging
-    static let className = String(describing: DidPublicKeyResolver.self)
+class DidJwkResolver : BaseDidPublicKeyResolver {
+    private static let className = String(describing: DidJwkResolver.self)
+    let parsedDid: ParsedDID
+    let networkManager: NetworkManaging
     
-    init(parsedDid: ParsedDID, networkManager: NetworkManaging) {
-        self.didUrl = parsedDid.didUrl
+    init(networkManager: NetworkManaging, parsedDID: ParsedDID)  {
         self.networkManager = networkManager
+        self.parsedDid = parsedDID
     }
     
     func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
-        let base64urlJwk = String(self.didUrl.dropFirst("did:jwk:".count))
+        let base64urlJwk = String(self.parsedDid.didUrl.dropFirst("did:jwk:".count))
         
         guard let jwkData = decodeBase64Url(base64urlJwk) else {
             throw PublicKeyResolutionFailed(message: "invalidBase64Encoding", className: Self.className)
