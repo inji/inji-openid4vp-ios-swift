@@ -86,6 +86,3 @@ struct ParsedDID : Equatable {
     var query: String?
     var fragment: String?
 }
-
-
-
