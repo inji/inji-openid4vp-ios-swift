@@ -38,11 +38,6 @@ class DidJwkResolver : BaseDidPublicKeyResolver {
             throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: Self.className)
         }
         
-        do {
-            let edKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
-            return .ed25519(edKey)
-        } catch {
-            throw PublicKeyResolutionFailed(message: "Public key resolution failed. Error: \(error)", className: Self.className)
-        }
+        return try toEd25519Key(publicKeyData: publicKeyData)
     }
 }

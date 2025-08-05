@@ -152,7 +152,6 @@ final class DidWebResolverTests: XCTestCase {
         
         let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
         
-        // The exact type will depend on the implementation of publicKeyFromHex
         XCTAssertNotNil(key)
     }
     

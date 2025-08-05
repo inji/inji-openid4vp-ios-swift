@@ -38,8 +38,7 @@ func publicKeyFromMultibase(_ publicKeyMultibase: String) throws -> PublicKeyTyp
                 className: className
             )
         }
-        let edKey = try Curve25519.Signing.PublicKey(rawRepresentation: keyData)
-        return .ed25519(edKey)
+        return try toEd25519Key(publicKeyData: keyData)
         
     case [0x12, 0x00]:
         return try createSecKey(from: keyData).map { .secKey($0) } ?? {
@@ -58,16 +57,16 @@ func publicKeyFromMultibase(_ publicKeyMultibase: String) throws -> PublicKeyTyp
 }
 
 func publicKeyFromJWK(_ jwk: [String: Any]) throws -> PublicKeyType {
-    guard let kty = jwk["kty"] as? String, kty == "OKP" else {
+    if let kty = jwk["kty"] as? String, kty != "OKP"  {
         throw PublicKeyResolutionFailed(
-            message: "KeyType - \(String(describing: jwk["kty"])) is not supported. Supported: OKP",
+            message: "KeyType - \(kty) is not supported. Supported: OKP",
             className: className
         )
     }
     
-    guard let crv = jwk["crv"] as? String, crv == "Ed25519" else {
+    if let crv = jwk["crv"] as? String, crv != "Ed25519" {
         throw PublicKeyResolutionFailed(
-            message: "Curve - \(String(describing: jwk["crv"])) is not supported. Supported: Ed25519",
+            message: "Curve - \(crv) is not supported. Supported: Ed25519",
             className: className
         )
     }
@@ -85,9 +84,7 @@ func publicKeyFromJWK(_ jwk: [String: Any]) throws -> PublicKeyType {
             className: className
         )
     }
-    let edPublicKey = try Curve25519.Signing.PublicKey(rawRepresentation: keyData)
-    
-    return .ed25519(edPublicKey)
+    return try toEd25519Key(publicKeyData: keyData)
 }
 
 
@@ -109,11 +106,11 @@ func hexStringToData(_ hex: String) -> Data? {
 }
 
 
-func publicKeyFromHex(_ hexKey: String) -> PublicKeyType? {
+func publicKeyFromHex(_ hexKey: String) throws -> PublicKeyType? {
     let hexData = hexStringToData(hexKey)!
-    let publicKey = try! Curve25519.Signing.PublicKey(rawRepresentation: hexData)
-    return .ed25519(publicKey)
+    return try toEd25519Key(publicKeyData: hexData)
 }
+
 
 func publicKeyFromPEM(_ pem: String) throws -> PublicKeyType {
     let base64Key = pem
@@ -153,12 +150,7 @@ func publicKeyFromPEM(_ pem: String) throws -> PublicKeyType {
 
     let publicKeyBytes = derData[offset..<offset + 32]
 
-    do {
-        let edKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyBytes)
-        return .ed25519(edKey)
-    } catch {
-        throw error
-    }
+    return try toEd25519Key(publicKeyData: publicKeyBytes)
 }
 
 private func createSecKey(from publicKeyData: Data) -> SecKey? {
@@ -189,4 +181,13 @@ func decodeMultibase(_ multibaseKey: String) throws -> Data {
         )
     }
     return Data(decoded)
+}
+
+func toEd25519Key(publicKeyData: Data) throws -> PublicKeyType {
+    do {
+        let edKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
+        return .ed25519(edKey)
+    } catch {
+        throw PublicKeyResolutionFailed(message: "Public key resolution failed. Error: \(error)", className: className)
+    }
 }

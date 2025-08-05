@@ -27,10 +27,6 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
         
         let keyBytes = decodedBytes[2..<34]
         
-        do {
-            return try .ed25519(Curve25519.Signing.PublicKey(rawRepresentation: Data(keyBytes)))
-        } catch {
-            throw PublicKeyResolutionFailed(message: "Public key resolution failed. Error: \(error)", className: Self.className)
-        }
+        return try toEd25519Key(publicKeyData: keyBytes)
     }
 }
