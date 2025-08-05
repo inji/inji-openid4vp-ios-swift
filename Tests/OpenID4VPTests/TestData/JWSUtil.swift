@@ -32,8 +32,7 @@ struct JWSUtil {
     }
 
     static func create(header: [String:Any]? = nil,payload: [String:Any],addValidSignature: Bool = true) -> String{
-        let base64 = ed25519PrivateKey.base64URLToBase64()
-        let privateKeyData = Data(base64Encoded: base64)
+        let privateKeyData = Data(base64UrlEncoded: ed25519PrivateKey)
         let jwsHeader = header == nil ? self.jwsHeader : header
         let headerData = try? JSONSerialization.data(withJSONObject: jwsHeader as Any)
         let header64 = base64UrlEncode(headerData!)
