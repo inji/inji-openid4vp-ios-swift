@@ -16,12 +16,6 @@ class DidPublicKeyResolver : PublicKeyResolver {
     private static let query = "([?][^#]*)?"
     private static let fragment = "(#.*)?"
     private let didMatcher = "^did:\(method):\(methodId)\(params)\(path)\(query)\(fragment)$"
-    private let docPath = "/did.json"
-    private let wellKnownPath = ".well-known"
-    private static let supportedPublicKeyTypes = ["publicKeyMultibase", "publicKeyJwk"]
-    
-    private let didWebMethod = "web"
-    
     
     init(didUrl: String, networkManager: NetworkManaging) {
         self.didUrl = didUrl
@@ -94,8 +88,4 @@ struct ParsedDID : Equatable {
 }
 
 
-enum DIDMethod: String {
-    case web = "web"
-    case key = "key"
-    case jwk = "jwk"
-}
+

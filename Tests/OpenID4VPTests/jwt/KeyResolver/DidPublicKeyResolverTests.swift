@@ -240,7 +240,4 @@ class DidPublicKeyResolverTests: XCTestCase {
             )
         }
     }
-
-
-
 }
