@@ -1,24 +1,14 @@
 import Foundation
 
 class DidWebResolver : BaseDidPublicKeyResolver {
-    private static let pctEncoded = "(?:%[0-9a-fA-F]{2})"
-    private static let idChar = "(?:[a-zA-Z0-9._-]|\(pctEncoded))"
-    private static let method = "([a-z0-9]+)"
-    private static let methodId = "((?:\(idChar)*:)*(\(idChar)+))"
-    private static let paramChar = "[a-zA-Z0-9_.:%-]"
-    private static let param = ";\(paramChar)+=\(paramChar)*"
-    private static let params = "((\(param))*)"
-    private static let path = "(/[^#?]*)?"
-    private static let query = "([?][^#]*)?"
-    private static let fragment = "(#.*)?"
     private static let className: String = String(describing: DidWebResolver.self)
     
-    private let didMatcher = "^did:\(method):\(methodId)\(params)\(path)\(query)\(fragment)$"
     private let docPath = "/did.json"
     private let wellKnownPath = ".well-known"
+    private static let supportedPublicKeyTypes = PublicKeyVerificationMaterial.allCases.map { $0.rawValue }
+    
     let parsedDid: ParsedDID
     let networkManager: NetworkManaging
-    private static let supportedPublicKeyTypes = ["publicKeyMultibase", "publicKeyJwk", "publicKeyPem", "publicKeyHex"]
     
     init(networkManager: NetworkManaging, parsedDID: ParsedDID) {
         self.networkManager = networkManager
@@ -68,32 +58,22 @@ class DidWebResolver : BaseDidPublicKeyResolver {
                         throw UnsupportedPublicKeyType(className: Self.className)
                     }
                     
-                    if method.keys.contains("publicKeyMultibase") {
-                        let publicKeyMultibase = method["publicKeyMultibase"] as? String
-                        if isNullOrEmpty(publicKeyMultibase) {
-                            throw InvalidData(
-                                message: "publicKeyMultibase cannot be null or empty",
-                                className: Self.className
-                            )
-                        }
-                        return try parsePublicKey(from: publicKeyMultibase!)
+                    if method.keys.contains(PublicKeyVerificationMaterial.multibase.rawValue) {
+                        return try extractAndParse(from: method, key: .multibase, parse: publicKeyFromMultibase)
                     }
-                    
-                    if let jwk = method["publicKeyJwk"] as? [String: Any] {
+                    else if let jwk = method[PublicKeyVerificationMaterial.jwk.rawValue] as? [String: Any] {
                         return try publicKeyFromJWK(jwk)
                     }
-                    
-                    if let publicKeyPem = method["publicKeyPem"] as? String {
-                        return try publicKeyFromPEM(publicKeyPem)
+                    else if method.keys.contains(PublicKeyVerificationMaterial.pem.rawValue) {
+                        return try extractAndParse(from: method, key: .pem, parse: publicKeyFromPEM)
                     }
-                    
-                    if let publicKeyHex = method["publicKeyHex"] as? String {
-                        return publicKeyFromHex(publicKeyHex)
+                    else if method.keys.contains(PublicKeyVerificationMaterial.hex.rawValue) {
+                        return try extractAndParse(from: method, key: .hex, parse: publicKeyFromHex)
                     }
                     
                     
                     throw PublicKeyExtractionFailed(
-                        message: "unsupported verification material or no publicKeyMultibase or publicKeyJwk",
+                        message: "unsupported verification material. Supported : \(Self.supportedPublicKeyTypes)",
                         className: Self.className
                     )
                 }
@@ -105,4 +85,20 @@ class DidWebResolver : BaseDidPublicKeyResolver {
             className: Self.className
         )
     }
+    
+    func extractAndParse<T>(
+        from method: [String: Any],
+        key: PublicKeyVerificationMaterial,
+        parse: (String) throws -> T
+    ) throws -> T {
+        let rawValue = method[key.rawValue] as? String
+        if(isNullOrEmpty(rawValue)) {
+            throw InvalidData(
+                message: "\(key.rawValue) cannot be null or empty",
+                className: String(describing: Self.self)
+            )
+        }
+        return try parse(rawValue!)
+    }
+    
 }

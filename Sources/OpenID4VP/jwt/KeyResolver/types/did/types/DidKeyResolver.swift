@@ -6,6 +6,7 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
     private static let className = String(describing: DidKeyResolver.self)
     let parsedDid: ParsedDID
     let networkManager: NetworkManaging
+    static let keySize = 34
     
     init(networkManager: NetworkManaging, parsedDID: ParsedDID) {
         self.networkManager = networkManager
@@ -13,13 +14,9 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
     }
     
     func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
-        let base58KeyPart = String(self.parsedDid.id.dropFirst())
-        guard let decodedBytes = Base58.base58Decode(base58KeyPart) else {
-            throw PublicKeyResolutionFailed(message: "keyDecodingFailed", className: Self.className)
-        }
+        let decodedBytes = try decodeMultibase(self.parsedDid.id)
         
-        
-        guard decodedBytes.count == 34,
+        guard decodedBytes.count == Self.keySize,
               decodedBytes[0] == 0xed,
               decodedBytes[1] == 0x01 else {
             throw PublicKeyResolutionFailed(message: "unsupportedKeyType", className: Self.className)
