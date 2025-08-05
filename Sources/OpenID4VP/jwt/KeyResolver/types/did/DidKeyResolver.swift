@@ -5,8 +5,7 @@ import Base58Swift
 class DidKeyResolver {
     private let didUrl: String
     private let networkManager: NetworkManaging
-    static let className = String(describing: DidPublicKeyResolver.self)
-    private static let supportedPublicKeyTypes = ["publicKeyMultibase", "publicKeyJwk"]
+    static let className = String(describing: DidKeyResolver.self)
     
     init(parsedDid: ParsedDID, networkManager: NetworkManaging) {
         self.didUrl = parsedDid.didUrl
@@ -15,11 +14,14 @@ class DidKeyResolver {
     
     func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
         guard let didKey = didUrl.components(separatedBy: "#").first?
-            .replacingOccurrences(of: "did:key:", with: "") else {
+            .components(separatedBy: "did:key:")
+                .filter({ !$0.isEmpty })
+                .first else {
             throw PublicKeyResolutionFailed(message: "invalidDID", className: Self.className)
         }
         
-        guard let decodedBytes = Base58.base58Decode(didKey) else {
+        let base58Part = String(didKey.dropFirst())
+        guard let decodedBytes = Base58.base58Decode(base58Part) else {
             throw PublicKeyResolutionFailed(message: "keyDecodingFailed", className: Self.className)
         }
         
