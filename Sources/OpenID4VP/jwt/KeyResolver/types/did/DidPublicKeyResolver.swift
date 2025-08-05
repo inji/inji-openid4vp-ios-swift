@@ -23,7 +23,7 @@ class DidPublicKeyResolver : PublicKeyResolver {
     }
     
     func resolveKey(header: [String : Any]) async throws -> PublicKeyType {
-        let parsedDid = try parse()
+        let parsedDid = try parseDid()
         
         guard let kid = header["kid"] as? String else {
             throw KidExtractionFailed(
@@ -31,19 +31,19 @@ class DidPublicKeyResolver : PublicKeyResolver {
             )
         }
         
-        switch parsedDid.method {
-        case DIDMethod.web.rawValue:
+        switch DIDMethod(rawValue: parsedDid.method) {
+        case .web:
             return try await DidWebResolver(parsedDid: parsedDid, networkManager: networkManager).resolve(verificationaMethodUri: kid)
-        case DIDMethod.jwk.rawValue:
+        case .jwk:
             return try await DidJwkResolver(parsedDid: parsedDid, networkManager: networkManager).resolve(verificationaMethodUri: kid)
-        case DIDMethod.key.rawValue:
+        case .key:
             return try await DidKeyResolver(parsedDid: parsedDid, networkManager: networkManager).resolve(verificationaMethodUri: kid)
         default:
             throw UnsupportedDidUrl(className: Self.className)
         }
     }
     
-    private func parse() throws -> ParsedDID {
+    private func parseDid() throws -> ParsedDID {
         let didUrlPattern = try! NSRegularExpression(pattern: didMatcher, options: [])
         let nsString = didUrl as NSString
         var sections: [String] = []
