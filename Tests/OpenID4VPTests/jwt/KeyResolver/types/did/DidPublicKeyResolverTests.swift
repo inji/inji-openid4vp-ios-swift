@@ -94,10 +94,9 @@ class DidPublicKeyResolverTests: XCTestCase {
             "alg": "EdDSA",
             "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
         ])){ result in
-            // assert if returned result is of type publick key type ed22519 case
             switch result {
             case .ed25519(let publicKey):
-                XCTAssertTrue(publicKey is Curve25519.Signing.PublicKey)
+                XCTAssertEqual("e46921ee472f8abd67294c5949b6487daf82309fbb2b817c3466a632146bf01e", publicKey.rawRepresentation.toHexString())
             default:
                 XCTFail("Unexpected public key type returned")
             }
