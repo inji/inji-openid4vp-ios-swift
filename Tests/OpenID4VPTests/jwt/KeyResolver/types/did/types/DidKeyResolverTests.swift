@@ -25,7 +25,6 @@ final class DidKeyResolverTests: XCTestCase {
     }
     
     func testInvalidBase58EncodedKey() async {
-        // Invalid base58 encoded key
         let invalidBase58DidKey = "did:key:z1nval1dBase58String"
         let parsedDid = ParsedDID(did: invalidBase58DidKey, method: .key, id: "z1nval1dBase58String", didUrl: invalidBase58DidKey)
         
@@ -36,9 +35,7 @@ final class DidKeyResolverTests: XCTestCase {
         }
     }
     
-    func testUnsupportedKeyType() async {
-        // Create a valid base58 string but with incorrect multicodec prefix
-        // This simulates a key that's not an Ed25519 key (first bytes not 0xed, 0x01)
+    func testUnsupportedKeyTypeWithIncorrectMultiCodeCPrefix() async {
         let keyBytes = [UInt8](repeating: 0, count: 32)
         let prefixedKeyBytes = [0x12, 0x20] + keyBytes // Using different prefix (e.g., secp256k1)
         let base58Key = Base58.base58Encode(prefixedKeyBytes)
@@ -53,8 +50,7 @@ final class DidKeyResolverTests: XCTestCase {
         }
     }
     
-    func testInvalidKeyData() async {
-        // The key bytes are too short to be a valid Ed25519 key
+    func testInvalidKeyDataWithKeyBytesLesserThan32() async {
         let invalidKeyBytes = [UInt8](repeating: 0, count: 16)
         let prefixedKeyBytes = [0xed, 0x01] + invalidKeyBytes
         let invalidBase58 = Base58.base58Encode(prefixedKeyBytes)
