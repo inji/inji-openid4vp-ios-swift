@@ -148,7 +148,7 @@ class PublicKeyExtractionFailed: OpenID4VPException {
 
 class UnsupportedPublicKeyType: OpenID4VPException {
     init(className: String) {
-        let message = "Unsupported Public Key type. Supported: publicKeyMultibase"
+        let message = "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }

@@ -45,7 +45,7 @@ class DidPublicKeyResolver : PublicKeyResolver {
         case DIDMethod.key.rawValue:
             return try await DidKeyResolver(parsedDid: parsedDid, networkManager: networkManager).resolve(verificationaMethodUri: kid)
         default:
-            throw InvalidData(message: "Provided did method - \(parsedDid.method) is not supported", className: Self.className)
+            throw UnsupportedDidUrl(className: Self.className)
         }
     }
     

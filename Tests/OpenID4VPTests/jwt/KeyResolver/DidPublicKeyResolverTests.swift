@@ -132,7 +132,7 @@ class DidPublicKeyResolverTests: XCTestCase {
     }
 
     func testThrowErrorWhenPublicKeyResolutionFailed() async {
-        let invalidDid = "did:jwk:xyz"
+        let invalidDid = "did:peer:xyz"
         let didKeyResolver = DidPublicKeyResolver(didUrl: invalidDid, networkManager: mockNetworkManager)
 
         await assertAsyncThrowsError(
@@ -150,41 +150,41 @@ class DidPublicKeyResolverTests: XCTestCase {
             }
     }
     
-    func testUnsupportedPublicKeyTypesThrowError() async {
-        let unsupportedKeys = [
-            "publicKey",
-            "publicKeyJwk",
-            "publicKeyPem",
-            "publicKeyHex"
-        ]
-
-        for key in unsupportedKeys {
-            let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-unsupported-\(key)"
-            let didDocumentWithUnsupportedKey = """
-            {
-              "verificationMethod": [
-                {
-                  "id": "\(kid)",
-                  "\(key)": "dummy-value"
-                }
-              ]
-            }
-            """
-            mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDocumentWithUnsupportedKey)
-
-            let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-
-            await assertAsyncThrowsError(
-                        try await resolver.resolveKey(header: ["kid": kid])
-                    ) { error in
-                    assertOpenID4VPException(
-                        error,
-                        expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase",
-                        expectedCode: OpenID4VPErrorCodes.invalidRequest
-                    )
-                }
-        }
-    }
+//    func testUnsupportedPublicKeyTypesThrowError() async {
+//        let unsupportedKeys = [
+//            "publicKey",
+//            "publicKeyJwk",
+//            "publicKeyPem",
+//            "publicKeyHex"
+//        ]
+//
+//        for key in unsupportedKeys {
+//            let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-unsupported-\(key)"
+//            let didDocumentWithUnsupportedKey = """
+//            {
+//              "verificationMethod": [
+//                {
+//                  "id": "\(kid)",
+//                  "\(key)": "dummy-value"
+//                }
+//              ]
+//            }
+//            """
+//            mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDocumentWithUnsupportedKey)
+//
+//            let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
+//
+//            await assertAsyncThrowsError(
+//                        try await resolver.resolveKey(header: ["kid": kid])
+//                    ) { error in
+//                    assertOpenID4VPException(
+//                        error,
+//                        expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem",
+//                        expectedCode: OpenID4VPErrorCodes.invalidRequest
+//                    )
+//                }
+//        }
+//    }
     
     func testThrowsErrorWhenPublicKeyMultibaseIsNil() async {
         let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"

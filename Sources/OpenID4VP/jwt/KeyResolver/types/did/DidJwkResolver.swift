@@ -18,7 +18,6 @@ class DidJwkResolver {
         guard let jwkData = decodeBase64Url(base64urlJwk) else {
             throw PublicKeyResolutionFailed(message: "invalidBase64Encoding", className: Self.className)
         }
-        
         let jwk = try JSONDecoder().decode(JWK.self, from: jwkData)
         
         guard jwk.kty == "OKP", jwk.crv == "Ed25519" else {

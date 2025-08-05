@@ -133,14 +133,15 @@ class DidWebResolver {
                         throw UnsupportedPublicKeyType(className: DidPublicKeyResolver.className)
                     }
                     
-                    if let publicKeyMultibase = method["publicKeyMultibase"] as? String{
-                        if publicKeyMultibase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    if method.keys.contains("publicKeyMultibase") {
+                        let publicKeyMultibase = method["publicKeyMultibase"] as? String
+                        if isNullOrEmpty(publicKeyMultibase) {
                             throw InvalidData(
                                 message: "publicKeyMultibase cannot be null or empty",
                                 className: DidPublicKeyResolver.className
                             )
                         }
-                        return try parsePublicKey(from: publicKeyMultibase)
+                        return try parsePublicKey(from: publicKeyMultibase!)
                     }
                     
                     if let jwk = method["publicKeyJwk"] as? [String: Any] {

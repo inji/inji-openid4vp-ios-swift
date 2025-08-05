@@ -16,6 +16,8 @@ private let testVerifierList:  [[String: Any]]  = [
     ]
 ]
 
+let didUrl = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"
+
 let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
 
 let verifiableCredentialsList : [String : [FormatType : [AnyCodable]]] = ["input_descriptor1": [FormatType.ldp_vc : [AnyCodable(ldpVC())]]]

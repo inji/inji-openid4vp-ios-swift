@@ -189,6 +189,20 @@ func XCTAssertNoThrowAndVerify<T>(_ expression: @autoclosure () throws -> T,
     }
 }
 
+
+func XCTAssertNoThrowAndVerifyAsync<T>(_ expression: @autoclosure () async throws -> T,
+                      file: StaticString = #filePath,
+                      line: UInt = #line,
+                           _ assertions: (T) -> Void) async {
+    do {
+        let result = try await expression()
+        assertions(result)
+    } catch {
+        print("Expression threw an error: \(error)")
+        XCTFail("Expression threw an error: \(error)", file: file, line: line)
+    }
+}
+
 // Write a custom assertion for comparing two arrays
 func assertArraysEqual<T: Equatable>(expected: [T], actual: [T], file: StaticString = #file, line: UInt = #line) {
     XCTAssertEqual(expected.count, actual.count, "Array sizes are different", file: file, line: line)

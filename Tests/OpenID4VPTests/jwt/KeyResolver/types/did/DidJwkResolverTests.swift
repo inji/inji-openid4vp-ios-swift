@@ -6,7 +6,7 @@ final class DidJwkResolverTests: XCTestCase {
     
     let mockNetworkManager = MockNetworkManager()
     
-    func testDidJwkResolver() async throws {
+    func testDidJwkSuccessfulResolving() async throws {
         let did = "did:jwk:eyJrdHkiOiAiT0tQIiwgImNydiI6ICJFZDI1NTE5IiwgIngiOiAiOGc5ZF9NQjBpVTJubWdiXzlQNERmMFRSUW01UkpUbWFpRWsySGtaeTVwRSIsICJhbGciOiAiRWREU0EiLCAia2V5X29wcyI6IFsidmVyaWZ5Il0sICJ1c2UiOiAic2lnIn0"
         let resolver = DidJwkResolver(parsedDid: ParsedDID(did: did, method: "jwk", id: "", didUrl: did), networkManager: mockNetworkManager)
         
@@ -18,6 +18,135 @@ final class DidJwkResolverTests: XCTestCase {
         default:
             XCTFail("Expected Ed25519 key type, but got \(key)")
         }
+    }
+    
+    func testInvalidBase64URL() async {
+        // Invalid base64url string that cannot be decoded
+        let invalidDid = "did:jwk:not@valid%base64"
+        let resolver = DidJwkResolver(parsedDid: ParsedDID(did: invalidDid, method: "jwk", id: "", didUrl: invalidDid),
+                                      networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidDid)) { error in
+            if let resolverError = error as? PublicKeyResolutionFailed {
+                XCTAssertEqual("invalidBase64Encoding", resolverError.message)
+                XCTAssertEqual(DidPublicKeyResolver.className, resolverError.className)
+            } else {
+                XCTFail("Expected PublicKeyResolutionFailed, got \(error)")
+            }
+        }
+    }
+    
+    func testInvalidJSONInJWK() async {
+        let invalidJsonDid = "did:jwk:\(encodeBase64Url("not valid json".data(using: .utf8)!))"
+        let resolver = DidJwkResolver(parsedDid: ParsedDID(did: invalidJsonDid, method: "jwk", id: "", didUrl: invalidJsonDid),
+                                      networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidJsonDid)) { error in
+            XCTAssertTrue(error is DecodingError, "Expected DecodingError but got \(type(of: error)) : \(error)")
+        }
+    }
+    
+    func testUnsupportedCurve() async {
+        // JWK with OKP key type but unsupported curve (P-256 instead of Ed25519)
+        let jwk = """
+            {
+                "kty": "OKP",
+                "crv": "P-256",
+                "alg": "ES256",
+                "use":"sig",
+                "x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+                "y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM"
+            }
+            """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let unsupportedCurveDid = "did:jwk:\(jwkBase64)"
+        let resolver = DidJwkResolver(parsedDid: ParsedDID(did: unsupportedCurveDid, method: "jwk", id: "", didUrl: unsupportedCurveDid),
+                                      networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: unsupportedCurveDid)) { error in
+            if let resolverError = error as? PublicKeyResolutionFailed {
+                XCTAssertEqual("DidJwkResolverError.unsupportedKeyType", resolverError.message)
+                XCTAssertEqual(DidPublicKeyResolver.className, resolverError.className)
+            } else {
+                XCTFail("Expected PublicKeyResolutionFailed, got \(error)")
+            }
+        }
+    }
+    
+    func testMissingXCoordinate() async {
+        let jwk = """
+            {
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "alg": "EdDSA"
+            }
+            """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let missingXDid = "did:jwk:\(jwkBase64)"
+        let resolver = DidJwkResolver(parsedDid: ParsedDID(did: missingXDid, method: "jwk", id: "", didUrl: missingXDid),
+                                      networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: missingXDid)) { error in
+            XCTAssertTrue(error is DeserializationFailure, "Expected DeserializationFailure but got \(type(of: error))")
+        }
+    }
+    
+    func testInvalidXCoordinateBase64() async {
+        let jwk = """
+            {
+                "kty": "OKP",
+                "use": "sig",
+                "crv": "Ed25519",
+                "x": "invalid@base64",
+                "alg": "EdDSA"
+            }
+            """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let invalidXBase64Did = "did:jwk:\(jwkBase64)"
+        let resolver = DidJwkResolver(parsedDid: ParsedDID(did: invalidXBase64Did, method: "jwk", id: "", didUrl: invalidXBase64Did),
+                                      networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidXBase64Did)) { error in
+            if let resolverError = error as? PublicKeyResolutionFailed {
+                XCTAssertEqual("DidJwkResolverError.keyConstructionFailed", resolverError.message)
+                XCTAssertEqual(DidPublicKeyResolver.className, resolverError.className)
+            } else {
+                XCTFail("Expected PublicKeyResolutionFailed, got \(error)")
+            }
+        }
+    }
+    
+    func testInvalidPublicKeyData() async {
+        // JWK with valid base64 in x coordinate but data is not a valid Ed25519 key
+        let jwk = """
+            {
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "x": "aW52YWxpZCBrZXkgZGF0YQ==",
+                "alg": "EdDSA",
+                "use": "sig"
+            }
+            """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let invalidKeyDataDid = "did:jwk:\(jwkBase64)"
+        let resolver = DidJwkResolver(parsedDid: ParsedDID(did: invalidKeyDataDid, method: "jwk", id: "", didUrl: invalidKeyDataDid),
+                                      networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidKeyDataDid)) { error in
+            if let resolverError = error as? PublicKeyResolutionFailed {
+                XCTAssertEqual("DidJwkResolverError.keyConstructionFailed", resolverError.message)
+                XCTAssertEqual(DidPublicKeyResolver.className, resolverError.className)
+            } else {
+                XCTFail("Expected PublicKeyResolutionFailed, got \(error)")
+            }
+        }
+    }
+    
+    private func encodeBase64Url(_ data: Data) -> String {
+        return data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }
 

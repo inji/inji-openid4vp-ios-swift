@@ -1,209 +1,368 @@
-//import XCTest
-//@testable import OpenID4VP
-//
-//final class DidWebResolverTests: XCTestCase {
-//    let mockNetworkManager = MockNetworkManager()
-//    
-//    let didUrl = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"
-//    
-//    func testResolveDidUrlToDidDocumentSuccessfully() async {
-//        let didWebResolver = DidWebResolver(didUrl: didUrl, networkManager: mockNetworkManager)
-//        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
-//        
-//        let didDocument = try! await didWebResolver.resolve()
-//        
-//        assertDictionariesEqual(expected: [
-//            "assertionMethod": [
-//                "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
-//            ],
-//            "service": [],
-//            "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-//            "verificationMethod": [
-//                [
-//                    "publicKeyMultibase": "z6MkwAm9tLpXZNfeEAqj9jcccFhjdiTwxVD32GhcjyeqGYSo",
-//                    "controller": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-//                    "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
-//                    "type": "Ed25519VerificationKey2020",
-//                    "@context": "https://w3id.org/security/suites/ed25519-2020/v1"
-//                ]
-//            ],
-//            "@context": [
-//                "https://www.w3.org/ns/did/v1"
-//            ],
-//            "alsoKnownAs": [],
-//            "authentication": [
-//                "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
-//            ]
-//        ], actual: didDocument)
-//    }
-//    
-//    func testDIDWebWithParamsPathQuertAndFragmentSection() async throws {
-//        let testCases: [TestCase] = [
-//            TestCase(input: "did:web:example.com;param=", expectedError: ""),
-//            TestCase(input: "did:web:example.com;param=value", expectedError: ""),
-//            TestCase(input: "did:web:example.com;param=value/user/profile?verified=true#contact", expectedError: "")
-//        ]
-//        
-//        for testCase in testCases {
-//            mockNetworkManager.setMockResponse(for: "https://example.com/.well-known/did.json", responseBody: didResponse)
-//            let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
-//            
-//            let didDocument = try await didWebResolver.resolve()
-//            
-//            assertDictionariesEqual(expected: [
-//                "assertionMethod": [
-//                    "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
-//                ],
-//                "service": [],
-//                "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-//                "verificationMethod": [
-//                    [
-//                        "publicKeyMultibase": "z6MkwAm9tLpXZNfeEAqj9jcccFhjdiTwxVD32GhcjyeqGYSo",
-//                        "controller": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-//                        "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
-//                        "type": "Ed25519VerificationKey2020",
-//                        "@context": "https://w3id.org/security/suites/ed25519-2020/v1"
-//                    ]
-//                ],
-//                "@context": [
-//                    "https://www.w3.org/ns/did/v1"
-//                ],
-//                "alsoKnownAs": [],
-//                "authentication": [
-//                    "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
-//                ]
-//            ], actual: didDocument)
-//        }
-//    }
-//    
-//    func testConstructDIDUrlWithPath() async throws {
-//        let testCases: [TestCase] = [
-//            TestCase(input: "did:web:example.com:user", expectedOutput: "https://example.com/user/did.json"),
-//            TestCase(input: "did:web:example.com:services:auth", expectedOutput: "https://example.com/services/auth/did.json"),
-//            TestCase(input: "did:web:example.com:folder:anotherFolder", expectedOutput: "https://example.com/folder/anotherFolder/did.json")
-//        ]
-//        
-//        for testCase in testCases {
-//            mockNetworkManager.setMockResponse(for: testCase.expectedOutput!, responseBody: didResponse)
-//            let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
-//            _ = try await didWebResolver.resolve()
-//            
-//            XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains(testCase.expectedOutput!),
-//                                  "Expected request to \(testCase.expectedOutput!) but it was not recorded.")
-//        
-//        }
-//    }
-//    
-//    func testConstructDIDUrlWithoutPath() async throws {
-//        let testCases: [TestCase] = [
-//            TestCase(input: "did:web:example.com", expectedOutput: "https://example.com/.well-known/did.json"),
-//            TestCase(input: "did:web:sub.example.com", expectedOutput: "https://sub.example.com/.well-known/did.json")
-//        ]
-//        
-//        for testCase in testCases {
-//            mockNetworkManager.setMockResponse(for: testCase.expectedOutput!, responseBody: didResponse)
-//            let didWebResolver = DidWebResolver(didUrl: testCase.input, networkManager: mockNetworkManager)
-//            _ = try await didWebResolver.resolve()
-//            
-//            XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains(testCase.expectedOutput!),
-//                                  "Expected request to \(testCase.expectedOutput!) but it was not recorded.")
-//        }
-//    }
-//    
-//    func testThrowErrorWhenDidUrlIsNonWebMethod() async {
-//        let invalidDID = "did:jwk:z6MkXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-//        let didWebResolver = DidWebResolver(didUrl: invalidDID, networkManager: mockNetworkManager)
-//        
-//        do{
-//            _ = try await didWebResolver.resolve()
-//            XCTFail("Error - unsupportedDidUrl should be thrown but did not throw")
-//        } catch {
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "Given did url is not supported",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
-//    
-//    func testThrowErrorWhenDidUrlIsEmptyString() async {
-//        let invalidDID = ""
-//        let didWebResolver = DidWebResolver(didUrl: invalidDID, networkManager: mockNetworkManager)
-//        
-//        do{
-//            _ = try await didWebResolver.resolve()
-//            XCTFail("Error - unsupportedDidUrl should be thrown but did not throw")
-//        } catch {
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "Given did url is not supported",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
-//    
-//    func testThrowErrorWhenDidUrlMissingMethod() async {
-//        let invalidDID = "did::123abc"
-//        let didWebResolver = DidWebResolver(didUrl: invalidDID, networkManager: mockNetworkManager)
-//        
-//        do{
-//            _ = try await didWebResolver.resolve()
-//            XCTFail("Error - unsupportedDidUrl should be thrown but did not throw")
-//        } catch {
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "Given did url is not supported",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
-//    
-//    func testThrowErrorDidResolutionFailedWhenAccessingDidDocumentViaNetworkCall() async {
-//        let errorMessage = "Network Request failed with error response: response"
-//        mockNetworkManager.setMockResponse(for: didDocumentUrl, error: NetworkRequestException.networkRequestFailed(message: errorMessage))
-//        
-//        let didWebResolver = DidWebResolver(didUrl: didUrl, networkManager: mockNetworkManager)
-//        
-//        do{
-//            _ = try await didWebResolver.resolve()
-//            XCTFail("Error - didResolutionFailed should be thrown but did not throw")
-//        } catch {
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "Network request failed with error response - Network Request failed with error response: response",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//        
-//    }
-//    
-//    func testThrowErrorDidResolutionFailedWhenNetworkResponseToDidJsonIsInvalid() async {
-//        let testCases: [TestCase<String, String>] = [
-//            TestCase(input: "{\"key\":\"value", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
-//            TestCase(input: "\"Just a string\"", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
-//            TestCase(input: "Invalid JSON", expectedError: "The data couldn’t be read because it isn’t in the correct format."),
-//            TestCase(input: "[1,2,3]", expectedError: "Conversion failed: resolved DID response is not a valid JSON object"),
-//        ]
-//        
-//        for testCase in testCases {
-//            mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: testCase.input)
-//            
-//            let didWebResolver = DidWebResolver(didUrl: didUrl, networkManager: mockNetworkManager)
-//            
-//            do {
-//                _ = try await didWebResolver.resolve()
-//                XCTFail("Error - DidResolutionFailed should have been thrown but did not throw")
-//            } catch {
-//               // let expectedMessage = "Failed to resolve did due to \(testCase.expectedError!)"
-//                
-//                // Check that error is OpenID4VPException subclass with correct message
-//                assertOpenID4VPException(
-//                    error,
-//                    expectedMessage: testCase.expectedError!,
-//                    expectedCode: OpenID4VPErrorCodes.invalidRequest
-//                )
-//            }
-//        }
-//    }
-//
-//}
+import XCTest
+@testable import OpenID4VP
+
+final class DidWebResolverTests: XCTestCase {
+    
+    let mockNetworkManager = MockNetworkManager()
+    
+    func testSuccessfulResolvingWithPublicKeyMultibase() async throws {
+        // Setup mock response with publicKeyMultibase
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyMultibase": "z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        // Create the resolver with a parsed DID
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        // Resolve the verification method
+        let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
+        
+        // Verify the result is a valid key
+        switch key {
+        case .ed25519:
+            // If we got an Ed25519 key, the test passes
+            break
+        default:
+            XCTFail("Expected Ed25519 key type, but got \(key)")
+        }
+    }
+    
+    func testSuccessfulResolvingWithJWK() async throws {
+        // Setup mock response with publicKeyJwk
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#key1",
+                "type": "JsonWebKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyJwk": {
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "x": "8g9d_MB0iU2nmgb_9P4Df0TRQm5RJTmaiEk2HkZy5pE",
+                    "alg": "EdDSA",
+                    "use": "sig"
+                }
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
+        
+        switch key {
+        case .ed25519:
+            // Test passes if we get an Ed25519 key
+            break
+        default:
+            XCTFail("Expected Ed25519 key type, but got \(key)")
+        }
+    }
+    
+    func testSuccessfulResolvingWithPEM() async throws {
+        // Setup mock response with publicKeyPem
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyPem": "-----BEGIN PUBLIC KEY-----\\nMCowBQYDK2VwAyEA8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=\\n-----END PUBLIC KEY-----"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
+        
+        switch key {
+        case .ed25519:
+            break
+        default:
+            XCTFail("Expected ed25519 type, but got \(key)")
+        }
+    }
+    
+    func testSuccessfulResolvingWithHex() async throws {
+        // Setup mock response with publicKeyHex
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyHex": "f20f5dfcc074894da79a06fff4fe037f44d1426e5125399a8849361e4672e691"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")
+        
+        // The exact type will depend on the implementation of publicKeyFromHex
+        XCTAssertNotNil(key)
+    }
+    
+    func testSubdomainInDID() async throws {
+        let didDocJSON = """
+        {
+            "id": "did:web:sub.example.com",
+            "verificationMethod": [{
+                "id": "did:web:sub.example.com#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:sub.example.com",
+                "publicKeyMultibase": "z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://sub.example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:sub.example.com",
+            method: "web",
+            id: "sub.example.com",
+            didUrl: "did:web:sub.example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        // This should construct the URL with the subdomain correctly
+        let key = try await resolver.resolve(verificationaMethodUri: "did:web:sub.example.com#key1")
+        
+        // Verify the URL was constructed correctly
+        XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains("https://sub.example.com/.well-known/did.json"))
+        XCTAssertNotNil(key)
+    }
+    
+    func testPathBasedDID() async throws {
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com:path:to:identity",
+            "verificationMethod": [{
+                "id": "did:web:example.com:path:to:identity#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com:path:to:identity",
+                "publicKeyMultibase": "z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/path/to/identity/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com:path:to:identity",
+            method: "web",
+            id: "example.com:path:to:identity",
+            didUrl: "did:web:example.com:path:to:identity#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com:path:to:identity#key1")
+        
+        // Verify the URL was constructed correctly
+        XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains("https://example.com/path/to/identity/did.json"))
+        XCTAssertNotNil(key)
+    }
+    
+    func testNetworkFailure() async {
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            error: NetworkRequestException.networkRequestFailed(message: "Not Found")
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+            if let didError = error as? DidResolutionFailed {
+                XCTAssertEqual(DidWebResolver.className, didError.className)
+                XCTAssertTrue(didError.message.contains("Not Found"))
+            } else {
+                XCTFail("Expected DidResolutionFailed, got \(error)")
+            }
+        }
+    }
+    
+    func testInvalidDidDocument() async {
+        // Setup mock response with invalid JSON
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: "Invalid JSON"
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+            if let didError = error as? DidResolutionFailed {
+                XCTAssertEqual(DidWebResolver.className, didError.className)
+            } else {
+                XCTFail("Expected DidResolutionFailed, got \(error)")
+            }
+        }
+    }
+    
+    func testMissingVerificationMethod() async {
+        // Setup mock response with no matching verification method
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#different-key",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyMultibase": "z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+            if let extractionError = error as? DidResolutionFailed {
+                XCTAssertEqual(DidWebResolver.className, extractionError.className)
+                XCTAssertTrue(extractionError.message.contains("Public key extraction failed for kid"))
+            } else {
+                XCTFail("Expected PublicKeyExtractionFailed, got \(type(of: error))")
+            }
+        }
+    }
+    
+    func testEmptyPublicKeyMultibase() async {
+        // Setup mock response with empty publicKeyMultibase
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyMultibase": ""
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+            assertOpenID4VPException(error, expectedMessage: "publicKeyMultibase cannot be null or empty", expectedCode: "invalid_request")
+        }
+    }
+    
+    func testNoSupportedKeyType() async {
+        // Setup mock response with no supported key types
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com",
+                "unsupportedKeyType": "value"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let parsedDid = ParsedDID(
+            did: "did:web:example.com",
+            method: "web",
+            id: "example.com",
+            didUrl: "did:web:example.com#key1"
+        )
+        let resolver = DidWebResolver(parsedDid: parsedDid, networkManager: mockNetworkManager)
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+            assertOpenID4VPException(error, expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem", expectedCode: "invalid_request")
+        }
+    }
+}
