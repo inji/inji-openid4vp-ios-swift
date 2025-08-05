@@ -28,9 +28,20 @@ class DidPublicKeyResolver : PublicKeyResolver {
         
         let parsedDID = try parseDid(didUrl)
         
-        let resolver : BaseDidPublicKeyResolver = try DidResolverFactory.resolver(parsedDid : parsedDID, networkManager: networkManager)
+        let resolver : BaseDidPublicKeyResolver = try resolver(parsedDid : parsedDID, networkManager: networkManager)
         
         return try await resolver.resolve(verificationaMethodUri: kid)
+    }
+    
+    private func resolver(parsedDid: ParsedDID, networkManager: NetworkManaging) throws -> BaseDidPublicKeyResolver {
+        switch parsedDid.method {
+        case .web:
+            return DidWebResolver(networkManager: networkManager, parsedDID: parsedDid)
+        case .jwk:
+            return DidJwkResolver(networkManager: networkManager, parsedDID: parsedDid)
+        case .key:
+            return DidKeyResolver(networkManager: networkManager, parsedDID: parsedDid)
+        }
     }
 }
 
@@ -80,31 +91,4 @@ private func parseDid(_ didUrl: String) throws -> ParsedDID {
         query: (sections.count > 7 && !sections[7].isEmpty) ? String(sections[7].dropFirst()) : nil,
         fragment: (sections.count > 8 && !sections[8].isEmpty) ? String(sections[8].dropFirst()) : nil
     )
-}
-
-
-final class DidResolverFactory {
-    static let className = String(describing: DidResolverFactory.self)
-    
-    static func resolver(parsedDid: ParsedDID, networkManager: NetworkManaging) throws -> BaseDidPublicKeyResolver {
-        switch parsedDid.method {
-        case .web:
-            return DidWebResolver(networkManager: networkManager, parsedDID: parsedDid)
-        case .jwk:
-            return DidJwkResolver(networkManager: networkManager, parsedDID: parsedDid)
-        case .key:
-            return DidKeyResolver(networkManager: networkManager, parsedDID: parsedDid)
-        }
-    }
-}
-
-struct ParsedDID : Equatable {
-    let did: String
-    let method: DIDMethod
-    let id: String
-    let didUrl: String
-    var params: [String: String]?
-    var path: String?
-    var query: String?
-    var fragment: String?
 }
