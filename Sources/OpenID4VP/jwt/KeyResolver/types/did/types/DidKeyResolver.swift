@@ -7,6 +7,9 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
     let parsedDid: ParsedDID
     let networkManager: NetworkManaging
     static let keySize = 34
+    static let edKeyPrefix = 0xed
+    static let multiCodecTrailingByte = 0x01
+    
     
     init(networkManager: NetworkManaging, parsedDID: ParsedDID) {
         self.networkManager = networkManager
@@ -17,9 +20,9 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
         let decodedBytes = try decodeMultibase(self.parsedDid.id)
         
         guard decodedBytes.count == Self.keySize,
-              decodedBytes[0] == 0xed,
-              decodedBytes[1] == 0x01 else {
-            throw PublicKeyResolutionFailed(message: "unsupportedKeyType", className: Self.className)
+              decodedBytes[0] == Self.edKeyPrefix,
+              decodedBytes[1] == Self.multiCodecTrailingByte else {
+            throw PublicKeyResolutionFailed(message: "Provided key is not supported. Supported: Ed25519", className: Self.className)
         }
         
         let keyBytes = decodedBytes[2..<34]
@@ -27,7 +30,7 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
         do {
             return try .ed25519(Curve25519.Signing.PublicKey(rawRepresentation: Data(keyBytes)))
         } catch {
-            throw PublicKeyResolutionFailed(message: "keyDecodingFailed", className: Self.className)
+            throw PublicKeyResolutionFailed(message: "Public key resolution failed. Error: \(error)", className: Self.className)
         }
     }
 }

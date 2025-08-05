@@ -49,7 +49,7 @@ final class DidKeyResolverTests: XCTestCase {
         let resolver = DidKeyResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidTypeDidKey)) { error in
-            assertOpenID4VPException(error, expectedMessage: "unsupportedKeyType", expectedCode: "invalid_request")
+            assertOpenID4VPException(error, expectedMessage: "Provided key is not supported. Supported: Ed25519", expectedCode: "invalid_request")
         }
     }
     
@@ -65,7 +65,7 @@ final class DidKeyResolverTests: XCTestCase {
         let resolver = DidKeyResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidDataDidKey)) { error in
-            assertOpenID4VPException(error, expectedMessage: "unsupportedKeyType", expectedCode: "invalid_request")
+            assertOpenID4VPException(error, expectedMessage: "Provided key is not supported. Supported: Ed25519", expectedCode: "invalid_request")
         }
     }
     
