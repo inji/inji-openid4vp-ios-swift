@@ -10,17 +10,6 @@ func isJWS(_ input: String) -> Bool {
     return input.split(separator: ".").count == 3
 }
 
-func makeBase64Standard(_ base64String: String) -> String {
-    var validBase64String = base64String
-        .replacingOccurrences(of: "-", with: "+")
-        .replacingOccurrences(of: "_", with: "/")
-    
-    while validBase64String.count % 4 != 0 {
-        validBase64String.append("=")
-    }
-    return validBase64String
-}
-
 func base64URLEscaped(_ base64String: String) -> String {
     return base64String
         .replacingOccurrences(of: "+", with: "-")

@@ -32,7 +32,7 @@ final class DidKeyResolverTests: XCTestCase {
         let resolver = DidKeyResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidBase58DidKey)) { error in
-            assertOpenID4VPException(error, expectedMessage: "keyDecodingFailed", expectedCode: "invalid_request")
+            assertOpenID4VPException(error, expectedMessage: "DID public key decoding failed", expectedCode: "invalid_request")
         }
     }
     

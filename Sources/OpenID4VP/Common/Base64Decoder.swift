@@ -3,7 +3,7 @@ import Foundation
 class Base64Decoder {
     static let className = String(describing: Base64Decoder.self)
     static func decodeBase64ToData(_ base64String: String) throws -> Data {
-        let standardBase64String = makeBase64Standard(base64String)
+        let standardBase64String = base64String.base64URLToBase64()
         guard let decodedData = Data(base64Encoded: standardBase64String) else {
             throw Base64DecodingFailed(message: "Base64 decoding failed" ,className: Base64Decoder.className)
         }
@@ -23,16 +23,5 @@ class Base64Decoder {
         } catch {
             throw JsonDecodingFailed(message: "Decoding to json failed", className: Base64Decoder.className)
         }
-    }
-    
-    static func makeBase64Standard(_ base64String: String) -> String {
-        var validBase64String = base64String
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        
-        while validBase64String.count % 4 != 0 {
-            validBase64String.append("=")
-        }
-        return validBase64String
     }
 }

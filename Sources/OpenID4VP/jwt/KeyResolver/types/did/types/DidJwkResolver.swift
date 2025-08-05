@@ -13,39 +13,36 @@ class DidJwkResolver : BaseDidPublicKeyResolver {
     }
     
     func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
-        let base64urlJwk = String(self.parsedDid.didUrl.dropFirst("did:jwk:".count))
+        let base64urlJwk = String(self.parsedDid.id)
         
-        guard let jwkData = decodeBase64Url(base64urlJwk) else {
-            throw PublicKeyResolutionFailed(message: "invalidBase64Encoding", className: Self.className)
+        guard let jwkData = Data(base64UrlEncoded: base64urlJwk) else {
+            throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: Self.className)
         }
         let jwk = try JSONDecoder().decode(JWK.self, from: jwkData)
         
-        guard jwk.kty == "OKP", jwk.crv == "Ed25519" else {
-            throw PublicKeyResolutionFailed(message: "DidJwkResolverError.unsupportedKeyType", className: Self.className)
+        guard jwk.kty == "OKP" else {
+            throw PublicKeyResolutionFailed(
+                message: "KeyType - \(jwk.kty) is not supported. Supported: OKP",
+                className: Self.className
+            )
         }
         
-        guard let publicKeyData = decodeBase64Url(jwk.x) else {
-            throw PublicKeyResolutionFailed(message: "DidJwkResolverError.keyConstructionFailed", className: Self.className)
+        guard jwk.crv == "Ed25519" else {
+            throw PublicKeyResolutionFailed(
+                message: "Curve - \(jwk.crv) is not supported. Supported: Ed25519",
+                className: Self.className
+            )
+        }
+        
+        guard let publicKeyData = Data(base64UrlEncoded: jwk.x) else {
+            throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: Self.className)
         }
         
         do {
             let edKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
             return .ed25519(edKey)
         } catch {
-            throw PublicKeyResolutionFailed(message: "DidJwkResolverError.keyConstructionFailed", className: Self.className)
+            throw PublicKeyResolutionFailed(message: "Public key resolution failed. Error: \(error)", className: Self.className)
         }
-    }
-    
-    private func decodeBase64Url(_ input: String) -> Data? {
-        var base64 = input
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        
-        let paddingNeeded = 4 - (base64.count % 4)
-        if paddingNeeded < 4 {
-            base64 += String(repeating: "=", count: paddingNeeded)
-        }
-        
-        return Data(base64Encoded: base64)
     }
 }

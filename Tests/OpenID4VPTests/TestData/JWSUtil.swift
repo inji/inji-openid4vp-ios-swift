@@ -2,6 +2,7 @@ import CryptoKit
 import Foundation
 import OpenID4VP
 import JSONWebSignature
+@testable import OpenID4VP
 
 struct JWSUtil {
     private static let ed25519PrivateKey = "7JGq310it2uq1_KZ3kARpoUB36KaVO2Ki5VeqQ_856A"
@@ -50,19 +51,6 @@ struct JWSUtil {
     }
 }
 
-extension String {
-    func base64URLToBase64() -> String {
-        var base64 = self
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
 
-        let paddingLength = 4 - (base64.count % 4)
-        if paddingLength < 4 {
-            base64 += String(repeating: "=", count: paddingLength)
-        }
-
-        return base64
-    }
-}
 
 
