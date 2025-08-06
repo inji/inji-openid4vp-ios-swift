@@ -115,6 +115,16 @@ func convertToJsonString(_ array: [Any]) -> String {
     return ""
 }
 
+func convertToJsonString<T: Encodable>(_ object: T) -> String {
+    do {
+        let jsonData = try JSONEncoder().encode(object)
+        return String(data: jsonData, encoding: .utf8) ?? ""
+    } catch {
+        print("Error converting object to JSON string: \(error)")
+        return ""
+    }
+}
+
 func convertToDictionary<T: Encodable>(object: T) -> [String: Any]? {
     guard let data = try? JSONEncoder().encode(object) else {
         return nil
