@@ -5,16 +5,14 @@ import Base58Swift
 
 final class KeyResolverUtilsTests: XCTestCase {
     
-    func testPublicKeyFromMultibaseValidEd25519() throws {
+    func testPublicKeyFromMultibaseValidEd25519() {
         let keyHex = "ed01f20f5dfcc074894da79a06fff4fe037f44d1426e5125399a8849361e4672e691"
         let keyData = Data(hex: keyHex)
         let base58 = Base58.base58Encode([UInt8](keyData))
         let multibase = "z\(base58)"
-        let key = try publicKeyFromMultibase(multibase)
-        if case .ed25519(let pubKey) = key {
-            XCTAssertEqual(pubKey.rawRepresentation, keyData.dropFirst(2))
-        } else {
-            XCTFail("Expected Ed25519 key")
+        
+        XCTAssertNoThrowAndVerify(try publicKeyFromMultibase(multibase)) { key in
+            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
     
@@ -62,17 +60,15 @@ final class KeyResolverUtilsTests: XCTestCase {
         }
     }
     
-    func testPublicKeyFromJWKValidEd25519() throws {
+    func testPublicKeyFromJWKValidEd25519() {
         let jwk: [String: Any] = [
             "kty": "OKP",
             "crv": "Ed25519",
             "x": "RzT9xmJDacPBzLg1KXMhzjQD-QV77hYykcD3GDPTMKg"
         ]
-        let key = try publicKeyFromJWK(jwk)
-        if case .ed25519(let pubKey) = key {
-            XCTAssertEqual(pubKey.rawRepresentation.toHexString(), "4734fdc6624369c3c1ccb835297321ce3403f9057bee163291c0f71833d330a8")
-        } else {
-            XCTFail("Expected Ed25519 key")
+        
+        XCTAssertNoThrowAndVerify(try publicKeyFromJWK(jwk)) { key in
+            assertEdKey(expectedBase64Encoded: "RzT9xmJDacPBzLg1KXMhzjQD+QV77hYykcD3GDPTMKg=", actualKey: key)
         }
     }
     
@@ -146,31 +142,20 @@ final class KeyResolverUtilsTests: XCTestCase {
         let keyHex = "f20f5dfcc074894da79a06fff4fe037f44d1426e5125399a8849361e4672e691"
         
         XCTAssertNoThrowAndVerify(try publicKeyFromHex(keyHex)) { key in
-            if case .ed25519(let pubKey) = key {
-                XCTAssertEqual(pubKey.rawRepresentation.toHexString(), keyHex)
-            } else {
-                XCTFail("Expected Ed25519 key")
-            }
+            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key!)
         }
     }
     
-    //    func testPublicKeyFromHexInvalid() {
-    //        let keyHex = "deadbee"
-    //        XCTAssertThrowsError(try { _ = try publicKeyFromHex(keyHex) }())
-    //    }
-    
-    func testPublicKeyFromPEMValid() throws {
-        // Public Ed25519 PEM from widely available test vectors
+    func testPublicKeyFromPEMValid() {
         let pem = """
         -----BEGIN PUBLIC KEY-----
         MCowBQYDK2VwAyEAf20f5dfcc074894da79a06fff4fe037f44d1426e5125399a
         -----END PUBLIC KEY-----
         """
-        let key = try publicKeyFromPEM(pem)
-        if case .ed25519 = key {
-            XCTAssertTrue(true)
-        } else {
-            XCTFail("Expected Ed25519 key")
+        
+        XCTAssertNoThrowAndVerify( try publicKeyFromPEM(pem)) {
+            key in
+            assertEdKey(expectedBase64Encoded: "f20f5dfcc074894da79a06fff4fe037f44d1426e510=", actualKey: key)
         }
     }
     

@@ -12,15 +12,9 @@ final class DidKeyResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: validDidKey, method: .key, id: "z6MkkXReNrZa6qLkqnQcffhNPEK1SJvJoK1cRezKEWnJ8PuS", didUrl: validDidKey)
         
         let resolver = DidKeyResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
-                
+        
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: validDidKey)){ key in
-            switch key {
-            case .ed25519(let publicKey):
-                XCTAssertNotNil(publicKey, "Public key should not be nil")
-                XCTAssertEqual(publicKey.rawRepresentation.count, 32, "Ed25519 public key should be 32 bytes")
-            default:
-                XCTFail("Expected Ed25519 key type, but got \(key)")
-            }
+            assertEdKey(expectedBase64Encoded: "WjdMndEkwsijxJeYqZGSaYeNiILXtlYPW8H9ZDqTjQE=", actualKey: key)
         }
     }
     
@@ -71,14 +65,8 @@ final class DidKeyResolverTests: XCTestCase {
         
         let resolver = DidKeyResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        let key = try await resolver.resolve(verificationaMethodUri: validDidKey)
-        
-        switch key {
-        case .ed25519(let publicKey):
-            XCTAssertNotNil(publicKey)
-            XCTAssertEqual(publicKey.rawRepresentation.count, 32)
-        default:
-            XCTFail("Expected Ed25519 key type, but got \(key)")
+        await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: validDidKey)) { key in
+            assertEdKey(expectedBase64Encoded: "Lm/M42cB3HkUiODQsXRcweM6TByfzEHGO9ND274JcOY=", actualKey: key)
         }
     }
 }

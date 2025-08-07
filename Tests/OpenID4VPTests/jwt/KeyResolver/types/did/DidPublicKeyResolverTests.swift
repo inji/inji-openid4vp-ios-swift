@@ -75,12 +75,7 @@ class DidPublicKeyResolverTests: XCTestCase {
             "alg": "EdDSA",
             "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
         ])){ result in
-            switch result {
-            case .ed25519(let publicKey):
-                XCTAssertEqual("+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", publicKey.rawRepresentation.base64EncodedString())
-            default:
-                XCTFail("Unexpected public key type returned")
-            }
+            assertEdKey(expectedBase64Encoded: "+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", actualKey: result)
         }
     }
     

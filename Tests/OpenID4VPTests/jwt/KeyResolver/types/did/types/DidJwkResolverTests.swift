@@ -12,13 +12,7 @@ final class DidJwkResolverTests: XCTestCase {
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         let key = try await resolver.resolve(verificationaMethodUri: did)
-        
-        switch key {
-        case .ed25519(let edKey):
-            XCTAssertEqual("f20f5dfcc074894da79a06fff4fe037f44d1426e5125399a8849361e4672e691", edKey.jwkRepresentation.x?.toHexString())
-        default:
-            XCTFail("Expected Ed25519 key type, but got \(key)")
-        }
+        assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
     }
     
     func testInvalidBase64URL() async {

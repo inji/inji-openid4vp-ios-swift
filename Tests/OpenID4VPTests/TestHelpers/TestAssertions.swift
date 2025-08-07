@@ -213,3 +213,11 @@ func assertOpenID4VPException(
 }
 
 
+func assertEdKey(expectedBase64Encoded: String, actualKey: PublicKeyType){
+    switch actualKey {
+    case .ed25519(let publicKey):
+        XCTAssertEqual(expectedBase64Encoded, publicKey.rawRepresentation.base64EncodedString())
+    default:
+        XCTFail("Unexpected public key type returned")
+    }
+}

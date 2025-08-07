@@ -238,13 +238,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
-            switch key {
-            case .ed25519:
-                // Test passes if we get an Ed25519 key
-                break
-            default:
-                XCTFail("Expected Ed25519 key type, but got \(key)")
-            }
+            assertEdKey(expectedBase64Encoded: "lJZrfAjkBXdfjebMHEUI9usidAPhAlssitLXR3OYxbI=", actualKey: key)
         }
     }
     
@@ -277,8 +271,6 @@ final class DidWebResolverTests: XCTestCase {
 
     
     func testThrowsErrorWhenPublicKeyMultibaseIsEmpty() async {
-        let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-
         let didDoc = """
         {
           "verificationMethod": [
@@ -332,13 +324,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
-            switch key {
-            case .ed25519:
-                // Test passes if we get an Ed25519 key
-                break
-            default:
-                XCTFail("Expected Ed25519 key type, but got \(key)")
-            }
+            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
     
@@ -364,13 +350,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
-            switch key {
-            case .ed25519:
-                // Test passes if we get an Ed25519 key
-                break
-            default:
-                XCTFail("Expected Ed25519 key type, but got \(key)")
-            }
+            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
     
@@ -396,13 +376,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
-            switch key {
-            case .ed25519:
-                // Test passes if we get an Ed25519 key
-                break
-            default:
-                XCTFail("Expected Ed25519 key type, but got \(key)")
-            }
+            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
 }
