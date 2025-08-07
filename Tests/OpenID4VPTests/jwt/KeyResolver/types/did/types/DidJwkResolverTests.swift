@@ -46,7 +46,6 @@ final class DidJwkResolverTests: XCTestCase {
     }
     
     func testUnsupportedCurve() async {
-        // JWK with OKP key type but unsupported curve (P-256 instead of Ed25519)
         let jwk = """
             {
                 "kty": "OKP",
@@ -65,6 +64,30 @@ final class DidJwkResolverTests: XCTestCase {
         await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: unsupportedCurveDid)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Curve - P-256 is not supported. Supported: Ed25519",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testUnsupportedKeyType() async {
+        let jwk = """
+            {
+                "kty": "EC",
+                "crv": "P-256",
+                "alg": "ES256",
+                "use":"sig",
+                "x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
+                "y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM"
+            }
+            """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let unsupportedCurveDid = "did:jwk:\(jwkBase64)"
+        let parsedDid =  ParsedDID(did: unsupportedCurveDid, method: .jwk, id: jwkBase64, didUrl: unsupportedCurveDid)
+        let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        
+        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: unsupportedCurveDid)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "KeyType - EC is not supported. Supported: OKP",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

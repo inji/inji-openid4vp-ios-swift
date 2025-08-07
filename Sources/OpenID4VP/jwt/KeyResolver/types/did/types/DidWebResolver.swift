@@ -53,29 +53,24 @@ class DidWebResolver : BaseDidPublicKeyResolver {
         if let verificationMethods = didDoc["verificationMethod"] as? [[String: Any]] {
             for method in verificationMethods {
                 if let id = method["id"] as? String, id == kid {
-                    
                     if !Self.supportedPublicKeyTypes.contains(where: { method[$0] != nil }) {
                         throw UnsupportedPublicKeyType(className: Self.className)
                     }
                     
-                    if method.keys.contains(PublicKeyVerificationMaterial.multibase.rawValue) {
+                    let methodKeys = method.keys
+                    
+                    if methodKeys.contains(PublicKeyVerificationMaterial.multibase.rawValue) {
                         return try extractAndParse(from: method, key: .multibase, parse: publicKeyFromMultibase)
                     }
-                    else if let jwk = method[PublicKeyVerificationMaterial.jwk.rawValue] as? [String: Any] {
+                    else if methodKeys.contains(PublicKeyVerificationMaterial.jwk.rawValue), let jwk = method[PublicKeyVerificationMaterial.jwk.rawValue] as? [String: Any] {
                         return try publicKeyFromJWK(jwk)
                     }
-                    else if method.keys.contains(PublicKeyVerificationMaterial.pem.rawValue) {
+                    else if methodKeys.contains(PublicKeyVerificationMaterial.pem.rawValue) {
                         return try extractAndParse(from: method, key: .pem, parse: publicKeyFromPEM)
                     }
-                    else if method.keys.contains(PublicKeyVerificationMaterial.hex.rawValue) {
+                    else {
                         return try extractAndParse(from: method, key: .hex, parse: publicKeyFromHex)
                     }
-                    
-                    
-                    throw PublicKeyExtractionFailed(
-                        message: "unsupported verification material. Supported : \(Self.supportedPublicKeyTypes)",
-                        className: Self.className
-                    )
                 }
             }
         }
