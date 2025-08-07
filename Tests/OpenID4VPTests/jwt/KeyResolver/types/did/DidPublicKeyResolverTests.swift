@@ -66,7 +66,7 @@ class DidPublicKeyResolverTests: XCTestCase {
     }
     """
 
-    func testValidPublicKeyResolution() async {
+    func testValidDidWebPublicKeyResolution() async {
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
         let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
 
@@ -85,25 +85,6 @@ class DidPublicKeyResolverTests: XCTestCase {
         }
     }
     
-    func testValidPublicKeyResolutionWithPublicKeyJwk() async {
-        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponseWithPublicKeyJwk)
-        let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-        
-        await assertAsyncNoThrowsErrorAndVerify(try await didKeyResolver.resolveKey(header: [
-            "typ": "oauth-authz-req+jwt",
-            "alg": "EdDSA",
-            "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-        ])){ result in
-            switch result {
-            case .ed25519(let publicKey):
-                XCTAssertEqual("e46921ee472f8abd67294c5949b6487daf82309fbb2b817c3466a632146bf01e", publicKey.rawRepresentation.toHexString())
-            default:
-                XCTFail("Unexpected public key type returned")
-            }
-        }
-
-    }
-
     func testThrowErrorWhenKeyIdIsNotMatchingAnyOfTheKeysInDidDocumentResponse() async {
         let testCases: [TestCase] = [
             TestCase(input: ""),
@@ -147,96 +128,5 @@ class DidPublicKeyResolverTests: XCTestCase {
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             }
-    }
-    
-    func testUnsupportedPublicKeyTypesThrowError() async {
-        let unsupportedKeys = [
-            "publicKeyBase58"
-        ]
-
-        for key in unsupportedKeys {
-            let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-unsupported-\(key)"
-            let didDocumentWithUnsupportedKey = """
-            {
-              "verificationMethod": [
-                {
-                  "id": "\(kid)",
-                  "\(key)": "dummy-value"
-                }
-              ]
-            }
-            """
-            mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDocumentWithUnsupportedKey)
-
-            let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-
-            await assertAsyncThrowsError(
-                        try await resolver.resolveKey(header: ["kid": kid])
-                    ) { error in
-                    assertOpenID4VPException(
-                        error,
-                        expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem",
-                        expectedCode: OpenID4VPErrorCodes.invalidRequest
-                    )
-                }
-        }
-    }
-    
-    func testThrowsErrorWhenPublicKeyMultibaseIsNil() async {
-        let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-
-        let didDoc = """
-        {
-          "verificationMethod": [
-            {
-              "id": "\(kid)",
-              "publicKeyMultibase": null
-            }
-          ]
-        }
-        """
-
-        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDoc)
-        let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-
-        await assertAsyncThrowsError(
-            try await resolver.resolveKey(header: ["kid": kid])
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "publicKeyMultibase cannot be null or empty",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-
-
-    
-    func testThrowsErrorWhenPublicKeyMultibaseIsEmpty() async {
-        let kid = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-
-        let didDoc = """
-        {
-          "verificationMethod": [
-            {
-              "id": "\(kid)",
-              "publicKeyMultibase": ""
-            }
-          ]
-        }
-        """
-
-        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didDoc)
-        let resolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-
-        await assertAsyncThrowsError(
-            try await resolver.resolveKey(header: ["kid": kid])
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "publicKeyMultibase cannot be null or empty",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
     }
 }

@@ -126,7 +126,7 @@ class InvalidInput: OpenID4VPException {
             message = "Invalid Input: \(path) value cannot be empty or null"
         } else if value == nil {
             message = "Invalid Input: \(path) value cannot be empty or null"
-        } else if let boolVal = value as? Bool {
+        } else if value is Bool {
             message = "Invalid Input: \(path) value must be either true or false"
         } else {
             message = "Invalid Input: \(path) value is invalid"
