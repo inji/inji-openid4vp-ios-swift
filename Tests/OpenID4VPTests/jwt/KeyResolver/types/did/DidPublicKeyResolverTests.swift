@@ -70,15 +70,14 @@ class DidPublicKeyResolverTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
         let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
 
-        await assertAsyncNoThrowsErrorAndVerify(try await didKeyResolver.resolveKey(header: [
+        await XCTAssertNoThrowAndVerifyAsync(try await didKeyResolver.resolveKey(header: [
             "typ": "oauth-authz-req+jwt",
             "alg": "EdDSA",
             "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
         ])){ result in
-            // assert if returned result is of type publick key type ed22519 case
             switch result {
             case .ed25519(let publicKey):
-                XCTAssertTrue(publicKey is Curve25519.Signing.PublicKey)
+                XCTAssertEqual("+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", publicKey.rawRepresentation.base64EncodedString())
             default:
                 XCTFail("Unexpected public key type returned")
             }
