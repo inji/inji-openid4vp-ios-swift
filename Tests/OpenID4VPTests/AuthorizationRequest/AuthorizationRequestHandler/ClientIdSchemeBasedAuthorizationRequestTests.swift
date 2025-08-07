@@ -162,7 +162,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23,["request_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "request_uri http://invalid-mock-verifier.com data is not valid",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -203,7 +203,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager
             )
             
-            await assertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+            await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
                 assertOpenID4VPException(
                     error,
                     expectedMessage: testCase.expectedError!,
@@ -342,7 +342,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager
             )
             
-            await assertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
                 assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
             }
         }
@@ -370,7 +370,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager
             )
             
-            await assertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
                 assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
             }
         }
@@ -398,7 +398,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager
             )
             
-            await assertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
                 assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
             }
         }
@@ -427,7 +427,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager
             )
             
-            await assertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
                 assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
             }
         }
@@ -442,7 +442,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await mockAuthHandler.validateAndParseRequestFields()) { error in
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "response type - vp_token id_token is not supported",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -454,7 +454,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["client_metadata": "{}"])
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
+        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Missing Input: client_metadata->vp_formats param is required",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -466,7 +466,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition", "presentation_definition": presentationDefinition])
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
+        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -499,7 +499,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         clientIdSchemeBasedAuthorizationRequestHandler.shouldValidateWithWalletMetadata = true
         
-        await assertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
+        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "presentation_definition_uri is not supported",
                                      expectedCode: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
@@ -521,7 +521,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Invalid Input: client_id value cannot be empty or null",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest

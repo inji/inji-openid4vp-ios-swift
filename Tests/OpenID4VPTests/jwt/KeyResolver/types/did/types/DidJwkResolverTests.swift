@@ -27,7 +27,7 @@ final class DidJwkResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: invalidDid, method: .jwk, id: "not@valid%base64", didUrl: invalidDid)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidDid)) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidDid)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Invalid base64url encoding for public key data",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -40,7 +40,7 @@ final class DidJwkResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: invalidJsonDid, method: .jwk, id: "", didUrl: invalidJsonDid)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidJsonDid)) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidJsonDid)) { error in
             XCTAssertTrue(error is DecodingError, "Expected DecodingError but got \(type(of: error)) : \(error)")
         }
     }
@@ -61,7 +61,7 @@ final class DidJwkResolverTests: XCTestCase {
         let parsedDid =  ParsedDID(did: unsupportedCurveDid, method: .jwk, id: jwkBase64, didUrl: unsupportedCurveDid)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: unsupportedCurveDid)) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: unsupportedCurveDid)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Curve - P-256 is not supported. Supported: Ed25519",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -85,7 +85,7 @@ final class DidJwkResolverTests: XCTestCase {
         let parsedDid =  ParsedDID(did: unsupportedCurveDid, method: .jwk, id: jwkBase64, didUrl: unsupportedCurveDid)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: unsupportedCurveDid)) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: unsupportedCurveDid)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "KeyType - EC is not supported. Supported: OKP",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -106,7 +106,7 @@ final class DidJwkResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: missingXDid, method: .jwk, id: jwkBase64, didUrl: missingXDid)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: missingXDid)) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: missingXDid)) { error in
             XCTAssertTrue(error is DeserializationFailure, "Expected DeserializationFailure but got \(type(of: error))")
         }
     }
@@ -126,7 +126,7 @@ final class DidJwkResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: invalidXBase64Did, method: .jwk, id: jwkBase64, didUrl: invalidXBase64Did)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidXBase64Did)) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidXBase64Did)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Invalid base64url encoding for public key data",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -150,7 +150,7 @@ final class DidJwkResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: invalidKeyDataDid, method: .jwk, id: jwkBase64, didUrl: invalidKeyDataDid)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidKeyDataDid)) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: invalidKeyDataDid)) { error in
            assertOpenID4VPException(error,
                 expectedMessage: "Public key resolution failed. Error: incorrectKeySize",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest

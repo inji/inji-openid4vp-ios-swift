@@ -101,7 +101,7 @@ class OpenID4VPTests: XCTestCase {
     //client_id_scheme = pre-registered, validation of client via shouldValidateClient
 
     func testAuthenticateVerifierWithShouldValidateClientFalse() async throws {
-        await assertAsyncNoThrowsError(try await openID4VP.authenticateVerifier(
+        await XCTAssertAsyncNoThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: preRegisteredVerifiers,
             shouldValidateClient: false
@@ -109,7 +109,7 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testAuthenticateVerifierWithShouldValidateClientTrue() async throws {
-        await assertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: preRegisteredVerifiers,
             shouldValidateClient: true
@@ -124,7 +124,7 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testAuthenticateVerifierWithoutShouldValidateClientParam() async throws {
-        await assertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: preRegisteredVerifiers
         )) { error in

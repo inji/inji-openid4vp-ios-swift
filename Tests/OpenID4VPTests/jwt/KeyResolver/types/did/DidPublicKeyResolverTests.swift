@@ -94,7 +94,7 @@ class DidPublicKeyResolverTests: XCTestCase {
             mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
             let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
 
-            await assertAsyncThrowsError(
+            await XCTAssertAsyncThrowsError(
                         try await didKeyResolver.resolveKey(header: [
                             "typ": "oauth-authz-req+jwt",
                             "alg": "EdDSA",
@@ -114,7 +114,7 @@ class DidPublicKeyResolverTests: XCTestCase {
         let invalidDid = "did:peer:xyz"
         let didKeyResolver = DidPublicKeyResolver(didUrl: invalidDid, networkManager: mockNetworkManager)
 
-        await assertAsyncThrowsError(
+        await XCTAssertAsyncThrowsError(
                 try await didKeyResolver.resolveKey(header: [
                     "typ": "oauth-authz-req+jwt",
                     "alg": "EdDSA",

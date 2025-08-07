@@ -19,7 +19,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         for holderId in invalidHolderIdTestCases {
-            await assertAsyncThrowsError(try handler.constructUnsignedVPToken(
+            await XCTAssertAsyncThrowsError(try handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,
@@ -46,7 +46,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         for invalidSignatureSuite in invalidsignatureSuiteTestCases {
-            await assertAsyncThrowsError(try handler.constructUnsignedVPToken(
+            await XCTAssertAsyncThrowsError(try handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,

@@ -32,7 +32,7 @@ final class DidWebResolverTests: XCTestCase {
 
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for kid: did:web:example.com#key1", expectedCode: "invalid_request")
         }
     }
@@ -45,7 +45,7 @@ final class DidWebResolverTests: XCTestCase {
         
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Network request failed with error response - Not Found", expectedCode: "invalid_request")
         }
     }
@@ -58,7 +58,7 @@ final class DidWebResolverTests: XCTestCase {
         
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "The data couldn’t be read because it isn’t in the correct format.", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -113,7 +113,7 @@ final class DidWebResolverTests: XCTestCase {
         
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for kid: did:web:example.com#key1", expectedCode: "invalid_request")
         }
     }
@@ -137,7 +137,7 @@ final class DidWebResolverTests: XCTestCase {
 
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "publicKeyMultibase cannot be null or empty", expectedCode: "invalid_request")
         }
     }
@@ -160,7 +160,7 @@ final class DidWebResolverTests: XCTestCase {
         )
 
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem", expectedCode: "invalid_request")
         }
     }
@@ -212,7 +212,7 @@ final class DidWebResolverTests: XCTestCase {
 
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
         
-        await assertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Conversion failed: resolved DID response is not a valid JSON object", expectedCode: "invalid_request")
         }
     }
@@ -263,7 +263,7 @@ final class DidWebResolverTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: didHttpsUrl, responseBody: didDoc)
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
 
-        await assertAsyncThrowsError(
+        await XCTAssertAsyncThrowsError(
             try await resolver.resolve(verificationaMethodUri: keyId)
         ) { error in
             assertOpenID4VPException(
@@ -293,7 +293,7 @@ final class DidWebResolverTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: didHttpsUrl, responseBody: didDoc)
         let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
 
-        await assertAsyncThrowsError(
+        await XCTAssertAsyncThrowsError(
             try await resolver.resolve(verificationaMethodUri: keyId)
         ) { error in
             assertOpenID4VPException(

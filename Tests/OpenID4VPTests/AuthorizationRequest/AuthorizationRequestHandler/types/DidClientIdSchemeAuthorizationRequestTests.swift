@@ -19,7 +19,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         let authorizationRequestByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithDidByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestByValue, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 
-        await assertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: nil, walletNonce: "mock-nonce",isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: nil, walletNonce: "mock-nonce",isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Missing Input: request_uri param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -33,7 +33,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
 
-        await assertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -50,7 +50,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         let authorizationRequestObject = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.walletNonce.rawValue: "hacker-nonce"]))
         let requestUriResponse = createNetworkResponse(authorizationRequestObject, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
 
-        await assertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "wallet_nonce provided in the authorization request is not the same as shared by wallet",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -65,7 +65,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
 
 
-        await assertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -80,7 +80,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         didSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
         let requestUriResponse = createNetworkResponse("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ10.SflK5c", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"]))
 
-        await assertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "request_object_signing_alg is not supported by wallet",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -93,7 +93,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 
-        await assertAsyncThrowsError(try await didSchemeAuthRequestHandler.fetchAuthorizationRequest()) { error in
+        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -121,7 +121,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
         let didScheme = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
 
-        await assertAsyncThrowsError(try didScheme.process(walletMetadata: walletMetadata)) { error in
+        await XCTAssertAsyncThrowsError(try didScheme.process(walletMetadata: walletMetadata)) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "request_object_signing_alg_values_supported is not present in wallet metadata.",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest

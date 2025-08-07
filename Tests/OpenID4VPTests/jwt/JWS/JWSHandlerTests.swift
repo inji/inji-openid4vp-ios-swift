@@ -13,7 +13,7 @@ final class JWSHandlerTests: XCTestCase {
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: didJwk, networkManager: mockNetworkManager)
         let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver)
         
-        await assertAsyncNoThrowsError(try await jwsHandler.verify())
+        await XCTAssertAsyncNoThrowsError(try await jwsHandler.verify())
     }
     
     func testJWSVerificationWithPublicKeyInDidKey() async throws {
@@ -22,7 +22,7 @@ final class JWSHandlerTests: XCTestCase {
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: didKey, networkManager: mockNetworkManager)
         let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver)
         
-        await assertAsyncNoThrowsError(try await jwsHandler.verify())
+        await XCTAssertAsyncNoThrowsError(try await jwsHandler.verify())
     }
     
     func testJWSVerificationWithPublicKeyInDidWeb() async throws {
@@ -57,7 +57,7 @@ final class JWSHandlerTests: XCTestCase {
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: didWeb, networkManager: mockNetworkManager)
         let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver)
         
-        await assertAsyncNoThrowsError(try await jwsHandler.verify())
+        await XCTAssertAsyncNoThrowsError(try await jwsHandler.verify())
     }
     
     func testInvalidSignature() async throws {
@@ -67,7 +67,7 @@ final class JWSHandlerTests: XCTestCase {
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: didKey, networkManager: mockNetworkManager)
         let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver)
         
-        await assertAsyncThrowsError(try await jwsHandler.verify()) { error in
+        await XCTAssertAsyncThrowsError(try await jwsHandler.verify()) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "JWS proof verification failed",
