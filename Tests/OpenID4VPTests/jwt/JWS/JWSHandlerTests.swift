@@ -11,18 +11,16 @@ final class JWSHandlerTests: XCTestCase {
 
         let didJwk = "did:jwk:eyJrdHkiOiAiT0tQIiwgImNydiI6ICJFZDI1NTE5IiwgIngiOiAiaU5xOFlNVlpYYTRRTzNwdzFkXzBTTEN5SEhzRDJiM1FXX21pMTVJTTVWTSIsICJhbGciOiAiRWREU0EiLCAia2V5X29wcyI6IFsidmVyaWZ5Il0sICJ1c2UiOiAic2lnIn0"
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: mockNetworkManager)
-        let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didJwk)
         
-        await XCTAssertAsyncNoThrowsError(try await jwsHandler.verify())
+        await XCTAssertAsyncNoThrowsError(try await JWSHandler.verify(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didJwk))
     }
     
     func testJWSVerificationWithPublicKeyInDidKey() async throws {
         let jws = "eyJ0eXAiOiJvYXV0aC1hdXRoei1yZXErand0IiwiYWxnIjoiRWREU0EiLCJraWQiOiJkaWQ6a2V5Ono2TWtvZlV3ZzZCQjNmUTNqaEJteURuM1BhOU02ZkN5aG03NVMxdGM0aHpXZzFyciJ9.eyJjbGllbnRfaWQiOiJkaWQ6a2V5Ono2TWtvZlV3ZzZCQjNmUTNqaEJteURuM1BhOU02ZkN5aG03NVMxdGM0aHpXZzFyciIsInByZXNlbnRhdGlvbl9kZWZpbml0aW9uX3VyaSI6Imh0dHBzOi8vM2E3YTc1NDZiYTI0Lm5ncm9rLWZyZWUuYXBwL3ZlcmlmaWVyL3ByZXNlbnRhdGlvbl9kZWZpbml0aW9uX3VyaSIsInJlc3BvbnNlX3R5cGUiOiJ2cF90b2tlbiIsInJlc3BvbnNlX21vZGUiOiJkaXJlY3RfcG9zdCIsIm5vbmNlIjoiZzZEZGdscXJxT2tNbU9NT0hmeHBMdz09Iiwic3RhdGUiOiJuWHVkTDFBMXlEMjRyMjNkQngxdFRnPT0iLCJyZXNwb25zZV91cmkiOiJodHRwczovLzNhN2E3NTQ2YmEyNC5uZ3Jvay1mcmVlLmFwcC92ZXJpZmllci92cC1yZXNwb25zZSIsImNsaWVudF9tZXRhZGF0YSI6IntcImNsaWVudF9uYW1lXCI6XCJSZXF1ZXN0ZXIgbmFtZVwiLFwibG9nb191cmlcIjpcIjxsb2dvX3VyaT5cIixcImF1dGhvcml6YXRpb25fZW5jcnlwdGVkX3Jlc3BvbnNlX2FsZ1wiOlwiRUNESC1FU1wiLFwiYXV0aG9yaXphdGlvbl9lbmNyeXB0ZWRfcmVzcG9uc2VfZW5jXCI6XCJBMjU2R0NNXCIsXCJqd2tzXCI6e1wia2V5c1wiOlt7XCJrdHlcIjpcIk9LUFwiLFwiY3J2XCI6XCJYMjU1MTlcIixcInVzZVwiOlwiZW5jXCIsXCJ4XCI6XCJCVk5WZHFvcnB4Q0NuVE9ra3c4UzJOQVlYdmZFdmtDLThSRE9iaHJBVUE0XCIsXCJhbGdcIjpcIkVDREgtRVNcIixcImtpZFwiOlwidmVyaWZpZXIta2V5LWlkXCJ9XX0sXCJ2cF9mb3JtYXRzXCI6e1wibXNvX21kb2NcIjp7XCJhbGdcIjpbXCJFUzI1NlwiXX0sXCJsZHBfdnBcIjp7XCJwcm9vZl90eXBlXCI6W1wiRWQyNTUxOVNpZ25hdHVyZTIwMThcIixcIkVkMjU1MTlTaWduYXR1cmUyMDIwXCIsXCJSc2FTaWduYXR1cmUyMDE4XCJdfX19In0.eHtFcTR3qy97yAMXqTe6MRVe53WsyKByjHgKVqDsqONgXBMWyH_6uXpD1xIWWu7kgT-p73LB_P2yPRDWnXfzDQ"
         let didKey = "did:key:z6MkofUwg6BB3fQ3jhBmyDn3Pa9M6fCyhm75S1tc4hzWg1rr"
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: mockNetworkManager)
-        let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didKey)
         
-        await XCTAssertAsyncNoThrowsError(try await jwsHandler.verify())
+        await XCTAssertAsyncNoThrowsError(try await JWSHandler.verify(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didKey))
     }
     
     func testJWSVerificationWithPublicKeyInDidWeb() async throws {
@@ -55,9 +53,8 @@ final class JWSHandlerTests: XCTestCase {
 
         let didWeb = "did:web:KiruthikaJeyashankar.github.io:did"
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: mockNetworkManager)
-        let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didWeb)
         
-        await XCTAssertAsyncNoThrowsError(try await jwsHandler.verify())
+        await XCTAssertAsyncNoThrowsError(try await JWSHandler.verify(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didWeb))
     }
     
     func testInvalidSignature() async throws {
@@ -65,9 +62,8 @@ final class JWSHandlerTests: XCTestCase {
 
         let didKey = "did:key:z6MkofUwg6BB3fQ3jhBmyDn3Pa9M6fCyhm75S1tc4hzWg1rr"
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: mockNetworkManager)
-        let jwsHandler = JWSHandler(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didKey)
         
-        await XCTAssertAsyncThrowsError(try await jwsHandler.verify()) { error in
+        await XCTAssertAsyncThrowsError(try await JWSHandler.verify(jws: jws, publicKeyResolver: keyResolver, verificationMethodUri: didKey)) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "JWS proof verification failed",
