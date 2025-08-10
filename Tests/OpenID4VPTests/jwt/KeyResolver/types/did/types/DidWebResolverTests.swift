@@ -30,9 +30,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
 
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for kid: did:web:example.com#key1", expectedCode: "invalid_request")
         }
     }
@@ -43,9 +43,9 @@ final class DidWebResolverTests: XCTestCase {
             error: NetworkRequestException.networkRequestFailed(message: "Not Found")
         )
         
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Network request failed with error response - Not Found", expectedCode: "invalid_request")
         }
     }
@@ -56,9 +56,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: "Invalid JSON"
         )
         
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "The data couldn’t be read because it isn’t in the correct format.", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -86,9 +86,9 @@ final class DidWebResolverTests: XCTestCase {
             id: "example.com:path:to:identity",
             didUrl: "did:web:example.com:path:to:identity#key1"
         )
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        let key = try await resolver.resolve(verificationaMethodUri: "did:web:example.com:path:to:identity#key1")
+        let key = try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com:path:to:identity#key1")
         
         XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains("https://example.com/path/to/identity/did.json"))
         XCTAssertNotNil(key)
@@ -111,9 +111,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
         
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for kid: did:web:example.com#key1", expectedCode: "invalid_request")
         }
     }
@@ -135,9 +135,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
 
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "publicKeyMultibase cannot be null or empty", expectedCode: "invalid_request")
         }
     }
@@ -159,8 +159,8 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
 
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
-        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem", expectedCode: "invalid_request")
         }
     }
@@ -188,9 +188,9 @@ final class DidWebResolverTests: XCTestCase {
                     didUrl: "did:web:sub.example.com#key1"
                 )
         
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: "did:web:sub.example.com#key1")) { key in
+        await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:sub.example.com#key1")) { key in
             XCTAssertTrue(mockNetworkManager.recordedRequests.keys.contains("https://sub.example.com/.well-known/did.json"))
             XCTAssertNotNil(key)
         }
@@ -210,9 +210,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
 
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertAsyncThrowsError(try await resolver.resolve(verificationaMethodUri: "did:web:example.com#key1")) { error in
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
             assertOpenID4VPException(error, expectedMessage: "Conversion failed: resolved DID response is not a valid JSON object", expectedCode: "invalid_request")
         }
     }
@@ -235,9 +235,9 @@ final class DidWebResolverTests: XCTestCase {
             for: didHttpsUrl,responseBody: didDocJSON
         )
 
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
+        await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
             assertEdKey(expectedBase64Encoded: "lJZrfAjkBXdfjebMHEUI9usidAPhAlssitLXR3OYxbI=", actualKey: key)
         }
     }
@@ -255,10 +255,10 @@ final class DidWebResolverTests: XCTestCase {
         """
 
         mockNetworkManager.setMockResponse(for: didHttpsUrl, responseBody: didDoc)
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
 
         await XCTAssertAsyncThrowsError(
-            try await resolver.resolve(verificationaMethodUri: keyId)
+            try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)
         ) { error in
             assertOpenID4VPException(
                 error,
@@ -283,10 +283,10 @@ final class DidWebResolverTests: XCTestCase {
         """
 
         mockNetworkManager.setMockResponse(for: didHttpsUrl, responseBody: didDoc)
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
 
         await XCTAssertAsyncThrowsError(
-            try await resolver.resolve(verificationaMethodUri: keyId)
+            try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)
         ) { error in
             assertOpenID4VPException(
                 error,
@@ -321,9 +321,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
 
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
+        await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
             assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
@@ -347,9 +347,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
 
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
+        await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
             assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
@@ -373,9 +373,9 @@ final class DidWebResolverTests: XCTestCase {
             responseBody: didDocJSON
         )
         
-        let resolver = DidWebResolver(networkManager: mockNetworkManager, parsedDID: parsedDid)
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
-        await XCTAssertNoThrowAndVerifyAsync(try await resolver.resolve(verificationaMethodUri: keyId)) { key in
+        await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
             assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }

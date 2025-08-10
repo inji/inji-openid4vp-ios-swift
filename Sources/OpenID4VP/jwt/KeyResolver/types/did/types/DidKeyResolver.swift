@@ -4,20 +4,18 @@ import Base58Swift
 
 class DidKeyResolver : BaseDidPublicKeyResolver{
     private static let className = String(describing: DidKeyResolver.self)
-    let parsedDid: ParsedDID
     let networkManager: NetworkManaging
     static let keySize = 34
     static let edKeyPrefix = 0xed
     static let multiCodecTrailingByte = 0x01
     
     
-    init(networkManager: NetworkManaging, parsedDID: ParsedDID) {
+    init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
-        self.parsedDid = parsedDID
     }
     
-    func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
-        let decodedBytes = try decodeMultibase(self.parsedDid.id)
+    func extractPublicKey(parsedDID: ParsedDID, keyId: String) async throws -> PublicKeyType {
+        let decodedBytes = try decodeMultibase(parsedDID.id)
         
         guard decodedBytes.count == Self.keySize,
               decodedBytes[0] == Self.edKeyPrefix,

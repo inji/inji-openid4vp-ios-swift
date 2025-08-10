@@ -2,8 +2,10 @@ import XCTest
 import CryptoKit
 @testable import OpenID4VP
 
+fileprivate let mockNetworkManager: MockNetworkManager! = MockNetworkManager()
+
 class DidPublicKeyResolverTests: XCTestCase {
-    let mockNetworkManager: MockNetworkManager! = MockNetworkManager()
+    let didKeyResolver = DidPublicKeyResolver(networkManager: mockNetworkManager)
     
     let did = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs"
     let didDocumentUrl = "https://mosip.github.io/inji-mock-services/openid4vp-service/docs/did.json"
@@ -65,16 +67,12 @@ class DidPublicKeyResolverTests: XCTestCase {
       ]
     }
     """
-
+    
     func testValidDidWebPublicKeyResolution() async {
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
-        let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-
-        await XCTAssertNoThrowAndVerifyAsync(try await didKeyResolver.resolveKey(header: [
-            "typ": "oauth-authz-req+jwt",
-            "alg": "EdDSA",
-            "kid": "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
-        ])){ result in
+        let keyId = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
+        
+        await XCTAssertNoThrowAndVerifyAsync(try await didKeyResolver.resolve(uri: did, keyId: keyId)){ result in
             assertEdKey(expectedBase64Encoded: "+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", actualKey: result)
         }
     }
@@ -84,43 +82,33 @@ class DidPublicKeyResolverTests: XCTestCase {
             TestCase(input: ""),
             TestCase(input: "did:example:123#2"),
         ]
-
+        
         for testCase in testCases {
             mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
-            let didKeyResolver = DidPublicKeyResolver(didUrl: did, networkManager: mockNetworkManager)
-
+            
             await XCTAssertAsyncThrowsError(
-                        try await didKeyResolver.resolveKey(header: [
-                            "typ": "oauth-authz-req+jwt",
-                            "alg": "EdDSA",
-                            "kid": testCase.input
-                        ])
-                    ) { error in
-                    assertOpenID4VPException(
-                        error,
-                        expectedMessage: "Public key extraction failed for kid: \(testCase.input)",
-                        expectedCode: OpenID4VPErrorCodes.invalidRequest
-                    )
-                }
-        }
-    }
-
-    func testThrowErrorWhenPublicKeyResolutionFailed() async {
-        let invalidDid = "did:peer:xyz"
-        let didKeyResolver = DidPublicKeyResolver(didUrl: invalidDid, networkManager: mockNetworkManager)
-
-        await XCTAssertAsyncThrowsError(
-                try await didKeyResolver.resolveKey(header: [
-                    "typ": "oauth-authz-req+jwt",
-                    "alg": "EdDSA",
-                    "kid": "did:example:123#2"
-                ])
+                try await didKeyResolver.resolve(uri: did, keyId: testCase.input)
             ) { error in
                 assertOpenID4VPException(
                     error,
-                    expectedMessage: "Given did url is not supported",
+                    expectedMessage: "Public key extraction failed for kid: \(testCase.input)",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             }
+        }
+    }
+    
+    func testThrowErrorWhenPublicKeyResolutionFailed() async {
+        let invalidDid = "did:peer:xyz"
+        
+        await XCTAssertAsyncThrowsError(
+            try await didKeyResolver.resolve(uri: invalidDid, keyId: "key-0")
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Given did url is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
     }
 }

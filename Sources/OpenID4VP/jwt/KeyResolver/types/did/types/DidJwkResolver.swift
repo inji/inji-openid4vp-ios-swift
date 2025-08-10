@@ -4,16 +4,14 @@ import Base58Swift
 
 class DidJwkResolver : BaseDidPublicKeyResolver {
     private static let className = String(describing: DidJwkResolver.self)
-    let parsedDid: ParsedDID
     let networkManager: NetworkManaging
     
-    init(networkManager: NetworkManaging, parsedDID: ParsedDID)  {
+    init(networkManager: NetworkManaging)  {
         self.networkManager = networkManager
-        self.parsedDid = parsedDID
     }
     
-    func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
-        let base64urlJwk = String(self.parsedDid.id)
+    func extractPublicKey(parsedDID: ParsedDID, keyId: String) async throws -> PublicKeyType {
+        let base64urlJwk = String(parsedDID.id)
         
         guard let jwkData = Data(base64UrlEncoded: base64urlJwk) else {
             throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: Self.className)

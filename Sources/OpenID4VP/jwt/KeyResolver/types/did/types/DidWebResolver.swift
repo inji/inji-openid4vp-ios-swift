@@ -7,18 +7,16 @@ class DidWebResolver : BaseDidPublicKeyResolver {
     private let wellKnownPath = ".well-known"
     private static let supportedPublicKeyTypes = PublicKeyVerificationMaterial.allCases.map { $0.rawValue }
     
-    let parsedDid: ParsedDID
     let networkManager: NetworkManaging
     
-    init(networkManager: NetworkManaging, parsedDID: ParsedDID) {
+    init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
-        self.parsedDid = parsedDID
     }
     
-    func resolve(verificationaMethodUri kid: String) async throws -> PublicKeyType {
+    func extractPublicKey(parsedDID: ParsedDID, keyId: String) async throws -> PublicKeyType {
         do {
             
-            let urlString = constructDIDUrl(from: parsedDid)
+            let urlString = constructDIDUrl(from: parsedDID)
             
             let response = try await networkManager.sendHTTPRequest(url: urlString, method: .get, bodyParams: nil, headers: nil)
             guard let responseBody = response.responseBody.data(using: .utf8) else {
@@ -34,7 +32,7 @@ class DidWebResolver : BaseDidPublicKeyResolver {
                 )
             }
             
-            return try self.extractPublicKey(for: kid, from: didResponse)!
+            return try self.extractPublicKey(for: keyId, from: didResponse)!
         } catch {
             throw DidResolutionFailed(message: error.localizedDescription, className: Self.className)
         }

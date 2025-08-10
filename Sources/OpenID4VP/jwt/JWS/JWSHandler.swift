@@ -8,15 +8,20 @@ struct JWSHandler {
     
     private let jws : String
     private let publicKeyResolver: PublicKeyResolver
+    private let verificationMethodUri: String
     
-    init(jws: String, publicKeyResolver: PublicKeyResolver) {
+    init(jws: String, publicKeyResolver: PublicKeyResolver, verificationMethodUri: String) {
         self.jws = jws
         self.publicKeyResolver = publicKeyResolver
+        self.verificationMethodUri = verificationMethodUri
     }
     
+    //TOOD: accept JWS and public key as parameters for verification
     func verify() async throws {
         do {
-            let publicKey = try await publicKeyResolver.resolveKey(header: try extractDataJsonFromJws(jwsPart: .header))
+            let header = try extractDataJsonFromJws(jwsPart: .header)
+            
+            let publicKey = try await publicKeyResolver.resolve(uri: verificationMethodUri, keyId: header["kid"] as? String)
 
             let jws = try JWS(jwsString: jws)
 

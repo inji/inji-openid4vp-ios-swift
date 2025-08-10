@@ -26,8 +26,8 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
             if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
                 let clientId: String = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
                 
-                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clientId, networkManager: networkManager)
-                let jwsHandler = JWSHandler(jws: requestUriResponse.body , publicKeyResolver: keyResolver)
+                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
+                let jwsHandler = JWSHandler(jws: requestUriResponse.body , publicKeyResolver: keyResolver, verificationMethodUri: clientId)
                 
                 let header = try jwsHandler.extractDataJsonFromJws(jwsPart: .header)
                 try validateAuthorizationRequestSigningAlgorithm(header: header)

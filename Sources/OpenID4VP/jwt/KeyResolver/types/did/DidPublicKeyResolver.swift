@@ -2,45 +2,42 @@ import Foundation
 import Base58Swift
 
 protocol BaseDidPublicKeyResolver {
-    func resolve(verificationaMethodUri _ : String) async throws -> PublicKeyType
+    func extractPublicKey(parsedDID: ParsedDID, keyId : String) async throws -> PublicKeyType
 }
 
 // This should be moved to other module - vc-verifier once available
 class DidPublicKeyResolver : PublicKeyResolver {
     let networkManager: NetworkManaging
-    let didUrl: String
     static let className = String(describing: DidPublicKeyResolver.self)
     var className: String {
         return String(describing: DidPublicKeyResolver.self)
     }
     
-    init(didUrl : String, networkManager: NetworkManaging) {
+    init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
-        self.didUrl = didUrl
     }
     
-    func resolveKey(header: [String : Any]) async throws -> PublicKeyType {
-        guard let kid = header["kid"] as? String else {
+    func resolve(uri: String, keyId : String?) async throws -> PublicKeyType {
+        guard let kid = keyId else {
             throw KidExtractionFailed(
                 className: self.className
             )
         }
         
-        let parsedDID = try parseDid(didUrl)
-        
+        let parsedDID = try parseDid(uri)
         let resolver : BaseDidPublicKeyResolver = try resolver(parsedDid : parsedDID, networkManager: networkManager)
         
-        return try await resolver.resolve(verificationaMethodUri: kid)
+        return try await resolver.extractPublicKey(parsedDID: parsedDID, keyId: kid)
     }
     
     private func resolver(parsedDid: ParsedDID, networkManager: NetworkManaging) throws -> BaseDidPublicKeyResolver {
         switch parsedDid.method {
         case .web:
-            return DidWebResolver(networkManager: networkManager, parsedDID: parsedDid)
+            return DidWebResolver(networkManager: networkManager)
         case .jwk:
-            return DidJwkResolver(networkManager: networkManager, parsedDID: parsedDid)
+            return DidJwkResolver(networkManager: networkManager)
         case .key:
-            return DidKeyResolver(networkManager: networkManager, parsedDID: parsedDid)
+            return DidKeyResolver(networkManager: networkManager)
         }
     }
 }
