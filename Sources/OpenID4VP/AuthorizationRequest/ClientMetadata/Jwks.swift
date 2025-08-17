@@ -1,6 +1,6 @@
 import Foundation
 //import JSONWebKey
-//TODO: use JWK from jose-swift
+//TODO: can we use JWK from jose-swift?
 
 struct JWKS: Codable {
     let keys: [JWK]

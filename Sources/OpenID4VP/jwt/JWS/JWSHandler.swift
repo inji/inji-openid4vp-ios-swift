@@ -5,15 +5,15 @@ import Base58Swift
 
 struct JWSHandler {
     static let className = String(describing: JWSHandler.self)
-
+    
     static func verify(jws: String, publicKeyResolver: PublicKeyResolver, verificationMethodUri: String) async throws {
         do {
             let header = try extractDataJsonFromJws(jws: jws, jwsPart: .header)
             
             let publicKey = try await publicKeyResolver.resolve(uri: verificationMethodUri, keyId: header["kid"] as? String)
-
+            
             let jws = try JWS(jwsString: jws)
-
+            
             switch publicKey {
             case .ed25519(let edKey):
                 guard try jws.verify(key: edKey) else {
@@ -35,8 +35,8 @@ struct JWSHandler {
             )
         }
     }
-
-
+    
+    
     static func extractDataJsonFromJws(jws: String, jwsPart: JWSPart) throws -> [String:Any] {
         let components = jws.split(separator: ".")
         let payload = String(components[jwsPart.rawValue])
