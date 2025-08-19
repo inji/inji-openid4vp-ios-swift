@@ -73,7 +73,7 @@ class DidWebResolver : BaseDidPublicKeyResolver {
             }
         }
         
-        throw PublicKeyExtractionFailed(
+        throw PublicKeyResolutionFailed(
             message: "Public key extraction failed for kid: \(kid)",
             className: Self.className
         )

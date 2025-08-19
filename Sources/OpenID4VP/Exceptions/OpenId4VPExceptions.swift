@@ -140,12 +140,6 @@ class InvalidInput: OpenID4VPException {
 
 // MARK: - JWS
 
-class PublicKeyExtractionFailed: OpenID4VPException {
-    init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
-    }
-}
-
 class UnsupportedPublicKeyType: OpenID4VPException {
     init(className: String) {
         let message = "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem"

@@ -17,7 +17,7 @@ class DidPublicKeyResolver : PublicKeyResolver {
         self.networkManager = networkManager
     }
     
-    func resolve(uri: String, keyId : String?) async throws -> PublicKeyType {
+    func resolve(uri: String, keyId : String? = nil) async throws -> PublicKeyType {
         guard let kid = keyId else {
             throw KidExtractionFailed(
                 className: self.className

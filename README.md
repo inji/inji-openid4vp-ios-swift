@@ -282,7 +282,7 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
      - unable to find the public key JWK from the `jwks` of `client_metadata` as per the provided algorithm in `client_metadata`
    - `publicKeyMultibase` is null or empty 
 7. UnsupportedPublicKeyType exception is thrown when the public key type is not `publicKeyMultibase`.
-8. PublicKeyExtractionFailed exception is thrown when there are any errors in extracting the public key from verification method
+8. PublicKeyResolutionFailed exception is thrown when there are any errors in extracting the public key from verification method
 9. InvalidVerifier exception is thrown if the received request client_iD & response_uri are not matching with any of the trusted verifiers
      
 
