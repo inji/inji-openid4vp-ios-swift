@@ -86,11 +86,21 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     
     override func validateAndParseRequestFields()async throws {
         if shouldValidateClient {
-            guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String && $0.responseUris.contains(getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]) ?? "null") }) else {
-                throw InvalidVerifier(
-                    message: "response_uri trust cannot be established",
-                    className: AuthorizationRequest.className
-                )
+            let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
+            if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
+                let responseUri = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]) ?? "null"
+                guard preRegisteredClient.responseUris.contains(responseUri) else {
+                    throw InvalidVerifier(
+                        message: "response_uri trust cannot be established",
+                        className: AuthorizationRequest.className
+                    )
+                }
+                if(preRegisteredClient.clientMetadata != nil && authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.clientMetadata.rawValue)){
+                    throw InvalidVerifier(
+                        message: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
+                        className: AuthorizationRequest.className
+                    )
+                }
             }
         }
         try await super.validateAndParseRequestFields()

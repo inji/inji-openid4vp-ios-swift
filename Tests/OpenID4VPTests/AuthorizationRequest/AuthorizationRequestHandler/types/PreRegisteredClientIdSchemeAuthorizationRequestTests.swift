@@ -63,7 +63,31 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
                                      expectedCode: OpenID4VPErrorCodes.invalidClient
             )
         }
+    }
+    
+    func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifierListWithClientMetadataButClientMetadataIsAlsoAvailableInAuthorizationRequest() async{
+        let clientMetadataString = """
+                {
+                    "client_name": "Valid Client",
+                    "logo_uri": "https://example.com/logo.png",
+                    "authorization_encrypted_response_alg": "RSA-OAEP",
+                    "authorization_encrypted_response_enc": "A256GCM",
+                    "vp_formats": { "format1": { "type1": ["value1"] } },
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                }
+            """.data(using: .utf8)!
+        let clientMetadata = try! ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
+        await assertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
+        }
     }
     
     /// Fetch authorization request by value - validate authorization request object and authorization request query paramaters
