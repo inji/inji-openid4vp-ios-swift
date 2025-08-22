@@ -456,7 +456,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Missing Input: client_metadata->vp_formats param is required",
+                                     expectedMessage: "Error during client metadata decoding - Missing Input: client_metadata->vp_formats param is required",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

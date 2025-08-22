@@ -15,7 +15,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->client_name value cannot be empty or null",
+                    expectedError: "Error during client metadata decoding - Invalid Input: client_metadata->client_name value cannot be empty or null",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
@@ -29,7 +29,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->logo_uri value cannot be empty or null",
+                    expectedError: "Error during client metadata decoding - Invalid Input: client_metadata->logo_uri value cannot be empty or null",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
@@ -43,7 +43,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_alg value cannot be empty or null",
+                    expectedError: "Error during client metadata decoding - Invalid Input: client_metadata->authorization_encrypted_response_alg value cannot be empty or null",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
@@ -57,7 +57,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                expectedError: "Invalid Input: client_metadata->authorization_encrypted_response_enc value cannot be empty or null",
+                expectedError: "Error during client metadata decoding - Invalid Input: client_metadata->authorization_encrypted_response_enc value cannot be empty or null",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
@@ -71,7 +71,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": {
                             "keys": [
                                 {
-                                    "kty": "ES",
+                                    "kty": "EC",
                                     "use": "sig",
                                     "alg": "RS256",
                                     "kid": "abc123",
@@ -82,7 +82,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                         }
                     }
                     """.data(using: .utf8)!,
-                    expectedError: "Invalid Input: client_metadata->vp_formats value cannot be empty or null",
+                    expectedError: "Error during client metadata decoding - Invalid Input: client_metadata->vp_formats value cannot be empty or null",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
                 ),
                 TestCase(
@@ -96,7 +96,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                         "jwks": null
                     }
                     """.data(using: .utf8)!,
-                expectedError: "Invalid Input: client_metadata->jwks value cannot be empty or null",
+                expectedError: "Error during client metadata decoding - Invalid Input: client_metadata->jwks value cannot be empty or null",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
                 )
             ]
@@ -121,7 +121,7 @@ final class ClientMetadataValidationTests: XCTestCase {
                     "authorization_encrypted_response_alg": "RSA-OAEP",
                     "authorization_encrypted_response_enc": "A256GCM",
                     "vp_formats": { "format1": { "type1": ["value1"] } },
-                    "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
                 }
             """.data(using: .utf8)!),
             TestCase(input: """

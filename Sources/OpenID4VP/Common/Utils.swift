@@ -79,3 +79,11 @@ func sha256Hash(from data: CBOR) -> [UInt8] {
     let hash: SHA256.Digest = SHA256.hash(data: CBOR.encode(data))
     return ([UInt8])(Data(hash))
 }
+
+func wrapError(_ error: Error, customError: (String) -> Error) -> Error {
+    if type(of: error) == OpenID4VPException.self {
+        return error
+    } else {
+        return customError(error.localizedDescription)
+    }
+}

@@ -145,13 +145,13 @@ class OpenID4VPTests: XCTestCase {
                     "authorization_encrypted_response_alg": "RSA-OAEP",
                     "authorization_encrypted_response_enc": "A256GCM",
                     "vp_formats": { "format1": { "type1": ["value1"] } },
-                    "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
                 }
             """.data(using: .utf8)!
         let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
         
         let trustedVerifiers = [Verifier(clientId: "mock-client-id", responseUris: ["https://example.com/callback"], clientMetadata: clientMetadata)]
-        await assertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: trustedVerifiers,
             shouldValidateClient: true
@@ -189,7 +189,7 @@ class OpenID4VPTests: XCTestCase {
         case .failure(let error):
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Missing Input: client_metadata->vp_formats param is required",
+                expectedMessage: "Error during client metadata decoding - Missing Input: client_metadata->vp_formats param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         case .success:
@@ -475,11 +475,4 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertNotNil(requestBody["state"], "Expected 'state' to be present in the request body")
         XCTAssertEqual(requestBody["state"], "+mRQe1d6pBoJqF6Ab28klg==")
     }
-    
-
-
-
-    
-    
-
 }

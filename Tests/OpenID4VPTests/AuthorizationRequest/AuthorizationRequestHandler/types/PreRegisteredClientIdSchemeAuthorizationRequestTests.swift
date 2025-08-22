@@ -65,7 +65,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifierListWithClientMetadataButClientMetadataIsAlsoAvailableInAuthorizationRequest() async{
+    func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifierListWithClientMetadataButClientMetadataIsAlsoAvailableInAuthorizationRequest() async throws {
         let clientMetadataString = """
                 {
                     "client_name": "Valid Client",
@@ -73,15 +73,15 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
                     "authorization_encrypted_response_alg": "RSA-OAEP",
                     "authorization_encrypted_response_enc": "A256GCM",
                     "vp_formats": { "format1": { "type1": ["value1"] } },
-                    "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
                 }
             """.data(using: .utf8)!
-        let clientMetadata = try! ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()) { error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
@@ -98,33 +98,10 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
                     "authorization_encrypted_response_alg": "RSA-OAEP",
                     "authorization_encrypted_response_enc": "A256GCM",
                     "vp_formats": { "format1": { "type1": ["value1"] } },
-                    "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
                 }
             """
-        let clientMetadataDict: [String: Any] = [
-            "client_name": "Valid Client",
-            "logo_uri": "https://example.com/logo.png",
-            "authorization_encrypted_response_alg": "RSA-OAEP",
-            "authorization_encrypted_response_enc": "A256GCM",
-            "vp_formats": [
-                "format1": [
-                    "type1": ["value1"]
-                ]
-            ],
-            "jwks": [
-                "keys": [
-                    [
-                        "kty": "RSA",
-                        "crv": "curve",
-                        "use": "sig",
-                        "alg": "RS256",
-                        "kid": "1",
-                        "x": "ur76ru"
-                    ]
-                ]
-            ]
-        ]
-        let clientMetadata = try! ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23.filter {$0 != "client_metadata"}, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)

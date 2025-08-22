@@ -35,7 +35,8 @@ final class DidJwkResolverTests: XCTestCase {
         let resolver = DidJwkResolver(networkManager: mockNetworkManager)
         
         await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: invalidJsonDid)) { error in
-            XCTAssertTrue(error is DecodingError, "Expected DecodingError but got \(type(of: error)) : \(error)")
+            XCTAssertTrue(error is PublicKeyResolutionFailed, "Expected DecodingError but got \(type(of: error)) : \(error)")
+            XCTAssertEqual("Failed to decode JWK: The data couldn’t be read because it isn’t in the correct format.", error.localizedDescription)
         }
     }
     
@@ -101,7 +102,7 @@ final class DidJwkResolverTests: XCTestCase {
         let resolver = DidJwkResolver(networkManager: mockNetworkManager)
         
         await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: missingXDid)) { error in
-            XCTAssertTrue(error is DeserializationFailure, "Expected DeserializationFailure but got \(type(of: error))")
+            XCTAssertTrue(error is PublicKeyResolutionFailed, "Expected DeserializationFailure but got \(type(of: error))")
         }
     }
     
@@ -122,7 +123,7 @@ final class DidJwkResolverTests: XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: invalidXBase64Did)) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "Invalid base64url encoding for public key data",
+                expectedMessage: "Failed to decode JWK: The operation couldn’t be completed. (Tools.Base64URL.Error error 0.)",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

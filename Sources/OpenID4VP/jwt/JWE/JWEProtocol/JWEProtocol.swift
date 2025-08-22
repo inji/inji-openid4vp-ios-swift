@@ -1,8 +1,9 @@
 import Foundation
+import JSONWebKey
 import CryptoKit
 
 protocol JWEKeyAgreement {
-    func deriveKey(publicKey: String) throws -> SymmetricKey
+    func deriveKey(publicKey: Data) throws -> SymmetricKey
     func getEphemeralPublicKey() -> [String: Any]?
     //TODO: should Header come from this class or simply be a map
     func getJWEHeader(alg: String, enc: String, jwk: JWK, producerInfo: String, recipientInfo: String) -> [String: Any]

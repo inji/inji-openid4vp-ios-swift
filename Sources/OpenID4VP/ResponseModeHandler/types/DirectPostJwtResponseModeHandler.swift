@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 
 
 struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
@@ -37,7 +38,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                            walletMetadata: walletMetadata)
         }
 
-        if !jwks.keys.contains(where: { $0.alg == alg && $0.use == "enc"}) {
+        if !jwks.keys.contains(where: { $0.algorithm == alg && $0.publicKeyUse == .encryption}) {
             throw InvalidData(
                 message: "No jwk matching the specified algorithm found for encryption",
                 className: className
@@ -83,7 +84,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         return response.responseBody
     }
 
-    private func getJwk(_ jwks: JWKS, _ alg: String) throws -> JWK {
-        return jwks.keys.first(where: { $0.alg == alg && $0.use == "enc"})!
+    private func getJwk(_ jwks: JWKSet, _ alg: String) throws -> JWK {
+        return jwks.keys.first(where: { $0.algorithm == alg && $0.publicKeyUse == .encryption})!
     }
 }

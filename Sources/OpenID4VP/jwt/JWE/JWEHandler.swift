@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 import CryptoKit
 
 public struct JWEHandler {
@@ -21,11 +22,11 @@ public struct JWEHandler {
         //TODO: Perform key agreement based on keyEncryptionAlgorithm
         let encrypter = try EncryptionProvider.getEncrypter(contentEncryptionAlgorithm)
         let keyAgreement = try KeyAgreementFactory.createKeyAgreement(for: publicKey)
-        let sharedKey = try keyAgreement.deriveKey(publicKey: publicKey.x)
+        let sharedKey = try keyAgreement.deriveKey(publicKey: publicKey.x ?? Data())
 
         let (ciphertext, nonce, tag) = try encrypter.encrypt(payloadData, with: sharedKey)
 
-        var header = keyAgreement.getJWEHeader(alg: publicKey.alg, enc: contentEncryptionAlgorithm, jwk: publicKey, producerInfo: producerInfo, recipientInfo: recipientInfo)
+        var header = keyAgreement.getJWEHeader(alg: publicKey.algorithm ?? "", enc: contentEncryptionAlgorithm, jwk: publicKey, producerInfo: producerInfo, recipientInfo: recipientInfo)
         if let epk = keyAgreement.getEphemeralPublicKey() {
             header["epk"] = epk
         }
