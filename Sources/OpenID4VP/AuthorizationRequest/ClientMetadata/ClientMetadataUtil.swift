@@ -8,7 +8,10 @@ func parseAndValidateClientMetadata(authorizationRequest: [String: Any],
     let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
     var mutableParams = authorizationRequest
     if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata.rawValue] {
-        if let clientMetadataObject = clientMetadata as? NSDictionary{
+        if let clientMetadataInstance = clientMetadata as? ClientMetadata {
+            mutableParams[clientMetadataKey] = clientMetadataInstance
+        }
+        else if let clientMetadataObject = clientMetadata as? NSDictionary{
             let data = try JSONSerialization.data(withJSONObject: clientMetadataObject, options: [])
             let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: data)
             mutableParams[clientMetadataKey] = clientMetadata

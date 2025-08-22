@@ -2,7 +2,7 @@ import Foundation
 //import JSONWebKey
 //TODO: can we use JWK from jose-swift?
 
-struct JWKS: Codable {
+public struct JWKS: Codable {
     let keys: [JWK]
     static let className = String(describing: JWKS.self)
     

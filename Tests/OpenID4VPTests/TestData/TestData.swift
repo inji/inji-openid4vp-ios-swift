@@ -1,6 +1,18 @@
 import OpenID4VP
 import Foundation
 
+let clientMetadataString = """
+        {
+            "client_name": "Valid Client",
+            "logo_uri": "https://example.com/logo.png",
+            "authorization_encrypted_response_alg": "RSA-OAEP",
+            "authorization_encrypted_response_enc": "A256GCM",
+            "vp_formats": { "format1": { "type1": ["value1"] } },
+            "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+        }
+    """.data(using: .utf8)!
+//let clientMetadata = clientMetadataString.toInstance(as: ClientMetadata.self)
+
 private let testVerifierList:  [[String: Any]]  = [
     [
         "client_id": "https://mock-verifier.com",

@@ -95,11 +95,17 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                         className: AuthorizationRequest.className
                     )
                 }
-                if(preRegisteredClient.clientMetadata != nil && authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.clientMetadata.rawValue)){
-                    throw InvalidVerifier(
-                        message: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
-                        className: AuthorizationRequest.className
-                    )
+                if(preRegisteredClient.clientMetadata != nil) {
+                    if (authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.clientMetadata.rawValue)){
+                        throw InvalidVerifier(
+                            message: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
+                            className: AuthorizationRequest.className
+                        )
+                    }
+                    
+                    
+                    // Update client_metadata in authorizationRequestParameters from the registered client for further use
+                    authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] = preRegisteredClient.clientMetadata
                 }
             }
         }

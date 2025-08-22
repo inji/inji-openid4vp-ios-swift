@@ -90,6 +90,51 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
+    func testAutorizationRequestUpdatedWithClientMetadataWithPreRegisteredClientMetadata() async throws {
+        let clientMetadataString = """
+                {
+                    "client_name": "Valid Client",
+                    "logo_uri": "https://example.com/logo.png",
+                    "authorization_encrypted_response_alg": "RSA-OAEP",
+                    "authorization_encrypted_response_enc": "A256GCM",
+                    "vp_formats": { "format1": { "type1": ["value1"] } },
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "curve", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                }
+            """
+        let clientMetadataDict: [String: Any] = [
+            "client_name": "Valid Client",
+            "logo_uri": "https://example.com/logo.png",
+            "authorization_encrypted_response_alg": "RSA-OAEP",
+            "authorization_encrypted_response_enc": "A256GCM",
+            "vp_formats": [
+                "format1": [
+                    "type1": ["value1"]
+                ]
+            ],
+            "jwks": [
+                "keys": [
+                    [
+                        "kty": "RSA",
+                        "crv": "curve",
+                        "use": "sig",
+                        "alg": "RS256",
+                        "kid": "1",
+                        "x": "ur76ru"
+                    ]
+                ]
+            ]
+        ]
+        let clientMetadata = try! ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23.filter {$0 != "client_metadata"}, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        try await preRegistered.validateAndParseRequestFields()
+        
+        let clientMetadataInAuthRequest = preRegistered.authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue]
+        assertJsonString(expected: clientMetadataString, actual: convertToJsonString(clientMetadataInAuthRequest as! ClientMetadata))
+    }
+    
     /// Fetch authorization request by value - validate authorization request object and authorization request query paramaters
     
     func testFetchAuthorizationRequestOnValidPreRegisteredSchemeAuthRequestSentByValue() async{

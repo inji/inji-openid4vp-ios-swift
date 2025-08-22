@@ -18,6 +18,20 @@ public struct ClientMetadata: Codable {
         case jwks
     }
     
+    public init(clientName: String? = nil,
+                logoUri: String? = nil,
+                authorizationEncryptedResponseAlg: String? = nil,
+                authorizationEncryptedResponseEnc: String? = nil,
+                vpFormats: [String: [String: [String]]],
+                jwks: JWKS? = nil) {
+        self.clientName = clientName
+        self.logoUri = logoUri
+        self.authorizationEncryptedResponseAlg = authorizationEncryptedResponseAlg
+        self.authorizationEncryptedResponseEnc = authorizationEncryptedResponseEnc
+        self.vpFormats = vpFormats
+        self.jwks = jwks
+    }
+    
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
