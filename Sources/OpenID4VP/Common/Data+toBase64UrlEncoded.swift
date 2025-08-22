@@ -1,6 +1,15 @@
 import Foundation
 
 extension Data {
+    init?(base64UrlEncoded: String) {
+        let base64 = base64UrlEncoded.base64URLToBase64()
+        guard let decoded = Data(base64Encoded: base64) else {
+            return nil
+        }
+        
+        self = decoded
+    }
+    
     func toBase64UrlEncoded() -> String {
         return base64URLEscaped(self.base64EncodedString())
     }

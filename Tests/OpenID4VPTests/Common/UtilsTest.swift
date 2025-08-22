@@ -170,4 +170,12 @@ class UtilsTest : XCTestCase {
         }
     }
 
+    func testBase64UrlToBase64Conversion() {
+        let input = "U29t-_"
+        let expected = "U29t+/=="
+        
+        let output = input.base64URLToBase64()
+        
+        XCTAssertEqual(output, expected, "URL-safe characters should be converted and padding should be added")
+    }
 }

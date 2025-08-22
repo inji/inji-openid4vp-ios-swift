@@ -55,8 +55,6 @@ public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             return [:]
         }
 
-        print("Unsigned VP Token: \(jsonString)")
-
         return [
             "unsignedVPToken": UnsignedLdpVPToken(dataToSign:jsonString),
             "vpTokenSigningPayload": vpTokenSigningPayload

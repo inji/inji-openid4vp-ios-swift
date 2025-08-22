@@ -25,16 +25,16 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
             let isContentTypeJWT = requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue)
             if (isContentTypeJWT && isJWS(requestUriResponse.body)) {
                 let clientId: String = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
+                let actualAuthorizationRequestObject = requestUriResponse.body
                 
-                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(didUrl: clientId, networkManager: networkManager)
-                let jwsHandler = JWSHandler(jws: requestUriResponse.body , publicKeyResolver: keyResolver)
+                let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
                 
-                let header = try jwsHandler.extractDataJsonFromJws(jwsPart: .header)
+                let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
                 try validateAuthorizationRequestSigningAlgorithm(header: header)
                 
-                try await jwsHandler.verify()
+                try await JWSHandler.verify(jws: actualAuthorizationRequestObject , publicKeyResolver: keyResolver, verificationMethodUri: clientId)
                 
-                let authorizationRequestObject =  try jwsHandler.extractDataJsonFromJws(jwsPart: .payload)
+                let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject, jwsPart: .payload)
                 
                 // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
                 let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)

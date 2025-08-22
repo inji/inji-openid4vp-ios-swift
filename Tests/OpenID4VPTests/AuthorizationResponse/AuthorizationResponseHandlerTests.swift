@@ -19,7 +19,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         for holderId in invalidHolderIdTestCases {
-            await assertAsyncThrowsError(try handler.constructUnsignedVPToken(
+            await XCTAssertAsyncThrowsError(try handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,
@@ -46,7 +46,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         for invalidSignatureSuite in invalidsignatureSuiteTestCases {
-            await assertAsyncThrowsError(try handler.constructUnsignedVPToken(
+            await XCTAssertAsyncThrowsError(try handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,
@@ -298,7 +298,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         // Get actual ID
         let actualJson = decodeQueryValue(actualBody)
         guard let actualData = actualJson.data(using: .utf8),
-              var actualDict = try JSONSerialization.jsonObject(with: actualData) as? [String: Any],
+              let actualDict = try JSONSerialization.jsonObject(with: actualData) as? [String: Any],
               let actualId = actualDict["id"] as? String else {
             XCTFail("Could not parse or extract ID from actual body")
             return

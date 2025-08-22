@@ -134,7 +134,7 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
 }
 
-func assertAsyncThrowsError<T>(
+func XCTAssertAsyncThrowsError<T>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
     file: StaticString = #filePath,
@@ -149,7 +149,7 @@ func assertAsyncThrowsError<T>(
     }
 }
 
-func assertAsyncNoThrowsError<T>(
+func XCTAssertAsyncNoThrowsError<T>(
     _ expression: @autoclosure () async throws -> T,
     _ message: @autoclosure () -> String = "",
     file: StaticString = #filePath,
@@ -170,6 +170,20 @@ func XCTAssertNoThrowAndVerify<T>(_ expression: @autoclosure () throws -> T,
         let result = try expression()
         assertions(result)
     } catch {
+        XCTFail("Expression threw an error: \(error)", file: file, line: line)
+    }
+}
+
+
+func XCTAssertNoThrowAndVerifyAsync<T>(_ expression: @autoclosure () async throws -> T,
+                      file: StaticString = #filePath,
+                      line: UInt = #line,
+                           _ assertions: (T) -> Void) async {
+    do {
+        let result = try await expression()
+        assertions(result)
+    } catch {
+        print("Expression threw an error: \(error)")
         XCTFail("Expression threw an error: \(error)", file: file, line: line)
     }
 }
@@ -199,3 +213,11 @@ func assertOpenID4VPException(
 }
 
 
+func assertEdKey(expectedBase64Encoded: String, actualKey: PublicKeyType){
+    switch actualKey {
+    case .ed25519(let publicKey):
+        XCTAssertEqual(expectedBase64Encoded, publicKey.rawRepresentation.base64EncodedString())
+    default:
+        XCTFail("Unexpected public key type returned")
+    }
+}

@@ -126,7 +126,7 @@ class InvalidInput: OpenID4VPException {
             message = "Invalid Input: \(path) value cannot be empty or null"
         } else if value == nil {
             message = "Invalid Input: \(path) value cannot be empty or null"
-        } else if let boolVal = value as? Bool {
+        } else if value is Bool {
             message = "Invalid Input: \(path) value must be either true or false"
         } else {
             message = "Invalid Input: \(path) value is invalid"
@@ -140,15 +140,9 @@ class InvalidInput: OpenID4VPException {
 
 // MARK: - JWS
 
-class PublicKeyExtractionFailed: OpenID4VPException {
-    init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
-    }
-}
-
 class UnsupportedPublicKeyType: OpenID4VPException {
     init(className: String) {
-        let message = "Unsupported Public Key type. Supported: publicKeyMultibase"
+        let message = "Unsupported Public Key type. Supported: publicKeyMultibase, publicKeyJwk, publicKeyHex, publicKeyPem"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
@@ -264,8 +258,7 @@ class UnsupportedKeyAgreementAlgorithm: OpenID4VPException {
 }
 
 class PublicKeyConversionFailed: OpenID4VPException {
-    init(className: String) {
-        let message = "Public key Data conversion from base64 failed."
+    init(message : String = "Public key Data conversion from base64 failed.", className: String) {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }

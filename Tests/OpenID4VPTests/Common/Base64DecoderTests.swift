@@ -72,15 +72,4 @@ class DecodrTests: XCTestCase {
                 )
             }
         }
-    
-    //Test convert base64 to bas64 url safe
-    
-    func testMakeBase64Standard() {
-        let input = "U29t-_"
-        let expected = "U29t+/=="
-        
-        let output = Base64Decoder.makeBase64Standard(input)
-        
-        XCTAssertEqual(output, expected, "URL-safe characters should be converted and padding should be added")
-    }
 }

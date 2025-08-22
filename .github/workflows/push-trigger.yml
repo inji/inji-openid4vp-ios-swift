@@ -19,11 +19,16 @@ on:
 
 jobs:
   build-swift:
-    runs-on: macos-latest
+    runs-on: macos-14
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Environment details
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices
 
       - name: Set up Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer

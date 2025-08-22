@@ -91,7 +91,7 @@ final class PresentationDefinitionUtilTests: XCTestCase {
         ]
 
         for testCase in testCases {
-            await assertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
+            await XCTAssertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
                 assertOpenID4VPException(error,
                     expectedMessage: "When mso_mdoc format is present in presentation definition, response_mode must be direct_post.jwt",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -134,7 +134,7 @@ final class PresentationDefinitionUtilTests: XCTestCase {
                 "presentation_definition_uri": "mock-url"
             ]
         )
-            await assertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
+            await XCTAssertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
                 assertOpenID4VPException(error,
                     expectedMessage: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -174,7 +174,7 @@ final class PresentationDefinitionUtilTests: XCTestCase {
                 "response_mode": "direct_post"
             ]
         )
-            await assertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
+            await XCTAssertAsyncThrowsError(try await parseAndValidatePresentationDefinition(testCase.input, isPresentationDefinitionUriSupported, networkManager)) { error in
                 assertOpenID4VPException(error,
                     expectedMessage: "Either presentation_definition or presentation_definition_uri request param must be present",
                     expectedCode: OpenID4VPErrorCodes.invalidRequest

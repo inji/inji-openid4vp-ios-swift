@@ -57,7 +57,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         ])) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()){ error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()){ error in
             assertOpenID4VPException(error,
                                      expectedMessage: "response_uri trust cannot be established",
                                      expectedCode: OpenID4VPErrorCodes.invalidClient
@@ -199,7 +199,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         
-        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Client Id is mismatching in QR data and Request Uri response",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -217,7 +217,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft21 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Client Id scheme is mismatching in QR data and Request Uri response",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -232,7 +232,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce",isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce",isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -246,7 +246,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
         
-        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -261,7 +261,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
         
-        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -303,7 +303,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23,[AuthorizationRequestFieldConstants.requestUriMethod.rawValue: "post"])) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        await assertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "wallet_nonce provided in the authorization request is not the same as shared by wallet",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
