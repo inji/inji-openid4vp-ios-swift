@@ -90,7 +90,7 @@ public struct ClientMetadata: Codable {
         }
     }
     
-    static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadata {
+    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadata {
         if let encodedData = clientMetadata as? Data {
             return try toClientMetadata(encodedData)
         } else if let data = clientMetadata as? String {
