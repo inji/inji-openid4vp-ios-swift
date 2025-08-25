@@ -50,6 +50,17 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     // Validate and parse authorization request - check if verifier is trusted
+    
+    func testDoesNotThrowExceptionWhenTrustedVerifierDoesNotHaveClientMetadataAndAuthorizationRequestContainsClientMetadata() async throws {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let trustedVerifiersWithoutClientMetadata = [
+            Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"])
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiersWithoutClientMetadata, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        await XCTAssertAsyncNoThrowsError(try await preRegistered.validateAndParseRequestFields(), "Error should not happen when client_metadata is not known to wallet but provided in authorization request")
+    }
+    
     func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifiersButResponseUriIsNotMatching() async{
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "mock-client",
@@ -90,7 +101,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    func testAutorizationRequestUpdatedWithClientMetadataWithPreRegisteredClientMetadata() async throws {
+    func testAutorizationRequestUpdatedWithClientMetadataForPreRegisteredVerifierWhichHasClientMetadataStored() async throws {
         let clientMetadataString = """
                 {
                     "client_name": "Valid Client",
