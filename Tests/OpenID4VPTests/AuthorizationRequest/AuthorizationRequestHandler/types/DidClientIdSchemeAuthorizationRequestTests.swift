@@ -14,6 +14,15 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     override func setUpWithError() throws {
         walletMetadata = try createWalletMetadataV2()
     }
+    
+    // Support for by Authorization request reference
+    
+    func testReturnFalseForAuthorizationRequestByReferenceSupport() {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+        let handler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        XCTAssertTrue(handler.isRequestUriSupported(), "did client_id_scheme should not support request by reference")
+    }
 
     func testShouldThrowErrorWhenRequestUriIsNotAvailableInAuthorizationRequest() async {
         let authorizationRequestByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithDidByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]

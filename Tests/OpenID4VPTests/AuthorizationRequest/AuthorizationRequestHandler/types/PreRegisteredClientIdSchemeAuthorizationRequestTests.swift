@@ -49,6 +49,17 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
+    // Support for by Authorization request reference
+    
+    func testReturnTrueForAuthorizationRequestByReferenceSupport() {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        XCTAssertTrue(preRegistered.isRequestUriSupported(), "Pre-registered client id scheme should support authorization request by reference")
+    }
+
+    
+    
     // Validate and parse authorization request - check if verifier is trusted
     
     func testDoesNotThrowExceptionWhenTrustedVerifierDoesNotHaveClientMetadataAndAuthorizationRequestContainsClientMetadata() async throws {

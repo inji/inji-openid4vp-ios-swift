@@ -18,6 +18,10 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     ///    Fetch authorization request
     class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler {
+        func isRequestUriSupported() -> Bool {
+            return true
+        }
+        
         func getHeadersForAuthorizationRequestUri() -> [String : String]? {
             return ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue,
                     "accept": ContentTypes.applicationJson.rawValue]

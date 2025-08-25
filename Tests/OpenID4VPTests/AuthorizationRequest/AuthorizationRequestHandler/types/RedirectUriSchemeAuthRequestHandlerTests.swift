@@ -60,6 +60,15 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         }
     }
     
+    // Support for by Authorization request reference
+    
+    func testReturnFalseForAuthorizationRequestByReferenceSupport() {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+        let handler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        XCTAssertFalse(handler.isRequestUriSupported(), "redirect_uri client_id_scheme should not support request by reference")
+    }
+    
     /// validate and parse request fields
     
     func testThrowNoErrorForValidAuthorizationRequestWhileValidateAndParseRequestFields() async {

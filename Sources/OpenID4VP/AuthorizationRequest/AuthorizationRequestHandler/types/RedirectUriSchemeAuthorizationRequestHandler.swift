@@ -14,6 +14,10 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
     
+    func isRequestUriSupported() -> Bool {
+        return false
+    }
+    
     func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(

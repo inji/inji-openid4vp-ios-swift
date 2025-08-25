@@ -41,6 +41,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                 Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
     }
     
+    func isRequestUriSupported() -> Bool {
+        return true
+    }
+    
     func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(

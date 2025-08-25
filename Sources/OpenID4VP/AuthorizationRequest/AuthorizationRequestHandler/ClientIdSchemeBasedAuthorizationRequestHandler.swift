@@ -5,6 +5,8 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
+    func isRequestUriSupported() -> Bool
+//    func extractPublicKey() -> PublicKeyType
 }
 
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {

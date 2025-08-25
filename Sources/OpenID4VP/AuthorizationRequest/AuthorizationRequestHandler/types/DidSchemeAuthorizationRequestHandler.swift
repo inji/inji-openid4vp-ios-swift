@@ -14,6 +14,10 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
     }
     
+    func isRequestUriSupported() -> Bool {
+        return true
+    }
+    
     func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
         if (isMismatchedAcceptableType) {
             throw InvalidData(
