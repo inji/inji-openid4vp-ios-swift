@@ -6,6 +6,7 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
     func isRequestUriSupported() -> Bool
+    func isRequestObjectSupported() -> Bool
 //    func extractPublicKey() -> PublicKeyType
 }
 

@@ -49,13 +49,21 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    // Support for by Authorization request reference
+    // Support for Authorization request by reference or by value
     
     func testReturnTrueForAuthorizationRequestByReferenceSupport() {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertTrue(preRegistered.isRequestUriSupported(), "Pre-registered client id scheme should support authorization request by reference")
+    }
+
+
+    func testReturnTrueForAuthorizationRequestByValueSupport() {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        XCTAssertTrue(preRegistered.isRequestObjectSupported(), "Pre-registered client id scheme should support authorization request by value")
     }
 
     

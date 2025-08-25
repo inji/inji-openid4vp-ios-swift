@@ -18,6 +18,10 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     ///    Fetch authorization request
     class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler {
+        func isRequestObjectSupported() -> Bool {
+            return true
+        }
+        
         func isRequestUriSupported() -> Bool {
             return true
         }

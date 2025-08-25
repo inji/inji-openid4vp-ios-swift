@@ -15,13 +15,20 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         walletMetadata = try createWalletMetadataV2()
     }
     
-    // Support for by Authorization request reference
+    // Support for Authorization request by reference or by value
     
     func testReturnFalseForAuthorizationRequestByReferenceSupport() {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
         let handler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertTrue(handler.isRequestUriSupported(), "did client_id_scheme should not support request by reference")
+        XCTAssertTrue(handler.isRequestUriSupported(), "did client_id_scheme should support request by reference")
+    }
+    
+    func testReturnFalseForAuthorizationRequestByValueSupport() {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+        let handler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        XCTAssertFalse(handler.isRequestObjectSupported(), "did client_id_scheme should not support request by value")
     }
 
     func testShouldThrowErrorWhenRequestUriIsNotAvailableInAuthorizationRequest() async {
