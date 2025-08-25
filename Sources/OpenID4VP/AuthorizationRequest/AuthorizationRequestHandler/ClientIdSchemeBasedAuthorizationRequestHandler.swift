@@ -42,6 +42,14 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         var isMismatchedAcceptableType : Bool = false
         var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
+            
+            guard (delegate.isRequestUriSupported()) else {
+                throw InvalidData(
+                    message: "request_uri is not supported for given client_id_scheme",
+                    className: className
+                )
+            }
+            
             if !isNeitherNullNorEmpty(field: requestUri) || (requestUri == "null") {
                 throw InvalidInput(fieldPath: ["requestUri"], className: className)
             }
