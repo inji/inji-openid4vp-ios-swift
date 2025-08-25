@@ -12,7 +12,6 @@ let clientMetadataString = """
         }
     """.data(using: .utf8)!
 
-
 private let testVerifierList:  [[String: Any]]  = [
     [
         "client_id": "https://mock-verifier.com",
@@ -24,7 +23,8 @@ private let testVerifierList:  [[String: Any]]  = [
         "client_id": "mock-client",
         "response_uris": [
             "https://mock-verifier.com",
-        ]
+        ],
+        "client_metadata": clientMetadata
     ]
 ]
 
@@ -143,8 +143,7 @@ let authRequestWithPreRegisteredByValueDraft23 : [String] = [
     "presentation_definition",
     "response_type",
     "nonce",
-    "state",
-    "client_metadata"
+    "state"
 ]
 
 let authRequestWithPreRegisteredByValueDraft21 : [String] = [
@@ -210,7 +209,7 @@ let vpFormatsMap: [String: VPFormatSupported] = [
     "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"])
 ]
 
-public let clientMetadata: [String: Any] = [
+let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
     "authorization_encrypted_response_alg": "ECDH-ES",

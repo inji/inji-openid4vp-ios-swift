@@ -78,7 +78,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             """.data(using: .utf8)!
         let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 + [AuthorizationRequestFieldConstants.clientMetadata.rawValue], requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()) { error in
@@ -143,27 +143,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
                     "purpose": "To verify identity using Linked Data Proofs"
                 ]],
                 "id": "vp_presentation_definition"
-            ],
-            "client_metadata": [
-                "authorization_encrypted_response_enc": "A256GCM",
-                "authorization_encrypted_response_alg": "ECDH-ES",
-                "logo_uri": "https://mock-verifier.com/logo",
-                "client_name": "Requester name",
-                "jwks": [
-                    "keys": [[
-                        "kty": "OKP",
-                        "crv": "X25519",
-                        "use": "enc",
-                        "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-                        "alg": "ECDH-ES",
-                        "kid": "ed-key1"
-                    ]]
-                ],
-                "vp_formats": [
-                    "ldp_vp": [
-                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020"]
-                    ]
-                ]
             ]
         ]
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
@@ -180,27 +159,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let expectedAuthorizationRequestParameters: [String : Any] = [
             "client_id": "mock-client",
             "state": "+mRQe1d6pBoJqF6Ab28klg==",
-            "client_metadata": [
-                "vp_formats": [
-                    "ldp_vp": [
-                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020"]
-                    ]
-                ],
-                "jwks": [
-                    "keys": [[
-                        "kty": "OKP",
-                        "crv": "X25519",
-                        "use": "enc",
-                        "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-                        "alg": "ECDH-ES",
-                        "kid": "ed-key1"
-                    ]]
-                ],
-                "logo_uri": "https://mock-verifier.com/logo",
-                "authorization_encrypted_response_enc": "A256GCM",
-                "authorization_encrypted_response_alg": "ECDH-ES",
-                "client_name": "Requester name"
-            ],
             "response_type": "vp_token",
             "response_mode": "direct_post",
             "response_uri": "https://mock-verifier.com",
