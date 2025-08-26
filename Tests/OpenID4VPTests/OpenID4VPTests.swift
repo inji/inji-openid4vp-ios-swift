@@ -135,6 +135,35 @@ class OpenID4VPTests: XCTestCase {
             )
         }
     }
+    
+    // pre-registered client available with associated client metadata
+    func testAuthenticateVerifierWithClientMetadataAlsoAvailableForVerifier() async throws {
+        let clientMetadataString = """
+                {
+                    "client_name": "Valid Client",
+                    "logo_uri": "https://example.com/logo.png",
+                    "authorization_encrypted_response_alg": "RSA-OAEP",
+                    "authorization_encrypted_response_enc": "A256GCM",
+                    "vp_formats": { "format1": { "type1": ["value1"] } },
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
+                }
+            """.data(using: .utf8)!
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
+        
+        let trustedVerifiers = [Verifier(clientId: "mock-client-id", responseUris: ["https://example.com/callback"], clientMetadata: clientMetadata)]
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
+            urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
+            trustedVerifierJSON: trustedVerifiers,
+            shouldValidateClient: true
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Verifier is not trusted by the wallet",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
+        
+        }
+    }
 
     // client_id_scheme = pre-registered draft 21
     func testReturnDataForValidRequestWithResponseUriDraft21() async {
@@ -160,7 +189,7 @@ class OpenID4VPTests: XCTestCase {
         case .failure(let error):
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Missing Input: client_metadata->vp_formats param is required",
+                expectedMessage: "Error during client metadata decoding - Missing Input: client_metadata->vp_formats param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         case .success:
@@ -446,11 +475,4 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertNotNil(requestBody["state"], "Expected 'state' to be present in the request body")
         XCTAssertEqual(requestBody["state"], "+mRQe1d6pBoJqF6Ab28klg==")
     }
-    
-
-
-
-    
-    
-
 }

@@ -54,7 +54,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
                         {
                             "kty": "OKP",
                             "crv": "X25519",
-                            "use": "sign",
+                            "use": "sig",
                             "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
                             "alg": "ECDH-ES",
                             "kid": "ed-key1"

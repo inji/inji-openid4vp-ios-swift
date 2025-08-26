@@ -1,6 +1,17 @@
 import OpenID4VP
 import Foundation
 
+let clientMetadataString = """
+        {
+            "client_name": "Valid Client",
+            "logo_uri": "https://example.com/logo.png",
+            "authorization_encrypted_response_alg": "RSA-OAEP",
+            "authorization_encrypted_response_enc": "A256GCM",
+            "vp_formats": { "format1": { "type1": ["value1"] } },
+            "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
+        }
+    """.data(using: .utf8)!
+
 private let testVerifierList:  [[String: Any]]  = [
     [
         "client_id": "https://mock-verifier.com",
@@ -12,7 +23,8 @@ private let testVerifierList:  [[String: Any]]  = [
         "client_id": "mock-client",
         "response_uris": [
             "https://mock-verifier.com",
-        ]
+        ],
+        "client_metadata": clientMetadata
     ]
 ]
 
@@ -131,8 +143,7 @@ let authRequestWithPreRegisteredByValueDraft23 : [String] = [
     "presentation_definition",
     "response_type",
     "nonce",
-    "state",
-    "client_metadata"
+    "state"
 ]
 
 let authRequestWithPreRegisteredByValueDraft21 : [String] = [
@@ -198,7 +209,7 @@ let vpFormatsMap: [String: VPFormatSupported] = [
     "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"])
 ]
 
-public let clientMetadata: [String: Any] = [
+let clientMetadata: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
     "authorization_encrypted_response_alg": "ECDH-ES",

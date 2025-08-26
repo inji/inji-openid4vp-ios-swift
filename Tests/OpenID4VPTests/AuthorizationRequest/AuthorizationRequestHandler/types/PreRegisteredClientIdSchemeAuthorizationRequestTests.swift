@@ -50,6 +50,17 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
     
     // Validate and parse authorization request - check if verifier is trusted
+    
+    func testDoesNotThrowExceptionWhenTrustedVerifierDoesNotHaveClientMetadataAndAuthorizationRequestContainsClientMetadata() async throws {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let trustedVerifiersWithoutClientMetadata = [
+            Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"])
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiersWithoutClientMetadata, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        await XCTAssertAsyncNoThrowsError(try await preRegistered.validateAndParseRequestFields(), "Error should not happen when client_metadata is not known to wallet but provided in authorization request")
+    }
+    
     func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifiersButResponseUriIsNotMatching() async{
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             "client_id": "mock-client",
@@ -63,7 +74,53 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
                                      expectedCode: OpenID4VPErrorCodes.invalidClient
             )
         }
+    }
+    
+    func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifierListWithClientMetadataButClientMetadataIsAlsoAvailableInAuthorizationRequest() async throws {
+        let clientMetadataString = """
+                {
+                    "client_name": "Valid Client",
+                    "logo_uri": "https://example.com/logo.png",
+                    "authorization_encrypted_response_alg": "RSA-OAEP",
+                    "authorization_encrypted_response_enc": "A256GCM",
+                    "vp_formats": { "format1": { "type1": ["value1"] } },
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
+                }
+            """.data(using: .utf8)!
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 + [AuthorizationRequestFieldConstants.clientMetadata.rawValue], requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
+        await XCTAssertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
+        }
+    }
+    
+    func testAutorizationRequestUpdatedWithClientMetadataForPreRegisteredVerifierWhichHasClientMetadataStored() async throws {
+        let clientMetadataString = """
+                {
+                    "client_name": "Valid Client",
+                    "logo_uri": "https://example.com/logo.png",
+                    "authorization_encrypted_response_alg": "RSA-OAEP",
+                    "authorization_encrypted_response_enc": "A256GCM",
+                    "vp_formats": { "format1": { "type1": ["value1"] } },
+                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
+                }
+            """
+        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23.filter {$0 != "client_metadata"}, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        try await preRegistered.validateAndParseRequestFields()
+        
+        let clientMetadataInAuthRequest = preRegistered.authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue]
+        assertJsonString(expected: clientMetadataString, actual: convertToJsonString(clientMetadataInAuthRequest as! ClientMetadata))
     }
     
     /// Fetch authorization request by value - validate authorization request object and authorization request query paramaters
@@ -97,27 +154,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
                     "purpose": "To verify identity using Linked Data Proofs"
                 ]],
                 "id": "vp_presentation_definition"
-            ],
-            "client_metadata": [
-                "authorization_encrypted_response_enc": "A256GCM",
-                "authorization_encrypted_response_alg": "ECDH-ES",
-                "logo_uri": "https://mock-verifier.com/logo",
-                "client_name": "Requester name",
-                "jwks": [
-                    "keys": [[
-                        "kty": "OKP",
-                        "crv": "X25519",
-                        "use": "enc",
-                        "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-                        "alg": "ECDH-ES",
-                        "kid": "ed-key1"
-                    ]]
-                ],
-                "vp_formats": [
-                    "ldp_vp": [
-                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020"]
-                    ]
-                ]
             ]
         ]
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
@@ -134,27 +170,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let expectedAuthorizationRequestParameters: [String : Any] = [
             "client_id": "mock-client",
             "state": "+mRQe1d6pBoJqF6Ab28klg==",
-            "client_metadata": [
-                "vp_formats": [
-                    "ldp_vp": [
-                        "proof_type": ["Ed25519Signature2018", "Ed25519Signature2020"]
-                    ]
-                ],
-                "jwks": [
-                    "keys": [[
-                        "kty": "OKP",
-                        "crv": "X25519",
-                        "use": "enc",
-                        "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-                        "alg": "ECDH-ES",
-                        "kid": "ed-key1"
-                    ]]
-                ],
-                "logo_uri": "https://mock-verifier.com/logo",
-                "authorization_encrypted_response_enc": "A256GCM",
-                "authorization_encrypted_response_alg": "ECDH-ES",
-                "client_name": "Requester name"
-            ],
             "response_type": "vp_token",
             "response_mode": "direct_post",
             "response_uri": "https://mock-verifier.com",

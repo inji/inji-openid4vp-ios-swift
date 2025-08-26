@@ -1,4 +1,5 @@
 import XCTest
+import JSONWebKey
 @testable import OpenID4VP
 
 final class X25519KeyAgreementTests: XCTestCase {
@@ -47,10 +48,10 @@ final class X25519KeyAgreementTests: XCTestCase {
     func testThrowErrorWhenInvalidPublicKeyIsPassedToDeriveKey() {
         let keyAgreement = X25519KeyAgreement()
         
-        XCTAssertThrowsError(try keyAgreement.deriveKey(publicKey: "some-invalid-data%^&")) { error in
+        XCTAssertThrowsError(try keyAgreement.deriveKey(publicKey: Data(base64UrlEncoded: "someinvaliddata") ?? Data())) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Public key Data conversion from base64 failed.",
+                expectedMessage: "Key agreement failed. - The operation couldn’t be completed. (CryptoKit.CryptoKitError error 1.)",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

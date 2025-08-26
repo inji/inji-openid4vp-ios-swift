@@ -1,4 +1,5 @@
 import XCTest
+import JSONWebKey
 @testable import OpenID4VP
 
 final class KeyAgreementFactoryTests: XCTestCase {
