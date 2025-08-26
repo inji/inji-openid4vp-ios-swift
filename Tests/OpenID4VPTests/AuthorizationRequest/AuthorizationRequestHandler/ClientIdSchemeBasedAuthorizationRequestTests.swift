@@ -49,13 +49,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldmakeApiCallToRequestUriPostWithCorrectAcceptTypeAndContentType() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "post"])) as [String : Any]
-
-        let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .did,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
-            applicableFields: authRequestWithDidByValue
-        )
-        let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJwt.rawValue])!)
+        let requestUriResponse = createNetworkResponse("header.payload.signature", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJwt.rawValue])!)
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 
@@ -74,11 +68,6 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     func testThrowExceptionWhenRequestUriResponseContentTypeIsNotJWT() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
 
-        let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
-            applicableFields: authRequestWithRedirectUriByValue
-        )
         let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJson.rawValue])!)
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
         
@@ -88,6 +77,23 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
             assertOpenID4VPException(error,
                 expectedMessage: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testThrowExceptionWhenRequestUriResponseIsNotJWT() async {
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
+
+        let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJwt.rawValue])!)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+
+
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Authorization Request Object must be a signed JWT",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

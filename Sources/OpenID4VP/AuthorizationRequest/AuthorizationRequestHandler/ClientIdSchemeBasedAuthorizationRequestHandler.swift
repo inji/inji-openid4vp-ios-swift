@@ -104,9 +104,15 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     
     //TODO: rename to validateRequestUriResponse
     private func validateAuthorizationRequestObject(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) throws {
+        //TODO: remove this check as its redundant. isMismatchedAcceptableType handles it already
         guard requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue) else {
             throw InvalidData(
                 message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
+        }
+        
+        guard isJWS(requestUriResponse.responseBody) else {
+            throw InvalidData(
+                message: "Authorization Request Object must be a signed JWT", className: className)
         }
     }
     
