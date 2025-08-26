@@ -7,7 +7,7 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
     func isRequestUriSupported() -> Bool
     func isRequestObjectSupported() -> Bool
-//    func extractPublicKey() -> PublicKeyType
+    //    func extractPublicKey() -> PublicKeyType
 }
 
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
@@ -19,9 +19,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     let networkManager: NetworkManaging
     var shouldValidateWithWalletMetadata: Bool = false
     var className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
-
+    
     let errorMessageForMismatchedAcceptableType: String = "does not match any acceptable types"
-
+    
     init(authorizationRequestParameters: [String: Any],
          walletMetadata: WalletMetadata?,
          setResponseUri: @escaping (String) -> Void,
@@ -33,16 +33,15 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         self.walletMetadata = walletMetadata
         self.walletNonce = walletNonce
     }
-
+    
     func validateClientId() throws {
         return
     }
-
+    
     func fetchAuthorizationRequest() async throws{
         var isMismatchedAcceptableType : Bool = false
         var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
-            
             guard (delegate.isRequestUriSupported()) else {
                 throw InvalidData(
                     message: "request_uri is not supported for given client_id_scheme",
@@ -60,13 +59,13 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     className: className
                 )
             }
-
+            
             let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
             let httpMethod = try determineHttpMethod(method: requestUriMethod)
-
+            
             var body: [String: String]? = nil
             var headers: [String: String]? = nil
-
+            
             if httpMethod == .post {
                 body = [:]
                 body?["wallet_nonce"] = walletNonce
@@ -137,7 +136,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             )
         }
     }
-
+    
     final func createAuthorizationRequest() -> AuthorizationRequest {
         return AuthorizationRequest(
             clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,

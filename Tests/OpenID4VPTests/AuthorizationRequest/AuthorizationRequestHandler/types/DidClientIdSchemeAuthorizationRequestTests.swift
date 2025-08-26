@@ -54,8 +54,6 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
                 expectedMessage: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
-
-
         }
     }
     
