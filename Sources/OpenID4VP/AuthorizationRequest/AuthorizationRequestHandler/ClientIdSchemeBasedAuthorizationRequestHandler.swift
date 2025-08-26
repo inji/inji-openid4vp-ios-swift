@@ -74,16 +74,22 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
                     let extractedExpr: String = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
                     body?["wallet_metadata"] = extractedExpr
-                    headers = delegate.getHeadersForAuthorizationRequestUri()
+                    headers = [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+                               Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
                     shouldValidateWithWalletMetadata = true
                 }
             }
             do{
                 let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+                try validateAuthorizationRequestObject(response)
                 
                 requestUriResponse = (response.responseBody, response.httpUrlResponse)
             } catch let error as NetworkRequestException {
                 isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
+                if(isMismatchedAcceptableType){
+                    throw InvalidData(
+                        message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
+                }
             }
         } else {
             guard (delegate.isRequestObjectSupported()) else {
@@ -94,6 +100,14 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
         try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, walletNonce: self.walletNonce, isMismatchedAcceptableType: isMismatchedAcceptableType)
+    }
+    
+    //TODO: rename to validateRequestUriResponse
+    private func validateAuthorizationRequestObject(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) throws {
+        guard requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue) else {
+            throw InvalidData(
+                message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
+        }
     }
     
     func validateAndParseRequestFields() async throws {

@@ -109,7 +109,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
         await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Authorization Request must be signed and contain JWT for given client_id_scheme - did",
+                                     expectedMessage: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
