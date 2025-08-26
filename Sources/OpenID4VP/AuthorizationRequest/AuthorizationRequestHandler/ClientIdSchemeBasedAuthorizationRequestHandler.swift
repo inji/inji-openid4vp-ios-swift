@@ -79,47 +79,55 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     shouldValidateWithWalletMetadata = true
                 }
             }
-          do{
+            do{
                 let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-
+                
                 requestUriResponse = (response.responseBody, response.httpUrlResponse)
             } catch let error as NetworkRequestException {
                 isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
             }
+        } else {
+            guard (delegate.isRequestObjectSupported()) else {
+                throw InvalidData(
+                    message: "request object is not supported for given client_id_scheme",
+                    className: className
+                )
+            }
         }
         try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, walletNonce: self.walletNonce, isMismatchedAcceptableType: isMismatchedAcceptableType)
     }
-
+    
     func validateAndParseRequestFields() async throws {
         let mandatoryFields = [AuthorizationRequestFieldConstants.responseType.rawValue,AuthorizationRequestFieldConstants.nonce.rawValue]
-
+        
         for field in mandatoryFields {
             try validateAttribute(field, values: authorizationRequestParameters)
         }
         
         try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue] as? String)!)
-
+        
         let optionalFields = [AuthorizationRequestFieldConstants.state.rawValue, AuthorizationRequestFieldConstants.responseMode.rawValue]
         for field in optionalFields {
             if (authorizationRequestParameters[field] != nil){
                 try validateAttribute(field, values: authorizationRequestParameters)
             }
         }
-
+        
         authorizationRequestParameters = try parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
-
+        
         let presentationDefinitionUriSupported = !shouldValidateWithWalletMetadata || walletMetadata?.presentationDefinitionURISupported ?? true
-
+        
         authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, presentationDefinitionUriSupported, networkManager)
     }
-
+    
     final func setResponseUrl() throws {
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
-
+        
         try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
     }
-
+    
     private func isClientIdSchemeSupported(walletMetadata: WalletMetadata) throws {
+        //TODO: Can we avoid extracting client id scheme twice? Can we get it from the delegate - delegate.clientIdScheme?
         let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
         let walletSupportedClientIdSchemes = walletMetadata.clientIdSchemesSupported.compactMap { $0.rawValue }
         if !walletSupportedClientIdSchemes.contains(clientIdScheme) {

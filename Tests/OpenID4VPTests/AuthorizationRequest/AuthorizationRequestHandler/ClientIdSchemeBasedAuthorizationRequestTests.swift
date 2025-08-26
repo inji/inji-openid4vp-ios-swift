@@ -21,6 +21,19 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     ///    Fetch authorization request tests
     
+    
+    func testShouldThrowErrorWhenAuthorizationRequestByValueIsNotSupported() async {
+        let authorizationRequestParametersByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByValue, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, isRequestObjectSupported: false)
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "request object is not supported for given client_id_scheme",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
     ///    Authorization request obtained by reference:  request_uri response - gives all data as JSON (presentation_definition is also obtained by reference)
     
     func testShouldThrowErrorWhenAuthorizationRequestByReferenceIsNotSupported() async {
@@ -30,6 +43,18 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "request_uri is not supported for given client_id_scheme",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testShouldThrowErrorWhenAuthorizationRequestByValueIsNotSupported() async {
+        let authorizationRequestParametersByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByValue, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, isRequestObjectSupported: false)
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "request object is not supported for given client_id_scheme",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
