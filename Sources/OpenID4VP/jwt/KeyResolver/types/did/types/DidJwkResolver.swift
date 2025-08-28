@@ -11,8 +11,7 @@ class DidJwkResolver : BaseDidPublicKeyResolver {
         self.networkManager = networkManager
     }
     
-    func extractPublicKey(parsedDID: ParsedDID, keyId: String) async throws -> PublicKeyType {
-        
+    func extractPublicKey(parsedDID: ParsedDID, keyId: String? = nil) async throws -> PublicKeyType {
         let base64urlJwk = String(parsedDID.id)
         
         guard let jwkData = Data(base64UrlEncoded: base64urlJwk) else {
@@ -29,7 +28,7 @@ class DidJwkResolver : BaseDidPublicKeyResolver {
                 )
             }
         }()
-        
+
         guard jwk.keyType == .octetKeyPair else {
             throw PublicKeyResolutionFailed(
                 message: "KeyType - \(jwk.keyType.rawValue) is not supported. Supported: OKP",
@@ -49,6 +48,5 @@ class DidJwkResolver : BaseDidPublicKeyResolver {
         }
         
         return try toEd25519Key(publicKeyData: publicKeyData)
-        
     }
 }

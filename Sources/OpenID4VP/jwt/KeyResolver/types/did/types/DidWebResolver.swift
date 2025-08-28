@@ -14,7 +14,7 @@ class DidWebResolver : BaseDidPublicKeyResolver {
         self.networkManager = networkManager
     }
     
-    func extractPublicKey(parsedDID: ParsedDID, keyId: String) async throws -> PublicKeyType {
+    func extractPublicKey(parsedDID: ParsedDID, keyId: String? = nil) async throws -> PublicKeyType {
         do {
             
             let urlString = constructDIDUrl(from: parsedDID)
@@ -32,8 +32,9 @@ class DidWebResolver : BaseDidPublicKeyResolver {
                     className: Self.className
                 )
             }
+            let verificationMethodId = keyId ?? parsedDID.didUrl
             
-            return try self.extractPublicKey(for: keyId, from: didResponse)!
+            return try self.extractPublicKey(for: verificationMethodId, from: didResponse)!
         } catch {
             throw DidResolutionFailed(message: error.localizedDescription, className: Self.className)
         }

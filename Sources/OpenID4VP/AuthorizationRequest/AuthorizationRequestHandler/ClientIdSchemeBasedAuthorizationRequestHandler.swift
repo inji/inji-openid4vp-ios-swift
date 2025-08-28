@@ -7,7 +7,7 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
     func isRequestUriSupported() -> Bool
     func isRequestObjectSupported() -> Bool
-    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
     func clientIdScheme() -> String
 }
 
@@ -95,7 +95,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         } else {
             guard (delegate.isRequestObjectSupported()) else {
                 throw InvalidData(
-                    message: "request object is not supported for given client_id_scheme",
+                    message: "request object is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
                     className: className
                 )
             }
@@ -136,7 +136,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         //            let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
         //            try validateAuthorizationRequestSigningAlgorithm(header: header)
         //
-        //            try await JWSHandler.verify(jws: actualAuthorizationRequestObject , publicKeyResolver: keyResolver, verificationMethodUri: clientId)
+//        try await JWSHandler.verify(jws: actualAuthorizationRequestObject , publicKeyResolver: publicKey)
         //
         //            let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject, jwsPart: .payload)
         //

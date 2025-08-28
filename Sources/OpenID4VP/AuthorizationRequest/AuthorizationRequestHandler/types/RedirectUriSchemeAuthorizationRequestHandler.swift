@@ -26,7 +26,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         return true
     }
     
-    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
         fatalError("redirect_uri scheme does not support signed Authorization Request")
     }
     

@@ -35,7 +35,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         return clientIdSchemeValue
     }
     
-    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
         return PublicKeyType.ed25519(publicKey)
     }
     

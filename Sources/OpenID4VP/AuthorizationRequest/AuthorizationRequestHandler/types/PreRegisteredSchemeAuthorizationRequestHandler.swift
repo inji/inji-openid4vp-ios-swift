@@ -54,8 +54,8 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         return true
     }
     
-    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
-        fatalError("redirect_uri scheme does not support signed Authorization Request")
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
+        fatalError("pre-registered scheme does not support signed Authorization Request")
     }
     
     func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {

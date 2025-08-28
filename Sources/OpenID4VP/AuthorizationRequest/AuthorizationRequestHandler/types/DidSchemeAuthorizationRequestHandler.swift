@@ -27,7 +27,8 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         return false
     }
     
-    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
+        // TODO: check if kid is nil
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
         
         return try await keyResolver.resolve(uri: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String, keyId: keyId)
