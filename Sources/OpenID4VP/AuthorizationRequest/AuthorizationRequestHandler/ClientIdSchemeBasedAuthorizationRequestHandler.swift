@@ -117,12 +117,11 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                 message: "Authorization Request Object must be a signed JWT", className: className)
         }
         
-        let clientId: String = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
-        let actualAuthorizationRequestObject = requestUriResponse.responseBody
-        try await validateJWT(actualAuthorizationRequestObject)
+        let jwtRequest = requestUriResponse.responseBody
+        try await validateJWT(jwtRequest)
         
-        //
-        //            let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject, jwsPart: .payload)
+        
+        let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .payload)
         //
         //            // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
         //            let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
@@ -130,15 +129,15 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         //                try validateWalletNonce(authorizationRequestObject, walletNonce)
         //            }
         //
-        //            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
-        //
-        //            self.authorizationRequestParameters = authorizationRequestObject
+        try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
+        
+        //                    self.authorizationRequestParameters = authorizationRequestObject
     }
     
-    private func validateJWT(_ actualAuthorizationRequestObject: String) async throws {
+    private func validateJWT(_ jwtRequest: String) async throws {
         do {
-            let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
-    //        try validateAuthorizationRequestSigningAlgorithm(header: header)
+            let header = try JWSHandler.extractDataJsonFromJws(jws: jwtRequest,jwsPart: .header)
+            //        try validateAuthorizationRequestSigningAlgorithm(header: header)
             
             guard let algorithm = header["alg"] as? String else {
                 throw InvalidData(message: "Request URI response validation failed - alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
@@ -146,7 +145,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             
             // TODO: IN JWT header keyId is optional as per spec, for did only its mandatory
             let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String ?? "", algorithm: algorithm)
-            try await JWSHandler.verify(jws: actualAuthorizationRequestObject , publicKey: publicKey)
+            try await JWSHandler.verify(jws: jwtRequest , publicKey: publicKey)
         } catch {
             throw InvalidData(message: "Request URI response validation failed - \(error.localizedDescription)", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
         }
