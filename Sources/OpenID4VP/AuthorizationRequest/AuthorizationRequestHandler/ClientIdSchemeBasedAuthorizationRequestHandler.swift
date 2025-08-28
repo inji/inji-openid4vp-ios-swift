@@ -119,24 +119,8 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         
         let clientId: String = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
         let actualAuthorizationRequestObject = requestUriResponse.responseBody
+        try await validateJWT(actualAuthorizationRequestObject)
         
-        let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
-//        try validateAuthorizationRequestSigningAlgorithm(header: header)
-        
-        guard let algorithm = header["alg"] as? String else {
-            throw InvalidData(message: "Request URI response validation failed - alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
-        }
-        
-        // TODO: IN JWT header keyId is optional as per spec, for did only its mandatory
-//        let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String, algorithm: "")
-        let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String ?? "", algorithm: algorithm)
-        //
-        //            let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
-        //
-        //            let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
-        //            try validateAuthorizationRequestSigningAlgorithm(header: header)
-        //
-//        try await JWSHandler.verify(jws: actualAuthorizationRequestObject , publicKeyResolver: publicKey)
         //
         //            let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject, jwsPart: .payload)
         //
@@ -149,6 +133,23 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         //            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
         //
         //            self.authorizationRequestParameters = authorizationRequestObject
+    }
+    
+    private func validateJWT(_ actualAuthorizationRequestObject: String) async throws {
+        do {
+            let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
+    //        try validateAuthorizationRequestSigningAlgorithm(header: header)
+            
+            guard let algorithm = header["alg"] as? String else {
+                throw InvalidData(message: "Request URI response validation failed - alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
+            }
+            
+            // TODO: IN JWT header keyId is optional as per spec, for did only its mandatory
+            let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String ?? "", algorithm: algorithm)
+            try await JWSHandler.verify(jws: actualAuthorizationRequestObject , publicKey: publicKey)
+        } catch {
+            throw InvalidData(message: "Request URI response validation failed - \(error.localizedDescription)", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
+        }
     }
     
     func validateAndParseRequestFields() async throws {

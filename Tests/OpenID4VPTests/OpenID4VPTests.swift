@@ -237,18 +237,12 @@ class OpenID4VPTests: XCTestCase {
             responseBody: didResponse
         )
 
-        let result = await Task {
-            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        }.result
-        switch result {
-        case .failure(let error):
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)){ error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "JWS proof verification failed",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
+                expectedMessage: "Request URI response validation failed - JWS proof verification failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
-        case .success:
-            XCTFail("Expected proof verification failure, but got success")
         }
     }
 
@@ -282,20 +276,15 @@ class OpenID4VPTests: XCTestCase {
     func testThrowErrorIfKidExtractionFailedFromJws() async {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
-
-        let result = await Task {
-            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        }.result
-
-        switch result {
-        case .failure(let error):
+        
+        
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)) {
+            error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Kid extraction from did document failed",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
+                expectedMessage: "Request URI response validation failed - Public key extraction failed for kid: ",
+                expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
-        case .success:
-            XCTFail("Expected OpenID4VPException but got success response")
         }
     }
 
