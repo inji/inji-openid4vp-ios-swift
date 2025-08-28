@@ -28,7 +28,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "request object is not supported for given client_id_scheme",
+                                     expectedMessage: "request object is not supported for given client_id_scheme - pre-registered",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
