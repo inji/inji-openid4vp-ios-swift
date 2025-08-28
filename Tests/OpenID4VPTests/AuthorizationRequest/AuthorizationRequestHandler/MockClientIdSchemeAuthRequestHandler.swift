@@ -5,7 +5,7 @@ import XCTest
 class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler {
     private let isRequestUriSupportedFlag: Bool
     private let isRequestObjectSupportedFlag: Bool
-    
+    private let clientIdSchemeValue: String
     
     init(authorizationRequestParameters: [String: Any],
          walletMetadata: WalletMetadata? = nil,
@@ -16,6 +16,11 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
          isRequestObjectSupported: Bool = true) {
         self.isRequestUriSupportedFlag = isRequestUriSupported
         self.isRequestObjectSupportedFlag = isRequestObjectSupported
+        do {
+            self.clientIdSchemeValue = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+        } catch {
+            self.clientIdSchemeValue = "unknown"
+        }
         
         super.init(authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
@@ -26,12 +31,24 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         super.className = String(describing: Self.self)
     }
     
+    func clientIdScheme() -> String {
+        return clientIdSchemeValue
+    }
+    
+    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
+        return PublicKeyType.ed25519(publicKey)
+    }
+    
     func isRequestObjectSupported() -> Bool {
         return self.isRequestObjectSupportedFlag
     }
     
     func isRequestUriSupported() -> Bool {
         return self.isRequestUriSupportedFlag
+    }
+    
+    func extractPublicKey() async throws -> PublicKeyType {
+        fatalError("redirect_uri scheme does not support signed Authorization Request")
     }
     
     func getHeadersForAuthorizationRequestUri() -> [String : String]? {

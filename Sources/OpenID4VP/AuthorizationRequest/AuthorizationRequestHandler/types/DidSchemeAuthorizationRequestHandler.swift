@@ -14,6 +14,10 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
     }
     
+    func clientIdScheme() -> String {
+        return ClientIdScheme.did.rawValue
+    }
+    
     func isRequestUriSupported() -> Bool {
         return true
     }
@@ -21,6 +25,12 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     
     func isRequestObjectSupported() -> Bool {
         return false
+    }
+    
+    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
+        let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
+        
+        return try await keyResolver.resolve(uri: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String, keyId: keyId)
     }
     
     func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {

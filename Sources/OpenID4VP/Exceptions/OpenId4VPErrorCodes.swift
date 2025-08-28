@@ -2,6 +2,7 @@
 public enum OpenID4VPErrorCodes {
     static let newUnknown = "new_unknown"
     static let invalidRequest = "invalid_request"
+    static let invalidRequestObject = "invalid_request_object"
     static let invalidClient = "invalid_client"
     static let invalidScope = "invalid_scope"
     static let invalidPresentationDefinitionUri = "invalid_presentation_definition_uri"

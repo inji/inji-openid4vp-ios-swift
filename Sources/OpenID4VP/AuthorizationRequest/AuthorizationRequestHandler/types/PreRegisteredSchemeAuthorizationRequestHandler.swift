@@ -22,6 +22,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
     }
     
+    func clientIdScheme() -> String {
+        return ClientIdScheme.preRegistered.rawValue
+    }
+    
     override func validateClientId() throws {
         if shouldValidateClient {
             guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String }) else {
@@ -48,6 +52,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     
     func isRequestObjectSupported() -> Bool {
         return true
+    }
+    
+    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
+        fatalError("redirect_uri scheme does not support signed Authorization Request")
     }
     
     func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {

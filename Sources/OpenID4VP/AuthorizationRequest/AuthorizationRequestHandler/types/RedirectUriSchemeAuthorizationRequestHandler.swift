@@ -13,6 +13,10 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         delegate = self
         super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
+
+    func clientIdScheme() -> String {
+        return ClientIdScheme.redirectUri.rawValue
+    }
     
     func isRequestUriSupported() -> Bool {
         return false
@@ -20,6 +24,10 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     
     func isRequestObjectSupported() -> Bool {
         return true
+    }
+    
+    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType {
+        fatalError("redirect_uri scheme does not support signed Authorization Request")
     }
     
     func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {

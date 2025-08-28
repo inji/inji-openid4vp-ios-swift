@@ -1,5 +1,6 @@
 import Foundation
 
+// TODO: modify folder structure -> no types folder needed again inside did folder
 class DidWebResolver : BaseDidPublicKeyResolver {
     private static let className: String = String(describing: DidWebResolver.self)
     

@@ -1,4 +1,5 @@
 import OpenID4VP
+import CryptoKit
 import Foundation
 
 let clientMetadataString = """
@@ -32,6 +33,8 @@ let didUrl = "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"
 
 let preRegisteredVerifiers = createVerifiers(from: testVerifierList)
 
+let requestUri : URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
+
 let verifiableCredentialsList : [String : [FormatType : [AnyCodable]]] = ["input_descriptor1": [FormatType.ldp_vc : [AnyCodable(ldpVC())]]]
 
 let didDocumentUrl = "https://inji-ovp/inji-mock-services/openid4vp-service/docs/did.json"
@@ -59,6 +62,15 @@ let didResponse = convertToJsonString([
         "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
     ]
 ])
+
+let publicKey = try! Curve25519.Signing.PublicKey(
+    rawRepresentation: Data([
+        0x98, 0x8C, 0xD0, 0x5E, 0xA7, 0xD3, 0x76, 0x8A,
+        0x66, 0x79, 0x65, 0x05, 0xC0, 0x9E, 0x3E, 0x3F,
+        0x8A, 0x49, 0x15, 0x3C, 0x0B, 0x45, 0x1C, 0x14,
+        0x41, 0x37, 0x5B, 0x0E, 0x79, 0x48, 0x95, 0xF7
+    ])
+)
 
 let authorizationRequestParamsWithValue: [String: Any] = [
     "redirect_uri": "https://mock-verifier.com",

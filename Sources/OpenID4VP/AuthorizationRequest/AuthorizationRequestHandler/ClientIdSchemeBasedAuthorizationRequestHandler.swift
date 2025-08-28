@@ -7,7 +7,8 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
     func isRequestUriSupported() -> Bool
     func isRequestObjectSupported() -> Bool
-    //    func extractPublicKey() -> PublicKeyType
+    func extractPublicKey(keyId: String, algorithm: String) async throws -> PublicKeyType
+    func clientIdScheme() -> String
 }
 
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
@@ -81,7 +82,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             }
             do{
                 let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-                try validateAuthorizationRequestObject(response)
+                try await validateAuthorizationRequestObject(response)
                 
                 requestUriResponse = (response.responseBody, response.httpUrlResponse)
             } catch let error as NetworkRequestException {
@@ -103,17 +104,51 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     //TODO: rename to validateRequestUriResponse
-    private func validateAuthorizationRequestObject(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) throws {
+    private func validateAuthorizationRequestObject(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) async throws {
         //TODO: remove this check as its redundant. isMismatchedAcceptableType handles it already
         guard requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue) else {
             throw InvalidData(
                 message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
         }
         
+        
         guard isJWS(requestUriResponse.responseBody) else {
             throw InvalidData(
                 message: "Authorization Request Object must be a signed JWT", className: className)
         }
+        
+        let clientId: String = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
+        let actualAuthorizationRequestObject = requestUriResponse.responseBody
+        
+        let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
+//        try validateAuthorizationRequestSigningAlgorithm(header: header)
+        
+        guard let algorithm = header["alg"] as? String else {
+            throw InvalidData(message: "Request URI response validation failed - alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+        
+        // TODO: IN JWT header keyId is optional as per spec, for did only its mandatory
+//        let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String, algorithm: "")
+        let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String ?? "", algorithm: algorithm)
+        //
+        //            let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
+        //
+        //            let header = try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject,jwsPart: .header)
+        //            try validateAuthorizationRequestSigningAlgorithm(header: header)
+        //
+        //            try await JWSHandler.verify(jws: actualAuthorizationRequestObject , publicKeyResolver: keyResolver, verificationMethodUri: clientId)
+        //
+        //            let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: actualAuthorizationRequestObject, jwsPart: .payload)
+        //
+        //            // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
+        //            let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
+        //            if( requestUriMethod == .post) {
+        //                try validateWalletNonce(authorizationRequestObject, walletNonce)
+        //            }
+        //
+        //            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
+        //
+        //            self.authorizationRequestParameters = authorizationRequestObject
     }
     
     func validateAndParseRequestFields() async throws {
