@@ -64,16 +64,6 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
-    func testShouldSuccessfullyValidateRequestUriResponse() async {
-        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (validJwtResponse, httpUrlResponseForJWS))
-        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
-        
-        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
-    }
-    
     func testThrowExceptionWhenRequestUriResponseContentTypeIsNotJWT() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         

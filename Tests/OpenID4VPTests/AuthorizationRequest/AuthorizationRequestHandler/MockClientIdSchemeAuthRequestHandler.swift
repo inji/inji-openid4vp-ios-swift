@@ -56,11 +56,6 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
                 "accept": ContentTypes.applicationJson.rawValue]
     }
     
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
-        capturedRequestUriResponse = requestUriResponse
-        wasMethodCalled = true
-    }
-    
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
         return walletMetadata
     }

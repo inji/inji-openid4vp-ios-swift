@@ -2,7 +2,6 @@ import Foundation
 
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func getHeadersForAuthorizationRequestUri() -> [String: String]?
     func isRequestUriSupported() -> Bool
@@ -41,7 +40,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     
     func fetchAuthorizationRequest() async throws{
         var isMismatchedAcceptableType : Bool = false
-        var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
             guard (delegate.isRequestUriSupported()) else {
                 throw InvalidData(
@@ -61,8 +59,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                 )
             }
             
-            let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
-            let httpMethod = try determineHttpMethod(method: requestUriMethod)
+            let httpMethod = try requestUriMethod()
             
             var body: [String: String]? = nil
             var headers: [String: String]? = nil
@@ -82,7 +79,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             }
             do{
                 let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-                try await validateAuthorizationRequestObject(response)
+                try await validateRequestUriResponse(response)
                 
                 requestUriResponse = (response.responseBody, response.httpUrlResponse)
             } catch let error as NetworkRequestException {
@@ -100,11 +97,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                 )
             }
         }
-        try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, walletNonce: self.walletNonce, isMismatchedAcceptableType: isMismatchedAcceptableType)
     }
     
-    //TODO: rename to validateRequestUriResponse
-    private func validateAuthorizationRequestObject(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) async throws {
+    private func validateRequestUriResponse(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) async throws {
         //TODO: remove this check as its redundant. isMismatchedAcceptableType handles it already
         guard requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue) else {
             throw InvalidData(
@@ -118,33 +113,32 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         }
         
         let jwtRequest = requestUriResponse.responseBody
-        try await validateJWT(jwtRequest)
-        
-        
         let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .payload)
-        //
-        //            // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
-        //            let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
-        //            if( requestUriMethod == .post) {
-        //                try validateWalletNonce(authorizationRequestObject, walletNonce)
-        //            }
-        //
+        
+        let requestUriMethod = try requestUriMethod()
+        if(requestUriMethod == .post){
+            try validateWalletNonce(authorizationRequestObject, walletNonce)
+        }
+        
+        try await validateJWTRequest(jwtRequest)
+        
         try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
         
-        //                    self.authorizationRequestParameters = authorizationRequestObject
+        self.authorizationRequestParameters = authorizationRequestObject
     }
     
-    private func validateJWT(_ jwtRequest: String) async throws {
+    // If the key is not associated with the client or if signature validation fails, error code = invalid_request_object
+    private func validateJWTRequest(_ jwtRequest: String) async throws {
         do {
             let header = try JWSHandler.extractDataJsonFromJws(jws: jwtRequest,jwsPart: .header)
-            //        try validateAuthorizationRequestSigningAlgorithm(header: header)
             
             guard let algorithm = header["alg"] as? String else {
                 throw InvalidData(message: "Request URI response validation failed - alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
             }
             
-            // TODO: IN JWT header keyId is optional as per spec, for did only its mandatory
-            let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String ?? "", algorithm: algorithm)
+            try validateAuthorizationRequestSigningAlgorithm(algorithm)
+            
+            let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String, algorithm: algorithm)
             try await JWSHandler.verify(jws: jwtRequest , publicKey: publicKey)
         } catch {
             throw InvalidData(message: "Request URI response validation failed - \(error.localizedDescription)", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
@@ -181,7 +175,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     private func isClientIdSchemeSupported(walletMetadata: WalletMetadata) throws {
-        //TODO: Can we avoid extracting client id scheme twice? Can we get it from the delegate - delegate.clientIdScheme?
         let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
         let walletSupportedClientIdSchemes = walletMetadata.clientIdSchemesSupported.compactMap { $0.rawValue }
         if !walletSupportedClientIdSchemes.contains(clientIdScheme) {
@@ -189,6 +182,31 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                 message: "client_id_scheme is not supported by wallet",
                 className: className
             )
+        }
+    }
+    
+    private func validateAuthorizationRequestSigningAlgorithm(_ algorithm: String) throws {
+        if shouldValidateWithWalletMetadata, let walletMetadata = walletMetadata {
+            if let supportedAlgs = walletMetadata.requestObjectSigningAlgValuesSupported?.compactMap({$0.rawValue}) ,
+               !supportedAlgs.contains(algorithm) {
+                throw InvalidData(
+                    message: "request_object_signing_alg is not supported by wallet",
+                    className: className
+                )
+            }
+        }
+    }
+    
+    private func requestUriMethod() throws -> HttpMethod {
+        let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
+        let httpMethod = try determineHttpMethod(method: requestUriMethod)
+        return httpMethod
+    }
+    
+    private func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
+        let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
+        if walletNonce != walletNonceFromAuthorizationRequest {
+            throw InvalidData(message: "wallet_nonce provided in the authorization request is not the same as shared by wallet", className: AuthorizationRequest.className)
         }
     }
     

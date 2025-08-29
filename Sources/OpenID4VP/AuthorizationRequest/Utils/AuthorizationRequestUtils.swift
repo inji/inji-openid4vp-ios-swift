@@ -200,10 +200,3 @@ func validateResponseTypeSupported(_ responseType: String) throws {
         )
     }
 }
-
-func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
-    let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
-    if walletNonce != walletNonceFromAuthorizationRequest {
-        throw InvalidData(message: "wallet_nonce provided in the authorization request is not the same as shared by wallet", className: AuthorizationRequest.className)
-    }
-}
