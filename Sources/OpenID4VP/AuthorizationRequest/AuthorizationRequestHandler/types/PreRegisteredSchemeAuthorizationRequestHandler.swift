@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 
 class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
     let trustedVerifiers: [Verifier]
@@ -55,7 +56,47 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
-        fatalError("pre-registered scheme does not support signed Authorization Request")
+        let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
+        
+        if ((authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue]) != nil)  {
+            throw InvalidData(
+                message: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request",
+                className: className,
+                code: OpenID4VPErrorCodes.invalidRequestObject
+            )
+        }
+        
+        if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
+            if let publicKeys = preRegisteredClient.clientMetadata?.jwks {
+                // if kid is available filter using it
+                if(keyId != nil) {
+                    if let keyDict = (publicKeys.keys as [JWK]).filter({ $0.keyID == keyId }).first {
+                        return try jwkToPublicKey(keyDict, className: className)
+                    } else {
+                        throw PublicKeyResolutionFailed(message: "Public key extraction failed for kid: \(String(describing: keyId))",
+                                                        className: className,
+                                                        code: OpenID4VPErrorCodes.invalidRequestObject)
+                    }
+                }
+                
+                // else filter using algorithm
+                if let keyDict = (publicKeys.keys as [JWK]).filter({ $0.algorithm == algorithm && $0.publicKeyUse == .signature }).first {
+                    return try jwkToPublicKey(keyDict, className: className)
+                } else {
+                    throw PublicKeyResolutionFailed(message: "Public key extraction failed for algorithm: \(algorithm)",
+                                                    className: className,
+                                                    code: OpenID4VPErrorCodes.invalidRequestObject)
+                }
+            } else {
+                throw InvalidData(
+                    message: "jwks not available in pre-registered client_metadata to verify the signed Authorization Request",
+                    className: className,
+                    code: OpenID4VPErrorCodes.invalidRequestObject
+                )
+            }
+        }
+        
+        fatalError("pre_registered scheme does not support signed Authorization Request")
     }
     
     func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {

@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 import Base58Swift
 import CryptoKit
 
@@ -190,4 +191,26 @@ func toEd25519Key(publicKeyData: Data) throws -> PublicKeyType {
     } catch {
         throw PublicKeyResolutionFailed(message: "Public key resolution failed. Error: \(error)", className: className)
     }
+}
+
+func jwkToPublicKey(_ jwk: JWK, className: String) throws -> PublicKeyType {
+    guard jwk.keyType == .octetKeyPair else {
+        throw PublicKeyResolutionFailed(
+            message: "KeyType - \(jwk.keyType.rawValue) is not supported. Supported: OKP",
+            className: className
+        )
+    }
+    
+    guard jwk.curve == .ed25519 else {
+        throw PublicKeyResolutionFailed(
+            message: "Curve - \(jwk.curve?.rawValue ?? "") is not supported. Supported: Ed25519",
+            className: className
+        )
+    }
+    
+    guard let publicKeyData = jwk.x else {
+        throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: className)
+    }
+    
+    return try toEd25519Key(publicKeyData: publicKeyData)
 }
