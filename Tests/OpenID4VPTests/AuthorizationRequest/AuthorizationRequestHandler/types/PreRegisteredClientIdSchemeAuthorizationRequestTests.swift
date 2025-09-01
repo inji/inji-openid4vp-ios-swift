@@ -220,7 +220,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
 //        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        
-//        try? await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), walletNonce: "mock-nonce", isMismatchedAcceptableType: false)
+//        try? await preRegistered.validateRequestUriResponse(requestUriResponse: createRequestUriResponserequestUriResponse), walletNonce: "mock-nonce", isMismatchedAcceptableType: false)
 //        
 //        assertDictionariesEqual(expected: expectedAuthorizationRequestParameters, actual: preRegistered.authorizationRequestParameters)
 //    }
@@ -233,7 +233,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
 //        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        
 //        
-//        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+//        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createRequestUriResponserequestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
 //            assertOpenID4VPException(error,
 //                                     expectedMessage: "Client Id is mismatching in QR data and Request Uri response",
 //                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -251,7 +251,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft21 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21)) as [String : Any]
 //        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        
-//        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
+//        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createRequestUriResponserequestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
 //            assertOpenID4VPException(error,
 //                                     expectedMessage: "Client Id scheme is mismatching in QR data and Request Uri response",
 //                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -266,7 +266,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
 //        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        
-//        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce",isMismatchedAcceptableType: false)) { error in
+//        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createRequestUriResponserequestUriResponse),walletNonce: "mock-nonce",isMismatchedAcceptableType: false)) { error in
 //            assertOpenID4VPException(error,
 //                                     expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
 //                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -278,7 +278,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
 //        
 //        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-//        let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
+//        let requestUriResponse = createRequestUriResponserequestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
 //        
 //        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
 //            assertOpenID4VPException(error,
@@ -293,7 +293,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
 //        
 //        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        
-//        let requestUriResponse = createNetworkResponse(requestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
+//        let requestUriResponse = createRequestUriResponserequestUriResponse, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
 //        
 //        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
 //            assertOpenID4VPException(error,
@@ -316,33 +316,43 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         assertDictionariesEqual(expected: convertToDictionary(object: expectedWalletMetadata)!, actual: convertToDictionary(object: processedMetadata))
     }
-    
-    func testFetchingHeadersForPreRegisteredClientIdSchemeSuccessfully() async{
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
-        ])) as [String : Any]
+
+    func testExtractPublicKeyThrowErrorWhenClientMetadataAvailableInAuthorizationRequestParameters() async throws {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 + ["client_metadata"], requestParams: authorizationRequestParamsWithValue) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
-        let expectedHeader =
-        [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-         Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
-        
-        let header = preRegistered.getHeadersForAuthorizationRequestUri()
-        
-        assertDictionariesEqual(expected: expectedHeader, actual: header)
+        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")){ error in
+            assertOpenID4VPException(error, expectedMessage: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
     }
     
-//    func testShouldThrowErrorWhenRequestUriResponseWalletNonceDoesNotMatchWithTheWalletNonceSentDuringRequest() async{
-//        let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.walletNonce.rawValue: "hacker-nonce"]), applicableFields: authRequestWithPreRegisteredByValueDraft23)
-//        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23,[AuthorizationRequestFieldConstants.requestUriMethod.rawValue: "post"])) as [String : Any]
-//        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil,shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-//        
-//        await XCTAssertAsyncThrowsError(try await preRegistered.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse), walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
-//            assertOpenID4VPException(error,
-//                                     expectedMessage: "wallet_nonce provided in the authorization request is not the same as shared by wallet",
-//                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
+    func testExtractPublicKeyThrowErrorWhenPreRegisteredClientNotAvailable() async throws {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23, requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted-client"])) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
+        
+        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")){ error in
+            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for keyId = ed-key2, algorithm: ECDSA", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
     
+    // clientMetadata available for trusted verifiers does not have jwks
+    func testExtractPublicKeyThrowErrorWhenJwksNotAvailable() async throws {
+        let trustedVerifiers = [
+            Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: ClientMetadata(vpFormats: [
+                "ldp_vp": [
+                    "proof_type": [
+                        "Ed25519Signature2018",
+                        "Ed25519Signature2020"
+                    ]
+                ]
+            ]))
+        ]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
+        
+        
+        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "EdDSA")){ error in
+            assertOpenID4VPException(error, expectedMessage: "jwks not available in pre-registered client_metadata to verify the signed Authorization Request", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
 }

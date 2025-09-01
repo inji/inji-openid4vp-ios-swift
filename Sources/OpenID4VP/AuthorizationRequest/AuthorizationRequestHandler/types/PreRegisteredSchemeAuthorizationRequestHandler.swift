@@ -41,11 +41,6 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         return updatedWalletMetadata
     }
     
-    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-                Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
-    }
-    
     func isRequestUriSupported() -> Bool {
         return true
     }

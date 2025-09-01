@@ -227,14 +227,23 @@ let clientMetadata: [String: Any] = [
     "authorization_encrypted_response_alg": "ECDH-ES",
     "authorization_encrypted_response_enc": "A256GCM",
     "jwks": [
-        "keys": [[
-            "kty": "OKP",
-            "crv": "X25519",
-            "use": "enc",
-            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-            "alg": "ECDH-ES",
-            "kid": "ed-key1"
-        ]]
+        "keys": [
+            [
+                "kty": "OKP",
+                "crv": "X25519",
+                "use": "enc",
+                "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                "alg": "ECDH-ES",
+                "kid": "ed-key1"
+            ],
+            [
+                "kty": "OKP",
+                "crv": "X25519",
+                "use": "sig",
+                "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                "alg": "EdDSA",
+                "kid": "ed-key2"
+            ]]
     ],
     "vp_formats": [
         "ldp_vp": [

@@ -47,7 +47,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
 //
 //        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-//        let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
+//        let requestUriResponse = createRequestUriResponse"non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
 //
 //        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
 //            assertOpenID4VPException(error,
@@ -62,7 +62,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue,[AuthorizationRequestFieldConstants.requestUriMethod.rawValue : "post"], DidSchemeClientIdDraft23)) as [String : Any]
 //        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        let authorizationRequestObject = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.walletNonce.rawValue: "hacker-nonce"]))
-//        let requestUriResponse = createNetworkResponse(authorizationRequestObject, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
+//        let requestUriResponse = createRequestUriResponseauthorizationRequestObject, httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"])!)
 //
 //        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
 //            assertOpenID4VPException(error,
@@ -87,7 +87,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 //    func testShouldThrowErrorWhenAuthRequestObtainedByReferenceDoesNotContainContentTypeFieldItselfInHeader() async {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
 //        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-//        let requestUriResponse = createNetworkResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
+//        let requestUriResponse = createRequestUriResponse"non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
 //
 //
 //        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
@@ -103,7 +103,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 //        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
 //        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        didSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
-//        let requestUriResponse = createNetworkResponse("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ10.SflK5c", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"]))
+//        let requestUriResponse = createRequestUriResponse"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ10.SflK5c", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/oauth-authz-req+jwt"]))
 //
 //        await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
 //            assertOpenID4VPException(error,
@@ -154,20 +154,4 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
             )
         }
     }
-
-    func testFetchingHeadersForDIDClientIdSchemeSuccessfully() async {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithDidByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
-        ])) as [String : Any]
-        let preRegistered = DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
-
-        let expectedHeader =
-        [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-         Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
-
-        let header = preRegistered.getHeadersForAuthorizationRequestUri()
-
-        assertDictionariesEqual(expected: expectedHeader, actual: header)
-    }
-    
 }

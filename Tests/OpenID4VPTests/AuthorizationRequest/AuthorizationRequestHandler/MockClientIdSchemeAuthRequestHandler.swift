@@ -50,12 +50,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     func extractPublicKey() async throws -> PublicKeyType {
         fatalError("redirect_uri scheme does not support signed Authorization Request")
     }
-    
-    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue,
-                "accept": ContentTypes.applicationJson.rawValue]
-    }
-    
+
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
         return walletMetadata
     }

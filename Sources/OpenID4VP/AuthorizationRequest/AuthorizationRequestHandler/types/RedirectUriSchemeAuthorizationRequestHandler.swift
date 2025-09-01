@@ -35,12 +35,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
         return updatedWalletMetadata
     }
-    
-    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-                Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
-    }
-    
+
     override func validateAndParseRequestFields()async throws {
         try await super.validateAndParseRequestFields()
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])

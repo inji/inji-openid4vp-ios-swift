@@ -46,12 +46,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         }
         return walletMetadata
     }
-    
-    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-                Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
-    }
-    
+
     private func validateAuthorizationRequestSigningAlgorithm(header: [String: Any]) throws {
         if shouldValidateWithWalletMetadata, let walletMetadata = walletMetadata {
             if let alg = header["alg"] as? String,

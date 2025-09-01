@@ -26,7 +26,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 //        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String:Any]
 //        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        
-//        await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
+//        await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createRequestUriResponserequestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
 //            assertOpenID4VPException(error,
 //                                     expectedMessage: "Authorization Request must not be signed for given client_id_scheme",
 //                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -37,7 +37,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 //    func testShouldThrowErrorWhenAuthRequestObtainedByReferenceIsNotHavingJsonContentType() async {
 //        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String:Any]
 //        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-//        let requestUriResponse = createNetworkResponse("string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
+//        let requestUriResponse = createRequestUriResponse"string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type":"application/x-www-form-urlencoded"])!)
 //        
 //        await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: true)) { error in
 //            assertOpenID4VPException(error,
@@ -50,7 +50,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 //    func testShouldThrowErrorWhenAuthRequestObtainedByReferenceIsNotHavingContentTypePropertyInHeaders() async {
 //        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String:Any]
 //        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
-//        let requestUriResponse = createNetworkResponse("string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
+//        let requestUriResponse = createRequestUriResponse"string-data", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: [:])!)
 //        
 //        await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce",isMismatchedAcceptableType: true)) { error in
 //            assertOpenID4VPException(error,
@@ -115,7 +115,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 //        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String:Any]
 //        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 //        
-//        await XCTAssertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createNetworkResponse(requestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false))
+//        await XCTAssertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: createRequestUriResponserequestUriResponse),walletNonce: "mock-nonce", isMismatchedAcceptableType: false))
 //    }
     
     func testProcessingWalletMetadataSuccessfully() async{
@@ -131,22 +131,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         
         assertDictionariesEqual(expected: convertToDictionary(object: expectedWalletMetadata)!, actual: convertToDictionary(object: processedMetadata))
     }
-    
-    func testFetchingHeadersForRedirectClientIdSchemeSuccessfully() async{
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
-        ])) as [String : Any]
-        let preRegistered = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
-        
-        let expectedHeader =
-        [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-         Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
-        
-        let header = preRegistered.getHeadersForAuthorizationRequestUri()
-        
-        assertDictionariesEqual(expected: expectedHeader, actual: header)
-    }
-    
+
     func testShouldThrowErrorWhenResponseUriNotEqualToClientId() async {
         let mockClientId = "http://mock-client.com"
         let invalidResponseUri = "http://invalid-mock-client.com"
@@ -190,7 +175,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 //    func testShouldThrowErrorWhenRequestUriResponseWalletNonceDoesNotMatchWithTheWalletNonceSentDuringRequest() async {
 //        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.requestUriMethod.rawValue: "post"])) as [String:Any]
 //        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-//        let requestUriResponse = createNetworkResponse(createAuthorizationRequestObject(clientIdScheme: .redirectUri, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.walletNonce.rawValue: "hacker-nonce"])), httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/json"])!)
+//        let requestUriResponse = createRequestUriResponsecreateAuthorizationRequestObject(clientIdScheme: .redirectUri, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.walletNonce.rawValue: "hacker-nonce"])), httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": "application/json"])!)
 //        await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateRequestUriResponse(requestUriResponse: requestUriResponse,walletNonce: "mock-nonce", isMismatchedAcceptableType: false)) { error in
 //            assertOpenID4VPException(error,
 //                                     expectedMessage: "wallet_nonce provided in the authorization request is not the same as shared by wallet",
