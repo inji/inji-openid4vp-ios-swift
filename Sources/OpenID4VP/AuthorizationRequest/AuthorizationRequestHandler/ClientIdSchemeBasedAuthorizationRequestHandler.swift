@@ -103,15 +103,14 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         }
         
         let jwtRequest = requestUriResponse.responseBody
-        let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .payload)
+        try await validateJWTRequest(jwtRequest)
         
-        //TODO: whats the order of validate wallet nonce and validate jwt request?
+        let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .payload)
         let requestUriMethod = try requestUriMethod()
         if(requestUriMethod == .post){
             try validateWalletNonce(authorizationRequestObject, walletNonce)
         }
         
-        try await validateJWTRequest(jwtRequest)
         
         try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
         
