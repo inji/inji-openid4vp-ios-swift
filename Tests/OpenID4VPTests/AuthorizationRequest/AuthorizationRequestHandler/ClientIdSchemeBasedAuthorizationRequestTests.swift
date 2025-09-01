@@ -19,6 +19,11 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         walletMetadata = try createWalletMetadataV2()
     }
     
+    override func setUp() {
+        super.setUp()
+        mockNetworkManager.clearResponses()
+    }
+    
     ///    Fetch authorization request tests
     
     
@@ -40,7 +45,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "request_uri is not supported for given client_id_scheme",
+                                     expectedMessage: "request_uri is not supported for given client_id_scheme - redirect_uri",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -84,6 +89,42 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
+    func testThrowExceptionWhenRequestUriResponseReturnNetworkRequestException() async {
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
+        
+        let requestUriResponse = createRequestUriResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJson.rawValue])!)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, error: NetworkRequestException.networkRequestFailed(message: "Something went wrong"))
+        
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Unknown error occurred Network error while fetching request_uri: Network request failed with error response - Something went wrong",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testThrowExceptionWhenRequestUriResponseReturnAnyException() async {
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
+        
+        let requestUriResponse = createRequestUriResponse("non-jwt", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJson.rawValue])!)
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, error: NetworkRequestException.networkRequestFailed(message: "Something went wrong"))
+        
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Unknown error occurred Network error while fetching request_uri: Network request failed with error response - Something went wrong",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
     func testThrowExceptionWhenRequestUriResponseIsNotJWT() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         
@@ -104,11 +145,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     func testThrowExceptionWhenRequestUriResponseHasDifferentValueThanAuthorizationRequestParameters() async throws {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         
-        let authorizationRequestObject = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            "client_id": "did:web:hacker-verifier.com",
-        ]))
-        let requestUriResponse = createRequestUriResponse(authorizationRequestObject)
-        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        let authorizationRequestObject = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "did:web:hacker-verifier.com"]))
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (authorizationRequestObject, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
@@ -121,7 +159,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             )
         }
     }
-        
+    
     func testThrowErrorWhenWalletNonceAvailableInTheRequestUriResponseIsNotSameAsTheWalletSentNonce() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "post"])) as [String : Any]
         
@@ -144,29 +182,6 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testThrowErrorWhenPublicKeyReslutionFailedForValidatingRequestUriResponse() async throws {
-        let didResponse = convertToJsonString([
-            "assertionMethod": [
-                "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0"
-            ],
-            "service": [],
-            "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-            "verificationMethod": [
-                [
-                    "publicKeyMultibase": "z6MkwAm9tLpXZNfeEAqj9jcccFhjdiTwxVD32GhcjyeqGYSo",
-                    "controller": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-                    "id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
-                    "type": "Ed25519VerificationKey2020",
-                    "@context": "https://w3id.org/security/suites/ed25519-2020/v1"
-                ]
-            ],
-            "@context": [
-                "https://www.w3.org/ns/did/v1"
-            ],
-            "alsoKnownAs": [],
-            "authentication": [
-                "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-1" // simulate key resolution failure with key id not available in did document
-            ]
-        ])
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         
         let authorizationRequestObject = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23))
@@ -175,11 +190,15 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        mockAuthHandler.setExtractPublicKeyError(error: PublicKeyResolutionFailed(
+            message: "Public key extraction failed for kid: did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
+            className: "mock"
+        ))
         
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "public key resolution failed for key id did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-1. Error: Public key with id did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-1 not found in DID Document",
+                                     expectedMessage: "Request URI response validation failed - Public key extraction failed for kid: did:web:inji-ovp:inji-mock-services:openid4vp-service:docs#key-0",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
         }
@@ -207,45 +226,116 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchAuthorizationRequestByReferenceWhenRespectiveClientIdSchemeSupportsIt() async{
         let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
+            clientIdScheme: .did,
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23),
             applicableFields: authRequestWithRedirectUriByValue
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,responseBody: authorizationRequestObject)
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest(), "Failed to fetch authorization request")
     }
     
-    func testFetchAuthoruixzationRequestPopulateAuthorizationRequestFieldWithRequestUriResponseWhenAllValidationsSucceeds() async{
+    func testFetchAuthoruizationRequestPopulateAuthorizationRequestFieldWithRequestUriResponseWhenAllValidationsSucceeds() async{
         let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
-            applicableFields: authRequestWithRedirectUriByValue
+            clientIdScheme: .did,
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23),
+            applicableFields: authRequestWithDidByValue
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, responseBody: authorizationRequestObject)
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest(), "Failed to fetch authorization request")
         
-        XCTAssertEqual(true, true)
+        let expected: [String: Any] = [
+            "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+            "presentation_definition": [
+                "id": "vp_presentation_definition",
+                "input_descriptors": [
+                    [
+                        "constraints": [
+                            "fields": [
+                                [
+                                    "filter": [
+                                        "pattern": "@gmail.com",
+                                        "type": "string"
+                                    ],
+                                    "path": ["$.credentialSubject.email"]
+                                ]
+                            ]
+                        ],
+                        "format": [
+                            "ldp_vc": [
+                                "proof_type": [
+                                    "Ed25519Signature2018",
+                                    "RsaSignature2018"
+                                ]
+                            ]
+                        ],
+                        "id": "input_1",
+                        "name": "Verifiable Credential",
+                        "purpose": "To verify identity using Linked Data Proofs"
+                    ]
+                ]
+            ],
+            "response_uri": "https://mock-verifier.com",
+            "client_metadata": [
+                "authorization_encrypted_response_alg": "ECDH-ES",
+                "authorization_encrypted_response_enc": "A256GCM",
+                "client_name": "Requester name",
+                "jwks": [
+                    "keys": [
+                        [
+                            "alg": "ECDH-ES",
+                            "crv": "X25519",
+                            "kid": "ed-key1",
+                            "kty": "OKP",
+                            "use": "enc",
+                            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4"
+                        ],
+                        [
+                            "alg": "EdDSA",
+                            "crv": "X25519",
+                            "kid": "ed-key2",
+                            "kty": "OKP",
+                            "use": "sig",
+                            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4"
+                        ]
+                    ]
+                ],
+                "logo_uri": "https://mock-verifier.com/logo",
+                "vp_formats": [
+                    "ldp_vp": [
+                        "proof_type": [
+                            "Ed25519Signature2018",
+                            "Ed25519Signature2020"
+                        ]
+                    ]
+                ]
+            ],
+            "state": "+mRQe1d6pBoJqF6Ab28klg==",
+            "response_mode": "direct_post",
+            "response_type": "vp_token",
+            "nonce": "VbRRB/LTxLiXmVNZuyMO8A=="
+        ]
+        assertDictionariesEqual(expected: expected, actual: mockAuthHandler.authorizationRequestParameters)
     }
     
     
-    //TODO: fix me
     func testFetchAuthorizationRequestByReferenceAndRequestUriMethodIsPostPassWalletMetadata() async{
-        
         var authorizationRequestWithPostRequestUriMethod = authorizationRequestParamsWithValue
         authorizationRequestWithPostRequestUriMethod[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] = "post"
         
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdScheme: .preRegistered,
-            authorizationRequestParams: mergeMaps(authorizationRequestWithPostRequestUriMethod, redirectUriSchemeClientIdDraft23),
-            applicableFields: authRequestWithRedirectUriByValue
+            authorizationRequestParams: mergeMaps(authorizationRequestWithPostRequestUriMethod, DidSchemeClientIdDraft23, ["wallet_nonce": "mock-nonce"]),
+            applicableFields: authRequestWithRedirectUriByValue + ["wallet_nonce"]
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestWithPostRequestUriMethod, redirectUriSchemeClientIdDraft23)) as [String : Any]
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestWithPostRequestUriMethod, DidSchemeClientIdDraft23)) as [String : Any]
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
@@ -255,22 +345,18 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         XCTAssertNotNil(recordedBody?["wallet_metadata"], "Expected wallet_metadata to be present in the request body")
     }
     
-    //TODO: fix me
     func testFetchAuthorizationRequestByValueWithRequestUriMethodNotAvailableInAuthorizationRequestProvided() async{
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23),
             applicableFields: authRequestWithRedirectUriByValue
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: [AuthorizationRequestFieldConstants.clientId.rawValue, "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: [AuthorizationRequestFieldConstants.clientId.rawValue, "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        do{
-            try await mockAuthHandler.fetchAuthorizationRequest()
-            
-            assertJSONStringEqual(expected: "{\"response_type\":\"vp_token\",\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\"]}},\"client_name\":\"Requester name\",\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"jwks\":{\"keys\":[{\"kid\":\"ed-key1\",\"crv\":\"X25519\",\"use\":\"enc\",\"kty\":\"OKP\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\"}]}},\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"presentation_definition\":{\"id\":\"vp_presentation_definition\",\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\",\"name\":\"Verifiable Credential\",\"purpose\":\"To verify identity using Linked Data Proofs\"}]},\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_uri\":\"https:\\/\\/mock-verifier.com\"}", actual: mockAuthHandler.capturedRequestUriResponse!.body)
-        } catch {
-            XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
+        
+        await XCTAssertNoThrowAndVerifyAsync(try await mockAuthHandler.fetchAuthorizationRequest()) {
+            XCTAssertEqual(mockNetworkManager.recordedRequests[requestUri.absoluteString]?.requestMethod, .get, "Expected HTTP method to be GET when request_uri_method is not provided")
         }
     }
     
@@ -337,6 +423,37 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
             
+        }
+    }
+    
+    func testShouldThrowErrorWhenAuthRequestsAlgObtainedByReferenceDoesNotMatchWithWalletMetadata() async {
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
+        let mockSchemeAuthRequestHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
+        let requestUriResponse = createRequestUriResponse("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ10.SflK5c")
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        
+        await XCTAssertAsyncThrowsError(try await mockSchemeAuthRequestHandler.fetchAuthorizationRequest()) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Request URI response validation failed - request_object_signing_alg is not supported by wallet",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequestObject
+            )
+        }
+    }
+    
+    func testThrowErrorWhenClientIdSchemeIsNotSupportedAsPerWalletMetadata() async {
+       let  minimalWalletMetadata = try! createWalletMetadataV2(clientIdSchemesSupported: [.preRegistered, .redirectUri])
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "post"])) as [String : Any]
+        let mockSchemeAuthRequestHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: minimalWalletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
+        let requestUriResponse = createRequestUriResponse("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ10.SflK5c")
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        
+        await XCTAssertAsyncThrowsError(try await mockSchemeAuthRequestHandler.fetchAuthorizationRequest()) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "client_id_scheme is not supported by wallet",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     
@@ -675,27 +792,4 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             )
         }
     }
-    
-    func testShouldThrowErrorForFetchAuthorizationRequestByReferenceForInvalidClientIdAndResponseUriMethodIsPost() async {
-        var authorizationRequestParamsWithValueUpdated = authorizationRequestParamsWithValue
-        authorizationRequestParamsWithValueUpdated[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] = "post"
-        authorizationRequestParamsWithValueUpdated[AuthorizationRequestFieldConstants.clientId.rawValue] = ""
-        
-        let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .preRegistered,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValueUpdated, redirectUriSchemeClientIdDraft23),
-            applicableFields: authRequestWithRedirectUriByValue
-        )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: authorizationRequestParamsWithValueUpdated) as [String : Any]
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
-        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
-            assertOpenID4VPException(error,
-                                     expectedMessage: "Invalid Input: client_id value cannot be empty or null",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
 }

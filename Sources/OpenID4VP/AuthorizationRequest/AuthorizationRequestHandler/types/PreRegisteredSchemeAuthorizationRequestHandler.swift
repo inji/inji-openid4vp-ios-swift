@@ -57,16 +57,17 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
             throw InvalidData(
                 message: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request",
                 className: className,
-                code: OpenID4VPErrorCodes.invalidRequestObject
+                code: OpenID4VPErrorCodes.invalidRequest
             )
         }
         
         if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
             if let publicKeys = preRegisteredClient.clientMetadata?.jwks {
-                return try filterAndExtractKey(jwks: publicKeys, keyId: keyId, algorithm: algorithm)
+                let publicKeyJwk =  try filterAndExtractKey(jwks: publicKeys, keyId: keyId, algorithm: algorithm)
+                return try jwkToPublicKey(publicKeyJwk, className: className)
             } else {
                 throw InvalidData(
-                    message: "jwks not available in pre-registered client_metadata to verify the signed Authorization Request",
+                    message: "Public key extraction failed - Either client_metadata not available or jwks not available in pre-registered client_metadata to verify the signed Authorization Request",
                     className: className,
                     code: OpenID4VPErrorCodes.invalidRequestObject
                 )
@@ -106,11 +107,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         try await super.validateAndParseRequestFields()
     }
     
-    private func filterAndExtractKey(jwks publicKeys: JWKSet, keyId: String?, algorithm: String) throws -> PublicKeyType {
-        // if kid is available filter using it
+    private func filterAndExtractKey(jwks publicKeys: JWKSet, keyId: String?, algorithm: String) throws -> JWK {
         if(keyId != nil) {
-            if let keyDict = (publicKeys.keys as [JWK]).filter({ $0.keyID == keyId }).first {
-                return try jwkToPublicKey(keyDict, className: className)
+            if let matchingJWK = (publicKeys.keys as [JWK]).filter({ $0.keyID == keyId }).first {
+                return matchingJWK
             } else {
                 throw PublicKeyResolutionFailed(message: "Public key extraction failed for kid: \(String(describing: keyId))",
                                                 className: className,
@@ -118,27 +118,16 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
             }
         }
         
-        // else filter using algorithm
-        let keyDict = (publicKeys.keys as [JWK]).filter({ $0.algorithm == algorithm && $0.publicKeyUse == .signature })
-        if(keyDict.count == 1) {
-            return try jwkToPublicKey(keyDict[0], className: className)
-        } else if (keyDict.count > 1) {
-            // filter using the key usage
-            let matchingKeys = (keyDict).filter({ $0.publicKeyUse == .signature })
-            if(matchingKeys.count == 1) {
-                return try jwkToPublicKey(matchingKeys[0], className: className)
-            } else if (matchingKeys.count == 0) {
-                throw PublicKeyResolutionFailed(message: "No public key found for algorithm: \(algorithm) with key use: signature",
-                                                className: className,
-                                                code: OpenID4VPErrorCodes.invalidRequestObject)
-            }else {
-                throw PublicKeyResolutionFailed(message: "Multiple public keys found for algorithm: \(algorithm)",
-                                                className: className,
-                                                code: OpenID4VPErrorCodes.invalidRequestObject)
-            }
-        }
-        else {
-            throw PublicKeyResolutionFailed(message: "Public key extraction failed for algorithm: \(algorithm)",
+        let matchingKeys = (publicKeys.keys as [JWK]).filter({ $0.algorithm == algorithm && $0.publicKeyUse == .signature })
+        
+        if(matchingKeys.isEmpty) {
+            throw PublicKeyResolutionFailed(message: "No public key found for algorithm: \(algorithm) with key use: signature",
+                                            className: className,
+                                            code: OpenID4VPErrorCodes.invalidRequestObject)
+        } else if(matchingKeys.count == 1) {
+            return matchingKeys[0]
+        } else  {
+            throw PublicKeyResolutionFailed(message: "Public key extraction failed - Multiple ambiguous keys found for \(algorithm) with signature usage",
                                             className: className,
                                             code: OpenID4VPErrorCodes.invalidRequestObject)
         }

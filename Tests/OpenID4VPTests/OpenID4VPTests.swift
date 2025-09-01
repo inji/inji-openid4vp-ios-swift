@@ -212,7 +212,7 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (validJwtResponse, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (validJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let decodedAuthorizationRequest: Any?
@@ -250,11 +250,12 @@ class OpenID4VPTests: XCTestCase {
 
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
-               mockNetworkManager.setMockResponse(
-                   for: "https://mock-verifier.com/verifier/get-auth-request-obj",
-                   response: (validJwtResponse, httpUrlResponseForJWS)
-               )
-               mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
+        mockNetworkManager.setMockResponse(
+            for: requestUri.absoluteString,
+//            responseBody: createRequestUriResponse(validJwtResponse)
+            response: (validJwtResponse, httpUrlResponseForJWS)
+        )
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
 
         let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInValidSignedVPRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)

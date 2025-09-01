@@ -41,7 +41,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
             guard (delegate.isRequestUriSupported()) else {
                 throw InvalidData(
-                    message: "request_uri is not supported for given client_id_scheme",
+                    message: "request_uri is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
                     className: className
                 )
             }
@@ -75,16 +75,21 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     shouldValidateWithWalletMetadata = true
                 }
             }
+            var response:  (responseBody: String, httpUrlResponse: HTTPURLResponse)
             do{
-                let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-                try await validateRequestUriResponse(response)                
-            } catch let error as NetworkRequestException {
+                response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+            }
+            catch let error as NetworkRequestException {
                 let isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
                 if(isMismatchedAcceptableType){
                     throw InvalidData(
                         message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
                 }
+                throw GenericFailure(message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
+            } catch {
+                throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
             }
+            try await validateRequestUriResponse(response)
         } else {
             guard (delegate.isRequestObjectSupported()) else {
                 throw InvalidData(
@@ -110,7 +115,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             try validateWalletNonce(authorizationRequestObject, walletNonce)
         }
         
-        
         try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
         
         self.authorizationRequestParameters = authorizationRequestObject
@@ -119,6 +123,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     // If the key is not associated with the client or if signature validation fails, error code = invalid_request_object
     private func validateJWTRequest(_ jwtRequest: String) async throws {
         do {
+            // TODO: wrap this as verification falure error
             let header = try JWSHandler.extractDataJsonFromJws(jws: jwtRequest,jwsPart: .header)
             
             guard let algorithm = header["alg"] as? String else {
@@ -128,6 +133,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             try validateAuthorizationRequestSigningAlgorithm(algorithm)
             
             let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String, algorithm: algorithm)
+            print("delegate - \(delegate.self.clientIdScheme())")
             try await JWSHandler.verify(jws: jwtRequest , publicKey: publicKey)
         } catch {
             throw InvalidData(message: "Request URI response validation failed - \(error.localizedDescription)", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
@@ -164,7 +170,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     private func isClientIdSchemeSupported(walletMetadata: WalletMetadata) throws {
-        let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+        let clientIdScheme = delegate.clientIdScheme()
         let walletSupportedClientIdSchemes = walletMetadata.clientIdSchemesSupported.compactMap { $0.rawValue }
         if !walletSupportedClientIdSchemes.contains(clientIdScheme) {
             throw InvalidData(

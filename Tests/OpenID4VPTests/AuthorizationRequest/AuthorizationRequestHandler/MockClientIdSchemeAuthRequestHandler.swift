@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import XCTest
 @testable import OpenID4VP
 
@@ -6,6 +7,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     private let isRequestUriSupportedFlag: Bool
     private let isRequestObjectSupportedFlag: Bool
     private let clientIdSchemeValue: String
+    private var extractPublicKeyError: OpenID4VPException?
     
     init(authorizationRequestParameters: [String: Any],
          walletMetadata: WalletMetadata? = nil,
@@ -35,7 +37,18 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         return clientIdSchemeValue
     }
     
+    func setExtractPublicKeyError(error: OpenID4VPException){
+        self.extractPublicKeyError = error
+    }
+    
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
+        if(extractPublicKeyError != nil){
+            throw extractPublicKeyError!
+        }
+        
+        if(clientIdSchemeValue == ClientIdScheme.did.rawValue){
+            return try PublicKeyType.ed25519(Curve25519.Signing.PublicKey(rawRepresentation: [248, 92, 183, 148, 198, 169, 205, 29, 240, 165, 166, 13, 8, 90, 182, 244, 96, 196, 159, 243, 104, 71, 122, 65, 177, 206, 117, 214, 173, 66, 198, 172]))
+        }
         return PublicKeyType.ed25519(publicKey)
     }
     
@@ -45,10 +58,6 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     
     func isRequestUriSupported() -> Bool {
         return self.isRequestUriSupportedFlag
-    }
-    
-    func extractPublicKey() async throws -> PublicKeyType {
-        fatalError("redirect_uri scheme does not support signed Authorization Request")
     }
 
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
