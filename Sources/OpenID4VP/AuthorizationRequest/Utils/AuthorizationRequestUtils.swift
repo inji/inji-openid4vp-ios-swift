@@ -25,8 +25,6 @@ func validateAttribute(
 }
 
 func validateAuthorizationRequestObjectAndParameters(params: [String: String], requestUriParams: [String: Any]) throws {
-    
-    
     guard params[AuthorizationRequestFieldConstants.clientId.rawValue] == requestUriParams[AuthorizationRequestFieldConstants.clientId.rawValue] as? String else {
         throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }

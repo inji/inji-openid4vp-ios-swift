@@ -2,8 +2,6 @@ import XCTest
 @testable import OpenID4VP
 
 final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
-    //TODO: need a valid mdoc credential to test creation of unsignedmdocvptoken
-
     func testThrowErrorWhenUnableToDecodeCredential() throws {
         let builder = UnsignedMdocVPTokenBuilder(
             mdocCredentials: ["invalidCBOR"],

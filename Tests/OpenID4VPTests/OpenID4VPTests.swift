@@ -282,7 +282,7 @@ class OpenID4VPTests: XCTestCase {
             error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Request URI response validation failed - Public key extraction failed for kid: ",
+                expectedMessage: "Request URI response validation failed - keyId is required to extract public key in did client_id_scheme",
                 expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
         }

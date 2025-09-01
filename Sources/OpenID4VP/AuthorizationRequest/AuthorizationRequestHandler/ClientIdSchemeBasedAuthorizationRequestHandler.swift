@@ -39,7 +39,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func fetchAuthorizationRequest() async throws{
-        var isMismatchedAcceptableType : Bool = false
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
             guard (delegate.isRequestUriSupported()) else {
                 throw InvalidData(
@@ -79,11 +78,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             }
             do{
                 let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-                try await validateRequestUriResponse(response)
-                
-                requestUriResponse = (response.responseBody, response.httpUrlResponse)
+                try await validateRequestUriResponse(response)                
             } catch let error as NetworkRequestException {
-                isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
+                let isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
                 if(isMismatchedAcceptableType){
                     throw InvalidData(
                         message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
@@ -100,13 +97,6 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     private func validateRequestUriResponse(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) async throws {
-        //TODO: remove this check as its redundant. isMismatchedAcceptableType handles it already
-        guard requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJwt.rawValue) else {
-            throw InvalidData(
-                message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
-        }
-        
-        
         guard isJWS(requestUriResponse.responseBody) else {
             throw InvalidData(
                 message: "Authorization Request Object must be a signed JWT", className: className)
@@ -115,6 +105,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         let jwtRequest = requestUriResponse.responseBody
         let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .payload)
         
+        //TODO: whats the order of validate wallet nonce and validate jwt request?
         let requestUriMethod = try requestUriMethod()
         if(requestUriMethod == .post){
             try validateWalletNonce(authorizationRequestObject, walletNonce)

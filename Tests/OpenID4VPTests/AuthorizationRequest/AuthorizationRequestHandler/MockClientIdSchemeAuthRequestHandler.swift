@@ -60,5 +60,4 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         return walletMetadata
     }
     var capturedRequestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?
-    var wasMethodCalled = false
 }

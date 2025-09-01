@@ -47,9 +47,11 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldmakeApiCallToRequestUriPostWithCorrectAcceptTypeAndContentType() async {
+        mockNetworkManager.clearResponses()
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "post"])) as [String : Any]
-        let requestUriResponse = createNetworkResponse("header.payload.signature", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJwt.rawValue])!)
+        let requestUriResponse = createNetworkResponse(createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["wallet_nonce": "mock-nonce"]), applicableFields: authRequestWithDidByValue + ["wallet_nonce"]), httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 200, httpVersion: "", headerFields: ["Content-Type": ContentTypes.applicationJwt.rawValue])!)
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         
@@ -112,7 +114,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Authorization Request Object must be a signed JWT",
+                                     expectedMessage: "Client Id is mismatching in QR data and Request Uri response",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -244,7 +246,6 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             try await mockAuthHandler.fetchAuthorizationRequest()
             
             assertJSONStringEqual(expected: "{\"response_type\":\"vp_token\",\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\"]}},\"client_name\":\"Requester name\",\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"jwks\":{\"keys\":[{\"kid\":\"ed-key1\",\"crv\":\"X25519\",\"use\":\"enc\",\"kty\":\"OKP\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\"}]}},\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"presentation_definition\":{\"id\":\"vp_presentation_definition\",\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\",\"name\":\"Verifiable Credential\",\"purpose\":\"To verify identity using Linked Data Proofs\"}]},\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_uri\":\"https:\\/\\/mock-verifier.com\"}", actual: mockAuthHandler.capturedRequestUriResponse!.body)
-            XCTAssertTrue(mockAuthHandler.wasMethodCalled)
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
         }
@@ -289,7 +290,6 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                     "logo_uri": "https://mock-verifier.com/logo"
                 ],
             ], actual: mockAuthHandler.authorizationRequestParameters)
-            XCTAssertTrue(mockAuthHandler.wasMethodCalled)
         } catch {
             XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
         }
