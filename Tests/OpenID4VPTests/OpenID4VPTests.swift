@@ -57,9 +57,8 @@ class OpenID4VPTests: XCTestCase {
             let decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             let jsonData = try JSONEncoder().encode(decoded)
             let authorizationRequestJsonString = String(decoding: jsonData, as: UTF8.self)
-            print("authorizationRequestJsonString \(authorizationRequestJsonString)")
 
-            assertJsonString(expected: "{\"redirect_uri\":null,\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"response_type\":\"vp_token\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_mode\":\"direct_post\",\"presentation_definition\":{\"id\":\"vp_presentation_definition\",\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"name\":\"Verifiable Credential\",\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\",\"purpose\":\"To verify identity using Linked Data Proofs\"}]},\"client_metadata\":{\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\"]}},\"jwks\":{\"keys\":[{\"kid\":\"ed-key1\",\"crv\":\"X25519\",\"kty\":\"OKP\",\"alg\":\"ECDH-ES\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"use\":\"enc\"},{\"kid\":\"ed-key2\",\"crv\":\"X25519\",\"kty\":\"OKP\",\"alg\":\"EdDSA\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"use\":\"sig\"}]},\"client_name\":\"Requester name\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"authorization_encrypted_response_alg\":\"ECDH-ES\"}}", actual: authorizationRequestJsonString)
+            assertJsonString(expected: "{\"redirect_uri\":null,\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"response_type\":\"vp_token\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_mode\":\"direct_post\",\"presentation_definition\":{\"id\":\"vp_presentation_definition\",\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"name\":\"Verifiable Credential\",\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\",\"purpose\":\"To verify identity using Linked Data Proofs\"}]},\"client_metadata\":{\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\"]}},\"jwks\":{\"keys\":[{\"kid\":\"ed-key1\",\"crv\":\"X25519\",\"kty\":\"OKP\",\"alg\":\"ECDH-ES\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"use\":\"enc\"},{\"kid\":\"ed-key2\",\"crv\":\"Ed25519\",\"kty\":\"OKP\",\"alg\":\"EdDSA\",\"x\":\"5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc\",\"use\":\"sig\"}]},\"client_name\":\"Requester name\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"authorization_encrypted_response_alg\":\"ECDH-ES\"}}", actual: authorizationRequestJsonString)
         } catch {
             XCTFail("Should not get error but got error - \(error)")
         }
@@ -87,16 +86,18 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = pre-registered
     func testReturnDataForValidRequestWithResponseUri() async {
-        let decoded: Any?
-
-        do {
-            decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        } catch {
-            decoded = nil
-            XCTFail("Should not get error but got error - \(error)")
+        let requestUriResponse = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdDraft23), applicableFields: authRequestWithPreRegisteredByValueDraft23)
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (requestUriResponse, httpUrlResponseForJWS))
+        
+        await XCTAssertNoThrowAndVerifyAsync(
+            try await openID4VP.authenticateVerifier(
+                urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
+                trustedVerifierJSON: preRegisteredVerifiers,
+                shouldValidateClient: true
+            )
+        ) { authorizationRequest in
+            XCTAssertEqual(authorizationRequest.clientId, "mock-client")
         }
-        XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
-        XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
 
     //client_id_scheme = pre-registered, validation of client via shouldValidateClient

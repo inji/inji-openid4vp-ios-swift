@@ -46,17 +46,4 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         }
         return walletMetadata
     }
-
-    private func validateAuthorizationRequestSigningAlgorithm(header: [String: Any]) throws {
-        if shouldValidateWithWalletMetadata, let walletMetadata = walletMetadata {
-            if let alg = header["alg"] as? String,
-               let supportedAlgs = walletMetadata.requestObjectSigningAlgValuesSupported?.compactMap({$0.rawValue}) ,
-               !supportedAlgs.contains(alg) {
-                throw InvalidData(
-                    message: "request_object_signing_alg is not supported by wallet",
-                    className: className
-                )
-            }
-        }
-    }
 }

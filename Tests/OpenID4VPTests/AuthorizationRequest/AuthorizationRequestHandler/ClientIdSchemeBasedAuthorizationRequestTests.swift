@@ -299,11 +299,11 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                         ],
                         [
                             "alg": "EdDSA",
-                            "crv": "X25519",
+                            "crv": "Ed25519",
                             "kid": "ed-key2",
                             "kty": "OKP",
                             "use": "sig",
-                            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4"
+                            "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc"
                         ]
                     ]
                 ],
@@ -393,9 +393,9 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                             ],
                             [
                                 "kty": "OKP",
-                                "crv": "X25519",
+                                "crv": "Ed25519",
                                 "use": "sig",
-                                "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                                "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
                                 "alg": "EdDSA",
                                 "kid": "ed-key2"
                             ]]

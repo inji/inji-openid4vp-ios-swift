@@ -21,6 +21,12 @@ private let testVerifierList:  [[String: Any]]  = [
         ]
     ],
     [
+        "client_id": "mock-client-2",
+        "response_uris": [
+            "https://mock-verifier.com",
+        ]
+    ],
+    [
         "client_id": "mock-client",
         "response_uris": [
             "https://mock-verifier.com",
@@ -183,9 +189,9 @@ let authRequestWithDidByValue : [String] = [
 
 
 let authRequestClientIdSchemeMap : [ClientIdScheme: [String]] = [
-    ClientIdScheme.preRegistered : authRequestWithDidByValue,
+    ClientIdScheme.preRegistered : authRequestWithPreRegisteredByValueDraft23,
     ClientIdScheme.redirectUri : authRequestWithRedirectUriByValue,
-    ClientIdScheme.did : authRequestWithPreRegisteredByValueDraft23
+    ClientIdScheme.did : authRequestWithDidByValue
 ]
 
 let presentationDefinition: [String: Any] = [
@@ -238,9 +244,9 @@ let clientMetadata: [String: Any] = [
             ],
             [
                 "kty": "OKP",
-                "crv": "X25519",
+                "crv": "Ed25519",
                 "use": "sig",
-                "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
                 "alg": "EdDSA",
                 "kid": "ed-key2"
             ]]
@@ -317,7 +323,7 @@ let testInValidSignedVPRequestWithDidAndClientIdDifferent = createUrlEncodedAuth
 
 let testInvalidPresentationDefinitionVPRequest = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, ["presentation_definition": convertToJsonString(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
 
-let urlEncodedAuthorizationRequestWithInvalidClientMetadata = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, ["client_metadata": "{}"]),clientIdScheme: .preRegistered)
+let urlEncodedAuthorizationRequestWithInvalidClientMetadata = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "mock-client-2"], ["client_metadata": "{}"]),clientIdScheme: .preRegistered, applicableFields: authRequestWithPreRegisteredByValueDraft23 + ["client_metadata"])
 
 let validJwtResponse = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23))
 
@@ -331,7 +337,7 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
 let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
 
 let mockUrlEncodedVPRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientIdDraft23),clientIdScheme: .preRegistered
+    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientIdDraft23).filter{$0.key != "client_metadata"},clientIdScheme: .preRegistered
 )
 
 let mockAuthorizationRequestObjectWithDirectPostResponseMode = getMockAuthorizationRequest()
