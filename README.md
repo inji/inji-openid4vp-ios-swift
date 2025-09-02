@@ -4,6 +4,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 **Table of Contents**
 
+- [OpenID4VP specification draft versions supported](#openid4vp-specification-draft-versions-supported)
 - [Supported features](#supported-features)
 - [Specifications supported](#specifications-supported)
 - [Functionalities](#functionalities)
@@ -14,22 +15,35 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
   - [shareVerifiablePresentation](#shareverifiablepresentation)
   - [sendErrorToVerifier](#senderrortoverifier)
 
+## OpenID4VP specification draft versions supported
+
+- OpenID for Verifiable Presentations - draft 21
+- OpenID for Verifiable Presentations - draft 23
 
 ## Supported features
 
-| Feature                                                    | Supported values                                                                                                                                                                                                                                                                                                                                                   |
-|------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Device flow                                                | cross device flow, Same device flow                                                                                                                                                                                                                                                                                                                                |
-| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                                                                                                                                                                                            |
-| Signed authorization request verification algorithms       | Ed25519                                                                                                                                                                                                                                                                                                                                                            |
-| Obtaining authorization request                            | By value, By reference ( via `request_uri` method) <br> _[Note: Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html#section-3.2))]_ |
-| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                                                                                                                                                                                         |
-| Presentation Request                                       | Presentation Exchange                                                                                                                                                                                                                                                                                                                                              |
-| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                                                                                                                                                                                             |
-| Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                                                                                                                                                                                          |
-| Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                                                                                                                                                                                                                                                                                          |
-| Authorization Response type                                | `vp_token`                                                                                                                                                                                                                                                                                                                                                         |
-| Supported Credential formats                               | `ldp_vc`, `mso_mdoc`                                                                                                                                                                                                                                                                                                                                               |
+| Feature                                                    | Supported values                                                       |
+|------------------------------------------------------------|------------------------------------------------------------------------|
+| Device flow                                                | cross device flow, Same device flow                                    |
+| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                |
+| Signed authorization request verification algorithms       | Ed25519                                                                |
+| Obtaining authorization request                            | By value, By reference ( via `request_uri` method)                     |
+| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)             |
+| Presentation Request                                       | Presentation Exchange                                                  |
+| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses) |
+| Authorization Response content encryption algorithms       | `A256GCM`                                                              |
+| Authorization Response key encryption algorithms           | `ECDH-ES`                                                              |
+| Authorization Response type                                | `vp_token`                                                             |
+| Supported Credential formats                               | `ldp_vc`, `mso_mdoc`                                                   |
+
+#### Client ID Schemes and obtaining authorization request matrix
+
+| Client Id Scheme | Supports By Value | Supports By Reference | Notes                                                                                                                                                                                                                                                                                            |
+|------------------|-------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pre-registered` | ✅                 | ✅                     | -                                                                                                                                                                                                                                                                                                |
+| `redirect_uri`   | ✅                 | ❌                     | Authorization request by reference is not supported, since this client ID scheme mandates unsigned Authorization Request. [(reference)](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID3.html#section-5.10.4-2.1)                                                              |
+| `did`            | ❌                 | ✅                     | Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html#section-3.2)) |
+
 
 #### Notes on Supported response modes
 1. `direct_post` : 
