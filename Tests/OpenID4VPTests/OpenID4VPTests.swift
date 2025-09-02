@@ -467,4 +467,46 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertNotNil(requestBody["state"], "Expected 'state' to be present in the request body")
         XCTAssertEqual(requestBody["state"], "+mRQe1d6pBoJqF6Ab28klg==")
     }
+    
+    
+    func testResetOfOpenID4VPFields() async throws {
+        let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (validJwtResponse, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        
+        // first call
+        _ = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        let firstMirror = Mirror(reflecting: openID4VP as Any)
+        let firstResponseUri = firstMirror.children.first(where: { $0.label == "responseUri" })?.value as? String
+        let firstAuthorizationRequest = firstMirror.children.first(where: { $0.label == "authorizationRequest" })?.value as? AuthorizationRequest
+        XCTAssertNotNil(firstResponseUri, "responseUri should not be nil after first authenticateVerifier call")
+        XCTAssertNotNil(firstAuthorizationRequest, "authorizedRequest should not be nil after first authenticateVerifier call")
+        
+        // second call
+        // clear all mock responses and set only those required for the second call
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(
+            for: "https://mock-verifier.com/verifier/get-auth-request-obj",
+            response: (invalidJwtResponse, httpUrlResponseForJWS)
+        )
+        mockNetworkManager.setMockResponse(
+            for: didDocumentUrl,
+            responseBody: didResponse
+        )
+
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)){ error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Request URI response validation failed - JWS proof verification failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequestObject
+            )
+        }
+        let secondMirror = Mirror(reflecting: openID4VP as Any)
+        let secondResponseUri = secondMirror.children.first(where: { $0.label == "responseUri" })?.value as? String
+        let secondAuthorizationRequest = secondMirror.children.first(where: { $0.label == "authorizationRequest" })?.value as? AuthorizationRequest
+        XCTAssertNil(secondResponseUri, "responseUri should be nil after second authenticateVerifier call which throws error")
+        XCTAssertNil(secondAuthorizationRequest, "authorizedRequest should be nil after second authenticateVerifier call which throws error")
+        // No error to verifier to be sent as no response uri is available
+        XCTAssertTrue(mockNetworkManager.recordedRequests.count == 2, "No requests should be recorded as responseUri is nil" )
+    }
 }

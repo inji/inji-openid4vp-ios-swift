@@ -123,17 +123,24 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     // If the key is not associated with the client or if signature validation fails, error code = invalid_request_object
     private func validateJWTRequest(_ jwtRequest: String) async throws {
         do {
-            // TODO: wrap this as verification falure error
-            let header = try JWSHandler.extractDataJsonFromJws(jws: jwtRequest,jwsPart: .header)
+            let header:  [String : Any]
+            do {
+                header = try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .header)
+            } catch {
+                throw VerificationFailure(
+                    message: "JWS header extraction failed: \(error.localizedDescription)",
+                    className: String(describing: type(of: self))
+                )
+            }
+
             
             guard let algorithm = header["alg"] as? String else {
-                throw InvalidData(message: "Request URI response validation failed - alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
+                throw InvalidData(message: "alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
             }
             
             try validateAuthorizationRequestSigningAlgorithm(algorithm)
             
             let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String, algorithm: algorithm)
-            print("delegate - \(delegate.self.clientIdScheme())")
             try await JWSHandler.verify(jws: jwtRequest , publicKey: publicKey)
         } catch {
             throw InvalidData(message: "Request URI response validation failed - \(error.localizedDescription)", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)

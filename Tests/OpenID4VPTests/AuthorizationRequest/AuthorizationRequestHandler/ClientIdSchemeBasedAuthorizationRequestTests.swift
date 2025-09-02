@@ -71,6 +71,22 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
+    func testThrowExceptionWhenRequestUriResponseJWTHeaderExtractionFails() async {
+        mockNetworkManager.clearResponses()
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "post"])) as [String : Any]
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: "eyJ0eXAiOi&vYXV0aC1hdXRoei1yZXErand0IiwiYWxnIjoiRWREU0EiLCJraWQiOiJzaWcta2V5MSJ9.eyJjbGllbnRfaWQiOiJtb2NrLWNsaWVudCIsInByZXNlbnRhdGlvbl9kZWZpbml0aW9uX3VyaSI6Imh0dHBzOi8vYTc4NzI2ODg0Y2ZmLm5ncm9rLWZyZWUuYXBwL3ZlcmlmaWVyL3ByZXNlbnRhdGlvbl9kZWZpbml0aW9uX3VyaSIsInJlc3BvbnNlX3R5cGUiOiJ2cF90b2tlbiIsInJlc3BvbnNlX21vZGUiOiJkaXJlY3RfcG9zdC5qd3QiLCJub25jZSI6IkVlOElGV1A5c1kxbEVrQ3VQYUorcXc9PSIsInN0YXRlIjoiYmhNUG1WYWRKTnlLYTYzVmludmdIdz09IiwicmVzcG9uc2VfdXJpIjoiaHR0cHM6Ly9hNzg3MjY4ODRjZmYubmdyb2stZnJlZS5hcHAvdmVyaWZpZXIvdnAtcmVzcG9uc2UifQ.qkdv4np_sfq86sS1f78g3BIXTBXYXe1vWE2nLESGCOGLpbOASTccVcw5l-DIDHpfbCEplMAevO5g0xwoKGh4Aw", httpUrlResponse: httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Request URI response validation failed - JWS header extraction failed: Base64 decoding failed",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
     func testThrowExceptionWhenRequestUriResponseContentTypeIsNotJWT() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         
@@ -217,7 +233,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Request URI response validation failed - Request URI response validation failed - alg is not present in JWS header",
+                                     expectedMessage: "Request URI response validation failed - alg is not present in JWS header",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
         }
