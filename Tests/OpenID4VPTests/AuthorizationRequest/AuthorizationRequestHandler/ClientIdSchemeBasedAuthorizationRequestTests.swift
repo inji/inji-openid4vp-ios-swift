@@ -82,7 +82,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Request URI response validation failed - JWS header extraction failed: Base64 decoding failed",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
         }
     }
