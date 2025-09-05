@@ -87,3 +87,25 @@ func wrapError(_ error: Error, customError: (String) -> Error) -> Error {
         return customError(error.localizedDescription)
     }
 }
+
+
+func hashData(_ data: String, hashAlgorithm: String, className: String) throws -> Data {
+    guard let inputData = data.data(using: .utf8) else {
+        throw UTF8EncodingFailed(fieldPath: "hashInput", className: className)
+    }
+    
+    let algorithm = HashAlgorithm(rawValue: hashAlgorithm.lowercased())
+    
+    switch algorithm {
+    case .sha256:
+        let hash = SHA256.hash(data: inputData)
+        return Data(hash)
+    case .sha512:
+        let hash = SHA512.hash(data: inputData)
+        return Data(hash)
+    default:
+//        TODO: checkout on the error code here
+        throw UnsupportedOperationException(message: "Hash algorithm \(hashAlgorithm) is not supported", className: className, code: OpenID4VPErrorCodes.invalidRequest)
+    }
+}
+

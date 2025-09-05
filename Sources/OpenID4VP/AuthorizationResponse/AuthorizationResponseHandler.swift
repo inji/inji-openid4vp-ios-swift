@@ -20,7 +20,7 @@ public class AuthorizationResponseHandler {
                                holderId: String?,
                                signatureSuite: String?,
                                walletNonce: String
-    ) throws -> [FormatType: UnsignedVPToken] {
+    ) async throws -> [FormatType: UnsignedVPToken] {
         let hasLdpVc = credentialsMap.values.contains { formatMap in
             formatMap.keys.contains(.ldp_vc)
         }
@@ -40,7 +40,7 @@ public class AuthorizationResponseHandler {
             }
         }
         
-        return try createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
+        return try await createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
         
     }
 
@@ -51,7 +51,7 @@ public class AuthorizationResponseHandler {
         walletNonce: String,
         holderId: String?,
         signatureSuite: String?
-    ) throws -> [FormatType: UnsignedVPToken] {
+    ) async throws -> [FormatType: UnsignedVPToken] {
         if credentialsMap.isEmpty {
             throw InvalidData(
                 message: "Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.",
@@ -62,7 +62,7 @@ public class AuthorizationResponseHandler {
         self.credentialsMap = credentialsMap
         self.walletNonce = walletNonce
 
-        unsignedVPTokens = try createUnsignedVPTokens(
+        unsignedVPTokens = try await createUnsignedVPTokens(
             credentialsMap: credentialsMap,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -218,6 +218,10 @@ public class AuthorizationResponseHandler {
                     case .mso_mdoc:
                         pathNested = nil
                         vpFormat = .mso_mdoc
+                    
+                    case .sdJWT:
+                        pathNested = nil
+                        vpFormat = .dcSdJWT
                     }
 
                     formatTypeToCredentialIndex[credentialFormat] = credentialIndex
@@ -239,7 +243,7 @@ public class AuthorizationResponseHandler {
         responseUri: String,
         holderId: String?,
         signatureSuite: String?
-    ) throws -> [FormatType: [String: Any]] {
+    ) async throws -> [FormatType: [String: Any]] {
         let groupedVcs: [FormatType: [AnyCodable]] = credentialsMap
             .compactMap { $0.value }
             .reduce(into: [FormatType: [AnyCodable]]()) { result, entry in
@@ -281,6 +285,22 @@ public class AuthorizationResponseHandler {
                     mdocGeneratedNonce: walletNonce
                 ).build()
                 result[format] = token
+                
+            case .sdJWT:
+                let sdJwtCreds = try credentialsArray
+                    .map { anyCodable in
+                        guard let str = anyCodable.value as? String else {
+                            throw InvalidData(
+                                message: "SD-JWT credential is not a String",
+                                className: AuthorizationResponseHandler.className
+                            )
+                        }
+                        return str
+                    }
+                let token = try await UnsignedSdJWTVPTokenBuilder(
+                    clientId: authorizationRequest.clientId, authorizationRequestNonce: authorizationRequest.nonce, credentials: sdJwtCreds
+                    ).build()
+                result[format] = token
             }
         }
 
@@ -293,13 +313,13 @@ public class AuthorizationResponseHandler {
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
         walletNonce: String
-    ) throws -> String {
+    ) async throws -> String {
         let transformedCredentials: [String: [FormatType: [AnyCodable]]] = verifiableCredentials.mapValues { credentials in
             let wrapped = credentials.map { AnyCodable($0) }
             return [.ldp_vc: wrapped]
         }
 
-        let unsignedVPToken = try createUnsignedVPToken(
+        let unsignedVPToken = try await createUnsignedVPToken(
             credentialsMap: transformedCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,

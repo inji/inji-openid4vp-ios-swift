@@ -67,7 +67,7 @@ public class OpenID4VP {
         signatureSuite: String? = nil
     ) async throws -> [FormatType: UnsignedVPToken] {
         do {
-            return try authorizationResponseHandler.constructUnsignedVPToken(
+            return try await authorizationResponseHandler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri!,
@@ -171,7 +171,7 @@ public class OpenID4VP {
         verifiableCredentials: [String: [String]]
     ) async throws -> String {
         do {
-            return try authorizationResponseHandler.constructUnsignedVPTokenV1(
+            return try await authorizationResponseHandler.constructUnsignedVPTokenV1(
                 verifiableCredentials: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri!,

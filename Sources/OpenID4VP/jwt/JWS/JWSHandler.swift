@@ -32,6 +32,15 @@ struct JWSHandler {
         }
     }
     
+    static func createUnsignedJWS(header: [String: Any], payload: [String: Any]) throws -> String {
+        do {
+            let headerEncoded = try JSONSerialization.data(withJSONObject: header, options: []).toBase64UrlEncoded()
+            let payloadEncoded = try JSONSerialization.data(withJSONObject: payload, options: []).toBase64UrlEncoded()
+            return "\(headerEncoded).\(payloadEncoded)."
+        } catch {
+            throw GenericFailure(message: "JWS creation failed: \(error.localizedDescription)", className: JWSHandler.className)
+        }
+    }
     
     static func extractDataJsonFromJws(jws: String, jwsPart: JWSPart) throws -> [String:Any] {
         let components = jws.split(separator: ".")

@@ -19,7 +19,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         for holderId in invalidHolderIdTestCases {
-            await XCTAssertAsyncThrowsError(try handler.constructUnsignedVPToken(
+            await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,
@@ -46,7 +46,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         for invalidSignatureSuite in invalidsignatureSuiteTestCases {
-            await XCTAssertAsyncThrowsError(try handler.constructUnsignedVPToken(
+            await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri,
@@ -71,7 +71,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         
-        XCTAssertNoThrowAndVerify(try handler.constructUnsignedVPToken(
+        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -94,7 +94,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         
-        XCTAssertNoThrowAndVerify(try handler.constructUnsignedVPTokenV1(
+        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPTokenV1(
             verifiableCredentials: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -114,7 +114,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         
-        _ = try handler.constructUnsignedVPToken(
+        _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -160,7 +160,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
         ]
         
-        _ = try handler.constructUnsignedVPToken(
+        _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: mockAuthorizationRequest,
             responseUri: responseUri,
@@ -203,7 +203,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     func testShareVPThrowErrorWhenRespectiveCredentialFormatIsNotAvailableInUnsignedVPTokens() async {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
-        _ = try? handler.constructUnsignedVPToken(
+        _ = try? await handler.constructUnsignedVPToken(
             credentialsMap: [:],
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -260,7 +260,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         
-        _ = try handler.constructUnsignedVPToken(
+        _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
             responseUri: responseUri,

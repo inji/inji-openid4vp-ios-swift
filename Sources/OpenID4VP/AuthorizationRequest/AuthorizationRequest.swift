@@ -10,6 +10,7 @@ public struct AuthorizationRequest : Encodable {
     let responseMode: String?
     let nonce: String
     let state: String?
+//    let transactionData: [String]?
     let redirectUri: String?
     let responseUri: String?
     //As per spec, walletNonce is available if post call to request_uri is made with wallet_nonce (optional) in the request body. Library will add wallet_nonce to the request body in case of post call to request_uri.

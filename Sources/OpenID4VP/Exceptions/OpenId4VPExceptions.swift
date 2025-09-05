@@ -327,10 +327,3 @@ public class UnsupportedOperationException : OpenID4VPException {
         super.init(errorCode: "unsupported_operation", message: message, className: className)
     }
 }
-
-
-
-
-
-
-

@@ -45,6 +45,13 @@ class VPTokenFactory {
                 mdocVPTokenSigningResult: mdocResult,
                 credentials: credentialList
             )
+            
+        default:
+            throw UnsupportedOperationException(
+                message: "Unsupported credential format: \(credentialFormat.rawValue)",
+                className: VPTokenFactory.className,
+                code: "UNSUPPORTED_CREDENTIAL_FORMAT"
+            )
         }
     }
 }
