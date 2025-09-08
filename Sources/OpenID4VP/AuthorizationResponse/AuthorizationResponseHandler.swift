@@ -205,7 +205,7 @@ public class AuthorizationResponseHandler {
                     let credentialIndex = (formatTypeToCredentialIndex[credentialFormat] ?? -1) + 1
                     let vpFormat: VPFormatType
                     let pathNested: PathNested?
-
+                    
                     switch credentialFormat {
                     case .ldp_vc:
                         let relativePath = "$.\(LdpVPToken.internalPath)[\(credentialIndex)]"
@@ -218,14 +218,18 @@ public class AuthorizationResponseHandler {
                     case .mso_mdoc:
                         pathNested = nil
                         vpFormat = .mso_mdoc
-                    
-                    case .sdJWT:
+                        
+                    case .dc_sd_jwt:
                         pathNested = nil
-                        vpFormat = .dcSdJWT
+                        vpFormat = .dc_sd_jwt
+                        
+                    case .vc_sd_jwt :
+                        pathNested = nil
+                        vpFormat = .vc_sd_jwt
                     }
-
+                    
                     formatTypeToCredentialIndex[credentialFormat] = credentialIndex
-
+                    
                     return DescriptorMap(
                         id: inputDescriptorId,
                         format: vpFormat,
@@ -286,7 +290,7 @@ public class AuthorizationResponseHandler {
                 ).build()
                 result[format] = token
                 
-            case .sdJWT:
+            case .dc_sd_jwt, .vc_sd_jwt:
                 let sdJwtCreds = try credentialsArray
                     .map { anyCodable in
                         guard let str = anyCodable.value as? String else {
