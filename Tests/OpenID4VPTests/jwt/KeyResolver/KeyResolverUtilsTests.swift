@@ -12,7 +12,7 @@ final class KeyResolverUtilsTests: XCTestCase {
         let multibase = "z\(base58)"
         
         XCTAssertNoThrowAndVerify(try publicKeyFromMultibase(multibase)) { key in
-            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
     
@@ -68,7 +68,7 @@ final class KeyResolverUtilsTests: XCTestCase {
         ]
         
         XCTAssertNoThrowAndVerify(try publicKeyFromJWK(jwk)) { key in
-            assertEdKey(expectedBase64Encoded: "RzT9xmJDacPBzLg1KXMhzjQD+QV77hYykcD3GDPTMKg=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "RzT9xmJDacPBzLg1KXMhzjQD+QV77hYykcD3GDPTMKg=", actualKey: key)
         }
     }
     
@@ -142,7 +142,7 @@ final class KeyResolverUtilsTests: XCTestCase {
         let keyHex = "f20f5dfcc074894da79a06fff4fe037f44d1426e5125399a8849361e4672e691"
         
         XCTAssertNoThrowAndVerify(try publicKeyFromHex(keyHex)) { key in
-            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key!)
+            assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key!)
         }
     }
     
@@ -155,7 +155,7 @@ final class KeyResolverUtilsTests: XCTestCase {
         
         XCTAssertNoThrowAndVerify( try publicKeyFromPEM(pem)) {
             key in
-            assertEdKey(expectedBase64Encoded: "f20f5dfcc074894da79a06fff4fe037f44d1426e510=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "f20f5dfcc074894da79a06fff4fe037f44d1426e510=", actualKey: key)
         }
     }
     

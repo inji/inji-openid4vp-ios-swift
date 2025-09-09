@@ -13,7 +13,7 @@ final class DidKeyResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: validDidKey, method: .key, id: "z6MkkXReNrZa6qLkqnQcffhNPEK1SJvJoK1cRezKEWnJ8PuS", didUrl: validDidKey)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID: parsedDid, keyId: validDidKey)){ key in
-            assertEdKey(expectedBase64Encoded: "WjdMndEkwsijxJeYqZGSaYeNiILXtlYPW8H9ZDqTjQE=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "WjdMndEkwsijxJeYqZGSaYeNiILXtlYPW8H9ZDqTjQE=", actualKey: key)
         }
     }
     
@@ -55,7 +55,7 @@ final class DidKeyResolverTests: XCTestCase {
         let parsedDid = ParsedDID(did: validDidKey, method: .key, id: "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK", didUrl: validDidKey, fragment: "key-1")
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID: parsedDid, keyId: validDidKey)) { key in
-            assertEdKey(expectedBase64Encoded: "Lm/M42cB3HkUiODQsXRcweM6TByfzEHGO9ND274JcOY=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "Lm/M42cB3HkUiODQsXRcweM6TByfzEHGO9ND274JcOY=", actualKey: key)
         }
     }
 }

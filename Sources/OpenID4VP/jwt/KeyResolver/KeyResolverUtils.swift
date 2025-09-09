@@ -193,6 +193,54 @@ func toEd25519Key(publicKeyData: Data) throws -> PublicKeyType {
     }
 }
 
+internal func toEdPublicKey(jwk: JWK) throws -> PublicKeyType {
+    guard jwk.curve == .ed25519 else {
+        throw PublicKeyResolutionFailed(
+            message: "Curve - \(jwk.curve?.rawValue ?? "") is not supported. Supported: Ed25519",
+            className: className
+        )
+    }
+    
+    guard let publicKeyData = jwk.x else {
+        throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: className)
+    }
+    
+    return try toEd25519Key(publicKeyData: publicKeyData)
+}
+
+internal func toECPublicKey(jwk: JWK) throws -> PublicKeyType {
+    guard jwk.curve == .p256 else {
+        throw PublicKeyResolutionFailed(
+            message: "Curve - \(jwk.curve?.rawValue ?? "") is not supported. Supported: P-256",
+            className: className
+        )
+    }
+    
+    guard let xData = jwk.x, let yData = jwk.y else {
+        throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: className)
+    }
+    
+    var keyData = Data([0x04])
+    keyData.append(xData)
+    keyData.append(yData)
+    
+    let attributes: [String: Any] = [
+        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+        kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+        kSecAttrKeySizeInBits as String: 256
+    ]
+    
+    var error: Unmanaged<CFError>?
+    guard let secKey = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, &error) else {
+        throw PublicKeyResolutionFailed(
+            message: "Public key creation failed: \(error?.takeRetainedValue().localizedDescription ?? "unknown error")",
+            className: className
+        )
+    }
+    
+    return .secKey(secKey)
+}
+
 func extractSigningAlgorithm(from publicKey : PublicKeyType) -> String {
     switch publicKey {
     case .ed25519(_):
@@ -203,23 +251,17 @@ func extractSigningAlgorithm(from publicKey : PublicKeyType) -> String {
 }
 
 func jwkToPublicKey(_ jwk: JWK, className: String) throws -> PublicKeyType {
-    guard jwk.keyType == .octetKeyPair else {
+    switch jwk.keyType {
+    case .octetKeyPair:
+        return try toEdPublicKey(jwk: jwk)
+        
+    case .ellipticCurve:
+        return try toECPublicKey(jwk: jwk)
+        
+    default:
         throw PublicKeyResolutionFailed(
-            message: "Public key extraction failed - KeyType - \(jwk.keyType.rawValue) is not supported. Supported: OKP",
+            message: "KeyType - \(jwk.keyType.rawValue) is not supported. Supported: OKP, EC",
             className: className
         )
     }
-
-    guard jwk.curve == .ed25519 else {
-        throw PublicKeyResolutionFailed(
-            message: "Public key extraction failed - Curve - \(jwk.curve?.rawValue ?? "") is not supported. Supported: Ed25519",
-            className: className
-        )
-    }
-
-    guard let publicKeyData = jwk.x else {
-        throw PublicKeyResolutionFailed(message: "Public key extraction failed - Invalid base64url encoding for public key data", className: className)
-    }
-
-    return try toEd25519Key(publicKeyData: publicKeyData)
 }
