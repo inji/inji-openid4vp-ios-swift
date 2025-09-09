@@ -89,7 +89,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             } catch {
                 throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
             }
-            try await validateRequestUriResponse(response)
+            try await validateRequestUriResponse(response, httpMethod: httpMethod)
         } else {
             guard (delegate.isRequestObjectSupported()) else {
                 throw InvalidData(
@@ -100,7 +100,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         }
     }
     
-    private func validateRequestUriResponse(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)) async throws {
+    private func validateRequestUriResponse(_ requestUriResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse), httpMethod: HttpMethod) async throws {
         guard isJWS(requestUriResponse.responseBody) else {
             throw InvalidData(
                 message: "Authorization Request Object must be a signed JWT", className: className)
@@ -110,8 +110,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         try await validateJWTRequest(jwtRequest)
         
         let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .payload)
-        let requestUriMethod = try requestUriMethod()
-        if(requestUriMethod == .post){
+        if(httpMethod == .post){
             try validateWalletNonce(authorizationRequestObject, walletNonce)
         }
         
