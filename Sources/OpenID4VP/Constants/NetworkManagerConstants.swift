@@ -10,7 +10,6 @@ enum Header : String {
 
 
 public enum ContentTypes : String {
-    case applicationJson = "application/json"
     case applicationJwt = "application/oauth-authz-req+jwt"
     case applicationFormUrlEncoded = "application/x-www-form-urlencoded"
 }
