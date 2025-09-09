@@ -293,6 +293,7 @@ public class AuthorizationResponseHandler {
         for (format, credentialsArray) in groupedVcs {
             switch format {
             case .ldp_vc:
+                //TODO: Add unit test for this
                 guard let holderId = holderId else {
                     throw InvalidData(
                         message: "Holder ID cannot be null for LDP VC format",
@@ -302,7 +303,6 @@ public class AuthorizationResponseHandler {
                 let token = UnsignedLdpVPTokenBuilder(
                     verifiableCredential: credentialsArray,
                     id: UUIDGenerator.generateUUID(),
-//                    TODO: check if not present and error out
                     holder: holderId,
                     challenge: authorizationRequest.nonce,
                     domain: authorizationRequest.clientId,

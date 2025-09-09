@@ -94,7 +94,7 @@ func hashData(_ data: String, hashAlgorithm: String, className: String) throws -
         throw UTF8EncodingFailed(fieldPath: "hashInput", className: className)
     }
     
-    let algorithm = HashAlgorithm(rawValue: hashAlgorithm.lowercased())
+    let algorithm = HashAlgorithm(rawValue: hashAlgorithm)
     
     switch algorithm {
     case .sha256:

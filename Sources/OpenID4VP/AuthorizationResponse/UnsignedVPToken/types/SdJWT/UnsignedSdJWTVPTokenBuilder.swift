@@ -44,8 +44,8 @@ struct UnsignedSdJWTVPTokenBuilder : UnsignedVPTokenBuilder {
                 "typ": keyBindingJWT
             ]
             
-            let sdHashAlgorithm = sdJWTPayload["_sd_alg"] as? String ?? "SHA-256"
-            let sdHash = try hashData(credential, hashAlgorithm: sdHashAlgorithm, className: Self.className)
+            let sdHashAlgorithm = sdJWTPayload["_sd_alg"] as? String ?? HashAlgorithm.sha256.rawValue
+            let sdHash = try hashData(credential, hashAlgorithm: sdHashAlgorithm, className: Self.className).toBase64UrlEncoded()
             
             let jwtPayload : [String: Any] = [
                 "iat": Int(Date().timeIntervalSince1970),
