@@ -27,7 +27,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
-        fatalError("redirect_uri scheme does not support signed Authorization Request")
+        throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_scheme", className: className)
     }
     
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
