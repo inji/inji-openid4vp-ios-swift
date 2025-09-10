@@ -37,7 +37,7 @@ struct JWSHandler {
             let headerEncoded = try JSONSerialization.data(withJSONObject: header, options: []).toBase64UrlEncoded()
             let payloadJson = try JSONSerialization.data(withJSONObject: payload, options: [])
             let payloadEncoded = payloadJson.toBase64UrlEncoded()
-            return "\(headerEncoded).\(payloadEncoded)."
+            return "\(headerEncoded).\(payloadEncoded)"
         } catch {
             throw GenericFailure(message: "JWS creation failed: \(error.localizedDescription)", className: JWSHandler.className)
         }
