@@ -285,4 +285,3 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
     ]
     return data
 }
-

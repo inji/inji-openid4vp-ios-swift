@@ -151,6 +151,9 @@ public class AuthorizationResponseHandler {
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
+        
+        // check - match the vpTokenSigningResults with unsignedVPTokens specific to format
+        
 
         var count = 0
         for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
@@ -172,7 +175,7 @@ public class AuthorizationResponseHandler {
                                 className: AuthorizationResponseHandler.className
                             )
                         }(),
-                        unsignedVPTokens: unsignedVPTokens[credentialFormat]?["unsignedVPTokens"] ?? {
+                        unsignedVPTokens: unsignedVPTokens[credentialFormat]?["unsignedVPToken"] ?? {
                             throw InvalidData(
                                 message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
                                 className: AuthorizationResponseHandler.className

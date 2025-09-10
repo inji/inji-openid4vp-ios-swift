@@ -62,29 +62,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
     
-    func testConstructUnsignedVPTokenSuccess() async throws {
-        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
-            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
-            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
-        ]
-        
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
-        
-        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
-            credentialsMap: verifiableCredentials,
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri,
-            holderId: holderId,
-            signatureSuite: signatureSuite,
-            walletNonce: walletNonce
-        )) { result in
-            XCTAssertTrue(result.keys.contains(.ldp_vc))
-            XCTAssertTrue(result.keys.contains(.mso_mdoc))
-        }
-        
-    }
-    
     
     func testConstructUnsignedVPTokenV1Success() async throws {
         let verifiableCredentials: [String: [String]] = [
@@ -313,4 +290,119 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             strict: false
         )
     }
+    
+    //MARK: Credential format = SD-JWT
+    
+    func testCreationOfUnsignedVPTokenWithSdJwtFormatSuccess() async throws {
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+        
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest()
+        
+        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )) { result in
+            XCTAssertTrue(result.keys.count == 1)
+            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
+            XCTAssertTrue((result.values.first as? UnsignedSdJWTVPToken)?.uuidToUnsignedKBT.count == 1)
+        }
+    }
+    
+    func testSharingOfSdJwtWithHolderBindingSuccess() async throws {
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+        
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest()
+        let unsignedVpTokens = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+        
+        let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys.first!
+        let result = try await handler.shareVP(authorizationRequest: authorizationRequest, vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])], responseUri: responseUri)
+        
+        
+        XCTAssertEqual(result, "sending is success in AuthorizationResponseTests")
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
+        XCTAssertEqual(recordedRequest.requestBody?["state"] as? String, state)
+        let presentationSubmission: String? = recordedRequest.requestBody?["presentation_submission"]
+        XCTAssertNotNil(presentationSubmission)
+        XCTAssertEqual(recordedRequest.requestBody?.keys.count, 3)
+         
+    }
+            
+    
+    //MARK: Credential format = All supported credential formats combination
+    
+    func testConstructUnsignedVPTokenSuccess() async throws {
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+            "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+        
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest()
+        
+        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )) { result in
+            XCTAssertTrue(result.keys.contains(.ldp_vc))
+            XCTAssertTrue(result.keys.contains(.mso_mdoc))
+            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
+            XCTAssertTrue(result.keys.contains(.dc_sd_jwt))
+        }
+        
+    }
 }
+
+
+/**
+ sdjwt1 (holder binding), sdjwt2 (no holder binding)
+ 
+unsigned vp token [uuid1: sdjwt1kbjwtUnsigned]
+ credentials [uuid1: sdjwt1, uuid2: sdjwt2]
+ 
+
+ 
+ consumer send the result
+ vpTokenSigningResults [uuid1:  kbJwtSigned]
+ vpTokenSigningResults [:]
+ 
+iterate credentials
+    for each uuid check if unsigned is available in unsigned vp token
+        if available, then add the signed version to vp token
+        else dont attach
+ 
+ 
+ sdjwtx (no holder binding)
+ unsigned vp token [:]
+  credentials [uuid1: sdjwtx]
+ 
+ result of method -> [sd-jwt : SdJwtUnsignedVpToken(uuidtoUnsignedKBT([:]))] // as long as credentials have sd-jwt there will be     SdJwtUnsignedVpToken   entry in the map (having uuidtoUnsignedKBT depends on holder binding) & consumer should send the sdjwt vptoken signing result back with info (info can be empty map or element based on the unsigned vp token input)
+ 
+    consumer send the result
+    vpTokenSigningResults [:]
+ 
+ */
+
