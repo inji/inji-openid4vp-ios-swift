@@ -29,7 +29,7 @@ struct UnsignedSdJWTVPTokenBuilder : UnsignedVPTokenBuilder {
             let sdJWTPayload = try JWSHandler.extractDataJsonFromJws(jws: String(sdJWT), jwsPart: .payload)
             
             guard let confirmationKeyClaim = sdJWTPayload["cnf"] as? [String: Any], !confirmationKeyClaim.isEmpty else {
-                throw InvalidData(message: "cnf missing or empty in sdJWT", className: Self.className)
+                continue
             }
             
             var jwtSigningALgorithm: String = ""

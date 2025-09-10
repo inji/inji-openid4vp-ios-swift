@@ -29,7 +29,7 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
                 throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
             }
             
-            let sdJwtVpTokenValue = "\(sdJwtCredential)~\(unsignedKBJwt).\(signature)"
+            let sdJwtVpTokenValue = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
             
             return SdJwtVPToken(value: sdJwtVpTokenValue)
         } else {

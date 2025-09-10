@@ -342,7 +342,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let presentationSubmission: String? = recordedRequest.requestBody?["presentation_submission"]
         XCTAssertNotNil(presentationSubmission)
         XCTAssertEqual(recordedRequest.requestBody?.keys.count, 3)
-         
     }
             
     
