@@ -8,8 +8,15 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     for verifierData in verifierList {
         if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId.rawValue] as? String,
            let responseUris = verifierData["response_uris"] as? [String] {
-            let verifier = Verifier(clientId: clientId, responseUris: responseUris)
-            verifiers.append(verifier)
+            if verifierData["client_metadata"] == nil {
+                let verifier = Verifier(clientId: clientId, responseUris: responseUris)
+                verifiers.append(verifier)
+            } else {
+                let clientMetadataData = verifierData["client_metadata"] as! [String: Any]
+                let clientMetadata = createInstance(clientMetadataData, as: ClientMetadata.self)
+                let verifier = Verifier(clientId: clientId, responseUris: responseUris, clientMetadata: clientMetadata)
+                verifiers.append(verifier)
+            }
         }
     }
     
@@ -86,14 +93,9 @@ func createAuthorizationRequestObject(
     
     let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
-//    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
+    //    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
     
-    switch clientIdScheme {
-    case .did:
-        return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
-    default:
-        return convertToJsonString(authorizaitonRequestParameters as [String : Any])
-    }
+    return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
 }
 
 
@@ -183,9 +185,8 @@ func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
     return (try? decoder.decode(T.self, from: jsonData!))!
 }
 
-func createNetworkResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {
-    let url = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
-    let defaultHttpUrlResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "", headerFields: [Header.contentType.rawValue: "application/json"])!
+func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {    
+    let defaultHttpUrlResponse = httpUrlResponseForJWS
     let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
     
     return (body: body, httpUrlResponse: modifiedResponse)

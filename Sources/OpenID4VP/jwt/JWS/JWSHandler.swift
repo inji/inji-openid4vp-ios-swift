@@ -6,12 +6,8 @@ import Base58Swift
 struct JWSHandler {
     static let className = String(describing: JWSHandler.self)
     
-    static func verify(jws: String, publicKeyResolver: PublicKeyResolver, verificationMethodUri: String) async throws {
+    static func verify(jws: String, publicKey: PublicKeyType) async throws {
         do {
-            let header = try extractDataJsonFromJws(jws: jws, jwsPart: .header)
-            
-            let publicKey = try await publicKeyResolver.resolve(uri: verificationMethodUri, keyId: header["kid"] as? String)
-            
             let jws = try JWS(jwsString: jws)
             
             switch publicKey {

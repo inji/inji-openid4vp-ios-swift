@@ -25,8 +25,6 @@ func validateAttribute(
 }
 
 func validateAuthorizationRequestObjectAndParameters(params: [String: String], requestUriParams: [String: Any]) throws {
-    
-    
     guard params[AuthorizationRequestFieldConstants.clientId.rawValue] == requestUriParams[AuthorizationRequestFieldConstants.clientId.rawValue] as? String else {
         throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }
@@ -198,12 +196,5 @@ func validateResponseTypeSupported(_ responseType: String) throws {
             message: "response type - \(responseType) is not supported",
             className: AuthorizationRequest.className
         )
-    }
-}
-
-func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
-    let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
-    if walletNonce != walletNonceFromAuthorizationRequest {
-        throw InvalidData(message: "wallet_nonce provided in the authorization request is not the same as shared by wallet", className: AuthorizationRequest.className)
     }
 }

@@ -119,7 +119,6 @@ func assertDictionariesEqual(expected: [String: Any], actual: [String: Any]?, fi
     }
     
     if strict {
-        //TODO: add containsAll check to enhance assertion
         XCTAssertEqual(expected.count, actualDict.count, "Dictionary sizes are different", file: file, line: line)
     }
     

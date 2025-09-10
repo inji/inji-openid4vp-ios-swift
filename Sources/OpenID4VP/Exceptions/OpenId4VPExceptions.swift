@@ -155,8 +155,8 @@ class KidExtractionFailed: OpenID4VPException {
 }
 
 class PublicKeyResolutionFailed: OpenID4VPException {
-    init(message: String, className: String) {
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    init(message: String, className: String, code: String = OpenID4VPErrorCodes.invalidRequest) {
+        super.init(errorCode: code, message: message, className: className)
     }
 }
 
@@ -322,6 +322,11 @@ public class InvalidTransactionData: OpenID4VPException {
     }
 }
 
+public class UnsupportedOperationException : OpenID4VPException {
+    public init(message: String, className: String) {
+        super.init(errorCode: "unsupported_operation", message: message, className: className)
+    }
+}
 
 
 

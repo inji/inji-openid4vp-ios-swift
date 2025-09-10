@@ -14,7 +14,7 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
         self.networkManager = networkManager
     }
     
-    func extractPublicKey(parsedDID: ParsedDID, keyId: String) async throws -> PublicKeyType {
+    func extractPublicKey(parsedDID: ParsedDID, keyId: String? = nil) async throws -> PublicKeyType {
         let decodedBytes = try decodeMultibase(parsedDID.id)
         
         guard decodedBytes.count == Self.keySize,

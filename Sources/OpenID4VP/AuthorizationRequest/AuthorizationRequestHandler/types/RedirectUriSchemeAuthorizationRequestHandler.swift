@@ -13,45 +13,21 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         delegate = self
         super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
-    
-    func validateRequestUriResponse(requestUriResponse:  (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
-        if (isMismatchedAcceptableType) {
-            throw InvalidData(
-                message: "Authorization Request must not be signed for given client_id_scheme",
-                className: className
-            )
-        }
-        if let requestUriResponse = requestUriResponse {
-            let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
-            if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {
-                throw InvalidData(
-                    message: "Authorization Request must not be signed for given client_id_scheme",
-                    className: className
-                )
-            }
-            guard let responseBody = requestUriResponse.body.data(using: .utf8) else {
-                throw InvalidData(
-                    message: "Conversion failed",
-                    className: className
-                )
-            }
-            guard let authorizationRequestObject = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
-                throw InvalidData(
-                    message: "Conversion failed",
-                    className: className
-                )
-            }
-            
-            // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
-            let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
-            if( requestUriMethod == .post) {
-                try validateWalletNonce(authorizationRequestObject, walletNonce)
-            }
 
-            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
-            
-            self.authorizationRequestParameters = authorizationRequestObject
-        }
+    func clientIdScheme() -> String {
+        return ClientIdScheme.redirectUri.rawValue
+    }
+    
+    func isRequestUriSupported() -> Bool {
+        return false
+    }
+    
+    func isRequestObjectSupported() -> Bool {
+        return true
+    }
+    
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
+        throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_scheme", className: className)
     }
     
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
@@ -59,12 +35,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
         return updatedWalletMetadata
     }
-    
-    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-                Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
-    }
-    
+
     override func validateAndParseRequestFields()async throws {
         try await super.validateAndParseRequestFields()
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])

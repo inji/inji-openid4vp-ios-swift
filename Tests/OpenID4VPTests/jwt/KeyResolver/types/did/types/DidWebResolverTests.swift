@@ -216,6 +216,30 @@ final class DidWebResolverTests: XCTestCase {
             assertOpenID4VPException(error, expectedMessage: "Conversion failed: resolved DID response is not a valid JSON object", expectedCode: "invalid_request")
         }
     }
+    
+    func testSuccessfulResolvingKeyIdAsNull() async throws {
+        let didDocJSON = """
+        {
+            "id": "did:web:example.com",
+            "verificationMethod": [{
+                "id": "did:web:example.com#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyHex": "f20f5dfcc074894da79a06fff4fe037f44d1426e5125399a8849361e4672e691"
+            }]
+        }
+        """
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON
+        )
+        
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
+        
+        await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: nil)) { key in
+            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
+        }
+    }
 
 //  verification material -> publicKeyMultibase
     

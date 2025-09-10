@@ -58,7 +58,7 @@ class OpenID4VPTests: XCTestCase {
             let jsonData = try JSONEncoder().encode(decoded)
             let authorizationRequestJsonString = String(decoding: jsonData, as: UTF8.self)
 
-            assertJsonString(expected: "{\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_type\":\"vp_token\",\"redirect_uri\":null,\"client_metadata\":{\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"client_name\":\"Requester name\",\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\"]}},\"authorization_encrypted_response_alg\":\"ECDH-ES\",\"jwks\":{\"keys\":[{\"kty\":\"OKP\",\"use\":\"enc\",\"kid\":\"ed-key1\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"alg\":\"ECDH-ES\",\"crv\":\"X25519\"}]}},\"presentation_definition\":{\"input_descriptors\":[{\"purpose\":\"To verify identity using Linked Data Proofs\",\"id\":\"input_1\",\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"name\":\"Verifiable Credential\"}],\"id\":\"vp_presentation_definition\"},\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"response_mode\":\"direct_post\"}", actual: authorizationRequestJsonString)
+            assertJsonString(expected: "{\"redirect_uri\":null,\"client_id\":\"redirect_uri:https:\\/\\/mock-verifier.com\",\"response_uri\":\"https:\\/\\/mock-verifier.com\",\"nonce\":\"VbRRB\\/LTxLiXmVNZuyMO8A==\",\"response_type\":\"vp_token\",\"state\":\"+mRQe1d6pBoJqF6Ab28klg==\",\"response_mode\":\"direct_post\",\"presentation_definition\":{\"id\":\"vp_presentation_definition\",\"input_descriptors\":[{\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"filter\":{\"pattern\":\"@gmail.com\",\"type\":\"string\"}}]},\"name\":\"Verifiable Credential\",\"format\":{\"ldp_vc\":{\"proof_type\":[\"Ed25519Signature2018\",\"RsaSignature2018\"]}},\"id\":\"input_1\",\"purpose\":\"To verify identity using Linked Data Proofs\"}]},\"client_metadata\":{\"authorization_encrypted_response_enc\":\"A256GCM\",\"vp_formats\":{\"ldp_vp\":{\"proof_type\":[\"Ed25519Signature2018\",\"Ed25519Signature2020\"]}},\"jwks\":{\"keys\":[{\"kid\":\"ed-key1\",\"crv\":\"X25519\",\"kty\":\"OKP\",\"alg\":\"ECDH-ES\",\"x\":\"BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4\",\"use\":\"enc\"},{\"kid\":\"ed-key2\",\"crv\":\"Ed25519\",\"kty\":\"OKP\",\"alg\":\"EdDSA\",\"x\":\"5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc\",\"use\":\"sig\"}]},\"client_name\":\"Requester name\",\"logo_uri\":\"https:\\/\\/mock-verifier.com\\/logo\",\"authorization_encrypted_response_alg\":\"ECDH-ES\"}}", actual: authorizationRequestJsonString)
         } catch {
             XCTFail("Should not get error but got error - \(error)")
         }
@@ -86,16 +86,18 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = pre-registered
     func testReturnDataForValidRequestWithResponseUri() async {
-        let decoded: Any?
-
-        do {
-            decoded = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        } catch {
-            decoded = nil
-            XCTFail("Should not get error but got error - \(error)")
+        let requestUriResponse = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdDraft23), applicableFields: authRequestWithPreRegisteredByValueDraft23)
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (requestUriResponse, httpUrlResponseForJWS))
+        
+        await XCTAssertNoThrowAndVerifyAsync(
+            try await openID4VP.authenticateVerifier(
+                urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
+                trustedVerifierJSON: preRegisteredVerifiers,
+                shouldValidateClient: true
+            )
+        ) { authorizationRequest in
+            XCTAssertEqual(authorizationRequest.clientId, "mock-client")
         }
-        XCTAssertTrue(decoded is AuthorizationRequest, "decodedResponse should be an instance of AuthenticationResponse")
-        XCTAssertTrue(decoded != nil, "decodedResponse should not be null")
     }
 
     //client_id_scheme = pre-registered, validation of client via shouldValidateClient
@@ -211,7 +213,7 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = did
     func testReturnDataForValidRequestWithDid() async {
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (validJwtResponse, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (validJwtResponse, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
 
         let decodedAuthorizationRequest: Any?
@@ -237,29 +239,24 @@ class OpenID4VPTests: XCTestCase {
             responseBody: didResponse
         )
 
-        let result = await Task {
-            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        }.result
-        switch result {
-        case .failure(let error):
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)){ error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "JWS proof verification failed",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
+                expectedMessage: "Request URI response validation failed - JWS proof verification failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
-        case .success:
-            XCTFail("Expected proof verification failure, but got success")
         }
     }
 
 
     // jwt -> client_id_scheme = did, Mismatching clientId's in QR data and Request Uri response
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
-               mockNetworkManager.setMockResponse(
-                   for: "https://mock-verifier.com/verifier/get-auth-request-obj",
-                   response: (validJwtResponse, httpUrlResponseForJWS)
-               )
-               mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
+        mockNetworkManager.setMockResponse(
+            for: requestUri.absoluteString,
+//            responseBody: createRequestUriResponse(validJwtResponse)
+            response: (validJwtResponse, httpUrlResponseForJWS)
+        )
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
 
         let result = await Task {
             try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInValidSignedVPRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
@@ -282,20 +279,15 @@ class OpenID4VPTests: XCTestCase {
     func testThrowErrorIfKidExtractionFailedFromJws() async {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (invalidJwtResponseWithoutKid, httpUrlResponseForJWS))
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
-
-        let result = await Task {
-            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        }.result
-
-        switch result {
-        case .failure(let error):
+        
+        
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)) {
+            error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Kid extraction from did document failed",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
+                expectedMessage: "Request URI response validation failed - keyId is required to extract public key in did client_id_scheme",
+                expectedCode: OpenID4VPErrorCodes.invalidRequestObject
             )
-        case .success:
-            XCTFail("Expected OpenID4VPException but got success response")
         }
     }
 
@@ -474,5 +466,47 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertEqual(requestBody["error_description"], "Some Error Message")
         XCTAssertNotNil(requestBody["state"], "Expected 'state' to be present in the request body")
         XCTAssertEqual(requestBody["state"], "+mRQe1d6pBoJqF6Ab28klg==")
+    }
+    
+    
+    func testResetOfOpenID4VPFields() async throws {
+        let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (validJwtResponse, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        
+        // first call
+        _ = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        let firstMirror = Mirror(reflecting: openID4VP as Any)
+        let firstResponseUri = firstMirror.children.first(where: { $0.label == "responseUri" })?.value as? String
+        let firstAuthorizationRequest = firstMirror.children.first(where: { $0.label == "authorizationRequest" })?.value as? AuthorizationRequest
+        XCTAssertNotNil(firstResponseUri, "responseUri should not be nil after first authenticateVerifier call")
+        XCTAssertNotNil(firstAuthorizationRequest, "authorizedRequest should not be nil after first authenticateVerifier call")
+        
+        // second call
+        // clear all mock responses and set only those required for the second call
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(
+            for: "https://mock-verifier.com/verifier/get-auth-request-obj",
+            response: (invalidJwtResponse, httpUrlResponseForJWS)
+        )
+        mockNetworkManager.setMockResponse(
+            for: didDocumentUrl,
+            responseBody: didResponse
+        )
+
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidSignedVPRequestWithDid, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)){ error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Request URI response validation failed - JWS proof verification failed",
+                expectedCode: OpenID4VPErrorCodes.invalidRequestObject
+            )
+        }
+        let secondMirror = Mirror(reflecting: openID4VP as Any)
+        let secondResponseUri = secondMirror.children.first(where: { $0.label == "responseUri" })?.value as? String
+        let secondAuthorizationRequest = secondMirror.children.first(where: { $0.label == "authorizationRequest" })?.value as? AuthorizationRequest
+        XCTAssertNil(secondResponseUri, "responseUri should be nil after second authenticateVerifier call which throws error")
+        XCTAssertNil(secondAuthorizationRequest, "authorizedRequest should be nil after second authenticateVerifier call which throws error")
+        // No error to verifier to be sent as no response uri is available
+        XCTAssertTrue(mockNetworkManager.recordedRequests.count == 2, "No requests should be recorded as responseUri is nil" )
     }
 }

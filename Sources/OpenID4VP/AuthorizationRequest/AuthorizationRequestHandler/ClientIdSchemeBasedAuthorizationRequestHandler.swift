@@ -2,9 +2,11 @@ import Foundation
 
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
-    func getHeadersForAuthorizationRequestUri() -> [String: String]?
+    func isRequestUriSupported() -> Bool
+    func isRequestObjectSupported() -> Bool
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
+    func clientIdScheme() -> String
 }
 
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
@@ -16,9 +18,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     let networkManager: NetworkManaging
     var shouldValidateWithWalletMetadata: Bool = false
     var className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
-
+    
     let errorMessageForMismatchedAcceptableType: String = "does not match any acceptable types"
-
+    
     init(authorizationRequestParameters: [String: Any],
          walletMetadata: WalletMetadata?,
          setResponseUri: @escaping (String) -> Void,
@@ -30,15 +32,20 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         self.walletMetadata = walletMetadata
         self.walletNonce = walletNonce
     }
-
+    
     func validateClientId() throws {
         return
     }
-
+    
     func fetchAuthorizationRequest() async throws{
-        var isMismatchedAcceptableType : Bool = false
-        var requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)? = nil
         if let requestUri = authorizationRequestParameters["request_uri"] as? String {
+            guard (delegate.isRequestUriSupported()) else {
+                throw InvalidData(
+                    message: "request_uri is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                    className: className
+                )
+            }
+            
             if !isNeitherNullNorEmpty(field: requestUri) || (requestUri == "null") {
                 throw InvalidInput(fieldPath: ["requestUri"], className: className)
             }
@@ -49,13 +56,12 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     className: className
                 )
             }
-
-            let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
-            let httpMethod = try determineHttpMethod(method: requestUriMethod)
-
+            
+            let httpMethod = try requestUriMethod()
+            
             var body: [String: String]? = nil
             var headers: [String: String]? = nil
-
+            
             if httpMethod == .post {
                 body = [:]
                 body?["wallet_nonce"] = walletNonce
@@ -64,52 +70,112 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
                     let extractedExpr: String = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
                     body?["wallet_metadata"] = extractedExpr
-                    headers = delegate.getHeadersForAuthorizationRequestUri()
+                    headers = [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+                               Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
                     shouldValidateWithWalletMetadata = true
                 }
             }
-          do{
-                let response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-
-                requestUriResponse = (response.responseBody, response.httpUrlResponse)
-            } catch let error as NetworkRequestException {
-                isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
+            var response:  (responseBody: String, httpUrlResponse: HTTPURLResponse)
+            do{
+                response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+            }
+            catch let error as NetworkRequestException {
+                let isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
+                if(isMismatchedAcceptableType){
+                    throw InvalidData(
+                        message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
+                }
+                throw GenericFailure(message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
+            } catch {
+                throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
+            }
+            try await validateRequestUriResponse(response.responseBody, httpMethod: httpMethod)
+        } else {
+            guard (delegate.isRequestObjectSupported()) else {
+                throw InvalidData(
+                    message: "request object is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                    className: className
+                )
             }
         }
-        try await delegate.validateRequestUriResponse(requestUriResponse: requestUriResponse, walletNonce: self.walletNonce, isMismatchedAcceptableType: isMismatchedAcceptableType)
     }
+    
+    private func validateRequestUriResponse(_ requestUriResponse: String, httpMethod: HttpMethod) async throws {
+        guard isJWS(requestUriResponse) else {
+            throw InvalidData(
+                message: "Authorization Request Object must be a signed JWT", className: className)
+        }
+        
+        try await validateJWTRequest(requestUriResponse)
+        
+        let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: requestUriResponse, jwsPart: .payload)
+        if(httpMethod == .post){
+            try validateWalletNonce(authorizationRequestObject, walletNonce)
+        }
+        
+        try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
+        
+        self.authorizationRequestParameters = authorizationRequestObject
+    }
+    
+    // If the key is not associated with the client or if signature validation fails, error code = invalid_request_object
+    private func validateJWTRequest(_ jwtRequest: String) async throws {
+        do {
+            let header:  [String : Any]
+            do {
+                header = try JWSHandler.extractDataJsonFromJws(jws: jwtRequest, jwsPart: .header)
+            } catch {
+                throw VerificationFailure(
+                    message: "JWS header extraction failed: \(error.localizedDescription)",
+                    className: String(describing: type(of: self))
+                )
+            }
 
+            
+            guard let algorithm = header["alg"] as? String else {
+                throw InvalidData(message: "alg is not present in JWS header", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
+            }
+            
+            try validateAuthorizationRequestSigningAlgorithm(algorithm)
+            
+            let publicKey = try await delegate.extractPublicKey(keyId: header["kid"] as? String, algorithm: algorithm)
+            try await JWSHandler.verify(jws: jwtRequest , publicKey: publicKey)
+        } catch {
+            throw InvalidData(message: "Request URI response validation failed - \(error.localizedDescription)", className: className, code: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
+    
     func validateAndParseRequestFields() async throws {
         let mandatoryFields = [AuthorizationRequestFieldConstants.responseType.rawValue,AuthorizationRequestFieldConstants.nonce.rawValue]
-
+        
         for field in mandatoryFields {
             try validateAttribute(field, values: authorizationRequestParameters)
         }
         
         try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue] as? String)!)
-
+        
         let optionalFields = [AuthorizationRequestFieldConstants.state.rawValue, AuthorizationRequestFieldConstants.responseMode.rawValue]
         for field in optionalFields {
             if (authorizationRequestParameters[field] != nil){
                 try validateAttribute(field, values: authorizationRequestParameters)
             }
         }
-
+        
         authorizationRequestParameters = try parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
-
+        
         let presentationDefinitionUriSupported = !shouldValidateWithWalletMetadata || walletMetadata?.presentationDefinitionURISupported ?? true
-
+        
         authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, presentationDefinitionUriSupported, networkManager)
     }
-
+    
     final func setResponseUrl() throws {
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
-
+        
         try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
     }
-
+    
     private func isClientIdSchemeSupported(walletMetadata: WalletMetadata) throws {
-        let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+        let clientIdScheme = delegate.clientIdScheme()
         let walletSupportedClientIdSchemes = walletMetadata.clientIdSchemesSupported.compactMap { $0.rawValue }
         if !walletSupportedClientIdSchemes.contains(clientIdScheme) {
             throw InvalidData(
@@ -118,7 +184,32 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             )
         }
     }
-
+    
+    private func validateAuthorizationRequestSigningAlgorithm(_ algorithm: String) throws {
+        if shouldValidateWithWalletMetadata, let walletMetadata = walletMetadata {
+            if let supportedAlgs = walletMetadata.requestObjectSigningAlgValuesSupported?.compactMap({$0.rawValue}) ,
+               !supportedAlgs.contains(algorithm) {
+                throw InvalidData(
+                    message: "request_object_signing_alg is not supported by wallet",
+                    className: className
+                )
+            }
+        }
+    }
+    
+    private func requestUriMethod() throws -> HttpMethod {
+        let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
+        let httpMethod = try determineHttpMethod(method: requestUriMethod)
+        return httpMethod
+    }
+    
+    private func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
+        let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
+        if walletNonce != walletNonceFromAuthorizationRequest {
+            throw InvalidData(message: "wallet_nonce provided in the authorization request is not the same as shared by wallet", className: AuthorizationRequest.className)
+        }
+    }
+    
     final func createAuthorizationRequest() -> AuthorizationRequest {
         return AuthorizationRequest(
             clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,

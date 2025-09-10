@@ -40,6 +40,10 @@ public class OpenID4VP {
     ) async throws -> AuthorizationRequest {
         // Create a new wallet nonce for each request
         self.walletNonce = nonceProvider.generateNonce()
+        self.authorizationRequest = nil
+        self.responseUri = nil
+        self.authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
+        
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
@@ -115,7 +119,13 @@ public class OpenID4VP {
             errorInfo["state"] = state
         }
         
-        
+        if responseUri == nil || responseUri!.isEmpty {
+            OpenID4VPException.error(logTag, GenericFailure(
+                message: "Response URI is not set. Cannot send error to verifier.",
+                className: String(describing: OpenID4VP.self)
+            ))
+            return
+        }
         do {
             _ = try await networkManager.sendHTTPRequest(
                 url: responseUri ?? "",

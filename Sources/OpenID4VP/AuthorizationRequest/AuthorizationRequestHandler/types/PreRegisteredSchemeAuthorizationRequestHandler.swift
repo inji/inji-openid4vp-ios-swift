@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 
 class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
     let trustedVerifiers: [Verifier]
@@ -22,9 +23,13 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
     }
     
+    func clientIdScheme() -> String {
+        return ClientIdScheme.preRegistered.rawValue
+    }
+    
     override func validateClientId() throws {
         if shouldValidateClient {
-            guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String }) else {
+            guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String }) else {
                 throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: AuthorizationRequest.className)
             }
         }
@@ -36,55 +41,45 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         return updatedWalletMetadata
     }
     
-    func getHeadersForAuthorizationRequestUri() -> [String : String]? {
-        return [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-                Header.accept.rawValue: ContentTypes.applicationJson.rawValue]
+    func isRequestUriSupported() -> Bool {
+        return true
     }
     
-    func validateRequestUriResponse(requestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?,walletNonce: String, isMismatchedAcceptableType: Bool) async throws {
-        if (isMismatchedAcceptableType) {
+    
+    func isRequestObjectSupported() -> Bool {
+        return true
+    }
+    
+    func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
+        let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String
+        
+        if ((authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue]) != nil)  {
             throw InvalidData(
-                message: "Authorization Request must not be signed for given client_id_scheme",
-                className: className
+                message: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request",
+                className: className,
+                code: OpenID4VPErrorCodes.invalidRequest
             )
         }
         
-        if let requestUriResponse = requestUriResponse {
-            let isContentTypeNotJson = !requestUriResponse.httpUrlResponse.isHeaderContentType(equalTo: ContentTypes.applicationJson.rawValue)
-            
-            if (isContentTypeNotJson || isJWS(requestUriResponse.body)) {
+        if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
+            if let publicKeys = preRegisteredClient.clientMetadata?.jwks {
+                let publicKeyJwk =  try filterAndExtractKey(jwks: publicKeys, keyId: keyId, algorithm: algorithm)
+                return try jwkToPublicKey(publicKeyJwk, className: className)
+            } else {
                 throw InvalidData(
-                    message: "Authorization Request must not be signed for given client_id_scheme",
-                    className: className
+                    message: "Public key extraction failed - Either client_metadata not available or jwks not available in pre-registered client_metadata to verify the signed Authorization Request",
+                    className: className,
+                    code: OpenID4VPErrorCodes.invalidRequestObject
                 )
             }
             
-            guard let responseBody = requestUriResponse.body.data(using: .utf8) else {
-                throw InvalidData(
-                    message: "Conversion failed",
-                    className: className
-                )
-            }
-            guard let authorizationRequestObject = try JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]  else {
-                throw InvalidData(
-                    message: "Conversion failed",
-                    className: className
-                )
-            }
-            
-            // wallet_nonce is passed in the POST request to request_uri,so the Request URI response must have wallet_nonce and Wallet MUST validate whether the request object contains the respective nonce value in a wallet_nonce claim.
-            let requestUriMethod = try determineHttpMethod(method: authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue)
-            if( requestUriMethod == .post) {
-                try validateWalletNonce(authorizationRequestObject, walletNonce)
-            }
-            
-            try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String : String], requestUriParams: authorizationRequestObject)
-            
-            authorizationRequestParameters = authorizationRequestObject
         }
+        throw PublicKeyResolutionFailed(message: "Public key extraction failed for keyId = \(keyId ?? "null"), algorithm: \(algorithm)",
+                                        className: className,
+                                        code: OpenID4VPErrorCodes.invalidRequestObject)
     }
     
-    override func validateAndParseRequestFields()async throws {
+    override func validateAndParseRequestFields() async throws {
         if shouldValidateClient {
             let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
             if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
@@ -110,5 +105,31 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
             }
         }
         try await super.validateAndParseRequestFields()
+    }
+    
+    private func filterAndExtractKey(jwks publicKeys: JWKSet, keyId: String?, algorithm: String) throws -> JWK {
+        if(keyId != nil) {
+            if let matchingJWK = (publicKeys.keys as [JWK]).filter({ $0.keyID == keyId }).first {
+                return matchingJWK
+            } else {
+                throw PublicKeyResolutionFailed(message: "Public key extraction failed for kid: \(String(describing: keyId))",
+                                                className: className,
+                                                code: OpenID4VPErrorCodes.invalidRequestObject)
+            }
+        }
+        
+        let matchingKeys = (publicKeys.keys as [JWK]).filter({ $0.algorithm == algorithm && $0.publicKeyUse == .signature })
+        
+        if(matchingKeys.isEmpty) {
+            throw PublicKeyResolutionFailed(message: "No public key found for algorithm: \(algorithm) with key use: signature",
+                                            className: className,
+                                            code: OpenID4VPErrorCodes.invalidRequestObject)
+        } else if(matchingKeys.count == 1) {
+            return matchingKeys[0]
+        } else  {
+            throw PublicKeyResolutionFailed(message: "Public key extraction failed - Multiple ambiguous keys found for \(algorithm) with signature usage",
+                                            className: className,
+                                            code: OpenID4VPErrorCodes.invalidRequestObject)
+        }
     }
 }

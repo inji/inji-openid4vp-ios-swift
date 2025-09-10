@@ -2,7 +2,7 @@ import Foundation
 import Base58Swift
 
 protocol BaseDidPublicKeyResolver {
-    func extractPublicKey(parsedDID: ParsedDID, keyId : String) async throws -> PublicKeyType
+    func extractPublicKey(parsedDID: ParsedDID, keyId : String?) async throws -> PublicKeyType
 }
 
 // This should be moved to other module - vc-verifier once available
