@@ -59,7 +59,7 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
             networkManager: MockNetworkManager()
         )
         await XCTAssertAsyncThrowsError(try await builder.build()) { error in
-            assertOpenID4VPException(error, expectedMessage: "Unsupported cnf format, only 'kid' is supported")
+            assertOpenID4VPException(error, expectedMessage: "Unsupported cnf format, only 'kid' is supported", expectedCode: "unsupported_operation")
         }
     }
 }

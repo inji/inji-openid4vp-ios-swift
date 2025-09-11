@@ -3,7 +3,7 @@ import XCTest
 
 final class AuthorizationResponseTests: XCTestCase {
 
-    let mdocVPToken = MdocVPToken(value: "mdoc")
+    let mdocVPToken = MdocVPToken(base64EncodedDeviceResponse: "mdoc")
 
     let ldpVPToken = LdpVPToken(
         context: ["context"],

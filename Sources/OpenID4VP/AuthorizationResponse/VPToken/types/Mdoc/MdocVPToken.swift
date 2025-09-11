@@ -1,9 +1,9 @@
 struct MdocVPToken: Encodable, VPToken {
     // TODO: Base64EncodedDeviceResponse change
-    let value: String
+    let base64EncodedDeviceResponse: String
     
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        try container.encode(value)
+        try container.encode(base64EncodedDeviceResponse)
     }
 }

@@ -12,9 +12,9 @@ final class MdocVPTokenBuilderTests: XCTestCase {
 
         XCTAssertNoThrowAndVerify(try builder.build()) { vpToken in
             XCTAssertTrue(vpToken is MdocVPToken, "vpToken should be of type MdocVPToken")
-            XCTAssertNotNil((vpToken as! MdocVPToken).value)
+            XCTAssertNotNil((vpToken as! MdocVPToken).base64EncodedDeviceResponse)
             let mdocVPToken: MdocVPToken = (vpToken as! MdocVPToken)
-            let decodedToken = try? decodeCBOR(base64EncodedInput: mdocVPToken.value)
+            let decodedToken = try? decodeCBOR(base64EncodedInput: mdocVPToken.base64EncodedDeviceResponse)
 
             // Verify keys - status, version, documents, documents -> deviceSigned is available in the token as its attached to the Verifiable Presentation by the builder
             XCTAssertEqual(decodedToken?["status"], CBOR.unsignedInt(0))

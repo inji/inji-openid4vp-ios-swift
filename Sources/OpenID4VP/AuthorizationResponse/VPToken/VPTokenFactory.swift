@@ -11,7 +11,6 @@ class VPTokenFactory {
     init(
         vpTokenSigningResult: VPTokenSigningResult,
         vpTokenSigningPayload: Any,
-//        TOOD: unsignedVPTokens should not be nil, it has to be value, fix test and remove tbis
         unsignedVPTokens: Any? = nil,
         nonce: String,
         uuid: String? = nil
