@@ -104,8 +104,7 @@ func hashData(_ data: String, hashAlgorithm: String, className: String) throws -
         let hash = SHA512.hash(data: inputData)
         return Data(hash)
     default:
-//        TODO: checkout on the error code here
-        throw UnsupportedOperationException(message: "Hash algorithm \(hashAlgorithm) is not supported", className: className, code: OpenID4VPErrorCodes.invalidRequest)
+        throw UnsupportedOperationException(message: "Hash algorithm \(hashAlgorithm) is not supported", className: className)
     }
 }
 
