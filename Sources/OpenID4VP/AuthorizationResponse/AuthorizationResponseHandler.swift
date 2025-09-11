@@ -152,35 +152,38 @@ public class AuthorizationResponseHandler {
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
         
-        // check - match the vpTokenSigningResults with unsignedVPTokens specific to format
-        
+        if(Set(unsignedVPTokens.keys) != Set(vpTokenSigningResults.keys)){
+            throw InvalidData(message: "VPTokenSigningResult not provided for the required formats", className: Self.className)
+        }
 
         var count = 0
         for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             var token : any VPToken
             if(credentialFormat == .vc_sd_jwt || credentialFormat == .dc_sd_jwt){
-                guard let sdJwtVPTokenSigningResult = (vpTokenSigningResult as? SdJwtVpTokenSigningResult)?.uuidToKbJWTSignature else {
+                guard ((vpTokenSigningResult as? SdJwtVpTokenSigningResult)?.uuidToKbJWTSignature) != nil else {
                     throw InvalidData(
                         message: "Invalid VPTokenSigningResult for SD-JWT format",
                         className: AuthorizationResponseHandler.className
                     )
                 }
-                for (uuid, _
-                ) in sdJwtVPTokenSigningResult {
+                guard let vpTokenSigningPayload = unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] else {
+                    throw InvalidData(
+                        message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+                guard let unsignedVPTokens = unsignedVPTokens[credentialFormat]?["unsignedVPToken"] else {
+                    throw InvalidData(
+                        message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+                
+                for( uuid, _ ) in vpTokenSigningPayload as? [String: String] ?? [:] {
                     token = try VPTokenFactory(
                         vpTokenSigningResult: vpTokenSigningResult,
-                        vpTokenSigningPayload: unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] ?? {
-                            throw InvalidData(
-                                message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
-                                className: AuthorizationResponseHandler.className
-                            )
-                        }(),
-                        unsignedVPTokens: unsignedVPTokens[credentialFormat]?["unsignedVPToken"] ?? {
-                            throw InvalidData(
-                                message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
-                                className: AuthorizationResponseHandler.className
-                            )
-                        }(),
+                        vpTokenSigningPayload: vpTokenSigningPayload,
+                        unsignedVPTokens: unsignedVPTokens,
                         nonce: authorizationRequest.nonce,
                         uuid: uuid
                     ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
@@ -296,20 +299,13 @@ public class AuthorizationResponseHandler {
         for (format, credentialsArray) in groupedVcs {
             switch format {
             case .ldp_vc:
-                //TODO: Add unit test for this
-                guard let holderId = holderId else {
-                    throw InvalidData(
-                        message: "Holder ID cannot be null for LDP VC format",
-                        className: AuthorizationResponseHandler.className
-                    )
-                }
                 let token = UnsignedLdpVPTokenBuilder(
                     verifiableCredential: credentialsArray,
                     id: UUIDGenerator.generateUUID(),
-                    holder: holderId,
+                    holder: holderId ?? "",
                     challenge: authorizationRequest.nonce,
                     domain: authorizationRequest.clientId,
-                    signatureSuite: signatureSuite!
+                    signatureSuite: signatureSuite ?? "Ed25519Signature2020"
                 ).build()
                 result[format] = token
             case .mso_mdoc:
@@ -370,8 +366,8 @@ public class AuthorizationResponseHandler {
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
             walletNonce: walletNonce,
-            holderId: "",
-            signatureSuite: "Ed25519Signature2020"
+            holderId: nil,
+            signatureSuite: nil
         )
 
         var ldpToken = unsignedVPTokens[.ldp_vc]?["vpTokenSigningPayload"] as? LdpVPToken

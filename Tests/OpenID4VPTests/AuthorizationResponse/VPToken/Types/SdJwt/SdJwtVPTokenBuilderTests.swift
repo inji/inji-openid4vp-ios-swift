@@ -22,15 +22,15 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual((sdJwtVpToken as! SdJwtVPToken).value, expectedResult)
     }
     
-    func testSdJwtVPTokenBuilderThrowErrorOnUnsignedKBTMissingForUuid() async throws {
-        let vpTokenSigningResult = SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [uuid: kbJwtSignature])
-        let uuidToCredentials: [String : String] = [uuid: sdJwtCredential]
-        let unsignedSdJwtVpToken: UnsignedSdJWTVPToken = UnsignedSdJWTVPToken(uuidToUnsignedKBT: ["invalid-uuid": unsignedKBTForSdJwtCredential])
+    func testSdJwtVPTokenBuilderBuildWithoutHolderBinding() async throws {
+        let vpTokenSigningResult = SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [:]) // if no holder binding required, the entry is not added to token signing result
+        let uuidToCredentials: [String : String] = [uuid: sampleVcSdJwtWithNoHolderBinding]
+        let unsignedSdJwtVpToken: UnsignedSdJWTVPToken = UnsignedSdJWTVPToken(uuidToUnsignedKBT: [:]) // Only inputs requried for signature are added to unsigned vp tokens
         let sdJwtVPTokenBuilder = SdJwtVPTokenBuilder(vpTokenSigningResult: vpTokenSigningResult, credentials: uuidToCredentials, unsignedVpTokens: unsignedSdJwtVpToken, uuid: uuid)
         
-        XCTAssertThrowsError(try sdJwtVPTokenBuilder.build()) { error in
-            assertOpenID4VPException(error, expectedMessage: "Missing Input: urn:uuid:f8466a91-e43d-4535-b2d9-f69b57172222 param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        }
+        let sdJwtVpToken = try sdJwtVPTokenBuilder.build()
+        
+        XCTAssertEqual((sdJwtVpToken as! SdJwtVPToken).value, sampleVcSdJwtWithNoHolderBinding)
     }
     
     func testSdJwtVPTokenBuilderThrowErrorOnSignedKBTForUuid() async throws {

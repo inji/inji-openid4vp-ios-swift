@@ -21,17 +21,17 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
     
     func build() throws -> VPToken {
         if let sdJwtCredential = credentials[uuid] {
-            guard let unsignedKBJwt = unsignedVpTokens.uuidToUnsignedKBT[uuid] else {
-                throw MissingInput(fieldPath: uuid, message: "Missing unsigned Key Binding JWT for uuid: \(uuid)", className: className)
+            if let unsignedKBJwt = unsignedVpTokens.uuidToUnsignedKBT[uuid]{
+                guard let signature = vpTokenSigningResult.uuidToKbJWTSignature[uuid] else {
+                    throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
+                }
+                
+                let sdJwtVpTokenValue = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
+                
+                return SdJwtVPToken(value: sdJwtVpTokenValue)
+            } else {
+                return SdJwtVPToken(value: sdJwtCredential)
             }
-            
-            guard let signature = vpTokenSigningResult.uuidToKbJWTSignature[uuid] else {
-                throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
-            }
-            
-            let sdJwtVpTokenValue = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
-            
-            return SdJwtVPToken(value: sdJwtVpTokenValue)
         } else {
             throw MissingInput(fieldPath: uuid, message: "Missing SD-JWT credential for uuid: \(uuid)", className: className)
         }

@@ -60,7 +60,7 @@ final class DidJwkResolverTests: XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "Public key extraction failed - Curve - P-256 is not supported. Supported: Ed25519",
+                expectedMessage: "Curve - P-256 is not supported. Supported: Ed25519",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

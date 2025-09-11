@@ -9,11 +9,13 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let walletNonce = "mock-nonce"
     let signatureSuite = "JsonWebSignature2020"
     
+    //MARK: Credential format = ldp_vc
+    
+    
     func testConstructUnsignedVPTokenThrowsErrorIncaseOfInvalidHoldersIdWithLdpVCAvailable() async throws {
-        let invalidHolderIdTestCases = ["", " ", "  ", nil]
+        let invalidHolderIdTestCases = ["", " ", "  ","null", nil]
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
-            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
@@ -37,7 +39,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     
     
     func testConstructUnsignedVPTokenThrowsErrorIncaseOfInvalidSignatureSuitesWithLdpVCAvailable() async throws {
-        let invalidsignatureSuiteTestCases = ["", " ", "  ", nil]
+        let invalidsignatureSuiteTestCases = ["", " ", "  ","null", nil]
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
             "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
@@ -79,7 +81,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )) { result in
             XCTAssertTrue(result.contains("credentialSubject"))
         }
-        
     }
     
     func testShareVPHasTheAuthorizationResponseAsExpected() async throws {
@@ -198,7 +199,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             XCTFail("Expected error not thrown")
         } catch {
             assertOpenID4VPException(error,
-                                     expectedMessage: "unable to find the related credential format - ldp_vc in the unsignedVPTokens map",
+                                     expectedMessage: "VPTokenSigningResult not provided for the required formats",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -218,7 +219,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 {
                     "format": "ldp_vp",
                     "id": "input_descriptor1",
-                    "path": "$",
+                    "path": "$[0]",
                     "path_nested": {
                         "id": "input_descriptor1",
                         "path": "$.verifiableCredential[0]",
@@ -228,7 +229,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 {
                     "id": "org.iso.18013.5.1.mDL",
                     "format": "mso_mdoc",
-                    "path": "$"
+                    "path": "$[1]"
                 }
             ],
             "id": "<DYNAMIC_ID>"
@@ -256,7 +257,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 jws: "testJWS",
                 proofValue: "test",
                 signatureAlgorithm: "JsonWebSignature2020"
-            )
+            ),
+            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "sign", algorithm: "ES256")])
         ]
         
         _ = try await handler.shareVP(
@@ -417,35 +419,51 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertEqual(recordedRequest?["state"] as? String, state)
         XCTAssertNotNil(recordedRequest?["presentation_submission"])
     }
+    
+    func testThrowExceptionWhenVPTokenSigningResultMissingForAFormat() async throws {
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+            "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+        
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest()
+        let unsignedVPTokens = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
+        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
+        
+        let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [ // simulate missing credential format
+            FormatType.ldp_vc: LdpVPTokenSigningResult(
+            jws: "testJWS",
+            proofValue: "",
+            signatureAlgorithm: "JsonWebSignature2020"),
+            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
+            .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"])
+        ]
+        
+        do {
+            _ = try await handler.shareVP(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: vpTokenSigningResults,
+                responseUri: "https://client.example.org/cb"
+            )
+            XCTFail("Expected error not thrown")
+        } catch {
+            assertOpenID4VPException(error,
+                                     expectedMessage: "VPTokenSigningResult not provided for the required formats",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
 }
-
-
-/**
- sdjwt1 (holder binding), sdjwt2 (no holder binding)
- 
-unsigned vp token [uuid1: sdjwt1kbjwtUnsigned]
- credentials [uuid1: sdjwt1, uuid2: sdjwt2]
- 
-
- 
- consumer send the result
- vpTokenSigningResults [uuid1:  kbJwtSigned]
- vpTokenSigningResults [:]
- 
-iterate credentials
-    for each uuid check if unsigned is available in unsigned vp token
-        if available, then add the signed version to vp token
-        else dont attach
- 
- 
- sdjwtx (no holder binding)
- unsigned vp token [:]
-  credentials [uuid1: sdjwtx]
- 
- result of method -> [sd-jwt : SdJwtUnsignedVpToken(uuidtoUnsignedKBT([:]))] // as long as credentials have sd-jwt there will be     SdJwtUnsignedVpToken   entry in the map (having uuidtoUnsignedKBT depends on holder binding) & consumer should send the sdjwt vptoken signing result back with info (info can be empty map or element based on the unsigned vp token input)
- 
-    consumer send the result
-    vpTokenSigningResults [:]
- 
- */
-
