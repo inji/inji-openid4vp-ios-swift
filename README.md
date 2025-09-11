@@ -22,19 +22,19 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 ## Supported features
 
-| Feature                                                    | Supported values                                                       |
-|------------------------------------------------------------|------------------------------------------------------------------------|
-| Device flow                                                | cross device flow, Same device flow                                    |
-| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                |
-| Signed authorization request verification algorithms       | Ed25519                                                                |
-| Obtaining authorization request                            | By value, By reference ( via `request_uri` method)                     |
-| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)             |
-| Presentation Request                                       | Presentation Exchange                                                  |
-| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses) |
-| Authorization Response content encryption algorithms       | `A256GCM`                                                              |
-| Authorization Response key encryption algorithms           | `ECDH-ES`                                                              |
-| Authorization Response type                                | `vp_token`                                                             |
-| Supported Credential formats                               | `ldp_vc`, `mso_mdoc`                                                   |
+| Feature                                                    | Supported values                                                                                                                                                                              |
+|------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Device flow                                                | cross device flow, Same device flow                                                                                                                                                           |
+| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                       |
+| Signed authorization request verification algorithms       | Ed25519                                                                                                                                                                                       |
+| Obtaining authorization request                            | By value, By reference ( via `request_uri` method)                                                                                                                                            |
+| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                    |
+| Presentation Request                                       | Presentation Exchange                                                                                                                                                                         |
+| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                        |
+| Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                     |
+| Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                                                                                                                     |
+| Authorization Response type                                | `vp_token`                                                                                                                                                                                    |
+| Supported Credential formats                               | `ldp_vc`, `mso_mdoc` (Note: If the Authorization request includes an `mso_mdoc` format VP, it can only use the `direct_post.jwt` response mode, as required by the ISO-18013-7 specification) |
 
 #### Client ID Schemes and obtaining authorization request matrix
 
