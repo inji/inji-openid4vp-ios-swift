@@ -67,8 +67,8 @@ class VPTokenFactory {
             guard let sdJwtCredentials = vpTokenSigningPayload as? [String: String] else {
                 throw InvalidData(message: "sd jwt credential payload must be a dictionary", className: Self.className)
             }
-            guard let unsignedSdJwtVpTokens = unsignedVpTokens as? UnsignedSdJWTVPToken else {
-                throw InvalidData(message: "unsignedVpTokens must be of type UnsignedSdJWTVPToken", className: Self.className)
+            guard let unsignedSdJwtVpTokens = unsignedVpTokens as? UnsignedSdJwtVPToken else {
+                throw InvalidData(message: "unsignedVpTokens must be of type UnsignedSdJwtVPToken", className: Self.className)
             }
             return SdJwtVPTokenBuilder(vpTokenSigningResult: sdJwtVpTokenSigningResult, credentials: sdJwtCredentials , unsignedVpTokens: unsignedSdJwtVpTokens, uuid: uuid)
         

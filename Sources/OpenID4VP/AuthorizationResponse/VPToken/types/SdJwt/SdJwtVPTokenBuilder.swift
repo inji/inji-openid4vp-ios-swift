@@ -3,14 +3,14 @@ import Foundation
 class SdJwtVPTokenBuilder : VPTokenBuilder {
     private let vpTokenSigningResult: SdJwtVpTokenSigningResult
     private let credentials: [String : String]
-    private let unsignedVpTokens: UnsignedSdJWTVPToken
+    private let unsignedVpTokens: UnsignedSdJwtVPToken
     private let uuid : String
     private let className = String(describing: SdJwtVPTokenBuilder.self)
     
     init(
         vpTokenSigningResult: SdJwtVpTokenSigningResult,
         credentials: [String : String],
-        unsignedVpTokens: UnsignedSdJWTVPToken,
+        unsignedVpTokens: UnsignedSdJwtVPToken,
         uuid: String
     ) {
         self.vpTokenSigningResult = vpTokenSigningResult

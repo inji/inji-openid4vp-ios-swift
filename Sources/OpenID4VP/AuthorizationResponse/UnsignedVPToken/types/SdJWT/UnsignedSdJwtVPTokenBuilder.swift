@@ -2,13 +2,13 @@ import Foundation
 
 private let keyBindingJWT = "kb+jwt"
 
-struct UnsignedSdJWTVPTokenBuilder : UnsignedVPTokenBuilder {
+struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
     private let clientId: String
     private let nonce: String
     private let sdJWTCredentials: [String]
     private let networkManager: any NetworkManaging
     
-    private static let className = "UnsignedSdJWTVPTokenBuilder"
+    private static let className = "UnsignedSdJwTVPTokenBuilder"
     
     init(clientId: String, authorizationRequestNonce: String, credentials: [String], networkManager: any NetworkManaging = NetworkManager()) {
         self.clientId = clientId
@@ -18,12 +18,12 @@ struct UnsignedSdJWTVPTokenBuilder : UnsignedVPTokenBuilder {
     }
     
     func build() async throws -> [String : Any] {        
-        var uuidToSdJWT = [String: String]()
+        var uuidToSdJwt = [String: String]()
         var uuidToUnsignedKBJWT = [String: String]()
         
         for credential in sdJWTCredentials {
             let uuid = UUIDGenerator.generateUUID()
-            uuidToSdJWT[uuid] = credential
+            uuidToSdJwt[uuid] = credential
             
             let sdJWT = credential.split(separator: "~")[0]
             let sdJWTPayload = try JWSHandler.extractDataJsonFromJws(jws: String(sdJWT), jwsPart: .payload)
@@ -62,8 +62,8 @@ struct UnsignedSdJWTVPTokenBuilder : UnsignedVPTokenBuilder {
         }
         
         return [
-            "unsignedVPToken": UnsignedSdJWTVPToken(uuidToUnsignedKBT: uuidToUnsignedKBJWT),
-            "vpTokenSigningPayload": uuidToSdJWT
+            "unsignedVPToken": UnsignedSdJwtVPToken(uuidToUnsignedKBT: uuidToUnsignedKBJWT),
+            "vpTokenSigningPayload": uuidToSdJwt
         ]
     }
 }

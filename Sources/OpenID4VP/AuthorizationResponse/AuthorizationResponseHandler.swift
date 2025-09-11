@@ -339,7 +339,7 @@ public class AuthorizationResponseHandler {
                         }
                         return str
                     }
-                let token = try await UnsignedSdJWTVPTokenBuilder(
+                let token = try await UnsignedSdJwtVPTokenBuilder(
                     clientId: authorizationRequest.clientId, authorizationRequestNonce: authorizationRequest.nonce, credentials: sdJwtCreds
                     ).build()
                 result[format] = token

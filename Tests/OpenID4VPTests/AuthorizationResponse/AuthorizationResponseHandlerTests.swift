@@ -313,7 +313,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )) { result in
             XCTAssertTrue(result.keys.count == 1)
             XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
-            XCTAssertTrue((result.values.first as? UnsignedSdJWTVPToken)?.uuidToUnsignedKBT.count == 1)
+            XCTAssertTrue((result.values.first as? UnsignedSdJwtVPToken)?.uuidToUnsignedKBT.count == 1)
         }
     }
     
@@ -334,7 +334,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
         
-        let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys.first!
+        let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys.first!
         let result = try await handler.shareVP(authorizationRequest: authorizationRequest, vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])], responseUri: responseUri)
         
         
@@ -396,8 +396,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )
-        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
-        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
+        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
+        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
         
         let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [
             FormatType.ldp_vc: LdpVPTokenSigningResult(
@@ -440,8 +440,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )
-        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
-        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
+        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
+        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
         
         let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [ // simulate missing credential format
             FormatType.ldp_vc: LdpVPTokenSigningResult(
