@@ -371,7 +371,51 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
             XCTAssertTrue(result.keys.contains(.dc_sd_jwt))
         }
+    }
+
+    
+    func testShareAuthorizationResponseSuccess() async throws {
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+            "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
         
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest()
+        let unsignedVPTokens = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
+        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJWTVPToken).uuidToUnsignedKBT.keys)
+        
+        let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [
+            FormatType.ldp_vc: LdpVPTokenSigningResult(
+            jws: "testJWS",
+            proofValue: "",
+            signatureAlgorithm: "JsonWebSignature2020"),
+            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
+            .vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [vcSdJwtUuids[0]: "ayuht"]),
+            .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"])
+        ]
+        
+        _ = try await handler.shareVP(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: vpTokenSigningResults,
+            responseUri: responseUri
+        )
+     
+        let recordedRequest = (mockNetworkManager.recordedRequests[responseUri]!).requestBody
+        XCTAssertEqual(recordedRequest?["state"] as? String, state)
+        XCTAssertNotNil(recordedRequest?["presentation_submission"])
     }
 }
 
