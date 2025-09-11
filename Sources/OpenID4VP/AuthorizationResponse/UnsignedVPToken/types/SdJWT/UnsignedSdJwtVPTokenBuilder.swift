@@ -38,7 +38,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
                 let confirmationKey = try await didResolver.resolve(uri: confirmationKeyClaim["kid"] as! String, keyId: nil)
                 jwtSigningALgorithm = extractSigningAlgorithm(from: confirmationKey)
             } else {
-                throw UnsupportedOperationException(message: "Unsupported cnf format, only 'kid' is supported", className: Self.className, code: "unsupported_operation")
+                throw UnsupportedOperationException(message: "Unsupported cnf format, only 'kid' is supported", className: Self.className)
             }
             
             let jwtHeader = [
