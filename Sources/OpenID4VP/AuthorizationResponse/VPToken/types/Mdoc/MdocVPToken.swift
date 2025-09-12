@@ -1,5 +1,4 @@
 struct MdocVPToken: Encodable, VPToken {
-    // TODO: Base64EncodedDeviceResponse change
     let base64EncodedDeviceResponse: String
     
     func encode(to encoder: Encoder) throws {

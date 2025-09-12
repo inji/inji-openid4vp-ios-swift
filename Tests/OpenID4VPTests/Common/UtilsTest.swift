@@ -178,4 +178,38 @@ class UtilsTest : XCTestCase {
         
         XCTAssertEqual(output, expected, "URL-safe characters should be converted and padding should be added")
     }
+    
+    func testHashDataSHA256() throws {
+        let input = "hello"
+        let expectedHex = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        let result = try hashData(input, hashAlgorithm: "sha-256", className: "Utils")
+        XCTAssertEqual(result.map { String(format: "%02x", $0) }.joined(), expectedHex)
+    }
+    
+    func testHashDataDefaultingSHA256() throws {
+        let input = "hello"
+        let expectedHex = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        let result = try hashData(input, className: "Utils")
+        XCTAssertEqual(result.map { String(format: "%02x", $0) }.joined(), expectedHex)
+    }
+    
+    func testHashDataSHA384() throws {
+        let input = "hello"
+        let expectedHex = "59e1748777448c69de6b800d7a33bbfb9ff1b463e44354c3553bcdb9c666fa90125a3c79f90397bdf5f6a13de828684f"
+        let result = try hashData(input, hashAlgorithm: "sha-384", className: "Utils")
+        XCTAssertEqual(result.map { String(format: "%02x", $0) }.joined(), expectedHex)
+    }
+    
+    func testHashDataSHA512() throws {
+        let input = "hello"
+        let expectedHex = "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043"
+        let result = try hashData(input, hashAlgorithm: "sha-512", className: "Utils")
+        XCTAssertEqual(result.map { String(format: "%02x", $0) }.joined(), expectedHex)
+    }
+    
+    func testHashDataUnsupportedAlgorithm() {
+        XCTAssertThrowsError(try hashData("hello", hashAlgorithm: "md5", className: "Utils")) { error in
+            XCTAssertTrue(error is UnsupportedOperationException)
+        }
+    }
 }
