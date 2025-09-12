@@ -1,5 +1,5 @@
 import Foundation
 
-struct SdJwtVpTokenSigningResult : VPTokenSigningResult {
+public struct SdJwtVpTokenSigningResult : VPTokenSigningResult {
     let uuidToKbJWTSignature : [String: String]
 }
