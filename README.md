@@ -34,7 +34,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 | Authorization Response content encryption algorithms       | `A256GCM`                                                              |
 | Authorization Response key encryption algorithms           | `ECDH-ES`                                                              |
 | Authorization Response type                                | `vp_token`                                                             |
-| Supported Credential formats                               | `ldp_vc`, `mso_mdoc`                                                   |
+| Supported Credential formats                               | `ldp_vc`, `mso_mdoc`, `vc+sdjwt`, `dc+sd-jwt`                          |
 
 #### Client ID Schemes and obtaining authorization request matrix
 
@@ -53,6 +53,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
    - Authorization Response is attached as request body in `application/x-www-form-urlencoded` HTTP content type. 
    - The response is encrypted using the public key provided in the client_metadata of the authorization request.
    - The created JWE's header contains the `apu` (producer info) as wallet generated nonce (with entropy 16 bytes) and `apv` (recipient info) as the verifier nonce i.e., the nonce received in the authorization request.
+   > Note: If the Authorization request includes an `mso_mdoc` format VP, it can only use the `direct_post.jwt` response mode, as required by the ISO-18013-7 specification. Other supported response mode (`direct_post`) is not applicable.
 
 ## Specifications supported
 - The implementation follows OpenID for Verifiable Presentations - draft 21 and draft23 .[Specification-21](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html) [Specification-23](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html).

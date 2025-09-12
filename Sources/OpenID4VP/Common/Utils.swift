@@ -87,3 +87,27 @@ func wrapError(_ error: Error, customError: (String) -> Error) -> Error {
         return customError(error.localizedDescription)
     }
 }
+
+
+func hashData(_ data: String, hashAlgorithm: String = HashAlgorithm.sha256.rawValue, className: String) throws -> Data {
+    guard let inputData = data.data(using: .utf8) else {
+        throw UTF8EncodingFailed(fieldPath: "hashInput", className: className)
+    }
+    
+    let algorithm = HashAlgorithm(rawValue: hashAlgorithm)
+    
+    switch algorithm {
+    case .sha256:
+        let hash = SHA256.hash(data: inputData)
+        return Data(hash)
+    case .sha384:
+        let hash = SHA384.hash(data: inputData)
+        return Data(hash)
+    case .sha512:
+        let hash = SHA512.hash(data: inputData)
+        return Data(hash)
+    default:
+        throw UnsupportedOperationException(message: "Hash algorithm \(hashAlgorithm) is not supported", className: className)
+    }
+}
+

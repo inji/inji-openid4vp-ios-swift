@@ -265,7 +265,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         let publicKey = try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "Ed25519")
         
-        assertEdKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
+        assertPublicKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
     }
     
     func testExtractPublicKeySuccessForAlgorithmAndUsage() async throws {
@@ -308,7 +308,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         
         await XCTAssertNoThrowAndVerifyAsync(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "EdDSA")) { publicKey in
-            assertEdKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
+            assertPublicKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
         }
     }
     

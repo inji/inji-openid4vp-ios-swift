@@ -18,11 +18,7 @@ class DidPublicKeyResolver : PublicKeyResolver {
     }
     
     func resolve(uri: String, keyId : String? = nil) async throws -> PublicKeyType {
-        guard let kid = keyId else {
-            throw KidExtractionFailed(
-                className: self.className
-            )
-        }
+        let kid = keyId ?? uri
         
         let parsedDID = try parseDid(uri)
         let resolver : BaseDidPublicKeyResolver = try resolver(parsedDid : parsedDID, networkManager: networkManager)
@@ -56,7 +52,7 @@ private func parseDid(_ didUrl: String) throws -> ParsedDID {
     let didMatcher = "^did:\(method):\(methodId)\(params)\(path)\(query)\(fragment)$"
     
     let didUrlPattern = try! NSRegularExpression(pattern: didMatcher, options: [])
-    let nsString = didUrl as NSString
+    let nsString = (didUrl as NSString).replacingOccurrences(of: "=", with: "") as NSString
     var sections: [String] = []
     if let match = didUrlPattern.firstMatch(in: didUrl, options: [], range: NSRange(location: 0, length: nsString.length)) {
         sections = (0..<match.numberOfRanges).compactMap {

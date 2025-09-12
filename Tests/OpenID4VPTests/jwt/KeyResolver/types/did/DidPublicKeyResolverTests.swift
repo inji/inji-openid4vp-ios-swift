@@ -73,7 +73,7 @@ class DidPublicKeyResolverTests: XCTestCase {
         let keyId = "did:web:mosip.github.io:inji-mock-services:openid4vp-service:docs#key-0"
         
         await XCTAssertNoThrowAndVerifyAsync(try await didKeyResolver.resolve(uri: did, keyId: keyId)){ result in
-            assertEdKey(expectedBase64Encoded: "+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", actualKey: result)
+            assertPublicKey(expectedBase64Encoded: "+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", actualKey: result)
         }
     }
     

@@ -1,5 +1,5 @@
 import Foundation
 
 protocol UnsignedVPTokenBuilder {
-    func build() throws -> [String:Any]
+    func build() async throws -> [String:Any]
 }

@@ -54,7 +54,7 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         
         //base64 url encode without padding the deviceResponse
         let encodedDeviceResponseBase64Url = Data(cborEncode(deviceResponse)).toBase64UrlEncoded()
-        return MdocVPToken(value: encodedDeviceResponseBase64Url)
+        return MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
     }
     
     // DeviceSignature is of COSE_Sign1 structure

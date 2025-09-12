@@ -212,11 +212,29 @@ func assertOpenID4VPException(
 }
 
 
-func assertEdKey(expectedBase64Encoded: String, actualKey: PublicKeyType){
+func assertPublicKey(expectedBase64Encoded: String, actualKey: PublicKeyType) {
     switch actualKey {
     case .ed25519(let publicKey):
         XCTAssertEqual(expectedBase64Encoded, publicKey.rawRepresentation.base64EncodedString())
-    default:
-        XCTFail("Unexpected public key type returned")
+        
+    case .secKey(let secKey):
+        // Extract the raw representation from SecKey
+        guard let keyData = extractPublicKeyData(from: secKey) else {
+            XCTFail("Failed to extract public key data from SecKey")
+            return
+        }
+        
+        let actualBase64 = keyData.base64EncodedString()
+        XCTAssertEqual(expectedBase64Encoded, actualBase64)
     }
+}
+
+private func extractPublicKeyData(from secKey: SecKey) -> Data? {
+    var error: Unmanaged<CFError>?
+    
+    guard let keyData = SecKeyCopyExternalRepresentation(secKey, &error) as Data? else {
+        return nil
+    }
+
+    return keyData
 }

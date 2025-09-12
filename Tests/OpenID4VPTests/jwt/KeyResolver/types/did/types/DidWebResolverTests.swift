@@ -237,7 +237,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: nil)) { key in
-            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
 
@@ -262,7 +262,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
-            assertEdKey(expectedBase64Encoded: "lJZrfAjkBXdfjebMHEUI9usidAPhAlssitLXR3OYxbI=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "lJZrfAjkBXdfjebMHEUI9usidAPhAlssitLXR3OYxbI=", actualKey: key)
         }
     }
     
@@ -348,7 +348,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
-            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
     
@@ -374,7 +374,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
-            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
     
@@ -400,7 +400,7 @@ final class DidWebResolverTests: XCTestCase {
         let resolver = DidWebResolver(networkManager: mockNetworkManager)
         
         await XCTAssertNoThrowAndVerifyAsync(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: keyId)) { key in
-            assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
+            assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
         }
     }
 }

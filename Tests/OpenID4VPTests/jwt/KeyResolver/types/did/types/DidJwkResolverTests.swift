@@ -6,13 +6,15 @@ final class DidJwkResolverTests: XCTestCase {
     
     let mockNetworkManager = MockNetworkManager()
     
-    func testDidJwkSuccessfulResolving() async throws {
+    // Kty = OKP, Supported Crv = Ed25519
+
+    func testDidJwkSuccessfulResolvingForOKPKeyTypeAndEd25519Curve() async throws {
         let did = "did:jwk:eyJrdHkiOiAiT0tQIiwgImNydiI6ICJFZDI1NTE5IiwgIngiOiAiOGc5ZF9NQjBpVTJubWdiXzlQNERmMFRSUW01UkpUbWFpRWsySGtaeTVwRSIsICJhbGciOiAiRWREU0EiLCAia2V5X29wcyI6IFsidmVyaWZ5Il0sICJ1c2UiOiAic2lnIn0"
         let parsedDid = ParsedDID(did: did, method: .jwk, id: "eyJrdHkiOiAiT0tQIiwgImNydiI6ICJFZDI1NTE5IiwgIngiOiAiOGc5ZF9NQjBpVTJubWdiXzlQNERmMFRSUW01UkpUbWFpRWsySGtaeTVwRSIsICJhbGciOiAiRWREU0EiLCAia2V5X29wcyI6IFsidmVyaWZ5Il0sICJ1c2UiOiAic2lnIn0", didUrl: did)
         let resolver = DidJwkResolver(networkManager: mockNetworkManager)
         
         let key = try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: did)
-        assertEdKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
+        assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
     }
     
     func testInvalidBase64URL() async {
@@ -58,36 +60,12 @@ final class DidJwkResolverTests: XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "Public key extraction failed - Curve - P-256 is not supported. Supported: Ed25519",
+                expectedMessage: "Curve - P-256 is not supported. Supported: Ed25519",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
     }
-    
-    func testUnsupportedKeyType() async {
-        let jwk = """
-            {
-                "kty": "EC",
-                "crv": "P-256",
-                "alg": "ES256",
-                "use":"sig",
-                "x": "MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4",
-                "y": "4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM"
-            }
-            """
-        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
-        let unsupportedCurveDid = "did:jwk:\(jwkBase64)"
-        let parsedDid =  ParsedDID(did: unsupportedCurveDid, method: .jwk, id: jwkBase64, didUrl: unsupportedCurveDid)
-        let resolver = DidJwkResolver(networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
-            assertOpenID4VPException(error,
-                expectedMessage: "Public key extraction failed - KeyType - EC is not supported. Supported: OKP",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
+
     func testMissingXCoordinate() async {
         let jwk = """
             {
@@ -158,6 +136,107 @@ final class DidJwkResolverTests: XCTestCase {
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "=", with: "")
+    }
+
+    // Kty = EC, Support curve = P-256
+
+    func testDidJwkSuccessfulResolvingForECKeyTypeAndP256Curve() async throws {
+        let did = "did:jwk:eyJrdHkiOiJFQyIsImFsZyI6IkVTMjU2IiwiY3J2IjoiUC0yNTYiLCJ4IjoiTUtCQ1ROSWNLVVNEaWkxMXlTczM1MjZpRFo4QWlUbzdUdTZLUEFxdjdENCIsInkiOiI0RXRsNlNSVzJZaUxVck41dmZ2Vkh1aHA3eDhQeGx0bVdXbGJiTTRJRnlNIiwidXNlIjoiZW5jIiwia2lkIjoiMSJ9"
+        let parsedDid = ParsedDID(did: did, method: .jwk, id: "eyJrdHkiOiJFQyIsImFsZyI6IkVTMjU2IiwiY3J2IjoiUC0yNTYiLCJ4IjoiTUtCQ1ROSWNLVVNEaWkxMXlTczM1MjZpRFo4QWlUbzdUdTZLUEFxdjdENCIsInkiOiI0RXRsNlNSVzJZaUxVck41dmZ2Vkh1aHA3eDhQeGx0bVdXbGJiTTRJRnlNIiwidXNlIjoiZW5jIiwia2lkIjoiMSJ9", didUrl: did)
+        let resolver = DidJwkResolver(networkManager: mockNetworkManager)
+
+        let key = try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: did)
+        assertPublicKey(expectedBase64Encoded: "BDCgQkzSHClEg4otdckrN+duog2fAIk6O07uijwKr+w+4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM=", actualKey: key)
+    }
+
+    func testUnsupportedCurveForECKeyType() async {
+        let jwk = """
+        {
+          "kty": "EC",
+          "use": "sig",
+          "key_ops": [
+            "sign"
+          ],
+          "alg": "ES384",
+          "kid": "c5366f28-6a78-458d-8c51-a907c9afb10c",
+          "crv": "P-384",
+          "x": "8bVNf2dECf0yp_ExmT8Awu-YvFUDt1oti3s2lqGWJ7ihI1P3vqYz_0iJImpm9pHM",
+          "y": "lStYwazJ0ZCj7rvvT2xPJolXW-tP-EImVdLKddHv9WFioQhpSYBtwqt70MRsu5dr",
+          "d": "UGNgu3ElU3v7T0T0vLaymbpjhjJNLN3Rk9MgukqkcCxoFkGc6vOtc7U9kz4S_Kaz"
+        }
+        """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let unsupportedCurveDid = "did:jwk:\(jwkBase64)"
+        let parsedDid =  ParsedDID(did: unsupportedCurveDid, method: .jwk, id: jwkBase64, didUrl: unsupportedCurveDid)
+        let resolver = DidJwkResolver(networkManager: mockNetworkManager)
+
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Curve - P-384 is not supported. Supported: P-256",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testThrowErrorOnInvalidXDataInEC_P256Key() async {
+        let jwk = """
+        {
+          "kty": "EC",
+          "use": "sig",
+          "key_ops": [
+            "sign"
+          ],
+          "alg": "ES256",
+          "kid": "c5366f28-6a78-458d-8c51-a907c9afb10c",
+          "crv": "P-256",
+          "x": "oKuKSOMjPfDaykr_s8Peyihy%dxs1HYQ7a26EGpXXc4",
+          "y": "6CBgZYLeTWYrbtliEew8vDo4wAUEbBbQwMauWBWt4xk",
+          "d": "6K3j95qPXIX6qJ55WHSrqTkmnf3_4rKedkAMn8HI-TA"
+        }
+        """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let unsupportedCurveDid = "did:jwk:\(jwkBase64)"
+        let parsedDid =  ParsedDID(did: unsupportedCurveDid, method: .jwk, id: jwkBase64, didUrl: unsupportedCurveDid)
+        let resolver = DidJwkResolver(networkManager: mockNetworkManager)
+
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Failed to decode JWK: The operation couldn’t be completed. (Tools.Base64URL.Error error 0.)",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    // unsupported key type
+
+        func testUnsupportedKeyType() async {
+        let jwk = """
+                {
+                  "kty": "RSA",
+                  "use": "sig",
+                  "key_ops": [
+                    "sign",
+                    "verify"
+                  ],
+                  "alg": "RS256",
+                  "kid": "59efc7e0-1693-46b2-bbd5-17ea4e65cc21",
+                  "d": "KWv4ejQze_ZMa-AhBFOEbPdC57Ofai87oXu6_X6mXpayp8FPCjQknivvKu4Z30HsAOb-jW7m_RlGOVLbGMvOphIbgJJjuxbEahtWI_qlCDBkB5uu5W16PnCC5IeO62kbq3fct5sLqmgqQeJqf4Frh_7be2Gz-QeVhpQoXW8gQz4HP0-F5KaWv1GWlxELBhrbL1nssin8CdSfpzZHYKImYmcq7prYpkAYKbWR4L5-ILcRcNsrmYv3tqYWIZ5VPozWLLPv8sThUSZt_7rZa7zW7AFabTultsOEx5mN5A030LltdUkX_1c8IIh431oXpE5C_t5qjP13sYm6LLutibAZAQ",
+                  "n": "soCA2De2eaIk72DFw774EBZaNXAG9zlUt4n5JxSrP6XLdEiQjkLGRGtrLMw8BD0O_tal-6XZJh1pwar3LGvbq_stsmWcTgN-MlxikGAIqpQRpCcpoWdIhCdYSoL0EJB7KWbjTqQUBbhvrC6IlWkXL7ZC93f5_GyENgeGBPlc0yJNTUfDdE4zqXVd5gQ6Omak-AFWnW3-TbBvKF0E37vTYD2XKE3_o8WJ-cEPznB1S8tf6sM5YaAVkCBkiBB0oa4PHwE82w4Lrs9nTNmR627v566_OBq6WQOLb6y1FZalS7nCb9B8OuatiGvIVLEHpQfdaGEQ0Vce3fZA_nPjoBvchw",
+                  "e": "AQAB"
+                }
+
+            """
+        let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
+        let unsupportedCurveDid = "did:jwk:\(jwkBase64)"
+        let parsedDid =  ParsedDID(did: unsupportedCurveDid, method: .jwk, id: jwkBase64, didUrl: unsupportedCurveDid)
+        let resolver = DidJwkResolver(networkManager: mockNetworkManager)
+
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "KeyType - RSA is not supported. Supported: OKP, EC",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
     }
 }
 

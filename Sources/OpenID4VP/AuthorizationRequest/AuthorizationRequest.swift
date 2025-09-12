@@ -43,7 +43,6 @@ public struct AuthorizationRequest : Encodable {
         try container.encode(responseUri, forKey: .response_uri)
         try container.encode(redirectUri, forKey: .redirect_uri)
         try container.encode(clientMetadata, forKey: .client_metadata)
-        
     }
     
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,

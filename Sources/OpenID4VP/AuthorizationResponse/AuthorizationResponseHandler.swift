@@ -20,7 +20,7 @@ public class AuthorizationResponseHandler {
                                holderId: String?,
                                signatureSuite: String?,
                                walletNonce: String
-    ) throws -> [FormatType: UnsignedVPToken] {
+    ) async throws -> [FormatType: UnsignedVPToken] {
         let hasLdpVc = credentialsMap.values.contains { formatMap in
             formatMap.keys.contains(.ldp_vc)
         }
@@ -40,7 +40,7 @@ public class AuthorizationResponseHandler {
             }
         }
         
-        return try createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
+        return try await createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
         
     }
 
@@ -51,7 +51,7 @@ public class AuthorizationResponseHandler {
         walletNonce: String,
         holderId: String?,
         signatureSuite: String?
-    ) throws -> [FormatType: UnsignedVPToken] {
+    ) async throws -> [FormatType: UnsignedVPToken] {
         if credentialsMap.isEmpty {
             throw InvalidData(
                 message: "Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.",
@@ -62,7 +62,7 @@ public class AuthorizationResponseHandler {
         self.credentialsMap = credentialsMap
         self.walletNonce = walletNonce
 
-        unsignedVPTokens = try createUnsignedVPTokens(
+        unsignedVPTokens = try await createUnsignedVPTokens(
             credentialsMap: credentialsMap,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -151,23 +151,61 @@ public class AuthorizationResponseHandler {
         credentialFormatIndex: inout [FormatType: Int]
     ) throws -> VPTokenType {
         var vpTokens: [VPToken] = []
+        
+        if(Set(unsignedVPTokens.keys) != Set(vpTokenSigningResults.keys)){
+            throw InvalidData(message: "VPTokenSigningResult not provided for the required formats", className: Self.className)
+        }
 
         var count = 0
         for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
-            let token = try VPTokenFactory(
-                vpTokenSigningResult: vpTokenSigningResult,
-                vpTokenSigningPayload: unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] ?? {
+            var token : any VPToken
+            if(credentialFormat == .vc_sd_jwt || credentialFormat == .dc_sd_jwt){
+                guard ((vpTokenSigningResult as? SdJwtVpTokenSigningResult)?.uuidToKbJWTSignature) != nil else {
+                    throw InvalidData(
+                        message: "Invalid VPTokenSigningResult for SD-JWT format",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+                guard let vpTokenSigningPayload = unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] else {
                     throw InvalidData(
                         message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
                         className: AuthorizationResponseHandler.className
                     )
-                }(),
-                nonce: authorizationRequest.nonce
-            ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
-
-            vpTokens.append(token)
-            credentialFormatIndex[credentialFormat] = count
-            count += 1
+                }
+                guard let unsignedVPTokens = unsignedVPTokens[credentialFormat]?["unsignedVPToken"] else {
+                    throw InvalidData(
+                        message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+                
+                for( uuid, _ ) in vpTokenSigningPayload as? [String: String] ?? [:] {
+                    token = try VPTokenFactory(
+                        vpTokenSigningResult: vpTokenSigningResult,
+                        vpTokenSigningPayload: vpTokenSigningPayload,
+                        unsignedVPTokens: unsignedVPTokens,
+                        nonce: authorizationRequest.nonce,
+                        uuid: uuid
+                    ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
+                    vpTokens.append(token)
+                    credentialFormatIndex[credentialFormat] = count
+                    count += 1
+                }
+            } else {
+                token = try VPTokenFactory(
+                    vpTokenSigningResult: vpTokenSigningResult,
+                    vpTokenSigningPayload: unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] ?? {
+                        throw InvalidData(
+                            message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
+                            className: AuthorizationResponseHandler.className
+                        )
+                    }(),
+                    nonce: authorizationRequest.nonce
+                ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
+                vpTokens.append(token)
+                credentialFormatIndex[credentialFormat] = count
+                count += 1
+            }
         }
 
         return vpTokens.count == 1
@@ -205,7 +243,7 @@ public class AuthorizationResponseHandler {
                     let credentialIndex = (formatTypeToCredentialIndex[credentialFormat] ?? -1) + 1
                     let vpFormat: VPFormatType
                     let pathNested: PathNested?
-
+                    
                     switch credentialFormat {
                     case .ldp_vc:
                         let relativePath = "$.\(LdpVPToken.internalPath)[\(credentialIndex)]"
@@ -218,10 +256,18 @@ public class AuthorizationResponseHandler {
                     case .mso_mdoc:
                         pathNested = nil
                         vpFormat = .mso_mdoc
+                        
+                    case .dc_sd_jwt:
+                        pathNested = nil
+                        vpFormat = .dc_sd_jwt
+                        
+                    case .vc_sd_jwt :
+                        pathNested = nil
+                        vpFormat = .vc_sd_jwt
                     }
-
+                    
                     formatTypeToCredentialIndex[credentialFormat] = credentialIndex
-
+                    
                     return DescriptorMap(
                         id: inputDescriptorId,
                         format: vpFormat,
@@ -239,7 +285,7 @@ public class AuthorizationResponseHandler {
         responseUri: String,
         holderId: String?,
         signatureSuite: String?
-    ) throws -> [FormatType: [String: Any]] {
+    ) async throws -> [FormatType: [String: Any]] {
         let groupedVcs: [FormatType: [AnyCodable]] = credentialsMap
             .compactMap { $0.value }
             .reduce(into: [FormatType: [AnyCodable]]()) { result, entry in
@@ -256,10 +302,10 @@ public class AuthorizationResponseHandler {
                 let token = UnsignedLdpVPTokenBuilder(
                     verifiableCredential: credentialsArray,
                     id: UUIDGenerator.generateUUID(),
-                    holder: holderId!,
+                    holder: holderId ?? "",
                     challenge: authorizationRequest.nonce,
                     domain: authorizationRequest.clientId,
-                    signatureSuite: signatureSuite!
+                    signatureSuite: signatureSuite ?? "Ed25519Signature2020"
                 ).build()
                 result[format] = token
             case .mso_mdoc:
@@ -281,6 +327,22 @@ public class AuthorizationResponseHandler {
                     mdocGeneratedNonce: walletNonce
                 ).build()
                 result[format] = token
+                
+            case .dc_sd_jwt, .vc_sd_jwt:
+                let sdJwtCreds = try credentialsArray
+                    .map { anyCodable in
+                        guard let str = anyCodable.value as? String else {
+                            throw InvalidData(
+                                message: "SD-JWT credential is not a String",
+                                className: AuthorizationResponseHandler.className
+                            )
+                        }
+                        return str
+                    }
+                let token = try await UnsignedSdJwtVPTokenBuilder(
+                    clientId: authorizationRequest.clientId, authorizationRequestNonce: authorizationRequest.nonce, credentials: sdJwtCreds
+                    ).build()
+                result[format] = token
             }
         }
 
@@ -293,19 +355,19 @@ public class AuthorizationResponseHandler {
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
         walletNonce: String
-    ) throws -> String {
+    ) async throws -> String {
         let transformedCredentials: [String: [FormatType: [AnyCodable]]] = verifiableCredentials.mapValues { credentials in
             let wrapped = credentials.map { AnyCodable($0) }
             return [.ldp_vc: wrapped]
         }
 
-        let unsignedVPToken = try createUnsignedVPToken(
+        let unsignedVPToken = try await createUnsignedVPToken(
             credentialsMap: transformedCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
             walletNonce: walletNonce,
-            holderId: "",
-            signatureSuite: "Ed25519Signature2020"
+            holderId: nil,
+            signatureSuite: nil
         )
 
         var ldpToken = unsignedVPTokens[.ldp_vc]?["vpTokenSigningPayload"] as? LdpVPToken
