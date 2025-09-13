@@ -57,7 +57,7 @@ struct JWSHandler {
     private static func jsonCompactString(_ input: [String: Any]) throws -> String {
         let data = try JSONSerialization.data(
             withJSONObject: input,
-            options: [] // Remove .sortedKeys - JS doesn't sort by default
+            options: [.withoutEscapingSlashes] // Remove .sortedKeys - JS doesn't sort by default
         )
         
         // Ensure no extra whitespace (JS default)
