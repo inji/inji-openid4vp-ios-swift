@@ -37,9 +37,7 @@ struct JWSHandler {
             let headerEncoded = try jsonCompactString(header)
             let payloadEncoded = try jsonCompactString(payload)
 
-//            return "\(headerEncoded).\(payloadEncoded)"
-            let input = "hello world".data(using: .utf8)!.toBase64UrlEncoded()
-            return input
+            return "\(headerEncoded).\(payloadEncoded)"
         } catch {
             throw GenericFailure(message: "JWS creation failed: \(error.localizedDescription)", className: JWSHandler.className)
         }
