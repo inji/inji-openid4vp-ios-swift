@@ -37,24 +37,15 @@ struct JWSHandler {
             let headerEncoded = try jsonCompactString(header)
             let payloadEncoded = try jsonCompactString(payload)
 
-            return "\(headerEncoded).\(payloadEncoded)"
+//            return "\(headerEncoded).\(payloadEncoded)"
+            let input = "hello world".data(using: .utf8)!.toBase64UrlEncoded()
+            return input
         } catch {
             throw GenericFailure(message: "JWS creation failed: \(error.localizedDescription)", className: JWSHandler.className)
         }
     }
     
-//    private static func jsonCompactString(_ input : [String: Any]) throws -> String {
-//        let data = try JSONSerialization.data(
-//            withJSONObject: input,
-//                options: [.sortedKeys] // keep deterministic order
-//            )
-//            guard let str = String(data: data, encoding: .utf8) else {
-//                throw NSError(domain: "JWTEncoding", code: -1, userInfo: [NSLocalizedDescriptionKey: "UTF8 conversion failed"])
-//            }
-//        return Data(str.utf8).toBase64UrlEncoded()
-//    }
-    
-    private static func jsonCompactString(_ input: [String: Any]) throws -> String {
+    static func jsonCompactString(_ input: [String: Any]) throws -> String {
         let data = try JSONSerialization.data(
             withJSONObject: input,
             options: [.withoutEscapingSlashes] // Remove .sortedKeys - JS doesn't sort by default
@@ -65,10 +56,7 @@ struct JWSHandler {
             throw NSError(domain: "JWTEncoding", code: -1, userInfo: [NSLocalizedDescriptionKey: "UTF8 conversion failed"])
         }
         
-        // Additional cleanup to match JS exactly
-        let compactStr = str.replacingOccurrences(of: " ", with: "")
-        
-        return Data(compactStr.utf8).toBase64UrlEncoded()
+        return Data(str.utf8).toBase64UrlEncoded()
     }
     
     static func extractDataJsonFromJws(jws: String, jwsPart: JWSPart) throws -> [String:Any] {
