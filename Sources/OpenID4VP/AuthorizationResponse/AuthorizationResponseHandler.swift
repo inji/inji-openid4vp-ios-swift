@@ -7,6 +7,7 @@ public class AuthorizationResponseHandler {
     private var path: [FormatType: (index: Int, nestedIndex: Int)] = [:]
     private var credentialsMap: [String: [FormatType: Array<Any>]]?
     private var walletNonce: String = ""
+    private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
 
     public static let className = String(describing: AuthorizationResponseHandler.self)
 
@@ -511,5 +512,25 @@ public class AuthorizationResponseHandler {
         } catch {
             throw error
         }
+    }
+    
+    private func createFormatToCredentialInputDescriptorMapping(
+        matchingCredentials: [String: [FormatType: [Any]]]
+    ) {
+        var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
+    
+        for (inputDescriptorId, formatCredentialMap) in matchingCredentials {
+            for (format, credentialsArray) in formatCredentialMap {
+                for credential in credentialsArray {
+                    let mapping = CredentialInputDescriptorMapping(
+                        format: format,
+                        credential: credential,
+                        inputDescriptorId: inputDescriptorId
+                    )
+                    formatToCredentialInputDescriptorMapping[format, default: []].append(mapping)
+                }
+            }
+        }
+        self.formatToCredentialInputDescriptorMapping = formatToCredentialInputDescriptorMapping
     }
 }
