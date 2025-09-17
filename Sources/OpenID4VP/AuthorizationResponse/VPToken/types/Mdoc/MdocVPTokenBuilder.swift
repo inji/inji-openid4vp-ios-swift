@@ -57,6 +57,78 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         return MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
     }
     
+    func build(
+        credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
+        unsignedVPTokenResult: (payload: Any?, unsignedVPToken: UnsignedVPToken),
+        vpTokenSigningResult: VPTokenSigningResult,
+        rootIndex: Int
+    ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
+        var documents : [CBOR] = []
+        try mdocVPTokenSigningResult.validate()
+        var descriptorMaps : [DescriptorMap] = []
+        
+        try credentialInputDescriptorMappings.forEach { credentialInputDescriptorMapping in
+            guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
+                throw InvalidType(
+                    message: "Invalid MSO-MDOC token or signing result type",
+                    className: VPTokenFactory.className
+                )
+            }
+            guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
+                throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
+            }
+            guard let docType = getValueFromCBORMap(cborMap: document, key: "docType") else {
+                throw InvalidData( message: "Invalid Verifiable Credential: docType not available in credential", className: className)
+            }
+            let docTypeString = extractStringFromCBOR(docType)!
+            
+            guard let deviceAuthSignature: DeviceAuthentication = mdocVPTokenSigningResult.docTypeToDeviceAuthentication[docTypeString] else {
+                throw MissingInput (
+                    fieldPath: ["mdocVPTokenSigningResult","docTypeToDeviceAuthentication","DeviceAuthentication"],
+                    message: "Device authentication signature not found for mdoc credential docType \(docTypeString)",
+                                    className: className)
+            }
+            
+            let deviceSignature = try createDeviceSignature(deviceAuthSignature)
+            
+            let deviceAuth = CBOR.map([.utf8String("deviceSignature"): deviceSignature])
+            let deviceNamespacesBytes = wrapCBORInputWithTag24(input: CBOR.map([:]))!
+            let deviceSigned = CBOR.map([
+                .utf8String("deviceAuthentication"): deviceAuth,
+                .utf8String("namespaces"): deviceNamespacesBytes,
+            ])
+            
+            // attach deviceSigned to cborCredential
+            document[CBOR.utf8String("deviceSigned")] = deviceSigned
+            
+            documents.append(document)
+            descriptorMaps.append(
+                DescriptorMap(
+                    id: credentialInputDescriptorMapping.inputDescriptorId,
+                    format: .ldp_vp,
+                    path: createDescriptorMapPath(rootIndex),
+                    pathNested: createNestedPath(
+                        id: credentialInputDescriptorMapping.inputDescriptorId,
+                        nestedPath: credentialInputDescriptorMapping.nestedPath,
+                        format: .ldp_vc
+                    )
+                )
+            )
+        }
+        
+        let deviceResponse = CBOR.map([
+            .utf8String("version"): .utf8String("1.0"),
+            .utf8String("documents"): .array(documents),
+            .utf8String("status"): .unsignedInt(UInt64(0)), // Status = OK
+        ])
+        
+        //base64 url encode without padding the deviceResponse
+        let encodedDeviceResponseBase64Url = Data(cborEncode(deviceResponse)).toBase64UrlEncoded()
+        let mdocVPToken = MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
+        
+        return ([mdocVPToken], descriptorMaps, rootIndex + 1)
+    }
+    
     // DeviceSignature is of COSE_Sign1 structure
     /**
      COSE_Sign1 = [

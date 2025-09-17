@@ -111,3 +111,11 @@ func hashData(_ data: String, hashAlgorithm: String = HashAlgorithm.sha256.rawVa
     }
 }
 
+func createNestedPath(id: String, nestedPath: String?, format: FormatType) -> PathNested? {
+    guard let nestedPath = nestedPath else { return nil }
+    return PathNested(id: id, format: format, path: nestedPath)
+}
+
+func createDescriptorMapPath(_ index: Int) -> String {
+    return "$[\(index)]"
+}
