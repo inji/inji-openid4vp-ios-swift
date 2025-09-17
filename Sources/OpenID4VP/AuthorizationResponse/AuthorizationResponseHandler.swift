@@ -8,6 +8,7 @@ public class AuthorizationResponseHandler {
     private var credentialsMap: [String: [FormatType: Array<Any>]]?
     private var walletNonce: String = ""
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
+    private var unsignedVPTokenResults : [FormatType: (Any?, UnsignedVPToken)] = [:]
 
     public static let className = String(describing: AuthorizationResponseHandler.self)
 
@@ -63,7 +64,7 @@ public class AuthorizationResponseHandler {
         self.credentialsMap = credentialsMap
         self.walletNonce = walletNonce
 
-        unsignedVPTokens = try await createUnsignedVPTokens(
+        self.unsignedVPTokenResults = try await createUnsignedVPTokens(
             credentialsMap: credentialsMap,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -71,14 +72,8 @@ public class AuthorizationResponseHandler {
             signatureSuite: signatureSuite
         )
 
-        let unsignedVPTokensExtracted: [FormatType: UnsignedVPToken] = try unsignedVPTokens.mapValues { innerMap in
-            guard let token = innerMap["unsignedVPToken"] as? UnsignedVPToken else {
-                throw InvalidData(
-                    message: "Missing or invalid 'unsignedVPToken' in VP token map",
-                    className: AuthorizationResponseHandler.className
-                )
-            }
-            return token
+        let unsignedVPTokensExtracted: [FormatType: UnsignedVPToken] = self.unsignedVPTokenResults.mapValues { innerMap in
+            return innerMap.1
         }
 
         return unsignedVPTokensExtracted
@@ -286,68 +281,51 @@ public class AuthorizationResponseHandler {
         responseUri: String,
         holderId: String?,
         signatureSuite: String?
-    ) async throws -> [FormatType: [String: Any]] {
-        let groupedVcs: [FormatType: [AnyCodable]] = credentialsMap
-            .compactMap { $0.value }
-            .reduce(into: [FormatType: [AnyCodable]]()) { result, entry in
-                for (format, creds) in entry {
-                    result[format, default: []].append(contentsOf: creds)
-                }
+    ) async throws -> [FormatType: (Any?, UnsignedVPToken)]  {
+        createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
+
+        var unsignedVPTokenResults: [FormatType: (Any?, UnsignedVPToken)] = [:]
+
+        for format in self.formatToCredentialInputDescriptorMapping.keys {
+            guard var credentialsArray = self.formatToCredentialInputDescriptorMapping[format] else {
+                continue
             }
-
-        var result: [FormatType: [String: Any]] = [:]
-
-        for (format, credentialsArray) in groupedVcs {
             switch format {
             case .ldp_vc:
-                let token = UnsignedLdpVPTokenBuilder(
-                    verifiableCredential: credentialsArray,
+                let token = try await UnsignedLdpVPTokenBuilder(
+                    verifiableCredential: [],
                     id: UUIDGenerator.generateUUID(),
                     holder: holderId ?? "",
                     challenge: authorizationRequest.nonce,
                     domain: authorizationRequest.clientId,
                     signatureSuite: signatureSuite ?? "Ed25519Signature2020"
-                ).build()
-                result[format] = token
+                ).build(
+                    credentialInputDescriptorMappings: &credentialsArray
+                )
+                unsignedVPTokenResults[format] = token
             case .mso_mdoc:
-                let mdocCreds = try credentialsArray
-                    .map { anyCodable in
-                        guard let str = anyCodable.value as? String else {
-                            throw InvalidData(
-                                message: "MDOC credential is not a String",
-                                className: AuthorizationResponseHandler.className
-                            )
-                        }
-                        return str
-                    }
-                let token = try UnsignedMdocVPTokenBuilder(
-                    mdocCredentials: mdocCreds,
+                let token = try await UnsignedMdocVPTokenBuilder(
+                    mdocCredentials: [],
                     clientId: authorizationRequest.clientId,
                     responseUri: responseUri,
                     verifierNonce: authorizationRequest.nonce,
                     mdocGeneratedNonce: walletNonce
-                ).build()
-                result[format] = token
+                ).build(
+                    credentialInputDescriptorMappings: &credentialsArray
+                )
+                unsignedVPTokenResults[format] = token
                 
             case .dc_sd_jwt, .vc_sd_jwt:
-                let sdJwtCreds = try credentialsArray
-                    .map { anyCodable in
-                        guard let str = anyCodable.value as? String else {
-                            throw InvalidData(
-                                message: "SD-JWT credential is not a String",
-                                className: AuthorizationResponseHandler.className
-                            )
-                        }
-                        return str
-                    }
                 let token = try await UnsignedSdJwtVPTokenBuilder(
-                    clientId: authorizationRequest.clientId, authorizationRequestNonce: authorizationRequest.nonce, credentials: sdJwtCreds
-                    ).build()
-                result[format] = token
+                    clientId: authorizationRequest.clientId, authorizationRequestNonce: authorizationRequest.nonce, credentials: []
+                    ).build(
+                        credentialInputDescriptorMappings: &credentialsArray
+                    )
+                unsignedVPTokenResults[format] = token
             }
         }
 
-        return result
+        return unsignedVPTokenResults
     }
 
     @available(*, deprecated, message: "This method supports constructing VP token for LDP VC without canonicalization of the data sent for signing. use constructUnsignedVPToken instead")
@@ -515,7 +493,7 @@ public class AuthorizationResponseHandler {
     }
     
     private func createFormatToCredentialInputDescriptorMapping(
-        matchingCredentials: [String: [FormatType: [Any]]]
+        matchingCredentials: [String: [FormatType: [AnyCodable]]]
     ) {
         var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
     

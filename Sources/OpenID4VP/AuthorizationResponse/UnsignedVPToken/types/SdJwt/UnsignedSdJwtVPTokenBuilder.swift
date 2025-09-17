@@ -67,7 +67,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         ]
     }
     
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (payload: Any?, unsignedVPToken: UnsignedVPToken) {
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (payload: Any?, unsignedVPToken : UnsignedVPToken) {
         var uuidToSdJwt = [String: String]()
         var uuidToUnsignedKBJWT = [String: String]()
         
@@ -82,7 +82,8 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             let sdJWT = credential.split(separator: "~")[0]
             let sdJWTPayload = try JWSHandler.extractDataJsonFromJws(jws: String(sdJWT), jwsPart: .payload)
             
-            credentialInputDescriptorMapping.identifier = uuid
+//            TODO: fix me
+//            credentialInputDescriptorMapping.identifier = uuid
             
             guard let confirmationKeyClaim = sdJWTPayload["cnf"] as? [String: Any], !confirmationKeyClaim.isEmpty else {
                 continue
