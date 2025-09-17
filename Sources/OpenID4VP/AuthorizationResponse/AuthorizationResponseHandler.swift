@@ -3,12 +3,9 @@ import Foundation
 
 public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
-    private var unsignedVPTokens: [FormatType: [String:Any]] = [:]
-    private var path: [FormatType: (index: Int, nestedIndex: Int)] = [:]
-    private var credentialsMap: [String: [FormatType: Array<Any>]]?
     private var walletNonce: String = ""
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
-    private var unsignedVPTokenResults : [FormatType: (Any?, UnsignedVPToken)] = [:]
+    private var unsignedVPTokenResults : [FormatType: (payload: Any?, unsignedVPToken: UnsignedVPToken)] = [:]
 
     public static let className = String(describing: AuthorizationResponseHandler.self)
 
@@ -61,7 +58,6 @@ public class AuthorizationResponseHandler {
             )
         }
 
-        self.credentialsMap = credentialsMap
         self.walletNonce = walletNonce
 
         self.unsignedVPTokenResults = try await createUnsignedVPTokens(
@@ -103,14 +99,11 @@ public class AuthorizationResponseHandler {
     ) throws -> AuthorizationResponse {
         switch authorizationRequest.responseType {
         case ResponseType.vp_token.rawValue:
-            var credentialFormatIndex: [FormatType: Int] = [:]
-            let vpToken = try createVPToken(
+            let (vpToken, presentationSubmission) = try createVPTokenAndPresentationSubmission(
                 vpTokenSigningResults: vpTokenSigningResults,
                 authorizationRequest: authorizationRequest,
-                credentialFormatIndex: &credentialFormatIndex
-            )
-            let presentationSubmission = createPresentationSubmission(
-                credentialFormatIndex: &credentialFormatIndex, authorizationRequest: authorizationRequest
+                unsignedVPTokenResults: self.unsignedVPTokenResults,
+                formatToCredentialInputDescriptorMapping: self.formatToCredentialInputDescriptorMapping
             )
             return AuthorizationResponse(
                 vpToken: vpToken,
@@ -119,9 +112,90 @@ public class AuthorizationResponseHandler {
             )
         default:
             throw InvalidData(
-                message: "response type - \(authorizationRequest.responseType) is not supported",
+                message: "Provided response_type - \(authorizationRequest.responseType) is not supported",
                 className: AuthorizationResponseHandler.className
             )
+        }
+    }
+    
+    private func createVPTokenAndPresentationSubmission(
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
+        authorizationRequest: AuthorizationRequest,
+        unsignedVPTokenResults: [FormatType: (Any?, UnsignedVPToken)],
+        formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]]
+    ) throws -> (VPTokenType, PresentationSubmission) {
+        if Set(unsignedVPTokenResults.keys) != Set(vpTokenSigningResults.keys) {
+            throw InvalidData(
+                message: "VPTokenSigningResult not provided for the required formats",
+                className: Self.className
+            )
+        }
+    
+        var finalVpTokens: [VPToken] = []
+        var finalDescriptorMappings: [DescriptorMap] = []
+        var rootIndex = 0
+    
+        for (credentialFormat, credentialInputDescriptorMappings) in formatToCredentialInputDescriptorMapping {
+            guard let vpTokenSigningResult = vpTokenSigningResults[credentialFormat] else {
+                throw InvalidData(
+                    message: "unable to find the related credential format - \(credentialFormat) in the vpTokenSigningResults map",
+                    className: Self.className
+                )
+            }
+            guard let unsignedVPTokenResult = unsignedVPTokenResults[credentialFormat] else {
+                throw InvalidData(
+                    message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokenResults map",
+                    className: Self.className
+                )
+            }
+    
+            let vpTokenBuilder = try VPTokenFactory(
+                vpTokenSigningResult: vpTokenSigningResult,
+                vpTokenSigningPayload: unsignedVPTokenResult.0 ?? "",
+                unsignedVPTokens: unsignedVPTokenResult.1,
+                nonce: authorizationRequest.nonce
+            ).getVPTokenBuilder(credentialFormat: credentialFormat)
+    
+            let (vpTokens, descriptorMaps, nextRootIndex) = try vpTokenBuilder.build(
+                credentialInputDescriptorMappings: credentialInputDescriptorMappings,
+                unsignedVPTokenResult: unsignedVPTokenResult,
+                vpTokenSigningResult: vpTokenSigningResult,
+                rootIndex: rootIndex
+            )
+            finalVpTokens.append(contentsOf: vpTokens)
+            finalDescriptorMappings.append(contentsOf: descriptorMaps)
+            rootIndex = nextRootIndex
+        }
+    
+        let vpToken: VPTokenType = (finalVpTokens.count == 1)
+            ? .vpTokenElement(finalVpTokens[0])
+            : .vpTokenArray(finalVpTokens)
+    
+        sanitizeDescriptorMap(&finalDescriptorMappings, isSingleVPToken: finalVpTokens.count == 1)
+        let presentationSubmission = PresentationSubmission(
+            definitionId: authorizationRequest.presentationDefinition.id,
+            descriptorMap: finalDescriptorMappings
+        )
+    
+        return (vpToken, presentationSubmission)
+    }
+    
+    private func sanitizeDescriptorMap(
+        _ descriptorMaps: inout [DescriptorMap],
+        isSingleVPToken: Bool
+    ) {
+        //In case of only single VP, presentation_submission -> path = $, path_nest = $.<credentialPathIdentifier - internalPath>[n]
+        //and in case of multiple VPs, presentation_submission -> path = $[i], path_nest = $[i].<credentialPathIdentifier - internalPath>[n]
+        if isSingleVPToken {
+            for i in 0..<descriptorMaps.count {
+                let updatedRootPath = descriptorMaps[i].path.replacingOccurrences(of: #"\[\d+]"#, with: "", options: .regularExpression)
+                descriptorMaps[i] = DescriptorMap(
+                    id: descriptorMaps[i].id,
+                    format: descriptorMaps[i].format,
+                    path: updatedRootPath,
+                    pathNested: descriptorMaps[i].pathNested
+                )
+            }
         }
     }
 
@@ -139,140 +213,6 @@ public class AuthorizationResponseHandler {
                 producerInfo:walletNonce,
                 recepientInfo: authorizationRequest.nonce
             )
-    }
-
-    private func createVPToken(
-        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
-        authorizationRequest: AuthorizationRequest,
-        credentialFormatIndex: inout [FormatType: Int]
-    ) throws -> VPTokenType {
-        var vpTokens: [VPToken] = []
-        
-        if(Set(unsignedVPTokens.keys) != Set(vpTokenSigningResults.keys)){
-            throw InvalidData(message: "VPTokenSigningResult not provided for the required formats", className: Self.className)
-        }
-
-        var count = 0
-        for (credentialFormat, vpTokenSigningResult) in vpTokenSigningResults.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
-            var token : any VPToken
-            if(credentialFormat == .vc_sd_jwt || credentialFormat == .dc_sd_jwt){
-                guard ((vpTokenSigningResult as? SdJwtVpTokenSigningResult)?.uuidToKbJWTSignature) != nil else {
-                    throw InvalidData(
-                        message: "Invalid VPTokenSigningResult for SD-JWT format",
-                        className: AuthorizationResponseHandler.className
-                    )
-                }
-                guard let vpTokenSigningPayload = unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] else {
-                    throw InvalidData(
-                        message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
-                        className: AuthorizationResponseHandler.className
-                    )
-                }
-                guard let unsignedVPTokens = unsignedVPTokens[credentialFormat]?["unsignedVPToken"] else {
-                    throw InvalidData(
-                        message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
-                        className: AuthorizationResponseHandler.className
-                    )
-                }
-                
-                for( uuid, _ ) in vpTokenSigningPayload as? [String: String] ?? [:] {
-                    token = try VPTokenFactory(
-                        vpTokenSigningResult: vpTokenSigningResult,
-                        vpTokenSigningPayload: vpTokenSigningPayload,
-                        unsignedVPTokens: unsignedVPTokens,
-                        nonce: authorizationRequest.nonce,
-                        uuid: uuid
-                    ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
-                    vpTokens.append(token)
-                    credentialFormatIndex[credentialFormat] = count
-                    count += 1
-                }
-            } else {
-                token = try VPTokenFactory(
-                    vpTokenSigningResult: vpTokenSigningResult,
-                    vpTokenSigningPayload: unsignedVPTokens[credentialFormat]?["vpTokenSigningPayload"] ?? {
-                        throw InvalidData(
-                            message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokens map",
-                            className: AuthorizationResponseHandler.className
-                        )
-                    }(),
-                    nonce: authorizationRequest.nonce
-                ).getVPTokenBuilder(credentialFormat: credentialFormat).build()
-                vpTokens.append(token)
-                credentialFormatIndex[credentialFormat] = count
-                count += 1
-            }
-        }
-
-        return vpTokens.count == 1
-            ? .vpTokenElement(vpTokens[0])
-            : .vpTokenArray(vpTokens)
-    }
-
-    private func createPresentationSubmission(
-        credentialFormatIndex: inout [FormatType: Int],
-        authorizationRequest: AuthorizationRequest
-    ) -> PresentationSubmission {
-        let descriptorMap = createInputDescriptor(
-            credentialFormatIndex: &credentialFormatIndex
-        )
-        let presentationDefinitionId = authorizationRequest.presentationDefinition.id
-
-        return PresentationSubmission(
-            definitionId: presentationDefinitionId,
-            descriptorMap: descriptorMap
-        )
-    }
-
-    private func createInputDescriptor(
-        credentialFormatIndex: inout [FormatType: Int]
-    ) -> [DescriptorMap] {
-        let multipleVPTokens = credentialFormatIndex.keys.count > 1
-        var formatTypeToCredentialIndex: [FormatType: Int] = [:]
-
-        return credentialsMap?.sorted(by: { $0.key < $1.key }).flatMap { inputDescriptorId, formatMap in
-            formatMap.flatMap { credentialFormat, credentials in
-                let vpTokenIndex = credentialFormatIndex[credentialFormat] ?? -1
-
-                return credentials.map { _ in
-                    let rootLevelPath = multipleVPTokens ? "$[\(vpTokenIndex)]" : "$"
-                    let credentialIndex = (formatTypeToCredentialIndex[credentialFormat] ?? -1) + 1
-                    let vpFormat: VPFormatType
-                    let pathNested: PathNested?
-                    
-                    switch credentialFormat {
-                    case .ldp_vc:
-                        let relativePath = "$.\(LdpVPToken.internalPath)[\(credentialIndex)]"
-                        vpFormat = .ldp_vp
-                        pathNested = PathNested(
-                            id: inputDescriptorId,
-                            format: credentialFormat,
-                            path: relativePath
-                        )
-                    case .mso_mdoc:
-                        pathNested = nil
-                        vpFormat = .mso_mdoc
-                        
-                    case .dc_sd_jwt:
-                        pathNested = nil
-                        vpFormat = .dc_sd_jwt
-                        
-                    case .vc_sd_jwt :
-                        pathNested = nil
-                        vpFormat = .vc_sd_jwt
-                    }
-                    
-                    formatTypeToCredentialIndex[credentialFormat] = credentialIndex
-                    
-                    return DescriptorMap(
-                        id: inputDescriptorId,
-                        format: vpFormat,
-                        path: rootLevelPath,
-                        pathNested: pathNested
-                    )
-                }
-            }
-        } ?? []
     }
 
     private func createUnsignedVPTokens(
@@ -340,7 +280,7 @@ public class AuthorizationResponseHandler {
             return [.ldp_vc: wrapped]
         }
 
-        let unsignedVPToken = try await createUnsignedVPToken(
+        _ = try await createUnsignedVPToken(
             credentialsMap: transformedCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -349,7 +289,7 @@ public class AuthorizationResponseHandler {
             signatureSuite: nil
         )
 
-        var ldpToken = unsignedVPTokens[.ldp_vc]?["vpTokenSigningPayload"] as? LdpVPToken
+        var ldpToken = self.unsignedVPTokenResults[.ldp_vc]?.0 as? LdpVPToken
 
         ldpToken?.proof = nil
 
@@ -391,7 +331,9 @@ public class AuthorizationResponseHandler {
             var pathIndex = 0
 
             // Flatten credentials
-            let flattenedCredentials: [String: [Any]] = (credentialsMap?.mapValues { $0.values.first ?? [] })!
+            let flattenedCredentials : [String : [Any]] = self.formatToCredentialInputDescriptorMapping[.ldp_vc]?.reduce(into: [String: [Any]]()) { partialResult, mapping in
+                partialResult[mapping.inputDescriptorId, default: []].append(mapping.credential.value)
+            } ?? [:]
 
             // Build descriptor map
             var descriptorMap: [DescriptorMap] = []
@@ -414,16 +356,14 @@ public class AuthorizationResponseHandler {
                 descriptorMap: descriptorMap
             )
 
-            guard let unsignedLdpVPTokenMap = unsignedVPTokens[.ldp_vc],
-                  var unsignedLdpVPToken = unsignedVPTokens[FormatType.ldp_vc]!["vpTokenSigningPayload"] as? LdpVPToken else {
+            guard let unsignedLdpVPTokenMap = self.unsignedVPTokenResults[.ldp_vc],
+                  var unsignedLdpVPToken = unsignedLdpVPTokenMap.0 as? LdpVPToken else {
                 throw NSError(domain: "Missing unsignedLdpVPToken", code: 0)
             }
 
             // Construct final VP Token
             unsignedLdpVPToken.proof?.verificationMethod = vpResponseMetadata.publicKey
             unsignedLdpVPToken.proof?.proofValue = vpResponseMetadata.jws
-
-            print("AuthorizationResponseHandler VP Token: \(unsignedLdpVPToken)")
 
             return try await constructHttpRequestBody(
                 vpToken: unsignedLdpVPToken,
