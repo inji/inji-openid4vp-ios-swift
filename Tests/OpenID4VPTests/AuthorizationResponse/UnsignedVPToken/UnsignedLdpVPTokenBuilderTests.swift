@@ -8,7 +8,6 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         let vc = ldpVC()
         
         let builder = UnsignedLdpVPTokenBuilder(
-            verifiableCredential: [AnyCodable(vc)],
             id: "ebc6f1c2",
             holder: "did:example:wallet",
             challenge: "test-challenge",
@@ -42,7 +41,6 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         let vc = ldpVC()
         
         let builder = UnsignedLdpVPTokenBuilder(
-            verifiableCredential: [AnyCodable(vc)],
             id: "ebc6f1c2",
             holder: "did:example:wallet",
             challenge: "test-challenge",

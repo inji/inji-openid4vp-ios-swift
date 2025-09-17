@@ -6,7 +6,6 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let builder = UnsignedSdJwtVPTokenBuilder(
             clientId: "client",
             authorizationRequestNonce: "nonce",
-            credentials: [sampeVcSdJwtWithHolderBinding],
             networkManager: MockNetworkManager()
         )
         var credentialInputDescriptorMappings = [
@@ -32,7 +31,6 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let builder = UnsignedSdJwtVPTokenBuilder(
             clientId: "client",
             authorizationRequestNonce: "nonce",
-            credentials: [],
             networkManager: MockNetworkManager()
         )
         var credentialInputDescriptorMappings = [
@@ -51,7 +49,6 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let builder = UnsignedSdJwtVPTokenBuilder(
             clientId: "client",
             authorizationRequestNonce: "nonce",
-            credentials: [sampleVcSdJwtWithNoHolderBinding],
             networkManager: MockNetworkManager()
         )
         
@@ -77,7 +74,6 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let builder = UnsignedSdJwtVPTokenBuilder(
             clientId: "client",
             authorizationRequestNonce: "nonce",
-            credentials: [sdJwtWithInvalidKid],
             networkManager: MockNetworkManager()
         )
         
@@ -94,7 +90,6 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let builder = UnsignedSdJwtVPTokenBuilder(
             clientId: "client",
             authorizationRequestNonce: "nonce",
-            credentials: [String(describing: invalidSdJwt)],
             networkManager: MockNetworkManager()
         )
         
