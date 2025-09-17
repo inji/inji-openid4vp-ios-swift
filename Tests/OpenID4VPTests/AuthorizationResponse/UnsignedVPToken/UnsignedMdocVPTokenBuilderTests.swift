@@ -24,7 +24,7 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         let token = unsignedVPToken as! UnsignedMdocVPToken
         XCTAssertEqual("org.iso.18013.5.1.mDL", token.docTypeToDeviceAuthenticationBytes.keys.first)
         XCTAssertTrue(token.docTypeToDeviceAuthenticationBytes.values.first!.starts(with: "d8"))
-        XCTAssertEqual("", mdocCredentialInputDescriptorMapping.identifier)
+        XCTAssertEqual("org.iso.18013.5.1.mDL", credentialInputDescriptorMappings.first?.identifier)
     }
 
     func testThrowErrorWhenUnableToDecodeCredential() async throws {

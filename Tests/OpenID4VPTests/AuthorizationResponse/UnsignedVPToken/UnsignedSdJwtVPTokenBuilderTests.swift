@@ -20,6 +20,8 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let unsignedVPToken = unsignedSdJwtVPToken as? UnsignedSdJwtVPToken
         XCTAssertNotNil(unsignedVPToken)
         XCTAssertTrue(((unsignedVPToken?.uuidToUnsignedKBT.values.first?.starts(with: "eyJ")) != nil)) // Check if it looks like a JWT
+        XCTAssertNotNil(credentialInputDescriptorMappings.first?.identifier) // identifier should be set to UUID
+        XCTAssertEqual(credentialInputDescriptorMappings.first?.identifier, unsignedVPToken?.uuidToUnsignedKBT.keys.first) // identifier should match the key in unsigned vp token
         
         XCTAssertNil(payload)
     }

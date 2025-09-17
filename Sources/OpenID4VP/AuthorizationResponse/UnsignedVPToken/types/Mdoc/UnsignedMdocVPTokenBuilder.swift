@@ -96,8 +96,9 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         let deviceNamespaces = CBOR.map([:])
         let deviceNamespacesBytes = wrapCBORInputWithTag24(input: deviceNamespaces)!
 
-        for index in credentialInputDescriptorMappings.indices {
-            guard let mdocCredential = credentialInputDescriptorMappings[index].credential.value as? String else {
+        for index in 0..<credentialInputDescriptorMappings.count {
+            let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
+            guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
                 throw InvalidData(
                     message: "MDOC credential is not a String",
                     className: AuthorizationResponseHandler.className
@@ -134,8 +135,12 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
 
             let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
             docTypeToDeviceAuthenticationBytes[docTypeString] = cborToByteString(cbor: wrapped)
-            credentialInputDescriptorMappings[index].identifier = docTypeString
-//            credentialInputDescriptorMappings[index] = credentialInputDescriptorMapping
+            credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
+                format: credentialInputDescriptorMapping.format,
+                credential: credentialInputDescriptorMapping.credential,
+                inputDescriptorId: credentialInputDescriptorMapping.inputDescriptorId,
+                identifier: docTypeString
+                )
         }
 
         let unsignedMdocVPToken = UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes) 

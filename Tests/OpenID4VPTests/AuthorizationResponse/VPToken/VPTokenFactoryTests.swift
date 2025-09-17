@@ -9,7 +9,6 @@ final class VPTokenFactoryTests: XCTestCase {
         let nonce = "nonce123"
 
         let factory = VPTokenFactory(
-            vpTokenSigningResult: ldpVPTokenSigningResult, vpTokenSigningPayload: LdpVPToken(verifiableCredential: [AnyCodable(ldpVC())], id: "testid", holder: "test-holder", proof: Proof(type: "", created: "test", challenge: "challenge", domain: "", verificationMethod: "")),
             nonce: nonce
         )
 
@@ -23,8 +22,6 @@ final class VPTokenFactoryTests: XCTestCase {
         let nonce = "nonce123"
 
         let factory = VPTokenFactory(
-            vpTokenSigningResult: mdocSigningResult,
-            vpTokenSigningPayload: ["mdoc"],
             nonce: nonce
         )
 

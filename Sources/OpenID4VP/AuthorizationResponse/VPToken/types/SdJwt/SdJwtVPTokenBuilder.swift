@@ -1,42 +1,7 @@
 import Foundation
 
 class SdJwtVPTokenBuilder : VPTokenBuilder {
-    private let vpTokenSigningResult: SdJwtVpTokenSigningResult
-    private let credentials: [String : String]
-    private let unsignedVpTokens: UnsignedSdJwtVPToken
-    private let uuid : String
     private let className = String(describing: SdJwtVPTokenBuilder.self)
-    
-    init(
-        vpTokenSigningResult: SdJwtVpTokenSigningResult,
-        credentials: [String : String],
-        unsignedVpTokens: UnsignedSdJwtVPToken,
-        uuid: String
-    ) {
-        self.vpTokenSigningResult = vpTokenSigningResult
-        self.credentials = credentials
-        self.unsignedVpTokens = unsignedVpTokens
-        self.uuid = uuid
-        
-    }
-    
-    func build() throws -> VPToken {
-        if let sdJwtCredential = credentials[uuid] {
-            if let unsignedKBJwt = unsignedVpTokens.uuidToUnsignedKBT[uuid]{
-                guard let signature = vpTokenSigningResult.uuidToKbJWTSignature[uuid] else {
-                    throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
-                }
-                
-                let sdJwtVpTokenValue = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
-                
-                return SdJwtVPToken(value: sdJwtVpTokenValue)
-            } else {
-                return SdJwtVPToken(value: sdJwtCredential)
-            }
-        } else {
-            throw MissingInput(fieldPath: uuid, message: "Missing SD-JWT credential for uuid: \(uuid)", className: className)
-        }
-    }
     
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
@@ -68,7 +33,7 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
                 finalVPToken = sdJwtCredential
             } else if let unsignedKBJwt = unsignedKBJwt, let signature = signature {
                 finalVPToken = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
-            } else if let unsignedKBJwt = unsignedKBJwt, signature == nil {
+            } else if unsignedKBJwt != nil, signature == nil {
                 throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
             } else {
                 throw InvalidData(message: "Signature present but unsigned KB-JWT missing for uuid: \(uuid)", className: className)

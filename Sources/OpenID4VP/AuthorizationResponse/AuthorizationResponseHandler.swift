@@ -150,9 +150,6 @@ public class AuthorizationResponseHandler {
             }
     
             let vpTokenBuilder = try VPTokenFactory(
-                vpTokenSigningResult: vpTokenSigningResult,
-                vpTokenSigningPayload: unsignedVPTokenResult.0 ?? "",
-                unsignedVPTokens: unsignedVPTokenResult.1,
                 nonce: authorizationRequest.nonce
             ).getVPTokenBuilder(credentialFormat: credentialFormat)
     
@@ -263,6 +260,7 @@ public class AuthorizationResponseHandler {
                     )
                 unsignedVPTokenResults[format] = token
             }
+            formatToCredentialInputDescriptorMapping[format] = credentialsArray
         }
 
         return unsignedVPTokenResults

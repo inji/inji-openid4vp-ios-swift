@@ -172,7 +172,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             XCTFail("Expected error not thrown")
         } catch {
             assertOpenID4VPException(error,
-                                     expectedMessage: "response type - fragment is not supported",
+                                     expectedMessage: "Provided response_type - fragment is not supported",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -217,19 +217,19 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "definition_id": "vp_presentation_definition",
             "descriptor_map": [
                 {
+                    "id": "org.iso.18013.5.1.mDL",
+                    "format": "mso_mdoc",
+                    "path": "$[0]"
+                },
+                {
                     "format": "ldp_vp",
                     "id": "input_descriptor1",
-                    "path": "$[0]",
+                    "path": "$[1]",
                     "path_nested": {
                         "id": "input_descriptor1",
                         "path": "$.verifiableCredential[0]",
                         "format": "ldp_vc"
                     }
-                },
-                {
-                    "id": "org.iso.18013.5.1.mDL",
-                    "format": "mso_mdoc",
-                    "path": "$[1]"
                 }
             ],
             "id": "<DYNAMIC_ID>"
@@ -285,7 +285,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         // Replace the dynamic ID in expected string
         let expectedJsonString = expectedPresentationSubmissionTemplate.replacingOccurrences(of: "<DYNAMIC_ID>", with: actualId)
-        
+        print(actualJson)
         assertJsonString(
             expected: expectedJsonString,
             actual: actualJson,

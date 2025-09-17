@@ -1,7 +1,6 @@
 import Foundation
 
 protocol VPTokenBuilder {
-    func build() throws -> VPToken
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
         unsignedVPTokenResult: (payload: Any?, unsignedVPToken: UnsignedVPToken),
