@@ -34,29 +34,15 @@ struct JWSHandler {
     
     static func createUnsignedJWS(header: [String: Any], payload: [String: Any]) throws -> String {
         do {
-            let headerEncoded = try jsonCompactString(header)
-            let payloadEncoded = try jsonCompactString(payload)
-
+            let headerEncoded = try JSONSerialization.data(withJSONObject: header, options: []).toBase64UrlEncoded()
+            let payloadJson = try JSONSerialization.data(withJSONObject: payload, options: [])
+            let payloadEncoded = payloadJson.toBase64UrlEncoded()
             return "\(headerEncoded).\(payloadEncoded)"
         } catch {
             throw GenericFailure(message: "JWS creation failed: \(error.localizedDescription)", className: JWSHandler.className)
         }
     }
-    
-    static func jsonCompactString(_ input: [String: Any]) throws -> String {
-        let data = try JSONSerialization.data(
-            withJSONObject: input,
-            options: [.withoutEscapingSlashes] // Remove .sortedKeys - JS doesn't sort by default
-        )
-        
-        // Ensure no extra whitespace (JS default)
-        guard let str = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: "JWTEncoding", code: -1, userInfo: [NSLocalizedDescriptionKey: "UTF8 conversion failed"])
-        }
-        
-        return Data(str.utf8).toBase64UrlEncoded()
-    }
-    
+
     static func extractDataJsonFromJws(jws: String, jwsPart: JWSPart) throws -> [String:Any] {
         let components = jws.split(separator: ".")
         let payload = String(components[jwsPart.rawValue])

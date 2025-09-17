@@ -10,8 +10,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let signatureSuite = "JsonWebSignature2020"
     
     //MARK: Credential format = ldp_vc
-    
-    
+
+
     func testConstructUnsignedVPTokenThrowsErrorIncaseOfInvalidHoldersIdWithLdpVCAvailable() async throws {
         let invalidHolderIdTestCases = ["", " ", "  ","null", nil]
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
@@ -63,7 +63,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             }
         }
     }
-    
+
     
     func testConstructUnsignedVPTokenV1Success() async throws {
         let verifiableCredentials: [String: [String]] = [
@@ -212,7 +212,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
         ]
         
-        let expectedPresentationSubmissionTemplate = """
+        let expectedPresentationSubmissionTemplateWithMdocFirst = """
         {
             "definition_id": "vp_presentation_definition",
             "descriptor_map": [
@@ -230,6 +230,30 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                         "path": "$.verifiableCredential[0]",
                         "format": "ldp_vc"
                     }
+                }
+            ],
+            "id": "<DYNAMIC_ID>"
+        }
+        """
+        
+        let expectedPresentationSubmissionTemplateWithLdpFirst = """
+        {
+            "definition_id": "vp_presentation_definition",
+            "descriptor_map": [
+                {
+                    "format": "ldp_vp",
+                    "id": "input_descriptor1",
+                    "path": "$[0]",
+                    "path_nested": {
+                        "id": "input_descriptor1",
+                        "path": "$.verifiableCredential[0]",
+                        "format": "ldp_vc"
+                    }
+                },        
+                {
+                    "id": "org.iso.18013.5.1.mDL",
+                    "format": "mso_mdoc",
+                    "path": "$[1]"
                 }
             ],
             "id": "<DYNAMIC_ID>"
@@ -274,6 +298,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             return
         }
         
+        
         // Get actual ID
         let actualJson = decodeQueryValue(actualBody)
         guard let actualData = actualJson.data(using: .utf8),
@@ -283,26 +308,30 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             return
         }
         
+        let vpToken = recordedRequest.requestBody?["vp_token"] as? String
+        // This check is made to avoid flakiness in tests as the order of credentials in vp_token is not guaranteed due to input mtaching credentials being a map
+        let expectedPresentationSubmissionTemplate: String = vpToken?.starts(with: "[\"o") ?? false ? expectedPresentationSubmissionTemplateWithMdocFirst : expectedPresentationSubmissionTemplateWithLdpFirst
+        
         // Replace the dynamic ID in expected string
         let expectedJsonString = expectedPresentationSubmissionTemplate.replacingOccurrences(of: "<DYNAMIC_ID>", with: actualId)
-        print(actualJson)
+        
         assertJsonString(
             expected: expectedJsonString,
             actual: actualJson,
             strict: false
         )
     }
-    
+
     //MARK: Credential format = SD-JWT
-    
+
     func testCreationOfUnsignedVPTokenWithSdJwtFormatSuccess() async throws {
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
-        
+
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
-        
+
         await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
@@ -316,13 +345,13 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             XCTAssertTrue((result.values.first as? UnsignedSdJwtVPToken)?.uuidToUnsignedKBT.count == 1)
         }
     }
-    
+
     func testSharingOfSdJwtWithHolderBindingSuccess() async throws {
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
-        
+
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         let unsignedVpTokens = try await handler.constructUnsignedVPToken(
@@ -333,11 +362,11 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )
-        
+
         let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys.first!
         let result = try await handler.shareVP(authorizationRequest: authorizationRequest, vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])], responseUri: responseUri)
-        
-        
+
+
         XCTAssertEqual(result, "sending is success in AuthorizationResponseTests")
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         XCTAssertEqual(recordedRequest.requestBody?["state"] as? String, state)
@@ -345,10 +374,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertNotNil(presentationSubmission)
         XCTAssertEqual(recordedRequest.requestBody?.keys.count, 3)
     }
-            
-    
+
+
     //MARK: Credential format = All supported credential formats combination
-    
+
     func testConstructUnsignedVPTokenSuccess() async throws {
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
@@ -356,10 +385,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
-        
+
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
-        
+
         await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
@@ -375,7 +404,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
 
-    
+
     func testShareAuthorizationResponseSuccess() async throws {
         mockNetworkManager.clearResponses()
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
@@ -385,7 +414,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
-        
+
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         let unsignedVPTokens = try await handler.constructUnsignedVPToken(
@@ -398,7 +427,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
         let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
         let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
-        
+
         let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [
             FormatType.ldp_vc: LdpVPTokenSigningResult(
             jws: "testJWS",
@@ -408,18 +437,18 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             .vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [vcSdJwtUuids[0]: "ayuht"]),
             .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"])
         ]
-        
+
         _ = try await handler.shareVP(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
             responseUri: responseUri
         )
-     
+
         let recordedRequest = (mockNetworkManager.recordedRequests[responseUri]!).requestBody
         XCTAssertEqual(recordedRequest?["state"] as? String, state)
         XCTAssertNotNil(recordedRequest?["presentation_submission"])
     }
-    
+
     func testThrowExceptionWhenVPTokenSigningResultMissingForAFormat() async throws {
         mockNetworkManager.clearResponses()
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
@@ -429,7 +458,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
-        
+
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         let unsignedVPTokens = try await handler.constructUnsignedVPToken(
@@ -442,7 +471,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
         let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
         let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
-        
+
         let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [ // simulate missing credential format
             FormatType.ldp_vc: LdpVPTokenSigningResult(
             jws: "testJWS",
@@ -451,7 +480,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
             .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"])
         ]
-        
+
         do {
             _ = try await handler.shareVP(
                 authorizationRequest: authorizationRequest,
