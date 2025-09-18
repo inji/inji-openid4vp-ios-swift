@@ -15,7 +15,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         self.networkManager = networkManager
     }
     
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (payload: Any?, unsignedVPToken : UnsignedVPToken) {
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPToken : UnsignedVPToken) {
         var uuidToUnsignedKBJWT = [String: String]()
         
         for index in 0..<credentialInputDescriptorMappings.count {
@@ -71,7 +71,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         }
         
         return (
-            payload: nil,
+            vpTokenSigningPayload: nil,
             unsignedVPToken: UnsignedSdJwtVPToken(uuidToUnsignedKBT: uuidToUnsignedKBJWT)
         )
     }

@@ -5,7 +5,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
 
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
-        unsignedVPTokenResult: (payload: Any?, unsignedVPToken: UnsignedVPToken),
+        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPToken: UnsignedVPToken),
         vpTokenSigningResult: VPTokenSigningResult,
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
@@ -13,7 +13,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
             throw InvalidData(message: "vpTokenSigningResult is not LdpVPTokenSigningResult", className: className)
         }
         try ldpVPTokenSigningResult.validate()
-        guard let unsignedLdpVPToken = unsignedVPTokenResult.payload as? LdpVPToken else {
+        guard let unsignedLdpVPToken = unsignedVPTokenResult.vpTokenSigningPayload as? LdpVPToken else {
             throw InvalidData(message: "payload is not LdpVPToken", className: className)
         }
         var proof = unsignedLdpVPToken.proof

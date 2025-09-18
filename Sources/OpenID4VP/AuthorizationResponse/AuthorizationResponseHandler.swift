@@ -5,7 +5,7 @@ public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
     private var walletNonce: String = ""
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
-    private var unsignedVPTokenResults : [FormatType: (payload: Any?, unsignedVPToken: UnsignedVPToken)] = [:]
+    private var unsignedVPTokenResults : [FormatType: (vpTokenSigningPayload: Any?, unsignedVPToken: UnsignedVPToken)] = [:]
     
     public static let className = String(describing: AuthorizationResponseHandler.self)
     

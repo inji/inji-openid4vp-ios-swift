@@ -21,7 +21,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     }
     
     
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (payload: Any?, unsignedVPToken: UnsignedVPToken) {
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPToken: UnsignedVPToken) {
         var docTypeToDeviceAuthenticationBytes: [String: String] = [:]
 
         let clientIdToHash = CBOR.array([.utf8String(clientId), .utf8String(mdocGeneratedNonce)])
@@ -86,7 +86,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         let unsignedMdocVPToken = UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes) 
 
         return (
-            payload: nil,
+            vpTokenSigningPayload: nil,
             unsignedVPToken: unsignedMdocVPToken
         )
     }

@@ -1,5 +1,5 @@
 import Foundation
 
 protocol UnsignedVPTokenBuilder {
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (payload: Any?, unsignedVPToken : UnsignedVPToken)
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPToken : UnsignedVPToken)
 }
