@@ -1,12 +1,7 @@
 import Foundation
 
 class LdpVPTokenBuilder: VPTokenBuilder {
-    private let nonce: String
     private let className = "LdpVPTokenBuilder"
-
-    init(nonce: String) {
-        self.nonce = nonce
-    }
 
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],

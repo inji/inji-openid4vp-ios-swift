@@ -149,9 +149,7 @@ public class AuthorizationResponseHandler {
                 )
             }
             
-            let vpTokenBuilder = try VPTokenFactory(
-                nonce: authorizationRequest.nonce
-            ).getVPTokenBuilder(credentialFormat: credentialFormat)
+            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: credentialFormat)
             
             let (vpTokens, descriptorMaps, nextRootIndex) = try vpTokenBuilder.build(
                 credentialInputDescriptorMappings: credentialInputDescriptorMappings,
