@@ -42,7 +42,7 @@ struct JWSHandler {
             throw GenericFailure(message: "JWS creation failed: \(error.localizedDescription)", className: JWSHandler.className)
         }
     }
-    
+
     static func extractDataJsonFromJws(jws: String, jwsPart: JWSPart) throws -> [String:Any] {
         let components = jws.split(separator: ".")
         let payload = String(components[jwsPart.rawValue])

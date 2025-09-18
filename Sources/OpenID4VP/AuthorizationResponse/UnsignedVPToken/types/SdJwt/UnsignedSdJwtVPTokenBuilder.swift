@@ -5,37 +5,46 @@ private let keyBindingJWT = "kb+jwt"
 struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
     private let clientId: String
     private let nonce: String
-    private let sdJWTCredentials: [String]
     private let networkManager: any NetworkManaging
     
     private static let className = "UnsignedSdJwTVPTokenBuilder"
     
-    init(clientId: String, authorizationRequestNonce: String, credentials: [String], networkManager: any NetworkManaging = NetworkManager()) {
+    init(clientId: String, authorizationRequestNonce: String, networkManager: any NetworkManaging = NetworkManager()) {
         self.clientId = clientId
         self.nonce = authorizationRequestNonce
-        self.sdJWTCredentials = credentials
         self.networkManager = networkManager
     }
     
-    func build() async throws -> [String : Any] {        
-        var uuidToSdJwt = [String: String]()
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken : UnsignedVPToken) {
         var uuidToUnsignedKBJWT = [String: String]()
         
-        for credential in sdJWTCredentials {
+        for index in 0..<credentialInputDescriptorMappings.count {
+            let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
             let uuid = UUIDGenerator.generateUUID()
-            uuidToSdJwt[uuid] = credential
+            guard let credential = credentialInputDescriptorMapping.credential.value as? String else {
+                throw InvalidData(
+                    message: "SD-JWT credential is not a String",
+                    className: Self.className)
+            }
             
             let sdJWT = credential.split(separator: "~")[0]
             let sdJWTPayload = try JWSHandler.extractDataJsonFromJws(jws: String(sdJWT), jwsPart: .payload)
+            
+            credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
+                format: credentialInputDescriptorMapping.format,
+                credential: credentialInputDescriptorMapping.credential,
+                inputDescriptorId: credentialInputDescriptorMapping.inputDescriptorId,
+                identifier: uuid
+                )
             
             guard let confirmationKeyClaim = sdJWTPayload["cnf"] as? [String: Any], !confirmationKeyClaim.isEmpty else {
                 continue
             }
             
             var jwtSigningALgorithm: String = ""
-            if confirmationKeyClaim.keys.contains("kid") {
+            if let keyId = confirmationKeyClaim["kid"] as? String {
                 let didResolver = DidPublicKeyResolver(networkManager: networkManager)
-                let confirmationKey = try await didResolver.resolve(uri: confirmationKeyClaim["kid"] as! String, keyId: nil)
+                let confirmationKey = try await didResolver.resolve(uri: keyId, keyId: nil)
                 jwtSigningALgorithm = extractSigningAlgorithm(from: confirmationKey)
             } else {
                 throw UnsupportedOperationException(message: "Unsupported cnf format, only 'kid' is supported", className: Self.className)
@@ -61,9 +70,9 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             uuidToUnsignedKBJWT[uuid] = unsignedJWT
         }
         
-        return [
-            "unsignedVPToken": UnsignedSdJwtVPToken(uuidToUnsignedKBT: uuidToUnsignedKBJWT),
-            "vpTokenSigningPayload": uuidToSdJwt
-        ]
+        return (
+            vpTokenSigningPayload: nil,
+            unsignedVPToken: UnsignedSdJwtVPToken(uuidToUnsignedKBT: uuidToUnsignedKBJWT)
+        )
     }
 }

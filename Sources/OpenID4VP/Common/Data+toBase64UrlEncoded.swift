@@ -11,6 +11,9 @@ extension Data {
     }
     
     func toBase64UrlEncoded() -> String {
-        return base64URLEscaped(self.base64EncodedString())
+        return self.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }

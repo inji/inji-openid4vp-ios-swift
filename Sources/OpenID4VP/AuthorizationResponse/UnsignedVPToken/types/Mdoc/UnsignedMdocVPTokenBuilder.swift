@@ -2,7 +2,6 @@ import Foundation
 import SwiftCBOR
 
 struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
-    private let mdocCredentials: [String]
     private let clientId: String
     private let responseUri: String
     private let verifierNonce: String
@@ -10,20 +9,19 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     static let className = String(describing: UnsignedMdocVPTokenBuilder.self)
 
     init(
-        mdocCredentials: [String],
         clientId: String,
         responseUri: String,
         verifierNonce: String,
         mdocGeneratedNonce: String
     ) {
-        self.mdocCredentials = mdocCredentials
         self.clientId = clientId
         self.responseUri = responseUri
         self.verifierNonce = verifierNonce
         self.mdocGeneratedNonce = mdocGeneratedNonce
     }
-
-    func build() throws -> [String: Any] {
+    
+    
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken) {
         var docTypeToDeviceAuthenticationBytes: [String: String] = [:]
 
         let clientIdToHash = CBOR.array([.utf8String(clientId), .utf8String(mdocGeneratedNonce)])
@@ -38,7 +36,14 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         let deviceNamespaces = CBOR.map([:])
         let deviceNamespacesBytes = wrapCBORInputWithTag24(input: deviceNamespaces)!
 
-        for mdocCredential in mdocCredentials {
+        for index in 0..<credentialInputDescriptorMappings.count {
+            let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
+            guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
+                throw InvalidData(
+                    message: "MDOC credential is not a String",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
             guard let credential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
                 throw InvalidData(
                     message: "Invalid Verifiable Credential: Error while decoding credential",
@@ -70,13 +75,19 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
 
             let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
             docTypeToDeviceAuthenticationBytes[docTypeString] = cborToByteString(cbor: wrapped)
+            credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
+                format: credentialInputDescriptorMapping.format,
+                credential: credentialInputDescriptorMapping.credential,
+                inputDescriptorId: credentialInputDescriptorMapping.inputDescriptorId,
+                identifier: docTypeString
+                )
         }
 
-        let unsignedMdocVPToken = UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes) // ✅ Use the model
+        let unsignedMdocVPToken = UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes) 
 
-        return [
-            "unsignedVPToken": unsignedMdocVPToken,
-            "vpTokenSigningPayload": mdocCredentials
-        ]
+        return (
+            vpTokenSigningPayload: nil,
+            unsignedVPToken: unsignedMdocVPToken
+        )
     }
 }

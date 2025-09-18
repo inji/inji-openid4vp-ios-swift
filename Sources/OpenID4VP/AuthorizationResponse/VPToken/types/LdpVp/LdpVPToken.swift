@@ -6,8 +6,6 @@ struct LdpVPToken: Encodable, VPToken {
     let holder: String
     var proof: Proof?
 
-    static let internalPath: String = "verifiableCredential"
-
     init(
         context: [String] = ["https://www.w3.org/2018/credentials/v1"],
         type: [String] = ["VerifiablePresentation"],

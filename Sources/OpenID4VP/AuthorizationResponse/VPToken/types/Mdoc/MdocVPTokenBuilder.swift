@@ -2,20 +2,32 @@ import Foundation
 import SwiftCBOR
 
 class MdocVPTokenBuilder : VPTokenBuilder {
-    private let mdocVPTokenSigningResult:  MdocVPTokenSigningResult
-    private let credentials: [String]
     private let className = String(describing: MdocVPTokenBuilder.self)
     
-    init(mdocVPTokenSigningResult:  MdocVPTokenSigningResult, credentials: [String]) {
-        self.mdocVPTokenSigningResult = mdocVPTokenSigningResult
-        self.credentials = credentials
-    }
-    
-    func build() throws -> VPToken {
+    func build(
+        credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
+        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken),
+        vpTokenSigningResult: VPTokenSigningResult,
+        rootIndex: Int
+    ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
         var documents : [CBOR] = []
-        try mdocVPTokenSigningResult.validate()
+        guard let mdocVPTokenSigningResult = vpTokenSigningResult as? MdocVPTokenSigningResult else {
+            throw InvalidType(
+                message: "Invalid MSO-MDOC token or signing result type",
+                className: VPTokenFactory.className
+            )
+        }
         
-        try credentials.forEach { mdocCredential in
+        try mdocVPTokenSigningResult.validate()
+        var descriptorMaps : [DescriptorMap] = []
+        
+        try credentialInputDescriptorMappings.forEach { credentialInputDescriptorMapping in
+            guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
+                throw InvalidType(
+                    message: "Invalid MSO-MDOC token or signing result type",
+                    className: VPTokenFactory.className
+                )
+            }
             guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
                 throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
             }
@@ -44,6 +56,18 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             document[CBOR.utf8String("deviceSigned")] = deviceSigned
             
             documents.append(document)
+            descriptorMaps.append(
+                DescriptorMap(
+                    id: credentialInputDescriptorMapping.inputDescriptorId,
+                    format: .mso_mdoc,
+                    path: createDescriptorMapPath(rootIndex),
+                    pathNested: createNestedPath(
+                        id: credentialInputDescriptorMapping.inputDescriptorId,
+                        nestedPath: credentialInputDescriptorMapping.nestedPath,
+                        format: .mso_mdoc
+                    )
+                )
+            )
         }
         
         let deviceResponse = CBOR.map([
@@ -54,7 +78,9 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         
         //base64 url encode without padding the deviceResponse
         let encodedDeviceResponseBase64Url = Data(cborEncode(deviceResponse)).toBase64UrlEncoded()
-        return MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
+        let mdocVPToken = MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
+        
+        return ([mdocVPToken], descriptorMaps, rootIndex + 1)
     }
     
     // DeviceSignature is of COSE_Sign1 structure
