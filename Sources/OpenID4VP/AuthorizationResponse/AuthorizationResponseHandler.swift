@@ -5,7 +5,7 @@ public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
     private var walletNonce: String = ""
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
-    private var unsignedVPTokenResults : [FormatType: (vpTokenSigningPayload: Any?, unsignedVPToken: UnsignedVPToken)] = [:]
+    private var unsignedVPTokenResults : [FormatType: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken)] = [:]
     
     public static let className = String(describing: AuthorizationResponseHandler.self)
     
@@ -121,7 +121,7 @@ public class AuthorizationResponseHandler {
     private func createVPTokenAndPresentationSubmission(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest,
-        unsignedVPTokenResults: [FormatType: (Any?, UnsignedVPToken)],
+        unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
         formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]]
     ) throws -> (VPTokenType, PresentationSubmission) {
         if Set(unsignedVPTokenResults.keys) != Set(vpTokenSigningResults.keys) {
@@ -216,10 +216,10 @@ public class AuthorizationResponseHandler {
         responseUri: String,
         holderId: String?,
         signatureSuite: String?
-    ) async throws -> [FormatType: (Any?, UnsignedVPToken)]  {
+    ) async throws -> [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)]  {
         createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
         
-        var unsignedVPTokenResults: [FormatType: (Any?, UnsignedVPToken)] = [:]
+        var unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)] = [:]
         
         for format in self.formatToCredentialInputDescriptorMapping.keys {
             guard var credentialsArray = self.formatToCredentialInputDescriptorMapping[format] else {
