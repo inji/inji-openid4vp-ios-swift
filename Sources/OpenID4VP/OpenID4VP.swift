@@ -96,7 +96,7 @@ public class OpenID4VP {
         }
     }
     
-    public func sendErrorToVerifier(error: Error) async {
+    fileprivate func sendErrorResponseToVerifier(_ error: any Error) async {
         let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
         
         
@@ -127,17 +127,24 @@ public class OpenID4VP {
             return
         }
         do {
-            _ = try await networkManager.sendHTTPRequest(
+            let dispatchResult = try await networkManager.sendHTTPRequest(
                 url: responseUri ?? "",
                 method: .post,
                 bodyParams: errorInfo,
                 headers: ["Content_Type": ContentTypes.applicationFormUrlEncoded.rawValue]
             )
+            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.responseBody, httpUrlResponse: dispatchResult.httpUrlResponse)
+            
         } catch {
             OpenID4VPException.error(logTag, NetworkRequestException.invalidResponse(
                 message: "Unexpected error occurred while sending the error to verifier: \(error)"
             ))
         }
+    }
+    
+    @available(*, deprecated, renamed: "sendErrorResponseToVerifier", message: "sendErrorToVerifier is now changed to sendErrorResponseToVerifier. Reason: This does not support listening the response from the verifier")
+    public func sendErrorToVerifier(error: Error) async {
+        _ = try await sendErrorResponseToVerifier(error)
     }
     
     @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")

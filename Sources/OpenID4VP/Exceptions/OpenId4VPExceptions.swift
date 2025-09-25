@@ -4,6 +4,11 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     public let errorCode: String
     public let message: String
     public let className: String
+    public var networkResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)? = nil
+    
+    internal func setNetworkResponse(responseBody: String, httpUrlResponse: HTTPURLResponse) {
+        self.networkResponse = (responseBody: responseBody, httpUrlResponse: httpUrlResponse)
+    }
     
     private static var logTag = ""
     private static var traceabilityId: String?
@@ -325,5 +330,15 @@ public class InvalidTransactionData: OpenID4VPException {
 public class UnsupportedOperationException : OpenID4VPException {
     public init(message: String, className: String, code: String = "unsupported_operation") {
         super.init(errorCode: code, message: message, className: className)
+    }
+}
+
+public class ErrorDispatchFailure : OpenID4VPException {
+    public init(message: String, className: String) {
+        super.init(
+            errorCode: OpenID4VPErrorCodes.errorDispatchFailure,
+            message: "Failed to send error to verifier: \(message)",
+            className: className
+        )
     }
 }

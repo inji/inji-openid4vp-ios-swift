@@ -75,6 +75,51 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
+    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> String {
+        guard let responseUri = responseUri, !responseUri.isEmpty else {
+            throw ErrorDispatchFailure(message: "Response URI is not set. Cannot send error to verifier.", className: Self.className)
+        }
+        
+        let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
+        
+        
+        var errorPayload: [String: String] = [:]
+        
+        
+        let resolvedError: OpenID4VPException
+        if let openidError = error as? OpenID4VPException {
+            resolvedError = openidError
+        } else {
+            resolvedError = GenericFailure(
+                message: "\(error)",
+                className: String(describing: OpenID4VP.self)
+            )
+        }
+        
+        errorPayload.merge(resolvedError.toErrorResponse()) { _, new in new }
+        
+        if let state = authorizationRequest?.state, !state.isEmpty {
+            errorPayload["state"] = state
+        }
+        
+        
+        do {
+            let dispatchResult = try await networkManager.sendHTTPRequest(
+                url: responseUri,
+                method: .post,
+                bodyParams: errorPayload,
+                headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
+            )
+            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.responseBody, httpUrlResponse: dispatchResult.httpUrlResponse)
+            return dispatchResult.responseBody 
+        } catch {
+            throw ErrorDispatchFailure(
+                message: "Failed to send error to verifier: \(error)",
+                className: Self.className
+            )
+        }
+    }
+    
     
     public func shareVP(
         authorizationRequest: AuthorizationRequest,
