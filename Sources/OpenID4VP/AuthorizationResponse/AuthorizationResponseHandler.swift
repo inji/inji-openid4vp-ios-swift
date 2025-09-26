@@ -110,7 +110,7 @@ public class AuthorizationResponseHandler {
                 bodyParams: errorPayload,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
             )
-            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.body, httpUrlResponse: dispatchResult.headers)
+            (error as? OpenID4VPException)?.setNetworkResponse(dispatchResult.body)
             return dispatchResult.body
         } catch {
             throw ErrorDispatchFailure(

@@ -4,10 +4,10 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     public let errorCode: String
     public let message: String
     public let className: String
-    public var networkResponse: (responseBody: String, httpUrlResponse: HTTPURLResponse)? = nil
+    public var networkResponse: String? = nil
     
-    internal func setNetworkResponse(responseBody: String, httpUrlResponse: HTTPURLResponse) {
-        self.networkResponse = (responseBody: responseBody, httpUrlResponse: httpUrlResponse)
+    internal func setNetworkResponse(_ responseBody: String) {
+        self.networkResponse = responseBody
     }
     
     private static var logTag = ""

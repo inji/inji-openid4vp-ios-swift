@@ -103,7 +103,7 @@ public class OpenID4VP {
     private func safeSendError(error: Error) async {
         do {
             let verifierResponse = try await sendErrorResponseToVerifier(error: error)
-            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: verifierResponse, httpUrlResponse: HTTPURLResponse())
+            (error as? OpenID4VPException)?.setNetworkResponse(verifierResponse)
         } catch {
             OpenID4VPException.error(error, className: String(describing: type(of: self)))
         }
