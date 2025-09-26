@@ -56,7 +56,7 @@ public class OpenID4VP {
             )
             return authorizationRequest
         } catch let exception {
-            await sendErrorToVerifier(error: exception)
+            await safeSendError(error: exception)
             throw exception
         }
     }
@@ -76,7 +76,7 @@ public class OpenID4VP {
                 walletNonce: self.walletNonce
             )
         } catch {
-            await sendErrorToVerifier(error: error)
+            await safeSendError(error: error)
             throw error
         }
     }
@@ -91,60 +91,22 @@ public class OpenID4VP {
                 responseUri: responseUri!
             )
         } catch {
-            await sendErrorToVerifier(error: error)
+            await safeSendError(error: error)
             throw error
         }
     }
     
-    fileprivate func sendErrorResponseToVerifier(_ error: any Error) async {
-        let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
-        
-        
-        var errorInfo: [String: String] = [:]
-        
-        
-        let resolvedError: OpenID4VPException
-        if let openidError = error as? OpenID4VPException {
-            resolvedError = openidError
-        } else {
-            resolvedError = GenericFailure(
-                message: "\(error)",
-                className: String(describing: OpenID4VP.self)
-            )
-        }
-        
-        errorInfo.merge(resolvedError.toErrorResponse()) { _, new in new }
-        
-        if let state = authorizationRequest?.state, !state.isEmpty {
-            errorInfo["state"] = state
-        }
-        
-        if responseUri == nil || responseUri!.isEmpty {
-            OpenID4VPException.error(logTag, GenericFailure(
-                message: "Response URI is not set. Cannot send error to verifier.",
-                className: String(describing: OpenID4VP.self)
-            ))
-            return
-        }
-        do {
-            let dispatchResult = try await networkManager.sendHTTPRequest(
-                url: responseUri ?? "",
-                method: .post,
-                bodyParams: errorInfo,
-                headers: ["Content_Type": ContentTypes.applicationFormUrlEncoded.rawValue]
-            )
-            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.body, httpUrlResponse: dispatchResult.headers)
-            
-        } catch {
-            OpenID4VPException.error(logTag, NetworkRequestException.invalidResponse(
-                message: "Unexpected error occurred while sending the error to verifier: \(error)"
-            ))
-        }
+    public func sendErrorResponseToVerifier(error: Error) async throws -> String {
+       return try await authorizationResponseHandler.sendAuthorizationError(responseUri: self.responseUri, authorizationRequest: self.authorizationRequest, error: error)
     }
     
-    @available(*, deprecated, renamed: "sendErrorResponseToVerifier", message: "sendErrorToVerifier is now changed to sendErrorResponseToVerifier. Reason: This does not support listening the response from the verifier")
-    public func sendErrorToVerifier(error: Error) async {
-        _ = try await sendErrorResponseToVerifier(error)
+    private func safeSendError(error: Error) async {
+        do {
+            let verifierResponse = try await sendErrorResponseToVerifier(error: error)
+            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: verifierResponse, httpUrlResponse: HTTPURLResponse())
+        } catch {
+            OpenID4VPException.error(error, className: String(describing: type(of: self)))
+        }
     }
     
     @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")
@@ -204,6 +166,15 @@ public class OpenID4VP {
         } catch {
             await sendErrorToVerifier(error: error)
             throw error
+        }
+    }
+    
+    @available(*, deprecated, renamed: "sendErrorResponseToVerifier", message: "sendErrorToVerifier is now changed to sendErrorResponseToVerifier. Reason: This does not support listening the response from the verifier")
+    public func sendErrorToVerifier(error: Error) async {
+        do {
+            _ = try await authorizationResponseHandler.sendAuthorizationError(responseUri: self.responseUri, authorizationRequest: self.authorizationRequest, error: error)
+        } catch {
+            OpenID4VPException.error(error, className: String(describing: type(of: self)))
         }
     }
 }
