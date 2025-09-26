@@ -110,8 +110,8 @@ public class AuthorizationResponseHandler {
                 bodyParams: errorPayload,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
             )
-            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.responseBody, httpUrlResponse: dispatchResult.httpUrlResponse)
-            return dispatchResult.responseBody 
+            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.body, httpUrlResponse: dispatchResult.headers)
+            return dispatchResult.body
         } catch {
             throw ErrorDispatchFailure(
                 message: "Failed to send error to verifier: \(error)",
@@ -465,7 +465,7 @@ public class AuthorizationResponseHandler {
                 headers: ["content-type": "application/x-www-form-urlencoded"]
             )
             
-            return response.responseBody
+            return response.body
         } catch {
             throw error
         }

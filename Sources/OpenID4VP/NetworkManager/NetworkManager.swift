@@ -1,6 +1,12 @@
 import Foundation
 import Alamofire
 
+public struct NetworkResponse {
+    let statusCode: Int
+    let body: String
+    let headers: HTTPURLResponse
+}
+
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = OpenID4VPException.getLogTag(String(describing: NetworkManager.self))
@@ -10,7 +16,7 @@ public struct NetworkManager: NetworkManaging {
         method: HttpMethod,
         bodyParams requestBody: [String: String]? = nil,
         headers: [String: String]? = nil
-    ) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
+    ) async throws -> NetworkResponse {
         
         let requestHeaders: HTTPHeaders? = headers?.reduce(into: HTTPHeaders()) { result, header in
             result.add(name: header.key, value: header.value)
@@ -38,7 +44,12 @@ public struct NetworkManager: NetworkManaging {
                         } else {
                             responseBody = ""
                         }
-                        continuation.resume(returning: (responseBody, httpResponse))
+                        let networkResponse = NetworkResponse(
+                            statusCode: httpResponse.statusCode,
+                            body: responseBody,
+                            headers: httpResponse
+                        )
+                        continuation.resume(returning: networkResponse)
                     } else {
                         let exception = NetworkRequestException.invalidResponse(message: "Invalid response received")
                         OpenID4VPException.error(NetworkManager.logTag, exception)

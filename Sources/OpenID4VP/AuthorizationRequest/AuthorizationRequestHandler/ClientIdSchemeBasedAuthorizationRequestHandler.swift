@@ -75,7 +75,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
                     shouldValidateWithWalletMetadata = true
                 }
             }
-            var response:  (responseBody: String, httpUrlResponse: HTTPURLResponse)
+            var response:  NetworkResponse
             do{
                 response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
             }
@@ -89,7 +89,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             } catch {
                 throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
             }
-            try await validateRequestUriResponse(response.responseBody, httpMethod: httpMethod)
+            try await validateRequestUriResponse(response.body, httpMethod: httpMethod)
         } else {
             guard (try delegate.isRequestObjectSupported()) else {
                 throw InvalidData(

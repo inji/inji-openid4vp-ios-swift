@@ -24,7 +24,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
             headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
         )
 
-        return response.responseBody
+        return response.body
     }
 
 }

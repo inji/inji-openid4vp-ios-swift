@@ -50,38 +50,39 @@ class MockNetworkManager: NetworkManaging {
         method: HttpMethod,
         bodyParams: [String: String]? = nil,
         headers: [String: String]? = nil
-    ) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse) {
-        
+    ) async throws -> NetworkResponse {
         recordedRequests[url] = (
             requestMethod: method,
             requestBody: bodyParams,
             requestHeaders: headers
         )
-        
         guard let url = URL(string: url) else {
             fatalError("url creation failed with input string")
         }
-        
         let defaultHttpUrlResponse = HTTPURLResponse(
             url: url,
             statusCode: 200,
             httpVersion: "",
             headerFields: ["Content-Type": "text/json"]
         )!
-        
         if let (response, error) = mockResponses[url] {
             if let error = error {
                 throw error
             }
-            return response ?? (
+            let resp = response ?? (
                 responseBody: "Success: Request completed successfully.",
                 httpUrlResponse: defaultHttpUrlResponse
             )
+            return NetworkResponse(
+                statusCode: resp.httpUrlResponse.statusCode,
+                body: resp.responseBody,
+                headers: resp.httpUrlResponse
+            )
         }
-        
-        return (
-            responseBody: "Success: Request completed successfully.",
-            httpUrlResponse: defaultHttpUrlResponse
+        return NetworkResponse(
+            statusCode: defaultHttpUrlResponse.statusCode,
+            body: "Success: Request completed successfully.",
+            headers: defaultHttpUrlResponse
         )
     }
 }

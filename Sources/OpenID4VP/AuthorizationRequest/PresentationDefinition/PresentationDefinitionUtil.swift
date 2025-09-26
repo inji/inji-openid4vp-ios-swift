@@ -83,7 +83,7 @@ func parseAndValidatePresentationDefinition(
             )
         }
         
-        let response: (responseBody: String, httpUrlResponse: HTTPURLResponse)
+        let response: NetworkResponse
         do {
             response = try await networkManager.sendHTTPRequest(
                 url: uriString, method: .get, bodyParams: nil, headers: nil
@@ -96,7 +96,7 @@ func parseAndValidatePresentationDefinition(
             )
         }
         
-        guard let data = response.responseBody.data(using: .utf8) else {
+        guard let data = response.body.data(using: .utf8) else {
             throw InvalidData(
                 message: "presentation_definition_uri response body is not valid",
                 className: AuthorizationRequest.className,

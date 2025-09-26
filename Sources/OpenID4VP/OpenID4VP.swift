@@ -133,7 +133,7 @@ public class OpenID4VP {
                 bodyParams: errorInfo,
                 headers: ["Content_Type": ContentTypes.applicationFormUrlEncoded.rawValue]
             )
-            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.responseBody, httpUrlResponse: dispatchResult.httpUrlResponse)
+            (error as? OpenID4VPException)?.setNetworkResponse(responseBody: dispatchResult.body, httpUrlResponse: dispatchResult.headers)
             
         } catch {
             OpenID4VPException.error(logTag, NetworkRequestException.invalidResponse(
