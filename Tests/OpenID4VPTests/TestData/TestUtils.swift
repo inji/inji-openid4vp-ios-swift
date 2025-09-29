@@ -8,15 +8,15 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     for verifierData in verifierList {
         if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId.rawValue] as? String,
            let responseUris = verifierData["response_uris"] as? [String] {
-            if verifierData["client_metadata"] == nil {
-                let verifier = Verifier(clientId: clientId, responseUris: responseUris)
+            
+            if let jwksUri = verifierData["jwks_uri"] as? String {
+                let verifier = Verifier(clientId: clientId, responseUris: responseUris, jwksUri: jwksUri)
                 verifiers.append(verifier)
-            } else {
-                let clientMetadataData = verifierData["client_metadata"] as! [String: Any]
-                let clientMetadata = createInstance(clientMetadataData, as: ClientMetadata.self)
-                let verifier = Verifier(clientId: clientId, responseUris: responseUris, clientMetadata: clientMetadata)
-                verifiers.append(verifier)
+                continue
             }
+            let verifier = Verifier(clientId: clientId, responseUris: responseUris)
+            verifiers.append(verifier)
+            
         }
     }
     

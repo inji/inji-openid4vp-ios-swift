@@ -152,7 +152,7 @@ class OpenID4VPTests: XCTestCase {
             """.data(using: .utf8)!
         let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
         
-        let trustedVerifiers = [Verifier(clientId: "mock-client-id", responseUris: ["https://example.com/callback"], clientMetadata: clientMetadata)]
+        let trustedVerifiers = [Verifier(clientId: "mock-client-id", responseUris: ["https://example.com/callback"], jwksUri: "https://mock-verifier.com/.well-known/jwks.json")]
         await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: trustedVerifiers,
@@ -449,6 +449,7 @@ class OpenID4VPTests: XCTestCase {
             trustedVerifierJSON: preRegisteredVerifiers,
             shouldValidateClient: true
         )
+        mockNetworkManager.setMockResponse(for: jwksUri, responseBody: jwkSet)
         openID4VP.authorizationRequest = authorizationRequest
 
         

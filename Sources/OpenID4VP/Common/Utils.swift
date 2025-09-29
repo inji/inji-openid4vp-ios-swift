@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 import CryptoKit
 import SwiftCBOR
 
@@ -118,4 +119,24 @@ func createNestedPath(id: String, nestedPath: String?, format: FormatType) -> Pa
 
 func createDescriptorMapPath(_ index: Int) -> String {
     return "$[\(index)]"
+}
+
+func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, className: String) async throws -> JWKSet {
+    do {
+        let response = try await networkManager.sendHTTPRequest(url: uri, method: .get, bodyParams: nil, headers: nil)
+        let data = try response.responseBody.data(using: .utf8) ?? {
+           throw InvalidData(
+                message: "unable to convert the jwks response to data",
+                className: className,
+                code: OpenID4VPErrorCodes.invalidRequestObject
+            )
+        }()
+        return try data.toInstance(as: JWKSet.self)
+    } catch {
+        throw InvalidData(
+            message: "Public key extraction failed - Unable to fetch/parse jwks from \(uri) due to \(error.localizedDescription)",
+            className: className,
+            code: OpenID4VPErrorCodes.invalidRequestObject
+                )
+    }
 }

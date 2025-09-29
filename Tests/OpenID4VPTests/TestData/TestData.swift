@@ -2,6 +2,24 @@ import OpenID4VP
 import CryptoKit
 import Foundation
 
+let jwkSet = """
+            { "keys": [
+                    { 
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "use": "sig",
+                    "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                    "alg": "EdDSA",
+                    "kid": "ed-key2" 
+                    },
+                {"kty": "OKP",
+                "crv": "X25519",
+                "use": "enc",
+                "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                "alg": "ECDH-ES",
+                "kid": "ed-key1"}] }
+"""
+
 let clientMetadataString = """
         {
             "client_name": "Valid Client",
@@ -9,9 +27,11 @@ let clientMetadataString = """
             "authorization_encrypted_response_alg": "RSA-OAEP",
             "authorization_encrypted_response_enc": "A256GCM",
             "vp_formats": { "format1": { "type1": ["value1"] } },
-            "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
+            "jwks": \(jwkSet)
         }
     """.data(using: .utf8)!
+
+let jwksUri = "https://mock-verifier.com/.well-known/jwks.json"
 
 private let testVerifierList:  [[String: Any]]  = [
     [
@@ -31,7 +51,7 @@ private let testVerifierList:  [[String: Any]]  = [
         "response_uris": [
             "https://mock-verifier.com",
         ],
-        "client_metadata": clientMetadata
+        "jwks_uri": "https://mock-verifier.com/.well-known/jwks.json",
     ]
 ]
 
@@ -161,7 +181,8 @@ let authRequestWithPreRegisteredByValueDraft23 : [String] = [
     "presentation_definition",
     "response_type",
     "nonce",
-    "state"
+    "state",
+    "client_metadata"
 ]
 
 let authRequestWithPreRegisteredByValueDraft21 : [String] = [
@@ -337,7 +358,7 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
 let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
 
 let mockUrlEncodedVPRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientIdDraft23).filter{$0.key != "client_metadata"},clientIdScheme: .preRegistered
+    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientIdDraft23),clientIdScheme: .preRegistered
 )
 
 let mockAuthorizationRequestObjectWithDirectPostResponseMode = getMockAuthorizationRequest()

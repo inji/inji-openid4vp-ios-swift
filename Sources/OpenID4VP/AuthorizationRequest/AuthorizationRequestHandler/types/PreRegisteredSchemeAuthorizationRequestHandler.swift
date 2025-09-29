@@ -52,22 +52,16 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
         let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String
-        
-        if ((authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue]) != nil)  {
-            throw InvalidData(
-                message: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request",
-                className: className,
-                code: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-        
+
         if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
-            if let publicKeys = preRegisteredClient.clientMetadata?.jwks {
-                let publicKeyJwk =  try filterAndExtractKey(jwks: publicKeys, keyId: keyId, algorithm: algorithm)
+            if let jwksUri = preRegisteredClient.jwksUri {
+                let jwkSet : JWKSet = try await resolveJwksFromUri(jwksUri, networkManager: self.networkManager, className: className)
+                
+                let publicKeyJwk =  try filterAndExtractKey(jwks: jwkSet, keyId: keyId, algorithm: algorithm)
                 return try jwkToPublicKey(publicKeyJwk, className: className)
             } else {
                 throw InvalidData(
-                    message: "Public key extraction failed - Either client_metadata not available or jwks not available in pre-registered client_metadata to verify the signed Authorization Request",
+                    message: "Public key extraction failed - Public key information not available in pre-registered data to verify the signed Authorization Request",
                     className: className,
                     code: OpenID4VPErrorCodes.invalidRequestObject
                 )
@@ -89,18 +83,6 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                         message: "response_uri trust cannot be established",
                         className: AuthorizationRequest.className
                     )
-                }
-                if(preRegisteredClient.clientMetadata != nil) {
-                    if (authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.clientMetadata.rawValue)){
-                        throw InvalidVerifier(
-                            message: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
-                            className: AuthorizationRequest.className
-                        )
-                    }
-                    
-                    
-                    // Update client_metadata in authorizationRequestParameters from the registered client for further use
-                    authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] = preRegisteredClient.clientMetadata
                 }
             }
         }
