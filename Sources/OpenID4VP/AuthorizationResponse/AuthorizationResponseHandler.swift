@@ -78,10 +78,7 @@ public class AuthorizationResponseHandler {
     func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> String {
         guard let responseUri = responseUri, !responseUri.isEmpty else {
             throw ErrorDispatchFailure(message: "Response URI is not set. Cannot send error to verifier.", className: Self.className)
-        }
-        
-        let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
-        
+        }        
         
         var errorPayload: [String: String] = [:]
         

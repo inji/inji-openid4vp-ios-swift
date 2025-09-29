@@ -512,4 +512,49 @@ class OpenID4VPTests: XCTestCase {
         // No error to verifier to be sent as no response uri is available
         XCTAssertTrue(mockNetworkManager.recordedRequests.count == 2, "No requests should be recorded as responseUri is nil" )
     }
+    
+    func testThrowErrorWhenResponseUriNotAvailableDuringSendErrorResponseToVerifier
+    () async throws {
+        let error = AccessDenied(message: "Some error", className: "test")
+        let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
+        
+        // directly call sendErrorResponseToVerifier
+        await XCTAssertAsyncThrowsError(try await openID4VP.sendErrorResponseToVerifier(error: error)) { error in
+            XCTAssertEqual(error.localizedDescription, "Failed to send error to verifier: Response URI is not set. Cannot send error to verifier.", "error_dispatch_failure")
+        }
+    }
+    
+    func testSuccessWhenSendErrorResponseToVerifierCalled
+    () async throws {
+        let error = AccessDenied(message: "Some error", className: "test")
+        
+        let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
+        openID4VP.setResponseUri("https://mock-verifier.com")
+        
+        await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorResponseToVerifier(error: error)) { result in
+            XCTAssertEqual(result, "Success: Request completed successfully.")
+        }
+    }
+    
+    func testNoThrowErrorWhenResponseUriNotAvailableDuringSendErrorToVerifier
+    () async throws {
+        let error = AccessDenied(message: "Some error", className: "test")
+        let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
+        
+        // directly call sendErrorResponseToVerifier
+        await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorToVerifier(error: error)) {
+            print("No error thrown even when responseUri is not set")
+        }
+    }
+    
+    func testThrownExceptionHavingVerifierResponse() async {
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInvalidPresentationDefinitionVPRequest, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: presentation_definition->id param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest,
+                expectedVerifierResponse: "Success: Request completed successfully."
+            )
+        }
+    }
 }

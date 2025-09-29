@@ -10,6 +10,8 @@ public class OpenID4VP {
     private var walletNonce: String = ""
     private let nonceProvider: NonceProvider
     
+    private let className = String(describing: type(of: OpenID4VP.self))
+    
     public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
         self.networkManager = NetworkManager.shared
@@ -105,7 +107,7 @@ public class OpenID4VP {
             let verifierResponse = try await sendErrorResponseToVerifier(error: error)
             (error as? OpenID4VPException)?.setNetworkResponse(verifierResponse)
         } catch {
-            OpenID4VPException.error(error, className: String(describing: type(of: self)))
+            OpenID4VPException.error(error, className: className)
         }
     }
     
