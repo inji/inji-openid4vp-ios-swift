@@ -60,7 +60,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
                 let publicKeyJwk =  try filterAndExtractKey(jwks: jwkSet, keyId: keyId, algorithm: algorithm)
                 return try jwkToPublicKey(publicKeyJwk, className: className)
             } else {
-                throw InvalidData(
+                throw PublicKeyResolutionFailed(
                     message: "Public key extraction failed - Public key information not available in pre-registered data to verify the signed Authorization Request",
                     className: className,
                     code: OpenID4VPErrorCodes.invalidRequestObject
