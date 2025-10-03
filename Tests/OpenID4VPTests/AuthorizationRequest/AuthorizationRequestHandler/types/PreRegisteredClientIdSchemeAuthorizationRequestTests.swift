@@ -70,8 +70,10 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "untrusted-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        // Should return false, not throw, as per implementation
-        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when clientId is not available in trusted verifiers")
+        
+        XCTAssertThrowsError(try preRegistered.isRequestObjectSupported()) { error in
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
+        }
     }
 
     func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedFalse_returnsFalse() {
