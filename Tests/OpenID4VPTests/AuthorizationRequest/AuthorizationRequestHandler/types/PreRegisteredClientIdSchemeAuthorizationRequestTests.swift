@@ -5,6 +5,7 @@ import JSONWebKey
 
 class PreRegisteredClientIdSchemeTests : XCTestCase {
     let mockNetworkManager: MockNetworkManager! = MockNetworkManager()
+    let mockNetworkManagerReal: NetworkManager! = NetworkManager()
     let mockSetResponseUri: (String) -> Void = { value in
     }
     
@@ -60,11 +61,33 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
 
 
-    func testReturnTrueForAuthorizationRequestByValueSupport() {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+    func testIsRequestObjectSupported_shouldValidateClientFalse_returnsFalse() {
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when shouldValidateClient is false")
+    }
+
+    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "untrusted-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertTrue(preRegistered.isRequestObjectSupported(), "Pre-registered client id scheme should support authorization request by value")
+        XCTAssertThrowsError(try preRegistered.isRequestObjectSupported()) { error in
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
+        }
+    }
+
+    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedFalse_returnsFalse() {
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: false)]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when allowUnsignedRequest is false")
+    }
+
+    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedTrue_returnsTrue() {
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: true)]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        XCTAssertTrue(try preRegistered.isRequestObjectSupported(), "Should return true when allowUnsignedRequest is true")
     }
 
     
@@ -96,53 +119,6 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifierListWithClientMetadataButClientMetadataIsAlsoAvailableInAuthorizationRequest() async throws {
-        let clientMetadataString = """
-                {
-                    "client_name": "Valid Client",
-                    "logo_uri": "https://example.com/logo.png",
-                    "authorization_encrypted_response_alg": "RSA-OAEP",
-                    "authorization_encrypted_response_enc": "A256GCM",
-                    "vp_formats": { "format1": { "type1": ["value1"] } },
-                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
-                }
-            """.data(using: .utf8)!
-        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
-        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 + [AuthorizationRequestFieldConstants.clientMetadata.rawValue], requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
-                expectedCode: OpenID4VPErrorCodes.invalidClient
-            )
-        }
-    }
-    
-    func testAutorizationRequestUpdatedWithClientMetadataForPreRegisteredVerifierWhichHasClientMetadataStored() async throws {
-        let clientMetadataString = """
-                {
-                    "client_name": "Valid Client",
-                    "logo_uri": "https://example.com/logo.png",
-                    "authorization_encrypted_response_alg": "RSA-OAEP",
-                    "authorization_encrypted_response_enc": "A256GCM",
-                    "vp_formats": { "format1": { "type1": ["value1"] } },
-                    "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
-                }
-            """
-        let clientMetadata = try ClientMetadata.deserializeAndValidate(clientMetadata: clientMetadataString)
-        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: clientMetadata)]
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23.filter {$0 != "client_metadata"}, requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        
-        try await preRegistered.validateAndParseRequestFields()
-        
-        let clientMetadataInAuthRequest = preRegistered.authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue]
-        assertJsonString(expected: clientMetadataString, actual: convertToJsonString(clientMetadataInAuthRequest as! ClientMetadata))
-    }
-    
     /// Fetch authorization request by value - validate authorization request object and authorization request query paramaters
     
     func testFetchAuthorizationRequestOnValidPreRegisteredSchemeAuthRequestSentByValue() async{
@@ -153,6 +129,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
             "state": "+mRQe1d6pBoJqF6Ab28klg==",
             "response_uri": "https://mock-verifier.com",
+            "client_metadata": (clientMetadata),
             "presentation_definition": [
                 "input_descriptors": [[
                     "format": [
@@ -199,43 +176,27 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         assertDictionariesEqual(expected: convertToDictionary(object: expectedWalletMetadata)!, actual: convertToDictionary(object: processedMetadata))
     }
-
-    func testExtractPublicKeyThrowErrorWhenClientMetadataAvailableInAuthorizationRequestParameters() async throws {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 + ["client_metadata"], requestParams: authorizationRequestParamsWithValue) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
-        
-        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")){ error in
-            assertOpenID4VPException(error, expectedMessage: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        }
-    }
     
     func testExtractPublicKeyThrowErrorWhenPreRegisteredClientNotAvailable() async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23, requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted-client"])) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")){ error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for keyId = ed-key2, algorithm: ECDSA", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
         }
     }
     
     // clientMetadata available for trusted verifiers does not have jwks
-    func testExtractPublicKeyThrowErrorWhenJwksNotAvailable() async throws {
+    func testExtractPublicKeyThrowErrorWhenJwksUriNotAvailable() async throws {
         let trustedVerifiers = [
-            Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: ClientMetadata(vpFormats: [
-                "ldp_vp": [
-                    "proof_type": [
-                        "Ed25519Signature2018",
-                        "Ed25519Signature2020"
-                    ]
-                ]
-            ]))
+            Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"])
         ]
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
         
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "EdDSA")){ error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Either client_metadata not available or jwks not available in pre-registered client_metadata to verify the signed Authorization Request", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Public key information not available in pre-registered data to verify the signed Authorization Request", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
         }
     }
     
@@ -248,153 +209,9 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     
     
     func testExtractPublicKeySuccessForKeyId() async throws {
-        let trustedVerifiers = preRegisteredVerifiers
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
             paramList: authRequestWithPreRegisteredByValueDraft23,
             requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
-        ) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
-            trustedVerifiers: trustedVerifiers,
-            authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
-            shouldValidateClient: true,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager!
-        )
-        
-        let publicKey = try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "Ed25519")
-        
-        assertPublicKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
-    }
-    
-    func testExtractPublicKeySuccessForAlgorithmAndUsage() async throws {
-        let trustedVerifier = Verifier(clientId: "mock-client", responseUris: ["/response-uri"], clientMetadata: ClientMetadata(
-            vpFormats: ["format1": [ "type1": ["value1"] ]],
-            jwks: JWKSet(keys: [
-                try convertToInstance([
-                    "kty": "OKP",
-                    "crv": "Ed25519",
-                    "use": "sig",
-                    "alg": "EdDSA",
-                    "kid": "ed-key1",
-                    "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
-                    "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
-                ], as: JWK.self),
-                try convertToInstance([
-                    "kty": "RSA",
-                    "crv": "P-256",
-                    "use": "sig",
-                    "alg": "RS256",
-                    "kid": "rsa-key1",
-                    "x": "ur76rg",
-                    "y": "x_FEzRu9m36HLN_tue659LNp"
-                ], as: JWK.self)
-            ])
-        ))
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
-            paramList: authRequestWithPreRegisteredByValueDraft23,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
-        ) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
-            trustedVerifiers: [trustedVerifier],
-            authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
-            shouldValidateClient: true,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager!
-        )
-        
-        
-        await XCTAssertNoThrowAndVerifyAsync(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "EdDSA")) { publicKey in
-            assertPublicKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
-        }
-    }
-    
-    func testExtractPublicKeyThrowErrorWhenAlgorithmAndKeyUsageDoesNotMatchInAvailableJWKS() async throws {
-        let trustedVerifier = Verifier(clientId: "mock-client", responseUris: ["/response-uri"], clientMetadata: ClientMetadata(
-            vpFormats: ["format1": [ "type1": ["value1"] ]],
-            jwks: JWKSet(keys: [
-                try convertToInstance([
-                    "kty": "EC",
-                    "crv": "P-256",
-                    "use": "sig",
-                    "alg": "ES256",
-                    "kid": "ec-key1",
-                    "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
-                    "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
-                ], as: JWK.self)
-            ])
-        ))
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
-            paramList: authRequestWithPreRegisteredByValueDraft23,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
-        ) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
-            trustedVerifiers: [trustedVerifier],
-            authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
-            shouldValidateClient: true,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager!
-        )
-        
-        
-        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "Ed25519")) { error in
-            assertOpenID4VPException(error, expectedMessage: "No public key found for algorithm: Ed25519 with key use: signature", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
-        }
-    }
-    
-    func testExtractPublicKeyThrowErrorWhenMultipleEntriesAreFoundForAlgorithmAndUsage() async throws {
-        let trustedVerifier = Verifier(clientId: "mock-client", responseUris: ["/response-uri"], clientMetadata: ClientMetadata(
-            vpFormats: ["format1": [ "type1": ["value1"] ]],
-            jwks: JWKSet(keys: [
-                try convertToInstance([
-                    "kty": "OKP",
-                    "crv": "Ed25519",
-                    "use": "sig",
-                    "alg": "EdDSA",
-                    "kid": "ed-key1",
-                    "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
-                    "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
-                ], as: JWK.self),
-                try convertToInstance([
-                    "kty": "OKP",
-                    "crv": "Ed25519",
-                    "alg": "EdDSA",
-                    "use": "sig",
-                    "kid": "ed-key2",
-                    "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvuyfwqef",
-                    "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
-                ], as: JWK.self)
-            ])
-        ))
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
-            paramList: authRequestWithPreRegisteredByValueDraft23,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
-        ) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
-            trustedVerifiers: [trustedVerifier],
-            authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
-            shouldValidateClient: true,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager!
-        )
-        
-        
-        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "EdDSA")) { error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Multiple ambiguous keys found for EdDSA with signature usage", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
-        }
-    }
-    
-    func testExtractPublicKeyThrowsWhenClientMetadataInAuthRequest() async throws {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
-            paramList: authRequestWithPreRegisteredByValueDraft23 + ["client_metadata"],
-            requestParams: authorizationRequestParamsWithValue
         ) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
             trustedVerifiers: preRegisteredVerifiers,
@@ -405,8 +222,110 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager!
         )
-        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")) { error in
-            assertOpenID4VPException(error, expectedMessage: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+        mockNetworkManager.setMockResponse(for: jwksUri, responseBody: jwkSet)
+        
+        let publicKey = try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "Ed25519")
+        
+        assertPublicKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
+    }
+    
+    func testExtractPublicKeySuccessForAlgorithmAndUsage() async throws {
+        let trustedVerifier = Verifier(clientId: "mock-client", responseUris: ["/response-uri"], jwksUri: jwksUri)
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
+            paramList: authRequestWithPreRegisteredByValueDraft23,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
+        ) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            trustedVerifiers: [trustedVerifier],
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletMetadata: walletMetadata,
+            shouldValidateClient: true,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager!
+        )
+        mockNetworkManager.setMockResponse(for: jwksUri, responseBody: jwkSet)
+        
+        
+        await XCTAssertNoThrowAndVerifyAsync(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "EdDSA")) { publicKey in
+            assertPublicKey(expectedBase64Encoded: "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc=", actualKey: publicKey)
+        }
+    }
+    
+    func testExtractPublicKeyThrowErrorWhenAlgorithmAndKeyUsageDoesNotMatchInAvailableJWKS() async throws {
+        let trustedVerifier = Verifier(clientId: "mock-client", responseUris: ["/response-uri"], jwksUri: "https://mock-verifier.com/jwks.json")
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
+            paramList: authRequestWithPreRegisteredByValueDraft23,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
+        ) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            trustedVerifiers: [trustedVerifier],
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletMetadata: walletMetadata,
+            shouldValidateClient: true,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager!
+        )
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/jwks.json", responseBody: """
+{
+"keys": [{
+                    "kty": "EC",
+                    "crv": "P-256",
+                    "use": "sig",
+                    "alg": "ES256",
+                    "kid": "ec-key1",
+                    "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                    "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+}]
+}
+""")
+        
+        
+        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "Ed25519")) { error in
+            assertOpenID4VPException(error, expectedMessage: "No public key found for algorithm: Ed25519 with key use: signature", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
+    
+    func testExtractPublicKeyThrowErrorWhenMultipleEntriesAreFoundForAlgorithmAndUsage() async throws {
+        let trustedVerifier = Verifier(clientId: "mock-client", responseUris: ["/response-uri"], jwksUri: "https://mock-verifier.com/jwks.json")
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
+            paramList: authRequestWithPreRegisteredByValueDraft23,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
+        ) as [String : Any]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            trustedVerifiers: [trustedVerifier],
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletMetadata: walletMetadata,
+            shouldValidateClient: true,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager!
+        )
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/jwks.json", responseBody: """
+{
+"keys": [{
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "use": "sig",
+                    "alg": "EdDSA",
+                    "kid": "ed-key1",
+                    "x": "5tvU4k/TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc="
+                },
+                {
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "use": "sig",
+                    "alg": "EdDSA",
+                    "kid": "ed-key2",
+                    "x": "nWGxne/9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2o="
+                }]
+}
+""")
+        
+        
+        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "EdDSA")) { error in
+            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Multiple ambiguous keys found for EdDSA with signature usage", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
         }
     }
     
@@ -425,7 +344,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             networkManager: mockNetworkManager!
         )
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")) { error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for keyId = ed-key2, algorithm: ECDSA", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
         }
     }
 
@@ -444,36 +363,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             networkManager: mockNetworkManager!
         )
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "ECDSA")) { error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for keyId = null, algorithm: ECDSA", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
-        }
-    }
-    
-    func testExtractPublicKeyThrowsWhenJwksNotAvailable() async throws {
-        let trustedVerifiers = [
-            Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], clientMetadata: ClientMetadata(vpFormats: [
-                "ldp_vp": [
-                    "proof_type": [
-                        "Ed25519Signature2018",
-                        "Ed25519Signature2020"
-                    ]
-                ]
-            ]))
-        ]
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(
-            paramList: authRequestWithPreRegisteredByValueDraft23,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)
-        ) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
-            trustedVerifiers: trustedVerifiers,
-            authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
-            shouldValidateClient: true,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager!
-        )
-        await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "EdDSA")) { error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Either client_metadata not available or jwks not available in pre-registered client_metadata to verify the signed Authorization Request", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
         }
     }
     
@@ -491,6 +381,9 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager!
         )
+        mockNetworkManager.setMockResponse(for: jwksUri, responseBody: jwkSet)
+        
+        
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "non-existent-key", algorithm: "RS256")) { error in
             assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for kid: Optional(\"non-existent-key\")", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
         }
@@ -502,5 +395,4 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         return decoded
     }
-
 }

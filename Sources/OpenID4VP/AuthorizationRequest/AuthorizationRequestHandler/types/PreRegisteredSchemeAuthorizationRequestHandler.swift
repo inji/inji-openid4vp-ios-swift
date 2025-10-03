@@ -46,63 +46,46 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     }
     
     
-    func isRequestObjectSupported() -> Bool {
-        return true
+    func isRequestObjectSupported() throws -> Bool {
+        if shouldValidateClient {
+            let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? ""
+            let preRegisteredVerifier = try verifier(clientId: clientId)
+            return preRegisteredVerifier.allowUnsignedRequest
+        }
+        return false
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
         let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String
         
-        if ((authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue]) != nil)  {
-            throw InvalidData(
-                message: "client_metadata available in Authorization Request, cannot be used to verify the signed Authorization Request",
+        let preRegisteredClient = try verifier(clientId: clientId ?? "")
+        if let jwksUri = preRegisteredClient.jwksUri {
+            let jwkSet : JWKSet = try await resolveJwksFromUri(jwksUri, networkManager: self.networkManager, className: className)
+            
+            let publicKeyJwk =  try filterAndExtractKey(jwks: jwkSet, keyId: keyId, algorithm: algorithm)
+            return try jwkToPublicKey(publicKeyJwk, className: className)
+        } else {
+            throw PublicKeyResolutionFailed(
+                message: "Public key extraction failed - Public key information not available in pre-registered data to verify the signed Authorization Request",
                 className: className,
-                code: OpenID4VPErrorCodes.invalidRequest
+                code: OpenID4VPErrorCodes.invalidRequestObject
             )
         }
-        
-        if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
-            if let publicKeys = preRegisteredClient.clientMetadata?.jwks {
-                let publicKeyJwk =  try filterAndExtractKey(jwks: publicKeys, keyId: keyId, algorithm: algorithm)
-                return try jwkToPublicKey(publicKeyJwk, className: className)
-            } else {
-                throw InvalidData(
-                    message: "Public key extraction failed - Either client_metadata not available or jwks not available in pre-registered client_metadata to verify the signed Authorization Request",
-                    className: className,
-                    code: OpenID4VPErrorCodes.invalidRequestObject
-                )
-            }
-            
-        }
-        throw PublicKeyResolutionFailed(message: "Public key extraction failed for keyId = \(keyId ?? "null"), algorithm: \(algorithm)",
-                                        className: className,
-                                        code: OpenID4VPErrorCodes.invalidRequestObject)
     }
     
     override func validateAndParseRequestFields() async throws {
         if shouldValidateClient {
             let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
-            if let preRegisteredClient = trustedVerifiers.filter({ $0.clientId == clientId }).first {
-                let responseUri = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]) ?? "null"
-                guard preRegisteredClient.responseUris.contains(responseUri) else {
-                    throw InvalidVerifier(
-                        message: "response_uri trust cannot be established",
-                        className: AuthorizationRequest.className
-                    )
-                }
-                if(preRegisteredClient.clientMetadata != nil) {
-                    if (authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.clientMetadata.rawValue)){
-                        throw InvalidVerifier(
-                            message: "client_metadata provided despite pre-registered metadata already existing for the Client Identifier.",
-                            className: AuthorizationRequest.className
-                        )
-                    }
-                    
-                    
-                    // Update client_metadata in authorizationRequestParameters from the registered client for further use
-                    authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] = preRegisteredClient.clientMetadata
-                }
+            let preRegisteredClient = try verifier(clientId: clientId)
+            
+            let responseUri = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]) ?? "null"
+            guard preRegisteredClient.responseUris.contains(responseUri) else {
+                throw InvalidVerifier(
+                    message: "response_uri trust cannot be established",
+                    className: AuthorizationRequest.className
+                )
             }
+            
         }
         try await super.validateAndParseRequestFields()
     }
@@ -130,6 +113,14 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
             throw PublicKeyResolutionFailed(message: "Public key extraction failed - Multiple ambiguous keys found for \(algorithm) with signature usage",
                                             className: className,
                                             code: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
+    
+    private func verifier(clientId: String) throws -> Verifier {
+        if let found = trustedVerifiers.first(where: { $0.clientId == clientId }) {
+            return found
+        } else {
+            throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
         }
     }
 }
