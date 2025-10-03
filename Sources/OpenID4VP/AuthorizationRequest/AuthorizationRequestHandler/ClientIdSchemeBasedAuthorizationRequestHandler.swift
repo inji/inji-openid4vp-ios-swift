@@ -4,7 +4,7 @@ import Foundation
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func isRequestUriSupported() -> Bool
-    func isRequestObjectSupported() -> Bool
+    func isRequestObjectSupported() throws -> Bool
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
     func clientIdScheme() -> String
 }
@@ -91,7 +91,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             }
             try await validateRequestUriResponse(response.responseBody, httpMethod: httpMethod)
         } else {
-            guard (delegate.isRequestObjectSupported()) else {
+            guard (try delegate.isRequestObjectSupported()) else {
                 throw InvalidData(
                     message: "request object is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
                     className: className
