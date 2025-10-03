@@ -103,11 +103,13 @@ class OpenID4VPTests: XCTestCase {
     //client_id_scheme = pre-registered, validation of client via shouldValidateClient
 
     func testAuthenticateVerifierWithShouldValidateClientFalse() async throws {
-        await XCTAssertAsyncNoThrowsError(try await openID4VP.authenticateVerifier(
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(
             urlEncodedAuthorizationRequest: testUrlEncodedAuthRequestOfUntrustedVerifier,
             trustedVerifierJSON: preRegisteredVerifiers,
             shouldValidateClient: false
-        ), "should not throw even though the client ID isn't in the trusted list because shouldValidateClient is false")
+        ), "should not throw even though the client ID isn't in the trusted list because shouldValidateClient is false") { error in
+            assertOpenID4VPException(error, expectedMessage: "Authorization Request Object must be a signed JWT", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+        }
     }
 
     func testAuthenticateVerifierWithShouldValidateClientTrue() async throws {
@@ -184,7 +186,7 @@ class OpenID4VPTests: XCTestCase {
     //client_id_scheme = pre_registered, ClientMetadata mandatory values are not present
     func testMissingClientMetadataRequiredFieldsInRequest() async {
         let result = await Task {
-            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequestWithInvalidClientMetadata, trustedVerifierJSON: [Verifier(clientId: "mock-client-2", responseUris: ["https://mock-verifier.com"], jwksUri: "https://mock-client.com/jwks", allowUnsignedRequest: true)], shouldValidateClient: true)
         }.result
 
         switch result {
@@ -203,7 +205,7 @@ class OpenID4VPTests: XCTestCase {
     func testShouldConstructAuthorizationRequestSuccessfullyWhenPresentationDefinitionIsSentByReference() async {
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition", responseBody: convertToJsonString(presentationDefinition))
         do {
-            let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthRequestWithPresentationDefinitionUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: false)
+            let authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: urlEncodedAuthRequestWithPresentationDefinitionUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
             XCTAssertNotNil(authorizationRequest)
             XCTAssertEqual("mock-client", authorizationRequest.clientId)
         } catch {

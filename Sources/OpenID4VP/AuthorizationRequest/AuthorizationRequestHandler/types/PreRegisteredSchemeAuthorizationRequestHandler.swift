@@ -47,7 +47,14 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     
     
     func isRequestObjectSupported() -> Bool {
-        return true
+        if shouldValidateClient {
+            let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? ""
+            if let preRegisteredVerifier = trustedVerifiers.first(where: { $0.clientId == clientId }) {
+                return preRegisteredVerifier.allowUnsignedRequest
+            }
+            return false
+        }
+        return false
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {

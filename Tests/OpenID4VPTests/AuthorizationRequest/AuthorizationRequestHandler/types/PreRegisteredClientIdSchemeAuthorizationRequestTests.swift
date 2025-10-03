@@ -61,11 +61,31 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
 
 
-    func testReturnTrueForAuthorizationRequestByValueSupport() {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        
-        XCTAssertTrue(preRegistered.isRequestObjectSupported(), "Pre-registered client id scheme should support authorization request by value")
+    func testIsRequestObjectSupported_shouldValidateClientFalse_returnsFalse() {
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        XCTAssertFalse(preRegistered.isRequestObjectSupported(), "Should return false when shouldValidateClient is false")
+    }
+
+    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "untrusted-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        // Should return false, not throw, as per implementation
+        XCTAssertFalse(preRegistered.isRequestObjectSupported(), "Should return false when clientId is not available in trusted verifiers")
+    }
+
+    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedFalse_returnsFalse() {
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: false)]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        XCTAssertFalse(preRegistered.isRequestObjectSupported(), "Should return false when allowUnsignedRequest is false")
+    }
+
+    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedTrue_returnsTrue() {
+        let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: true)]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        XCTAssertTrue(preRegistered.isRequestObjectSupported(), "Should return true when allowUnsignedRequest is true")
     }
 
     
@@ -373,5 +393,4 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         
         return decoded
     }
-
 }

@@ -8,9 +8,10 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     for verifierData in verifierList {
         if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId.rawValue] as? String,
            let responseUris = verifierData["response_uris"] as? [String] {
+            let jwksUri = verifierData["jwks_uri"] as? String
             
-            if let jwksUri = verifierData["jwks_uri"] as? String {
-                let verifier = Verifier(clientId: clientId, responseUris: responseUris, jwksUri: jwksUri)
+            if let allowUnsignedRequest = verifierData["allow_unsigned_request"] as? Bool {
+                let verifier = Verifier(clientId: clientId, responseUris: responseUris, jwksUri: jwksUri, allowUnsignedRequest: allowUnsignedRequest)
                 verifiers.append(verifier)
                 continue
             }

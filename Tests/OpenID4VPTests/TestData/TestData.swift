@@ -38,7 +38,8 @@ private let testVerifierList:  [[String: Any]]  = [
         "client_id": "https://mock-verifier.com",
         "response_uris": [
             "https://mock-verifier.com/response",
-        ]
+        ],
+        "allow_unsigned_request": true,
     ],
     [
         "client_id": "mock-client-2",
@@ -52,6 +53,7 @@ private let testVerifierList:  [[String: Any]]  = [
             "https://mock-verifier.com",
         ],
         "jwks_uri": "https://mock-verifier.com/.well-known/jwks.json",
+        "allow_unsigned_request": true,
     ]
 ]
 
@@ -329,7 +331,7 @@ let testVPRequestWithRedirectUriAndClientIdNotEqual = createUrlEncodedAuthorizat
 //client_id_scheme = pre-registered
 let testValidUrlEncodedVPRequestWithResponseUri = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23), clientIdScheme: .preRegistered)
 
-let testUrlEncodedAuthRequestOfUntrustedVerifier = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted_client"]), clientIdScheme: .preRegistered)
+let testUrlEncodedAuthRequestOfUntrustedVerifier = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted_client"]), verifierSentAuthRequestByReference: true, clientIdScheme: .preRegistered)
 
 // client_id_scheme = pre-registered draft 21
 let testValidUrlEncodedVPRequestWithResponseUriDraft21 = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21), clientIdScheme: .preRegistered, draftVersion: 21)
