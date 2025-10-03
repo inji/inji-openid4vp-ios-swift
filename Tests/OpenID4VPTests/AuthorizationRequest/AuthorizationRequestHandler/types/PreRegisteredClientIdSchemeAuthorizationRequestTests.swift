@@ -64,28 +64,28 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     func testIsRequestObjectSupported_shouldValidateClientFalse_returnsFalse() {
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        XCTAssertFalse(preRegistered.isRequestObjectSupported(), "Should return false when shouldValidateClient is false")
+        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when shouldValidateClient is false")
     }
 
     func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "untrusted-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         // Should return false, not throw, as per implementation
-        XCTAssertFalse(preRegistered.isRequestObjectSupported(), "Should return false when clientId is not available in trusted verifiers")
+        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when clientId is not available in trusted verifiers")
     }
 
     func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedFalse_returnsFalse() {
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: false)]
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        XCTAssertFalse(preRegistered.isRequestObjectSupported(), "Should return false when allowUnsignedRequest is false")
+        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when allowUnsignedRequest is false")
     }
 
     func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedTrue_returnsTrue() {
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: true)]
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        XCTAssertTrue(preRegistered.isRequestObjectSupported(), "Should return true when allowUnsignedRequest is true")
+        XCTAssertTrue(try preRegistered.isRequestObjectSupported(), "Should return true when allowUnsignedRequest is true")
     }
 
     
@@ -180,7 +180,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")){ error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for keyId = ed-key2, algorithm: ECDSA", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
         }
     }
     
@@ -342,7 +342,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             networkManager: mockNetworkManager!
         )
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")) { error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for keyId = ed-key2, algorithm: ECDSA", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
         }
     }
 
@@ -361,7 +361,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
             networkManager: mockNetworkManager!
         )
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: nil, algorithm: "ECDSA")) { error in
-            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed for keyId = null, algorithm: ECDSA", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+            assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
         }
     }
     
