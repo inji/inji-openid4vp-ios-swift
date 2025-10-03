@@ -22,27 +22,29 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 ## Supported features
 
-| Feature                                                    | Supported values                                                       |
-|------------------------------------------------------------|------------------------------------------------------------------------|
-| Device flow                                                | cross device flow, Same device flow                                    |
-| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                |
-| Signed authorization request verification algorithms       | Ed25519                                                                |
-| Obtaining authorization request                            | By value, By reference ( via `request_uri` method)                     |
-| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)             |
-| Presentation Request                                       | Presentation Exchange                                                  |
-| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses) |
-| Authorization Response content encryption algorithms       | `A256GCM`                                                              |
-| Authorization Response key encryption algorithms           | `ECDH-ES`                                                              |
-| Authorization Response type                                | `vp_token`                                                             |
-| Supported Credential formats                               | `ldp_vc`, `mso_mdoc`, `vc+sdjwt`, `dc+sd-jwt`                          |
+
+| Feature                                                    | Supported values                                                                         |
+|------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| Device flow                                                | Cross device flow, Same device flow (only `direct_post` and `direct_post.jwt` supported) |
+| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                  |
+| Signed authorization request verification algorithms       | Ed25519                                                                                  |
+| Obtaining authorization request                            | By value, By reference ( via `request_uri` method)                                       |
+| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                               |
+| Authorization Response content encryption algorithms       | `A256GCM`                                                                                |
+| Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                |
+| Credential formats                                         | `ldp_vc`, `mso_mdoc`, `dc+sd-jwt`, `vc+sd-jwt`                                           |
+| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                   |
+| Authorization Response type                                | `vp_token`                                                                               |
 
 #### Client ID Schemes and obtaining authorization request matrix
 
-| Client Id Scheme | Supports By Value | Supports By Reference | Notes                                                                                                                                                                                                                                                                                            |
-|------------------|-------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `pre-registered` | ✅                 | ✅                     | -                                                                                                                                                                                                                                                                                                |
-| `redirect_uri`   | ✅                 | ❌                     | Authorization request by reference is not supported, since this client ID scheme mandates unsigned Authorization Request. [(reference)](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID3.html#section-5.10.4-2.1)                                                              |
-| `did`            | ❌                 | ✅                     | Authorization request by value is not supported for the did client ID scheme, as it requires a signed request. Instead, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html#section-3.2)) |
+| Client Id Scheme | Supports By Value                     | Supports By Reference | Notes                                                                                                                                                                                                                                                                                             |
+|------------------|---------------------------------------|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pre-registered` | depends ⚖️ on pre-registered Verifier | ✅                     | If the pre-registered verifier has the config allowUnsignedRequest set to true By Value support is available else not available                                                                                                                                                                   |
+| `redirect_uri`   | ✅                                     | ❌                     | Authorization request by reference is not supported, since this client ID scheme mandates unsigned Authorization Request. [(reference)](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID3.html#section-5.10.4-2.1)                                                               |
+| `did`            | ❌                                     | ✅                     | Signed Authorization requests are supported in "By Reference" mode. As `did` client id scheme requires a signed request, a Request URI should be used to fetch the signed authorization request ([reference](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html#section-3.2)) |
+
+Note: All `By Reference` requests are fetched using HTTP GET / POST method and expected to be signed JWT.
 
 
 #### Notes on Supported response modes
@@ -267,15 +269,28 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
 ###### Example usage
 
 ```swift
- let trustedVerifiers: [Verifier] = [Verifier(clientId: "https://mock-verifier.com", responseUris:["https://mock-verifier.com/response"]
+ let trustedVerifiers: [Verifier] = [
+  Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com/response"], jwksUri: "https://mock-verifier.com/.well-known/jwks.json", allowUnsignedRequest: false)
+]
 
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
                 urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri,
-                trustedVerifierJSON: trustedVerifiers),
+                trustedVerifierJSON: trustedVerifiers,
                 walletMetadata: walletMetadata,
                 shouldValidateClient: true
             )
 ```
+
+#### Verifier Parameters
+
+Each Verifier object in the trustedVerifiers list should contain the following properties:
+
+| Parameter            | Type     | Required | Default Value | Description                                                                                                                                                                                       |
+|----------------------|----------|----------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| clientId             | String   | Yes      | N/A           | The unique identifier for the Verifier.                                                                                                                                                           |
+| responseUri          | [String] | Yes      | N/A           | A list of trusted Verifier objects each containing a clientId, responseUri, jwksUri and allowUnsignedRequest list (refer [here](#verifier-parameters) for more details)                           |
+| jwksUri              | String   | No       | null          | URI value of the Verifier's hosted public key. This will be used to verify the signed Authorization Request. If this is not available Verifier's signed Authorization request cannot be verified. |
+| allowUnsignedRequest | Bool     | No       | false         | Accepts unsigned requests from the Verifier. If `shouldValidateClient` is false, unsigned requests are still not allowed.                                                                         |
 
 
 ###### Exceptions
