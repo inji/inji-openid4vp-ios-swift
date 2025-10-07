@@ -173,10 +173,6 @@ public class OpenID4VP {
     
     @available(*, deprecated, renamed: "sendErrorResponseToVerifier", message: "sendErrorToVerifier is now changed to sendErrorResponseToVerifier. Reason: This does not support listening the response from the verifier")
     public func sendErrorToVerifier(error: Error) async {
-        do {
-            _ = try await authorizationResponseHandler.sendAuthorizationError(responseUri: self.responseUri, authorizationRequest: self.authorizationRequest, error: error)
-        } catch {
-            OpenID4VPException.error(error, className: String(describing: type(of: self)))
-        }
+        await self.safeSendError(error: error)
     }
 }
