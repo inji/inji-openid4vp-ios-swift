@@ -386,8 +386,27 @@ val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenS
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
+### sendErrorResponseToVerifier
 
-### sendErrorToVerifier
+- Receives an exception and sends it's message to the Verifier via an HTTP POST request to the Verifier's response_uri endpoint.
+- Returns back the response body received from the Verifier.
+
+```swift
+// Example: The user declines to share the requested credentials. In this case, Verifier needs to be informed about the scenario.
+// So call the sendErrorResponseToVerifier method with appropriate exception message to notify the Verifier.
+
+let verifierResponse: String = openID4VP.sendErrorResponseToVerifier(
+        AccessDenied(
+            message = "User did not give consent to share the requested Credentials with the Verifier.",
+            className = this.className
+        )
+)
+```
+###### Exceptions
+
+1. ErrorDispatchFailure is thrown if any issue occurs while sending the Authorization Error response to the Verifier.
+
+### sendErrorToVerifier (deprecated, use sendErrorResponseToVerifier instead)
 - Receives an exception and sends it's message to the Verifier via a HTTP POST request.
 
 ```
@@ -408,12 +427,19 @@ await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedE
 
 ###### Exceptions
 
-1. InterruptedIOException is thrown if the connection is timed out when network call is made.
-2. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
+1. ErrorDispatchFailure is thrown if any issue occurs while sending the Authorization Error response to the Verifier.
 
 ###### Exception Handling Enhancement
 
 - The library has been enhanced to handle exceptions more gracefully. Library is throwing `OpenID4VPException` now which gives both Error Code, Message and optional state to the consumer app. The `state` value is extracted from the authorization request and is included in the error response only if it is present and non-empty. This allows the consumer app to handle exceptions more effectively and provide better user experience.
+
+## 🚨 Deprecation Notice
+
+The following methods are deprecated and will be removed in future releases. Please migrate to the suggested alternatives.
+
+| Method Name         | Description                               | Deprecated Since | Suggested Alternative                                       |
+|---------------------|-------------------------------------------|------------------|-------------------------------------------------------------|
+| sendErrorToVerifier | Sends Authorization error to the verifier | 0.6.0            | [sendErrorResponseToVerifier](#sendErrorResponseToVerifier) |
 
 ## Architecture decisions
 
