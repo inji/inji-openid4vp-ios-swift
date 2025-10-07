@@ -211,7 +211,7 @@ func assertOpenID4VPException(
     XCTAssertEqual(expectedMessage, ex.message, file: file, line: line)
     XCTAssertEqual(expectedCode, ex.errorCode, file: file, line: line)
     if(expectedVerifierResponse != nil) {
-        XCTAssertEqual(expectedVerifierResponse, (error as? OpenID4VPException)?.networkResponse)
+        XCTAssertEqual(expectedVerifierResponse, (error as? OpenID4VPException)?.response)
     }
 }
 
