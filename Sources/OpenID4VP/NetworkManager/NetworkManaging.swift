@@ -7,5 +7,5 @@ public protocol NetworkManaging {
         method: HttpMethod,
         bodyParams: [String: String]?,
         headers: [String: String]?
-    ) async throws -> (responseBody: String, httpUrlResponse: HTTPURLResponse)
+    ) async throws -> NetworkResponse
 }

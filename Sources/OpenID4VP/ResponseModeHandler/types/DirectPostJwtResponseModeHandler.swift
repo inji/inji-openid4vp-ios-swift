@@ -81,7 +81,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         let requestBody = ["response": encryptedBody]
         let response = try await networkManager.sendHTTPRequest(url: url, method: .post, bodyParams: requestBody, headers: [Header.contentType.rawValue : ContentTypes.applicationFormUrlEncoded.rawValue])
 
-        return response.responseBody
+        return response.body
     }
 
     private func getJwk(_ jwks: JWKSet, _ alg: String) throws -> JWK {

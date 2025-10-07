@@ -124,7 +124,7 @@ func createDescriptorMapPath(_ index: Int) -> String {
 func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, className: String) async throws -> JWKSet {
     do {
         let response = try await networkManager.sendHTTPRequest(url: uri, method: .get, bodyParams: nil, headers: nil)
-        let data = try response.responseBody.data(using: .utf8) ?? {
+        let data = try response.body.data(using: .utf8) ?? {
            throw InvalidData(
                 message: "unable to convert the jwks response to data",
                 className: className,

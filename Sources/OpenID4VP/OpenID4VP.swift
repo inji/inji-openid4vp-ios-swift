@@ -10,6 +10,8 @@ public class OpenID4VP {
     private var walletNonce: String = ""
     private let nonceProvider: NonceProvider
     
+    private let className = String(describing: type(of: OpenID4VP.self))
+    
     public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
         self.networkManager = NetworkManager.shared
@@ -56,7 +58,7 @@ public class OpenID4VP {
             )
             return authorizationRequest
         } catch let exception {
-            await sendErrorToVerifier(error: exception)
+            await safeSendError(error: exception)
             throw exception
         }
     }
@@ -76,7 +78,7 @@ public class OpenID4VP {
                 walletNonce: self.walletNonce
             )
         } catch {
-            await sendErrorToVerifier(error: error)
+            await safeSendError(error: error)
             throw error
         }
     }
@@ -91,52 +93,21 @@ public class OpenID4VP {
                 responseUri: responseUri!
             )
         } catch {
-            await sendErrorToVerifier(error: error)
+            await safeSendError(error: error)
             throw error
         }
     }
     
-    public func sendErrorToVerifier(error: Error) async {
-        let logTag = OpenID4VPException.getLogTag(String(describing: OpenID4VP.self))
-        
-        
-        var errorInfo: [String: String] = [:]
-        
-        
-        let resolvedError: OpenID4VPException
-        if let openidError = error as? OpenID4VPException {
-            resolvedError = openidError
-        } else {
-            resolvedError = GenericFailure(
-                message: "\(error)",
-                className: String(describing: OpenID4VP.self)
-            )
-        }
-        
-        errorInfo.merge(resolvedError.toErrorResponse()) { _, new in new }
-        
-        if let state = authorizationRequest?.state, !state.isEmpty {
-            errorInfo["state"] = state
-        }
-        
-        if responseUri == nil || responseUri!.isEmpty {
-            OpenID4VPException.error(logTag, GenericFailure(
-                message: "Response URI is not set. Cannot send error to verifier.",
-                className: String(describing: OpenID4VP.self)
-            ))
-            return
-        }
+    public func sendErrorResponseToVerifier(error: Error) async throws -> String {
+       return try await authorizationResponseHandler.sendAuthorizationError(responseUri: self.responseUri, authorizationRequest: self.authorizationRequest, error: error)
+    }
+    
+    private func safeSendError(error: Error) async {
         do {
-            _ = try await networkManager.sendHTTPRequest(
-                url: responseUri ?? "",
-                method: .post,
-                bodyParams: errorInfo,
-                headers: ["Content_Type": ContentTypes.applicationFormUrlEncoded.rawValue]
-            )
+            let verifierResponse = try await sendErrorResponseToVerifier(error: error)
+            (error as? OpenID4VPException)?.setResponse(verifierResponse)
         } catch {
-            OpenID4VPException.error(logTag, NetworkRequestException.invalidResponse(
-                message: "Unexpected error occurred while sending the error to verifier: \(error)"
-            ))
+            OpenID4VPException.error(error, className: className)
         }
     }
     
@@ -198,5 +169,10 @@ public class OpenID4VP {
             await sendErrorToVerifier(error: error)
             throw error
         }
+    }
+    
+    @available(*, deprecated, renamed: "sendErrorResponseToVerifier", message: "sendErrorToVerifier is now changed to sendErrorResponseToVerifier. Reason: This does not support listening the response from the verifier")
+    public func sendErrorToVerifier(error: Error) async {
+        await self.safeSendError(error: error)
     }
 }

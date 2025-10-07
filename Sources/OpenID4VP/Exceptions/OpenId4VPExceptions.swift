@@ -4,6 +4,12 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     public let errorCode: String
     public let message: String
     public let className: String
+    // holds the response body received from the Verifier if the error is sent to the Verifier
+    public var response: String? = nil
+    
+    internal func setResponse(_ responseBody: String) {
+        self.response = responseBody
+    }
     
     private static var logTag = ""
     private static var traceabilityId: String?
@@ -40,6 +46,10 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     }
     
     static func error(_ logTag: String, _ exception: Error) {
+        print("\(logTag) | ERROR: \(exception.localizedDescription)")
+    }
+    
+    static func error( _ exception: Error, className: String) {
         print("\(logTag) | ERROR: \(exception.localizedDescription)")
     }
 }
@@ -325,5 +335,15 @@ public class InvalidTransactionData: OpenID4VPException {
 public class UnsupportedOperationException : OpenID4VPException {
     public init(message: String, className: String, code: String = "unsupported_operation") {
         super.init(errorCode: code, message: message, className: className)
+    }
+}
+
+public class ErrorDispatchFailure : OpenID4VPException {
+    public init(message: String, className: String) {
+        super.init(
+            errorCode: OpenID4VPErrorCodes.errorDispatchFailure,
+            message: "Failed to send error to verifier: \(message)",
+            className: className
+        )
     }
 }

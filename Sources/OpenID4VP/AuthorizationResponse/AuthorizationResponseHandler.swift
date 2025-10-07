@@ -75,6 +75,48 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
+    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> String {
+        guard let responseUri = responseUri, !responseUri.isEmpty else {
+            throw ErrorDispatchFailure(message: "Response URI is not set. Cannot send error to verifier.", className: Self.className)
+        }        
+        
+        var errorPayload: [String: String] = [:]
+        
+        
+        let resolvedError: OpenID4VPException
+        if let openidError = error as? OpenID4VPException {
+            resolvedError = openidError
+        } else {
+            resolvedError = GenericFailure(
+                message: "\(error)",
+                className: String(describing: OpenID4VP.self)
+            )
+        }
+        
+        errorPayload.merge(resolvedError.toErrorResponse()) { _, new in new }
+        
+        if let state = authorizationRequest?.state, !state.isEmpty {
+            errorPayload["state"] = state
+        }
+        
+        
+        do {
+            let dispatchResult = try await networkManager.sendHTTPRequest(
+                url: responseUri,
+                method: .post,
+                bodyParams: errorPayload,
+                headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
+            )
+            (error as? OpenID4VPException)?.setResponse(dispatchResult.body)
+            return dispatchResult.body
+        } catch {
+            throw ErrorDispatchFailure(
+                message: "Failed to send error to verifier: \(error)",
+                className: Self.className
+            )
+        }
+    }
+    
     
     public func shareVP(
         authorizationRequest: AuthorizationRequest,
@@ -420,7 +462,7 @@ public class AuthorizationResponseHandler {
                 headers: ["content-type": "application/x-www-form-urlencoded"]
             )
             
-            return response.responseBody
+            return response.body
         } catch {
             throw error
         }
