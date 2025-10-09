@@ -76,13 +76,13 @@ class MockNetworkManager: NetworkManaging {
             return NetworkResponse(
                 statusCode: resp.httpUrlResponse.statusCode,
                 body: resp.responseBody,
-                headers: resp.httpUrlResponse
+                headers: resp.httpUrlResponse.headers.dictionary
             )
         }
         return NetworkResponse(
             statusCode: defaultHttpUrlResponse.statusCode,
             body: "Success: Request completed successfully.",
-            headers: defaultHttpUrlResponse
+            headers: defaultHttpUrlResponse.headers.dictionary
         )
     }
 }

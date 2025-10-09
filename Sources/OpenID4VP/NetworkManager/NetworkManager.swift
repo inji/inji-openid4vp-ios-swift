@@ -1,10 +1,10 @@
 import Foundation
 import Alamofire
 
-public struct NetworkResponse {
-    let statusCode: Int
-    let body: String
-    let headers: HTTPURLResponse
+public struct NetworkResponse : Codable {
+    public let statusCode: Int
+    public let body: String
+    public let headers: [String: String]
 }
 
 public struct NetworkManager: NetworkManaging {
@@ -47,7 +47,7 @@ public struct NetworkManager: NetworkManaging {
                         let networkResponse = NetworkResponse(
                             statusCode: httpResponse.statusCode,
                             body: responseBody,
-                            headers: httpResponse
+                            headers: httpResponse.headers.dictionary
                         )
                         continuation.resume(returning: networkResponse)
                     } else {
