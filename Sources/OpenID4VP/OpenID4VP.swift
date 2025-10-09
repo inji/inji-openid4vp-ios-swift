@@ -83,9 +83,9 @@ public class OpenID4VP {
         }
     }
     
-    public func shareVerifiablePresentation(
+    public func sendAuthorizationResponseToVerifier(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
-    ) async throws -> String {
+    ) async throws -> NetworkResponse {
         do {
             return try await authorizationResponseHandler.shareVP(
                 authorizationRequest: authorizationRequest,
@@ -96,6 +96,13 @@ public class OpenID4VP {
             await safeSendError(error: error)
             throw error
         }
+    }
+    
+    @available(*, deprecated, renamed: "sendAuthorizationResponseToVerifier", message: "This method does not support listening to the status code sent from the verifier. Replace with sendAuthorizationResponseToVerifier(vpTokenSigningResults)")
+    public func shareVerifiablePresentation(
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
+    ) async throws -> String {
+        return try await self.sendAuthorizationResponseToVerifier(vpTokenSigningResults: vpTokenSigningResults).body
     }
     
     public func sendErrorResponseToVerifier(error: Error) async throws -> String {

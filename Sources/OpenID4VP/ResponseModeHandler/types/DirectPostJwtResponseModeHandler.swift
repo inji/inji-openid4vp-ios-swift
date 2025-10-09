@@ -71,7 +71,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     }
 
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging, producerInfo: String,
-    recepientInfo: String) async throws -> String {
+                                   recepientInfo: String) async throws -> NetworkResponse {
         let bodyParams = try authorizationResponse.toJsonEncodedMap()
         let clientMetadata = (authorizationRequest.clientMetadata)!
         let verifierPublicKey = try getJwk(clientMetadata.jwks!, clientMetadata.authorizationEncryptedResponseAlg!)
@@ -81,7 +81,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         let requestBody = ["response": encryptedBody]
         let response = try await networkManager.sendHTTPRequest(url: url, method: .post, bodyParams: requestBody, headers: [Header.contentType.rawValue : ContentTypes.applicationFormUrlEncoded.rawValue])
 
-        return response.body
+        return response
     }
 
     private func getJwk(_ jwks: JWKSet, _ alg: String) throws -> JWK {

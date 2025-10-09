@@ -122,7 +122,7 @@ public class AuthorizationResponseHandler {
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         responseUri: String
-    ) async throws -> String {
+    ) async throws -> NetworkResponse {
         let authorizationResponse = try createAuthorizationResponse(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults
@@ -240,7 +240,7 @@ public class AuthorizationResponseHandler {
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
         responseUri: String
-    ) async throws -> String {
+    ) async throws -> NetworkResponse {
         return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
             .sendAuthorizationResponse(
                 authorizationRequest: authorizationRequest,

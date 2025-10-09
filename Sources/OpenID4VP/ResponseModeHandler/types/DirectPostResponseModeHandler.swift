@@ -14,7 +14,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         networkManager: any NetworkManaging,
         producerInfo: String,
         recepientInfo recipientInfo: String
-    ) async throws -> String {
+    ) async throws -> NetworkResponse {
         let requestBody: [String: String] = try authorizationResponse.toJsonEncodedMap()
 
         let response = try await networkManager.sendHTTPRequest(
@@ -24,7 +24,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
             headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
         )
 
-        return response.body
+        return response
     }
 
 }
