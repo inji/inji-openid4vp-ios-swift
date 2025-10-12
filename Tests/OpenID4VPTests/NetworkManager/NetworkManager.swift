@@ -45,6 +45,9 @@ class MockNetworkManager: NetworkManaging {
         recordedRequests = [:]
     }
     
+    /// Sends a mocked HTTP request, records the request details, and returns the configured or default mocked response.
+    /// - Returns: A `NetworkResponse` containing the response `statusCode`, `body` string, and a dictionary of header fields taken from the mocked response (or a default success response) for the given URL.
+    /// - Throws: The `Error` that was configured for the requested URL in the mockResponses dictionary, if present.
     public func sendHTTPRequest(
         url: String,
         method: HttpMethod,
@@ -76,13 +79,13 @@ class MockNetworkManager: NetworkManaging {
             return NetworkResponse(
                 statusCode: resp.httpUrlResponse.statusCode,
                 body: resp.responseBody,
-                headers: resp.httpUrlResponse
+                headers: resp.httpUrlResponse.headers.dictionary
             )
         }
         return NetworkResponse(
             statusCode: defaultHttpUrlResponse.statusCode,
             body: "Success: Request completed successfully.",
-            headers: defaultHttpUrlResponse
+            headers: defaultHttpUrlResponse.headers.dictionary
         )
     }
 }

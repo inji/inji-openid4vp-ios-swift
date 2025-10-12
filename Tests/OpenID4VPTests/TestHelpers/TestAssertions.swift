@@ -196,11 +196,19 @@ func assertArraysEqual<T: Equatable>(expected: [T], actual: [T], file: StaticStr
     }
 }
 
+/// Asserts that an Error is an `OpenID4VPException` and that its message, error code, and optional network response match expected values.
+/// - Parameters:
+///   - error: The error to validate; must be an `OpenID4VPException`.
+///   - expectedMessage: The expected exception message.
+///   - expectedCode: The expected exception error code.
+///   - expectedVerifierResponse: If non-nil, the expected `NetworkResponse` whose `body`, `headers`, and `statusCode` are compared against the exception's `networkResponse`.
+///   - file: The file name to use when reporting a failure. Defaults to the calling file.
+///   - line: The line number to use when reporting a failure. Defaults to the calling line.
 func assertOpenID4VPException(
     _ error: Error,
     expectedMessage: String,
     expectedCode: String,
-    expectedVerifierResponse: String? = nil,
+    expectedVerifierResponse: NetworkResponse? = nil,
     file: StaticString = #file,
     line: UInt = #line
 ) {
@@ -211,7 +219,9 @@ func assertOpenID4VPException(
     XCTAssertEqual(expectedMessage, ex.message, file: file, line: line)
     XCTAssertEqual(expectedCode, ex.errorCode, file: file, line: line)
     if(expectedVerifierResponse != nil) {
-        XCTAssertEqual(expectedVerifierResponse, (error as? OpenID4VPException)?.response)
+        XCTAssertEqual(expectedVerifierResponse?.body, (error as? OpenID4VPException)?.networkResponse?.body)
+        XCTAssertEqual(expectedVerifierResponse?.headers, (error as? OpenID4VPException)?.networkResponse?.headers)
+        XCTAssertEqual(expectedVerifierResponse?.statusCode, (error as? OpenID4VPException)?.networkResponse?.statusCode)
     }
 }
 

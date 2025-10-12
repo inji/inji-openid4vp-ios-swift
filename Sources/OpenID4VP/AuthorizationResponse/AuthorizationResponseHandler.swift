@@ -1,4 +1,3 @@
-
 import Foundation
 
 public class AuthorizationResponseHandler {
@@ -43,6 +42,17 @@ public class AuthorizationResponseHandler {
         
     }
     
+    /// Builds unsigned VP tokens for each credential format from the provided credentials and request.
+    /// - Parameters:
+    ///   - credentialsMap: A dictionary mapping input descriptor IDs to a dictionary of credential formats to arrays of credentials (`AnyCodable`) that satisfy that descriptor.
+    ///   - authorizationRequest: The original authorization request containing presentation definition and other metadata used when constructing tokens.
+    ///   - responseUri: The callback URI to which the authorization response will be sent; used in some unsigned token formats.
+    ///   - walletNonce: Nonce produced by the wallet; stored on the handler and used when constructing unsigned tokens.
+    ///   - holderId: Optional holder identifier required for certain formats (e.g., LDP VCs).
+    ///   - signatureSuite: Optional signature suite identifier required for certain formats (e.g., LDP VCs).
+    /// - Returns: A dictionary mapping each `FormatType` to its constructed `UnsignedVPToken`.
+    /// - Throws: `InvalidData` if `credentialsMap` is empty. Errors thrown by underlying token construction (e.g., `createUnsignedVPTokens`) are propagated.
+    /// - Side effects: Stores `walletNonce` on the handler and populates `unsignedVPTokenResults` with per-format construction results.
     private func createUnsignedVPToken(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
@@ -75,7 +85,14 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
-    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> String {
+    /// Sends the provided error to the verifier at the given response URI as an OAuth/OpenID error response.
+    /// - Parameters:
+    ///   - responseUri: The verifier's response URI; must be non-empty.
+    ///   - authorizationRequest: The original authorization request; if it contains a `state` value it will be included in the error payload.
+    ///   - error: The error to send; if it conforms to `OpenID4VPException` its payload will be used, otherwise a generic error payload is constructed.
+    /// - Returns: The network dispatch result containing response metadata and body.
+    /// - Throws: `ErrorDispatchFailure` if `responseUri` is nil or empty, or if sending the HTTP request fails.
+    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> NetworkResponse {
         guard let responseUri = responseUri, !responseUri.isEmpty else {
             throw ErrorDispatchFailure(message: "Response URI is not set. Cannot send error to verifier.", className: Self.className)
         }        
@@ -107,8 +124,8 @@ public class AuthorizationResponseHandler {
                 bodyParams: errorPayload,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
             )
-            (error as? OpenID4VPException)?.setResponse(dispatchResult.body)
-            return dispatchResult.body
+            (error as? OpenID4VPException)?.setNetworkResponse(dispatchResult)
+            return dispatchResult
         } catch {
             throw ErrorDispatchFailure(
                 message: "Failed to send error to verifier: \(error)",
@@ -118,11 +135,17 @@ public class AuthorizationResponseHandler {
     }
     
     
+    /// Builds an authorization response from the provided signed VP tokens and sends it to the verifier.
+    /// - Parameters:
+    ///   - authorizationRequest: The original authorization request containing presentation definition and response details.
+    ///   - vpTokenSigningResults: A mapping from credential format to its VP token signing result used to construct the final VP token(s).
+    ///   - responseUri: The verifier endpoint URL to which the authorization response will be sent.
+    /// - Returns: The `NetworkResponse` produced by dispatching the authorization response to the verifier.
     public func shareVP(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         responseUri: String
-    ) async throws -> String {
+    ) async throws -> NetworkResponse {
         let authorizationResponse = try createAuthorizationResponse(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults
@@ -236,11 +259,17 @@ public class AuthorizationResponseHandler {
         }
     }
     
+    /// Sends the authorization response to the verifier using the handler selected for the request's response mode.
+    /// - Parameters:
+    ///   - authorizationRequest: The original authorization request; its `responseMode` selects the sending handler and its `nonce` is used as recipient info.
+    ///   - authorizationResponse: The response to deliver to the verifier.
+    ///   - responseUri: The verifier endpoint URL to which the response will be sent.
+    /// - Returns: The `NetworkResponse` produced by the response-mode handler.
     private func sendAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
         responseUri: String
-    ) async throws -> String {
+    ) async throws -> NetworkResponse {
         return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
             .sendAuthorizationResponse(
                 authorizationRequest: authorizationRequest,

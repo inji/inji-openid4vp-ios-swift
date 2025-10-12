@@ -63,6 +63,15 @@ public class OpenID4VP {
         }
     }
     
+    /// Constructs unsigned verifiable presentation (VP) tokens for the active authorization request.
+    /// 
+    /// Builds an unsigned VP token for each supported format using the provided verifiable credentials and the current flow state. If an error occurs, the method attempts to send an error response to the verifier and then rethrows the error.
+    /// - Parameters:
+    ///   - verifiableCredentials: A dictionary mapping credential identifiers to a dictionary that maps `FormatType` to an array of credential objects (`AnyCodable`) for that format.
+    ///   - holderId: Optional identifier for the holder to include in the VP token.
+    ///   - signatureSuite: Optional preferred signature suite to request in the VP token.
+    /// - Returns: A dictionary mapping each `FormatType` to its constructed `UnsignedVPToken`.
+    /// - Throws: Rethrows any error produced while constructing VP tokens.
     public func constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [AnyCodable]]],
         holderId: String? = nil,
@@ -83,9 +92,14 @@ public class OpenID4VP {
         }
     }
     
-    public func shareVerifiablePresentation(
+    /// Sends the signed verifiable presentation tokens to the verifier and returns the verifier's network response.
+    /// - Parameters:
+    ///   - vpTokenSigningResults: A dictionary mapping each presentation format to its corresponding signing result.
+    /// - Returns: The `NetworkResponse` received from the verifier after sharing the VP.
+    /// - Throws: Propagates any error encountered while sharing the VP. If an error occurs, an attempt is made to send an error response to the verifier before the error is rethrown.
+    public func sendAuthorizationResponseToVerifier(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
-    ) async throws -> String {
+    ) async throws -> NetworkResponse {
         do {
             return try await authorizationResponseHandler.shareVP(
                 authorizationRequest: authorizationRequest,
@@ -98,19 +112,47 @@ public class OpenID4VP {
         }
     }
     
-    public func sendErrorResponseToVerifier(error: Error) async throws -> String {
+    /// Sends the given error to the verifier's response endpoint and returns the verifier's network response.
+    /// - Parameters:
+    ///   - error: The error to report to the verifier.
+    /// - Returns: The `NetworkResponse` returned by the verifier.
+    /// - Throws: If sending the error to the verifier fails.
+    public func sendErrorResponseToVerifier(error: Error) async throws -> NetworkResponse {
        return try await authorizationResponseHandler.sendAuthorizationError(responseUri: self.responseUri, authorizationRequest: self.authorizationRequest, error: error)
     }
     
+    /// Attempts to report `error` to the verifier and, if successful, attaches the verifier's network response to the error.
+    /// - Parameter error: The error to send to the verifier. If `error` is an `OpenID4VPException`, its network response will be set; failures to send are recorded via `OpenID4VPException.error`.
     private func safeSendError(error: Error) async {
         do {
             let verifierResponse = try await sendErrorResponseToVerifier(error: error)
-            (error as? OpenID4VPException)?.setResponse(verifierResponse)
+            (error as? OpenID4VPException)?.setNetworkResponse(verifierResponse)
         } catch {
             OpenID4VPException.error(error, className: className)
         }
     }
     
+    /// Shares the verifiable presentation with the verifier and returns the verifier's response body.
+    /// - Parameters:
+    ///   - vpTokenSigningResults: A dictionary mapping each presentation format to its corresponding signing result.
+    /// - Returns: The response body returned by the verifier as a `String`.
+    @available(*, deprecated, renamed: "sendAuthorizationResponseToVerifier", message: "This method does not support listening to the status code sent from the verifier. Replace with sendAuthorizationResponseToVerifier(vpTokenSigningResults)")
+    public func shareVerifiablePresentation(
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
+    ) async throws -> String {
+        return try await self.sendAuthorizationResponseToVerifier(vpTokenSigningResults: vpTokenSigningResults).body
+    }
+    
+    /// Authenticates a verifier's authorization request and returns a validated `AuthorizationRequest`.
+    /// 
+    /// Generates and stores a new wallet nonce, validates the provided URL-encoded authorization request against the supplied trusted verifiers (and optional wallet metadata), and caches the resulting `authorizationRequest`.
+    /// - Parameters:
+    ///   - urlEncodedAuthorizationRequest: The URL-encoded authorization request received from the verifier.
+    ///   - trustedVerifierJSON: An array of trusted verifier descriptors used to validate the request.
+    ///   - shouldValidateClient: If `true`, perform client validation as part of request validation.
+    ///   - walletMetadata: Optional wallet metadata to include in the request validation (deprecated — prefer supplying metadata via the `OpenID4VP` initializer).
+    /// - Returns: A validated `AuthorizationRequest`.
+    /// - Throws: Rethrows any validation or network error after attempting to send an error response to the verifier.
     @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,

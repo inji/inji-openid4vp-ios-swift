@@ -1,16 +1,24 @@
 import Foundation
 import Alamofire
 
-public struct NetworkResponse {
-    let statusCode: Int
-    let body: String
-    let headers: HTTPURLResponse
+public struct NetworkResponse : Codable {
+    public let statusCode: Int
+    public let body: String
+    public let headers: [String: String]
 }
 
 public struct NetworkManager: NetworkManaging {
     public static var shared = NetworkManager()
     static let logTag = OpenID4VPException.getLogTag(String(describing: NetworkManager.self))
     
+    /// Sends an HTTP request to the given URL and returns a parsed NetworkResponse.
+    /// - Parameters:
+    ///   - url: The request URL as a string.
+    ///   - method: The HTTP method to use for the request.
+    ///   - bodyParams: Optional request body parameters; treated as an empty set if `nil`.
+    ///   - headers: Optional request headers; the `Content-Type` header (if present) is used to determine request encoding.
+    /// - Returns: A `NetworkResponse` containing the HTTP status code, response body as a UTF-8 string (empty string if absent or undecodable), and response headers as a dictionary.
+    /// - Throws: `NetworkRequestException.invalidResponse` if no HTTP response is received; `NetworkRequestException.networkRequestTimeout` if the request times out; `NetworkRequestException.networkRequestFailed` for other request failures.
     public func sendHTTPRequest(
         url: String,
         method: HttpMethod,
@@ -47,7 +55,7 @@ public struct NetworkManager: NetworkManaging {
                         let networkResponse = NetworkResponse(
                             statusCode: httpResponse.statusCode,
                             body: responseBody,
-                            headers: httpResponse
+                            headers: httpResponse.headers.dictionary
                         )
                         continuation.resume(returning: networkResponse)
                     } else {
