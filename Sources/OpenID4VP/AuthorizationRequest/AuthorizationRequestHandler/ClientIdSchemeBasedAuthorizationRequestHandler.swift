@@ -78,6 +78,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             var response:  NetworkResponse
             do{
                 response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+                if(response.statusCode != 200){
+                    throw InvalidData(message: "Error while fetching request_uri: HTTP status code \(response.statusCode) & body: \(response.body)", className: className)
+                }
             }
             catch let error as NetworkRequestException {
                 let isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)

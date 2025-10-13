@@ -60,7 +60,18 @@ public struct NetworkManager: NetworkManaging {
                         let exception = NetworkRequestException.networkRequestTimeout
                         OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
-                    } else {
+                    }
+                    if let statusCode = response.response?.statusCode {
+                        let message = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                        let response = NetworkResponse(
+                            statusCode: statusCode,
+                            body: response.data.flatMap { String(data: $0, encoding: .utf8) } ?? "",
+                            headers: response.response?.headers.dictionary ?? [:]
+                        )
+                        continuation.resume(returning: response)
+                        return
+                    }
+                    else {
                         let exception = NetworkRequestException.networkRequestFailed(message: "\(error.localizedDescription)")
                         OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
@@ -71,7 +82,7 @@ public struct NetworkManager: NetworkManaging {
     }
     
     private func getEncoding(for contentType: String?) -> ParameterEncoding {
-            return URLEncoding.default
+        return URLEncoding.default
     }
     
     private func formatRequestBody(_ body: [String: String]?, for contentType: String?) -> Parameters {

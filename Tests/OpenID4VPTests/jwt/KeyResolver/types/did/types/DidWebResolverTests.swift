@@ -196,6 +196,21 @@ final class DidWebResolverTests: XCTestCase {
         }
     }
     
+    func testThrowsErrorWhenDidResponseHasNon200StatusCode() async throws {
+        let didDocJSON = "{\"message\": \"something went wrong\"}"
+        mockNetworkManager.setMockResponse(
+            for: "https://example.com/.well-known/did.json",
+            responseBody: didDocJSON,
+            statusCode: 400
+        )
+        
+        let resolver = DidWebResolver(networkManager: mockNetworkManager)
+        
+        await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: "did:web:example.com#key1")) { error in
+            assertOpenID4VPException(error, expectedMessage: "Error while resolving did, status code: 400 with body: {\"message\": \"something went wrong\"}", expectedCode: "invalid_request")
+        }
+    }
+    
     func testThrowsErrorWhenDidResponseIsNotValidJson() async throws {
         let didDocJSON = """
             [{

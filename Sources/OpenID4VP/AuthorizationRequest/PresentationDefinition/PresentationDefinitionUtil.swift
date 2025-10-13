@@ -88,6 +88,12 @@ func parseAndValidatePresentationDefinition(
             response = try await networkManager.sendHTTPRequest(
                 url: uriString, method: .get, bodyParams: nil, headers: nil
             )
+            if(response.statusCode != 200){
+                throw InvalidData(
+                    message: "Error while fetching presentation_definition from presentation_definition_uri: \(uriString), status code: \(response.statusCode) with body: \(response.body)",
+                    className: AuthorizationRequest.className
+                )
+            }
         } catch {
             throw InvalidData(
                 message: "presentation_definition_uri could not be reached: \(uriString)",
