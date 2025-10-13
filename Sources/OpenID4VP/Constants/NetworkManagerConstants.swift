@@ -13,3 +13,8 @@ public enum ContentTypes : String {
     case applicationJwt = "application/oauth-authz-req+jwt"
     case applicationFormUrlEncoded = "application/x-www-form-urlencoded"
 }
+
+
+public enum StatusCodes : Int {
+    case ok = 200
+}

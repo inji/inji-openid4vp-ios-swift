@@ -5,6 +5,11 @@ public struct NetworkResponse : Codable {
     public let statusCode: Int
     public let body: String
     public let headers: [String: String]
+    
+    var isOK: Bool {
+        return statusCode == StatusCodes.ok.rawValue
+        
+    }
 }
 
 public struct NetworkManager: NetworkManaging {

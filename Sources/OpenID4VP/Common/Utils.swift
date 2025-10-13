@@ -124,7 +124,7 @@ func createDescriptorMapPath(_ index: Int) -> String {
 func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, className: String) async throws -> JWKSet {
     do {
         let response = try await networkManager.sendHTTPRequest(url: uri, method: .get, bodyParams: nil, headers: nil)
-        if(response.statusCode != 200){
+        if(!response.isOK){
             throw InvalidData(
                 message: "Error while fetching jwks information, status code: \(response.statusCode) with body: \(response.body)",
                 className: AuthorizationRequest.className
