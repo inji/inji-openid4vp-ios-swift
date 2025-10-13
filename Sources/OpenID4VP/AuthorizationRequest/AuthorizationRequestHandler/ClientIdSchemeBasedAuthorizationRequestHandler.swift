@@ -146,6 +146,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func validateAndParseRequestFields() async throws {
+        if authorizationRequestParameters[AuthorizationRequestFieldConstants.transactionData.rawValue] != nil {
+            throw InvalidRequest(message: "Invalid Request: transaction_data is not supported in the authorization request", className: className)
+        }
         let mandatoryFields = [AuthorizationRequestFieldConstants.responseType.rawValue,AuthorizationRequestFieldConstants.nonce.rawValue]
         
         for field in mandatoryFields {

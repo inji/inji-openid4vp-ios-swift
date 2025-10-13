@@ -332,6 +332,12 @@ public class InvalidTransactionData: OpenID4VPException {
     }
 }
 
+class InvalidRequest: OpenID4VPException {
+    init(message: String, className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
 public class UnsupportedOperationException : OpenID4VPException {
     public init(message: String, className: String, code: String = "unsupported_operation") {
         super.init(errorCode: code, message: message, className: className)
