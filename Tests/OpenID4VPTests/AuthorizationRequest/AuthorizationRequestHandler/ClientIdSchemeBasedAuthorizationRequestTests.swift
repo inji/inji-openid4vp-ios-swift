@@ -820,7 +820,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             assertOpenID4VPException(
                 error,
                 expectedMessage: "Invalid Request: transaction_data is not supported in the authorization request",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
+                expectedCode: OpenID4VPErrorCodes.invalidTransactionData
             )
         }
     }
