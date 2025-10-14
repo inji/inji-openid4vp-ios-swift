@@ -12,8 +12,8 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 - [APIs](#apis)
   - [authenticateVerifier](#authenticateverifier)
   - [constructUnsignedVPToken](#constructUnsignedVPToken)
-  - [shareVerifiablePresentation](#shareverifiablepresentation)
-  - [sendErrorToVerifier](#senderrortoverifier)
+  - [sendAuthorizationResponseToVerifier](#sendauthorizationresponsetoverifier)
+  - [sendErrorResponseToVerifier](#senderrorresponsetoverifier)
 
 ## OpenID4VP specification draft versions supported
 
@@ -353,7 +353,55 @@ let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUns
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
-### shareVerifiablePresentation
+### sendAuthorizationResponseToVerifier
+- This function constructs a vp_token with proof using received VPTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
+- Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
+
+```swift
+    let response = try await openID4VP.sendAuthorizationResponseToVerifier(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
+```
+
+###### Parameters
+
+| Name                  | Type                               | Required | Default Value | Description                                                                                                                                                   |
+|-----------------------|------------------------------------|:---------|:--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | Yes      | N/A           | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
+
+
+###### Example usage
+
+```swift
+let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
+    jws : createJWS(unsignedLdpVPToken),
+    signatureAlgorithm : "RsaSignature2018",
+    publicKey : "<publicKey>",
+    domain : "<domain>"
+)
+
+let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
+    docTypeToDeviceAuthentication: [
+        "<docType>": DeviceAuthentication(
+            signature: createSignature(unsignedMdocVPToken.docTypeToDeviceAuthenticationBytes("<docType>")), 
+            algorithm: "<mdocAuthenticationAlgorithm>",
+        )
+    ]
+  )
+let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
+let response : NetworkResponse = try await openID4VP.sendAuthorizationResponseToVerifier(vpTokenSigningResults : vpTokenSigningResults)
+```
+
+###### Exceptions
+
+1. JsonEncodingFailed exception is thrown if there is any issue while serializing the generating vp_token or presentation_submission class instances.
+2. UnsupportedTypeDecoding exception is thrown when there is any issue in decoding the unsupported type.
+3. InterruptedIOException is thrown if the connection is timed out when network call is made.
+4. NetworkRequestFailed exception is thrown when there is any other exception occurred when sending the response over http post request.
+5. InvalidData exception is thrown if the response_type in the authorization request is not supported
+
+
+This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
+
+### shareVerifiablePresentation (deprecated, use sendAuthorizationResponseToVerifier instead)
 - This function constructs a vp_token with proof using received VPTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
@@ -410,7 +458,7 @@ This method will also notify the Verifier about the error by sending it to the r
 // Example: The user declines to share the requested credentials. In this case, Verifier needs to be informed about the scenario.
 // So call the sendErrorResponseToVerifier method with appropriate exception message to notify the Verifier.
 
-let verifierResponse: String = openID4VP.sendErrorResponseToVerifier(
+let verifierResponse: NetworkResponse = openID4VP.sendErrorResponseToVerifier(
         AccessDenied(
             message = "User did not give consent to share the requested Credentials with the Verifier.",
             className = this.className
@@ -444,17 +492,30 @@ await openID4VP.sendErrorToVerifier(error: AuthorizationConsent.consentRejectedE
 
 1. ErrorDispatchFailure is thrown if any issue occurs while sending the Authorization Error response to the Verifier.
 
-###### Exception Handling Enhancement
+## Exception Handling Enhancement
 
 - The library has been enhanced to handle exceptions more gracefully. Library is throwing `OpenID4VPException` now which gives both Error Code, Message and optional state to the consumer app. The `state` value is extracted from the authorization request and is included in the error response only if it is present and non-empty. This allows the consumer app to handle exceptions more effectively and provide better user experience.
+
+### OpenID4VPException structure
+
+OpenID4VPException is a custom exception class that extends the standard Exception class. It is used to represent errors specific to the OpenID4VP library.
+
+This exception has the following properties:
+
+1. errorCode: A unique code representing the type of error.
+2. message: A descriptive message providing details about the error.
+3. networkResponse: An optional property that holds the Verifier response obtained while sending the error to Verifier.
+4. className: The name of the class where the exception occurred.
+
 
 ## 🚨 Deprecation Notice
 
 The following methods are deprecated and will be removed in future releases. Please migrate to the suggested alternatives.
 
-| Method Name         | Description                               | Deprecated Since | Suggested Alternative                                       |
-|---------------------|-------------------------------------------|------------------|-------------------------------------------------------------|
-| sendErrorToVerifier | Sends Authorization error to the verifier | 0.6.0            | [sendErrorResponseToVerifier](#sendErrorResponseToVerifier) |
+| Method Name                 | Description                                   | Deprecated Since | Suggested Alternative                                                       |
+|-----------------------------|-----------------------------------------------|------------------|-----------------------------------------------------------------------------|
+| shareVerifiablePresentation | Sends VP (Authorization response) to verifier | 0.6.0            | [sendAuthorizationResponseToVerifier](#sendauthorizationresponsetoverifier) |
+| sendErrorToVerifier         | Sends Authorization error to the verifier     | 0.6.0            | [sendErrorResponseToVerifier](#sendErrorResponseToVerifier)                 |
 
 ## Architecture decisions
 
