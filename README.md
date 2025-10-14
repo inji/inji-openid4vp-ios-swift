@@ -515,7 +515,7 @@ The following methods are deprecated and will be removed in future releases. Ple
 | Method Name                 | Description                                   | Deprecated Since | Suggested Alternative                                                       |
 |-----------------------------|-----------------------------------------------|------------------|-----------------------------------------------------------------------------|
 | shareVerifiablePresentation | Sends VP (Authorization response) to verifier | 0.6.0            | [sendAuthorizationResponseToVerifier](#sendauthorizationresponsetoverifier) |
-| sendErrorToVerifier         | Sends Authorization error to the verifier     | 0.6.0            | [sendErrorResponseToVerifier](#sendErrorResponseToVerifier)                 |
+| sendErrorToVerifier         | Sends Authorization error to the verifier     | 0.6.0            | [sendErrorResponseToVerifier](#senderrorresponsetoverifier)                 |
 
 ## Architecture decisions
 
