@@ -248,7 +248,7 @@ public class AuthorizationResponseHandler {
                 url: responseUri,
                 networkManager: networkManager,
                 producerInfo:walletNonce,
-                recepientInfo: authorizationRequest.nonce
+                recipientInfo: authorizationRequest.nonce
             )
     }
     
