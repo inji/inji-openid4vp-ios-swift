@@ -17,4 +17,5 @@ public enum ContentTypes : String {
 
 public enum StatusCodes : Int {
     case ok = 200
+    case multipleChoices = 300
 }

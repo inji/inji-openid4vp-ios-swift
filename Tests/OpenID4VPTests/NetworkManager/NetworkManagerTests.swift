@@ -22,4 +22,9 @@ final class NetworkManagerTests: XCTestCase {
         }
     }
     
+    func testReturnFalseForNon2xxStatusCode() async throws {
+        let response = NetworkResponse(statusCode: 400, body: "", headers: [:])
+        
+        XCTAssertFalse(response.isOK)
+    }
 }

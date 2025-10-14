@@ -182,7 +182,7 @@ final class PresentationDefinitionUtilTests: XCTestCase {
             }
     }
     
-    func testThrowErrorWhenPresentationDefinitionUriRespondsWithNon200Response() async {
+    func testThrowErrorWhenPresentationDefinitionUriRespondsWithNon2xxResponse() async {
         let presentationDefinitionUri = "https://mock-verifier.com/verifier/presentation-definition"
         let authorizationRequest = [
             "presentation_definition_uri": presentationDefinitionUri,

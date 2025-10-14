@@ -7,7 +7,7 @@ public struct NetworkResponse : Codable {
     public let headers: [String: String]
     
     var isOK: Bool {
-        return statusCode == StatusCodes.ok.rawValue
+        return statusCode >= StatusCodes.ok.rawValue && statusCode < StatusCodes.multipleChoices.rawValue
         
     }
 }

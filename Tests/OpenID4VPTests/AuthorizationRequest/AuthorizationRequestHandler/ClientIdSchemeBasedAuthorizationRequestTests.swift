@@ -86,7 +86,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
-    func testThrowExceptionWhenRequestUriResponseIsNot200() async {
+    func testThrowExceptionWhenRequestUriResponseIsNot2xx() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23)) as [String : Any]
         
         let requestUriResponse = createRequestUriResponse("{\"message\" : \"Invalid request\"}", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 400, httpVersion: "", headerFields: ["Content-Type": "application/json"])!)
