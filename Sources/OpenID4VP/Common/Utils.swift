@@ -127,7 +127,7 @@ func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, classNam
         if(!response.isOK){
             throw InvalidData(
                 message: "Error while fetching jwks information, status code: \(response.statusCode) with body: \(response.body)",
-                className: AuthorizationRequest.className
+                className: className
             )
         }
         let data = try response.body.data(using: .utf8) ?? {
