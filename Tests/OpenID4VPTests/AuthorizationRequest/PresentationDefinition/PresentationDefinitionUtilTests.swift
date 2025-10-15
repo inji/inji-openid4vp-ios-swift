@@ -181,4 +181,24 @@ final class PresentationDefinitionUtilTests: XCTestCase {
                 )
             }
     }
+    
+    func testThrowErrorWhenPresentationDefinitionUriRespondsWithNon2xxResponse() async {
+        let presentationDefinitionUri = "https://mock-verifier.com/verifier/presentation-definition"
+        let authorizationRequest = [
+            "presentation_definition_uri": presentationDefinitionUri,
+            // other request params
+        ]
+        let requestUriResponse = createRequestUriResponse("{\"message\" : \"Invalid request\"}", httpUrlResponse: HTTPURLResponse(url: requestUri, statusCode: 400, httpVersion: "", headerFields: ["Content-Type": "application/json"])!)
+        networkManager.setMockResponse(for: presentationDefinitionUri,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+            
+        
+        
+        await XCTAssertAsyncThrowsError(try await parseAndValidatePresentationDefinition(authorizationRequest, isPresentationDefinitionUriSupported, networkManager)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "presentation_definition_uri could not be reached: https://mock-verifier.com/verifier/presentation-definition",
+                expectedCode: OpenID4VPErrorCodes.invalidPresentationDefinitionUri
+            )
+        }
+        
+    }
 }

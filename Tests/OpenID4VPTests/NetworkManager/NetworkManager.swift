@@ -14,6 +14,7 @@ class MockNetworkManager: NetworkManaging {
         for urlString: String,
         response: (responseBody: String, httpUrlResponse: HTTPURLResponse?)? = nil,
         responseBody: String? = nil,
+        statusCode: Int? = nil,
         error: Error? = nil
     ) {
         guard let url = URL(string: urlString) else {
@@ -23,7 +24,7 @@ class MockNetworkManager: NetworkManaging {
 
         let defaultHttpUrlResponse = HTTPURLResponse(
             url: url,
-            statusCode: 200,
+            statusCode: statusCode ?? 200,
             httpVersion: "",
             headerFields: ["Content-Type": "application/json"]
         )!
@@ -76,13 +77,13 @@ class MockNetworkManager: NetworkManaging {
             return NetworkResponse(
                 statusCode: resp.httpUrlResponse.statusCode,
                 body: resp.responseBody,
-                headers: resp.httpUrlResponse
+                headers: resp.httpUrlResponse.headers.dictionary
             )
         }
         return NetworkResponse(
             statusCode: defaultHttpUrlResponse.statusCode,
             body: "Success: Request completed successfully.",
-            headers: defaultHttpUrlResponse
+            headers: defaultHttpUrlResponse.headers.dictionary
         )
     }
 }

@@ -13,18 +13,16 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         url: String,
         networkManager: any NetworkManaging,
         producerInfo: String,
-        recepientInfo recipientInfo: String
-    ) async throws -> String {
+        recipientInfo: String
+    ) async throws -> NetworkResponse {
         let requestBody: [String: String] = try authorizationResponse.toJsonEncodedMap()
 
-        let response = try await networkManager.sendHTTPRequest(
+        return try await networkManager.sendHTTPRequest(
             url: url,
             method: .post,
             bodyParams: requestBody,
             headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
         )
-
-        return response.body
     }
 
 }

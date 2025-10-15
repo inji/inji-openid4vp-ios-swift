@@ -9,8 +9,8 @@ protocol ResponseModeBasedHandler {
                                    url: String,
                                    networkManager: NetworkManaging,
                                    producerInfo: String,
-                                   recepientInfo: String
-    ) async throws -> String
+                                   recipientInfo: String
+    ) async throws -> NetworkResponse
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
 }
 

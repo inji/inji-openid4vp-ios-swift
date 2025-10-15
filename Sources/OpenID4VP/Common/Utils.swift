@@ -124,11 +124,16 @@ func createDescriptorMapPath(_ index: Int) -> String {
 func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, className: String) async throws -> JWKSet {
     do {
         let response = try await networkManager.sendHTTPRequest(url: uri, method: .get, bodyParams: nil, headers: nil)
+        if(!response.isOK){
+            throw InvalidData(
+                message: "Error while fetching jwks information, status code: \(response.statusCode) with body: \(response.body)",
+                className: className
+            )
+        }
         let data = try response.body.data(using: .utf8) ?? {
            throw InvalidData(
                 message: "unable to convert the jwks response to data",
-                className: className,
-                code: OpenID4VPErrorCodes.invalidRequestObject
+                className: className
             )
         }()
         return try data.toInstance(as: JWKSet.self)

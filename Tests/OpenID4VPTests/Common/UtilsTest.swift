@@ -212,4 +212,47 @@ class UtilsTest : XCTestCase {
             XCTAssertTrue(error is UnsupportedOperationException)
         }
     }
+    
+    // MARK: - resolveJwksFromUri Tests
+    
+    let mockNetworkManager = MockNetworkManager()
+    let jwksUri = "https://example.com/jwks"
+    
+    func testResolveJwksFromUriSuccess() async throws {
+        let validJwksJson = """
+        {"keys":[{"kty":"RSA","kid":"1","n":"abc","e":"AQAB"}]}
+        """
+        mockNetworkManager.setMockResponse(for: jwksUri, responseBody: validJwksJson)
+        
+        let jwks = try await resolveJwksFromUri(jwksUri, networkManager: mockNetworkManager, className: testClassName)
+        
+        XCTAssertEqual(jwks.keys.count, 1)
+        XCTAssertEqual(jwks.keys[0].keyType, .rsa)
+        XCTAssertEqual(jwks.keys[0].keyID, "1")
+    }
+    
+    func testResolveJwksFromUriNon200StatusCode() async {
+        mockNetworkManager.setMockResponse(for: jwksUri, responseBody: "Not found", statusCode: 404)
+        
+        await XCTAssertAsyncThrowsError(try await resolveJwksFromUri(self.jwksUri, networkManager: self.mockNetworkManager, className: self.testClassName)) { error in
+            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Unable to fetch/parse jwks from https://example.com/jwks due to Error while fetching jwks information, status code: 404 with body: Not found", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
+    
+    func testResolveJwksFromUriInvalidJwksParsing() async {
+        let invalidJwksJson = "{not a jwks}" // invalid JSON
+        mockNetworkManager.setMockResponse(for: jwksUri, responseBody: invalidJwksJson)
+        
+        await XCTAssertAsyncThrowsError(try await resolveJwksFromUri(self.jwksUri, networkManager: self.mockNetworkManager, className: self.testClassName)) { error in
+            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Unable to fetch/parse jwks from https://example.com/jwks due to The data couldn’t be read because it isn’t in the correct format.", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
+    
+    func testResolveJwksFromUriNetworkError() async {
+        mockNetworkManager.setMockResponse(for: jwksUri, error: NetworkRequestException.networkRequestFailed(message: "Simulated network error"))
+        
+        await XCTAssertAsyncThrowsError(try await resolveJwksFromUri(self.jwksUri, networkManager: self.mockNetworkManager, className: self.testClassName)) { error in
+            assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Unable to fetch/parse jwks from https://example.com/jwks due to Network request failed with error response - Simulated network error", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
 }

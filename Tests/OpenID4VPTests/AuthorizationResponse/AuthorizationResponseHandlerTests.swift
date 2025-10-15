@@ -115,7 +115,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             responseUri: responseUri
         )
         
-        XCTAssertEqual(result, "sending is success in AuthorizationResponseTests")
+        XCTAssertEqual(result.body, "sending is success in AuthorizationResponseTests")
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         XCTAssertEqual(recordedRequest.requestBody?["state"] as? String, state)
         XCTAssertNotNil(recordedRequest.requestBody?["presentation_submission"])
@@ -153,7 +153,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             responseUri: responseUri
         )
         
-        XCTAssertEqual(result, "sending is success in AuthorizationResponseTests")
+        XCTAssertEqual(result.body, "sending is success in AuthorizationResponseTests")
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         XCTAssertEqual(recordedRequest.requestBody?.keys.count, 1)
         XCTAssertNotNil(recordedRequest.requestBody?["response"])
@@ -367,7 +367,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let result = try await handler.shareVP(authorizationRequest: authorizationRequest, vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])], responseUri: responseUri)
 
 
-        XCTAssertEqual(result, "sending is success in AuthorizationResponseTests")
+        XCTAssertEqual(result.body, "sending is success in AuthorizationResponseTests")
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
         XCTAssertEqual(recordedRequest.requestBody?["state"] as? String, state)
         let presentationSubmission: String? = recordedRequest.requestBody?["presentation_submission"]

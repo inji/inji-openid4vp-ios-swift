@@ -30,14 +30,14 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         do {
             let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager,
                                                                                                         producerInfo: "mock-nonce",
-                                                                                                        recepientInfo: "verifier-nonce")
+                                                                                                        recipientInfo: "verifier-nonce")
 
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
             XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)
             XCTAssertTrue(recordedRequest?.requestBody?.keys.count == 3)
             XCTAssertTrue((recordedRequest?.requestBody?.keys.allSatisfy(["vp_token", "presentation_submission", "state"].contains(_:))) != nil)
             assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: recordedRequest?.requestHeaders)
-            XCTAssertEqual("Response has been shared successfully here.", result)
+            XCTAssertEqual("Response has been shared successfully here.", result.body)
         }
     }
 

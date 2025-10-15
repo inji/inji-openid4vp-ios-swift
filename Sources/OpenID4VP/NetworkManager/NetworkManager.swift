@@ -1,10 +1,15 @@
 import Foundation
 import Alamofire
 
-public struct NetworkResponse {
-    let statusCode: Int
-    let body: String
-    let headers: HTTPURLResponse
+public struct NetworkResponse : Codable {
+    public let statusCode: Int
+    public let body: String
+    public let headers: [String: String]
+    
+    var isOK: Bool {
+        return statusCode >= StatusCodes.ok.rawValue && statusCode < StatusCodes.multipleChoices.rawValue
+        
+    }
 }
 
 public struct NetworkManager: NetworkManaging {
@@ -47,7 +52,7 @@ public struct NetworkManager: NetworkManaging {
                         let networkResponse = NetworkResponse(
                             statusCode: httpResponse.statusCode,
                             body: responseBody,
-                            headers: httpResponse
+                            headers: httpResponse.headers.dictionary
                         )
                         continuation.resume(returning: networkResponse)
                     } else {
@@ -60,7 +65,18 @@ public struct NetworkManager: NetworkManaging {
                         let exception = NetworkRequestException.networkRequestTimeout
                         OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
-                    } else {
+                    }
+                    if let statusCode = response.response?.statusCode {
+                        let message = HTTPURLResponse.localizedString(forStatusCode: statusCode)
+                        let response = NetworkResponse(
+                            statusCode: statusCode,
+                            body: response.data.flatMap { String(data: $0, encoding: .utf8) } ?? "",
+                            headers: response.response?.headers.dictionary ?? [:]
+                        )
+                        continuation.resume(returning: response)
+                        return
+                    }
+                    else {
                         let exception = NetworkRequestException.networkRequestFailed(message: "\(error.localizedDescription)")
                         OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
@@ -71,7 +87,7 @@ public struct NetworkManager: NetworkManaging {
     }
     
     private func getEncoding(for contentType: String?) -> ParameterEncoding {
-            return URLEncoding.default
+        return URLEncoding.default
     }
     
     private func formatRequestBody(_ body: [String: String]?, for contentType: String?) -> Parameters {

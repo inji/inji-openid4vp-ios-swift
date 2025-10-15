@@ -532,7 +532,9 @@ class OpenID4VPTests: XCTestCase {
         openID4VP.setResponseUri("https://mock-verifier.com")
         
         await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorResponseToVerifier(error: error)) { result in
-            XCTAssertEqual(result, "Success: Request completed successfully.")
+            XCTAssertEqual(result.body, "Success: Request completed successfully.")
+            XCTAssertEqual(result.statusCode, 200)
+            XCTAssertEqual(result.headers, ["Content-Type": "text/json"])
         }
     }
     
@@ -553,7 +555,7 @@ class OpenID4VPTests: XCTestCase {
                 error,
                 expectedMessage: "Missing Input: presentation_definition->id param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest,
-                expectedVerifierResponse: "Success: Request completed successfully."
+                expectedVerifierResponse: NetworkResponse(statusCode: 200, body: "Success: Request completed successfully.", headers: ["Content-Type": "text/json"])
             )
         }
     }
