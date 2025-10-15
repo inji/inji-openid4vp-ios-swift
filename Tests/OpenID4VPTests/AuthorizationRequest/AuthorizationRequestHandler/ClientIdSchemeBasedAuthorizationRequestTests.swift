@@ -824,4 +824,21 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             )
         }
     }
+    
+    func testShouldThrowErrorWhenTransactionDataIsPresentInAuthorizationRequest() async {
+        let authorizationRequestParameters: [String: Any] = mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.transactionData.rawValue: ["foo": "bar"]])
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParameters,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.validateAndParseRequestFields()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid Request: transaction_data is not supported in the authorization request",
+                expectedCode: OpenID4VPErrorCodes.invalidTransactionData
+            )
+        }
+    }
 }

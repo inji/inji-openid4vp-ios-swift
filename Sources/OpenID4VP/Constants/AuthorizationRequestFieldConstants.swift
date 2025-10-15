@@ -13,4 +13,5 @@ public enum AuthorizationRequestFieldConstants: String {
     case state = "state"
     case clientMetadata = "client_metadata"
     case walletNonce = "wallet_nonce"
+    case transactionData = "transaction_data"
 }
