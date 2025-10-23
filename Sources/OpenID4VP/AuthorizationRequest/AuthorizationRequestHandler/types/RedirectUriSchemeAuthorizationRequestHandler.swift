@@ -18,11 +18,11 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         return ClientIdScheme.redirectUri.rawValue
     }
     
-    func isRequestUriSupported() -> Bool {
+    func isSignedRequestSupported() -> Bool {
         return false
     }
     
-    func isRequestObjectSupported() -> Bool {
+    func isUnsignedRequestSupported() -> Bool {
         return true
     }
     

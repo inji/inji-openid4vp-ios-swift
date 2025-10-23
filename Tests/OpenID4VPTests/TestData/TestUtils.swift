@@ -73,13 +73,21 @@ private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
 
 func createAuthorizationRequest(
     paramList: [String],
-    requestParams: [String: Any?]
+    requestParams: [String: Any?],
+    isSigned: Bool = false
 ) -> [String: Any?] {
     var authorizationRequestParam: [String: Any?] = [:]
     for param in paramList {
         if let value = requestParams[param], value != nil {
             authorizationRequestParam[param] = value
         }
+    }
+    if(isSigned){
+        let request = JWSUtil.create(payload: authorizationRequestParam as [String : Any])
+        authorizationRequestParam = [
+            AuthorizationRequestFieldConstants.request.rawValue: request,
+            AuthorizationRequestFieldConstants.clientId.rawValue: requestParams[AuthorizationRequestFieldConstants.clientId.rawValue] ?? ""
+        ]
     }
     return authorizationRequestParam
 }

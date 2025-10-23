@@ -3,8 +3,8 @@ import Foundation
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
-    func isRequestUriSupported() -> Bool
-    func isRequestObjectSupported() throws -> Bool
+    func isSignedRequestSupported() -> Bool
+    func isUnsignedRequestSupported() throws -> Bool
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
     func clientIdScheme() -> String
 }
@@ -38,68 +38,102 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func fetchAuthorizationRequest() async throws{
-        if let requestUri = authorizationRequestParameters["request_uri"] as? String {
-            guard (delegate.isRequestUriSupported()) else {
-                throw InvalidData(
-                    message: "request_uri is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
-                    className: className
-                )
-            }
-            
-            if !isNeitherNullNorEmpty(field: requestUri) || (requestUri == "null") {
-                throw InvalidInput(fieldPath: ["requestUri"], className: className)
-            }
-            guard isValidUri(requestUri)
-            else {
-                throw InvalidData(
-                    message: "request_uri \(requestUri) data is not valid",
-                    className: className
-                )
-            }
-            
-            let httpMethod = try requestUriMethod()
-            
-            var body: [String: String]? = nil
-            var headers: [String: String]? = nil
-            
-            if httpMethod == .post {
-                body = [:]
-                body?["wallet_nonce"] = walletNonce
-                if let walletMetadata = walletMetadata {
-                    try isClientIdSchemeSupported(walletMetadata: walletMetadata)
-                    let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
-                    let extractedExpr: String = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
-                    body?["wallet_metadata"] = extractedExpr
-                    headers = [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-                               Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
-                    shouldValidateWithWalletMetadata = true
-                }
-            }
-            var response:  NetworkResponse
-            do{
-                response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
-                if(!response.isOK){
-                    throw InvalidData(message: "Error while fetching request_uri: HTTP status code \(response.statusCode) & body: \(response.body)", className: className)
-                }
-            }
-            catch let error as NetworkRequestException {
-                let isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
-                if(isMismatchedAcceptableType){
-                    throw InvalidData(
-                        message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
-                }
-                throw GenericFailure(message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
-            } catch {
-                throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
-            }
-            try await validateRequestUriResponse(response.body, httpMethod: httpMethod)
+        let request = authorizationRequestParameters[AuthorizationRequestFieldConstants.request.rawValue] as? String
+        let requestUri = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] as? String
+        
+        if(request != nil && requestUri != nil){
+            throw InvalidData(
+                message: "Both 'request' and 'request_uri' cannot be present in same authorization request",
+                className: className
+            )
+        }
+        
+        if let request = request {
+            try await handleRequestObjectAsValue(request)
+        }
+        else if let requestUri = requestUri {
+            try await handleRequestObjectByReference(requestUri)
         } else {
-            guard (try delegate.isRequestObjectSupported()) else {
-                throw InvalidData(
-                    message: "request object is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
-                    className: className
-                )
+            try handleUrlEncodedRequest()
+        }
+    }
+    
+    private func handleRequestObjectAsValue(_ request: String) async throws {
+        try validate(request, fieldPath: AuthorizationRequestFieldConstants.request.rawValue, className: className)
+        guard (delegate.isSignedRequestSupported()) else {
+            throw InvalidData(
+                message: "Signed request (via request) is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                className: className
+            )
+        }
+        
+        try await validateJWTRequest(request)
+        let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: request, jwsPart: .payload)
+        
+        self.authorizationRequestParameters = authorizationRequestObject
+    }
+    
+    private func handleRequestObjectByReference(_ requestUri: String) async throws {
+        guard (delegate.isSignedRequestSupported()) else {
+            throw InvalidData(
+                message: "Signed request (via request_uri) is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                className: className
+            )
+        }
+        
+        try validate(requestUri, fieldPath: AuthorizationRequestFieldConstants.requestUri.rawValue, className: className)
+        guard isValidUri(requestUri)
+        else {
+            throw InvalidData(
+                message: "request_uri \(requestUri) data is not valid",
+                className: className
+            )
+        }
+        
+        let httpMethod = try requestUriMethod()
+        
+        var body: [String: String]? = nil
+        var headers: [String: String]? = nil
+        
+        if httpMethod == .post {
+            body = [:]
+            body?["wallet_nonce"] = walletNonce
+            if let walletMetadata = walletMetadata {
+                try isClientIdSchemeSupported(walletMetadata: walletMetadata)
+                let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
+                let extractedExpr: String = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
+                body?["wallet_metadata"] = extractedExpr
+                headers = [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
+                           Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
+                shouldValidateWithWalletMetadata = true
             }
+        }
+        var response:  NetworkResponse
+        do{
+            response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+            if(!response.isOK){
+                throw InvalidData(message: "Error while fetching request_uri: HTTP status code \(response.statusCode) & body: \(response.body)", className: className)
+            }
+        }
+        catch let error as NetworkRequestException {
+            let isMismatchedAcceptableType = error.localizedDescription.contains(errorMessageForMismatchedAcceptableType)
+            if(isMismatchedAcceptableType){
+                throw InvalidData(
+                    message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
+            }
+            throw GenericFailure(message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
+        } catch {
+            throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
+        }
+        try await validateRequestUriResponse(response.body, httpMethod: httpMethod)
+    }
+    
+    private func handleUrlEncodedRequest() throws {
+        guard (try delegate.isUnsignedRequestSupported()) else {
+            throw InvalidData(
+                message: "unsigned request is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                className: className
+            )
         }
     }
     
