@@ -125,7 +125,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         } catch {
             throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
         }
-        try await validateRequestUriResponse(response.body, httpMethod: httpMethod)
+        self.authorizationRequestParameters = try await validateRequestUriResponse(response.body, httpMethod: httpMethod)
     }
     
     private func handleUrlEncodedRequest() throws {
@@ -137,7 +137,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         }
     }
     
-    private func validateRequestUriResponse(_ requestUriResponse: String, httpMethod: HttpMethod) async throws {
+    private func validateRequestUriResponse(_ requestUriResponse: String, httpMethod: HttpMethod) async throws -> [String: Any] {
         guard isJWS(requestUriResponse) else {
             throw InvalidData(
                 message: "Authorization Request Object must be a signed JWT", className: className)
@@ -152,7 +152,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         
         try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
         
-        self.authorizationRequestParameters = authorizationRequestObject
+        return authorizationRequestObject
     }
     
     // If the key is not associated with the client or if signature validation fails, error code = invalid_request_object
