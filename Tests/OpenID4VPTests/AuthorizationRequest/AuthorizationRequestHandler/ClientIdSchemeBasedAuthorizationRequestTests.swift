@@ -130,7 +130,26 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
-    func testShouldMakeApiCallToRequestUriPostWithCorrectAcceptTypeAndContentType() async {
+    func testShouldMakeApiCallToRequestUriGetWithCorrectAcceptType() async {
+        mockNetworkManager.clearResponses()
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "get"])) as [String : Any]
+        let requestUriResponse = createRequestUriResponse(createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["wallet_nonce": "mock-nonce"]), applicableFields: authRequestWithDidByValue + ["wallet_nonce"]) )
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
+        
+        mockNetworkManager.recordedRequests.forEach { (url, recordedRequest) in
+            if (url == requestUri.absoluteString) {
+                XCTAssertEqual(recordedRequest.requestMethod, HttpMethod.get, "Expected HTTP method to be POST")
+                XCTAssertEqual(recordedRequest.requestHeaders?["Accept"], ContentTypes.applicationJwt.rawValue, "Expected Accept header to be \(ContentTypes.applicationJwt.rawValue)")
+            }
+        }
+    }
+    
+    func testShouldMakeApiCallToRequestUriPostWithCorrectAcceptTypeAndContentTypeWhenWalletMetadataIsAvailable() async {
         mockNetworkManager.clearResponses()
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "post"])) as [String : Any]
         let requestUriResponse = createRequestUriResponse(createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["wallet_nonce": "mock-nonce"]), applicableFields: authRequestWithDidByValue + ["wallet_nonce"]) )
@@ -146,6 +165,29 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 XCTAssertEqual(recordedRequest.requestMethod, HttpMethod.post, "Expected HTTP method to be POST")
                 XCTAssertEqual(recordedRequest.requestHeaders?["Accept"], ContentTypes.applicationJwt.rawValue, "Expected Accept header to be \(ContentTypes.applicationJwt.rawValue)")
                 XCTAssertEqual(recordedRequest.requestHeaders?["Content-Type"], ContentTypes.applicationFormUrlEncoded.rawValue, "Expected Content-Type header to be \(ContentTypes.applicationFormUrlEncoded.rawValue)")
+                XCTAssertEqual(recordedRequest.requestBody?["wallet_nonce"], "mock-nonce", "Expected wallet_nonce in request body to be mock-nonce")
+                XCTAssertTrue(recordedRequest.requestBody?["wallet_metadata"] != nil, "Expected wallet_metadata in request body to be present")
+            }
+        }
+    }
+    
+    func testShouldMakeApiCallToRequestUriPostWithCorrectAcceptTypeAndContentTypeWhenWalletMetadataIsNotAvailable() async {
+        mockNetworkManager.clearResponses()
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["request_uri_method": "post"])) as [String : Any]
+        let requestUriResponse = createRequestUriResponse(createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23, ["wallet_nonce": "mock-nonce"]), applicableFields: authRequestWithDidByValue + ["wallet_nonce"]) )
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
+        
+        mockNetworkManager.recordedRequests.forEach { (url, recordedRequest) in
+            if (url == requestUri.absoluteString) {
+                XCTAssertEqual(recordedRequest.requestMethod, HttpMethod.post, "Expected HTTP method to be POST")
+                XCTAssertEqual(recordedRequest.requestHeaders?["Accept"], ContentTypes.applicationJwt.rawValue, "Expected Accept header to be \(ContentTypes.applicationJwt.rawValue)")
+                XCTAssertEqual(recordedRequest.requestHeaders?["Content-Type"], ContentTypes.applicationFormUrlEncoded.rawValue, "Expected Content-Type header to be \(ContentTypes.applicationFormUrlEncoded.rawValue)")
+                XCTAssertEqual(recordedRequest.requestBody?["wallet_nonce"], "mock-nonce", "Expected wallet_nonce in request body to be mock-nonce")
             }
         }
     }

@@ -95,18 +95,17 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         let httpMethod = try requestUriMethod()
         
         var body: [String: String]? = nil
-        var headers: [String: String]? = nil
+        var headers: [String: String] = [Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
         
         if httpMethod == .post {
-            body = [:]
-            body?["wallet_nonce"] = walletNonce
+            body = [AuthorizationRequestFieldConstants.walletNonce.rawValue: walletNonce]
+            headers[Header.contentType.rawValue] = ContentTypes.applicationFormUrlEncoded.rawValue
+            
             if let walletMetadata = walletMetadata {
                 try isClientIdSchemeSupported(walletMetadata: walletMetadata)
                 let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
                 let extractedExpr: String = try encode(processedWalletMetadata, fieldName:  "wallet_metadata", className: className)
                 body?["wallet_metadata"] = extractedExpr
-                headers = [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue,
-                           Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
                 shouldValidateWithWalletMetadata = true
             }
         }
