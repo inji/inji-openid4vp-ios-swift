@@ -70,6 +70,8 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         try await validateJWTRequest(request)
         let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: request, jwsPart: .payload)
         
+        try validateAuthorizationRequestObjectAndParameters(params: self.authorizationRequestParameters, requestObject: authorizationRequestObject)
+        
         self.authorizationRequestParameters = authorizationRequestObject
     }
     
@@ -150,7 +152,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             try validateWalletNonce(authorizationRequestObject, walletNonce)
         }
         
-        try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters as! [String:String], requestUriParams: authorizationRequestObject)
+        try validateAuthorizationRequestObjectAndParameters(params: authorizationRequestParameters, requestObject: authorizationRequestObject)
         
         return authorizationRequestObject
     }

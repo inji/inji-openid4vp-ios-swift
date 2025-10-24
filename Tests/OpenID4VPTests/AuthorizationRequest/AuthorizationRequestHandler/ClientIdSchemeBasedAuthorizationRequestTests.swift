@@ -57,6 +57,24 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
     }
     
+    func testShouldThrowErrorWhenClientIdIsMismatchedBetweenRequestObjectAndParameters() async {
+        let authorizationRequestParametersByValue: [String : Any] = mergeMaps(
+            createAuthorizationRequest(
+                paramList: authRequestWithRedirectUriByValue ,
+                requestParams: mergeMaps(authorizationRequestParamsWithValue), // if client id is not sent in requestparams function parameter "" is added in the signed request object
+                isSigned: true),
+            DidSchemeClientIdDraft23 // attach client id in the request params to simulate the mismatch
+        ) as [String : Any]
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByValue, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, isUnsignedRequestSupported: false)
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Client Id mismatch in Authorization Request parameter and the Request Object",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
     func testSouldThrowErrorWhenRequestValueIsInvalid() async {
         let authorizationRequestParametersByValue: [String : Any] = [
             AuthorizationRequestFieldConstants.request.rawValue: "",
