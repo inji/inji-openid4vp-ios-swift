@@ -248,14 +248,14 @@ class InvalidType: OpenID4VPException {
 
 class MismatchingClientIDInRequest: OpenID4VPException {
     init(className: String) {
-        let message = "Client Id is mismatching in QR data and Request Uri response"
+        let message = "Client Id mismatch in Authorization Request parameter and the Request Object"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
 
 class MismatchingClientIdSchemeInRequest: OpenID4VPException {
     init(className: String) {
-        let message = "Client Id scheme is mismatching in QR data and Request Uri response"
+        let message = "Client Id Scheme mismatch in Authorization Request parameter and the Request Object"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }

@@ -248,7 +248,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Client Id is mismatching in QR data and Request Uri response",
+                                     expectedMessage: "Client Id mismatch in Authorization Request parameter and the Request Object",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -885,6 +885,27 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 error,
                 expectedMessage: "Invalid Request: transaction_data is not supported in the authorization request",
                 expectedCode: OpenID4VPErrorCodes.invalidTransactionData
+            )
+        }
+    }
+    
+    
+    // draft 21 specific
+    
+    func testThrowExceptionWhenRequestUriResponseHasDifferentValueThanAuthorizationRequestParametersForClientIdScheme() async throws {
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft21 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft21)) as [String : Any]
+        
+        let authorizationRequestObject = createAuthorizationRequestObject(clientIdScheme: .did, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft21, ["client_id_scheme": "pre-registered"]))
+        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (authorizationRequestObject, httpUrlResponseForJWS))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
+        
+        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "Client Id Scheme mismatch in Authorization Request parameter and the Request Object",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
     }
