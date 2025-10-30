@@ -255,24 +255,16 @@ class OpenID4VPTests: XCTestCase {
     func testThrowErrorIfClientIdIsMismatchingWithQrDataAndRequest() async {
         mockNetworkManager.setMockResponse(
             for: requestUri.absoluteString,
-//            responseBody: createRequestUriResponse(validJwtResponse)
             response: (validJwtResponse, httpUrlResponseForJWS)
         )
         mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
-
-        let result = await Task {
-            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInValidSignedVPRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
-        }.result
-
-        switch result {
-        case .failure(let error):
+        
+        await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInValidSignedVPRequestWithDidAndClientIdDifferent, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Client Id is mismatching in QR data and Request Uri response",
+                expectedMessage: "Client Id mismatch in Authorization Request parameter and the Request Object",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
-        case .success:
-            XCTFail("Expected client_id mismatch error but got success")
         }
     }
 

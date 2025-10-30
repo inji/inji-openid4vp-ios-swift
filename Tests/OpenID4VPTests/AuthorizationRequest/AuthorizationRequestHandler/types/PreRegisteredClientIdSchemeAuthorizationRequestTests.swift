@@ -57,37 +57,37 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertTrue(preRegistered.isRequestUriSupported(), "Pre-registered client id scheme should support authorization request by reference")
+        XCTAssertTrue(preRegistered.isSignedRequestSupported(), "Pre-registered client id scheme should support authorization request by reference")
     }
 
 
-    func testIsRequestObjectSupported_shouldValidateClientFalse_returnsFalse() {
+    func testisUnsignedRequestSupported_shouldValidateClientFalse_returnsFalse() {
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when shouldValidateClient is false")
+        XCTAssertFalse(try preRegistered.isUnsignedRequestSupported(), "Should return false when shouldValidateClient is false")
     }
 
-    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {
+    func testisUnsignedRequestSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "untrusted-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertThrowsError(try preRegistered.isRequestObjectSupported()) { error in
+        XCTAssertThrowsError(try preRegistered.isUnsignedRequestSupported()) { error in
             assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
         }
     }
 
-    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedFalse_returnsFalse() {
+    func testisUnsignedRequestSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedFalse_returnsFalse() {
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: false)]
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        XCTAssertFalse(try preRegistered.isRequestObjectSupported(), "Should return false when allowUnsignedRequest is false")
+        XCTAssertFalse(try preRegistered.isUnsignedRequestSupported(), "Should return false when allowUnsignedRequest is false")
     }
 
-    func testIsRequestObjectSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedTrue_returnsTrue() {
+    func testisUnsignedRequestSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedTrue_returnsTrue() {
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: true)]
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        XCTAssertTrue(try preRegistered.isRequestObjectSupported(), "Should return true when allowUnsignedRequest is true")
+        XCTAssertTrue(try preRegistered.isUnsignedRequestSupported(), "Should return true when allowUnsignedRequest is true")
     }
 
     

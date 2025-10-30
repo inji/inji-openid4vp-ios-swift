@@ -24,14 +24,14 @@ func validateAttribute(
     }
 }
 
-func validateAuthorizationRequestObjectAndParameters(params: [String: String], requestUriParams: [String: Any]) throws {
-    guard params[AuthorizationRequestFieldConstants.clientId.rawValue] == requestUriParams[AuthorizationRequestFieldConstants.clientId.rawValue] as? String else {
+func validateAuthorizationRequestObjectAndParameters(params: [String: Any], requestObject: [String: Any]) throws {
+    guard params[AuthorizationRequestFieldConstants.clientId.rawValue] as? String == requestObject[AuthorizationRequestFieldConstants.clientId.rawValue] as? String else {
         throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }
     
     // If client_id_scheme is present in the authorization request, it should be present in the request_uri response as well and should be same we are assuming it follows Draft 21 specification
     if params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] != nil {
-        guard params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] == requestUriParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String else {
+        guard params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String == requestObject[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String else {
             throw MismatchingClientIdSchemeInRequest(className: AuthorizationRequest.className)
         }
     }

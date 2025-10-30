@@ -4,8 +4,8 @@ import XCTest
 @testable import OpenID4VP
 
 class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler {
-    private let isRequestUriSupportedFlag: Bool
-    private let isRequestObjectSupportedFlag: Bool
+    private let isSignedRequestSupportedFlag: Bool
+    private let isUnsignedRequestSupportedFlag: Bool
     private let clientIdSchemeValue: String
     private var extractPublicKeyError: OpenID4VPException?
     
@@ -14,10 +14,10 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging,
-         isRequestUriSupported: Bool = true,
-         isRequestObjectSupported: Bool = true) {
-        self.isRequestUriSupportedFlag = isRequestUriSupported
-        self.isRequestObjectSupportedFlag = isRequestObjectSupported
+         isSignedRequestSupported: Bool = true,
+         isUnsignedRequestSupported: Bool = true) {
+        self.isSignedRequestSupportedFlag = isSignedRequestSupported
+        self.isUnsignedRequestSupportedFlag = isUnsignedRequestSupported
         do {
             self.clientIdSchemeValue = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
         } catch {
@@ -52,12 +52,12 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         return PublicKeyType.ed25519(publicKey)
     }
     
-    func isRequestObjectSupported() -> Bool {
-        return self.isRequestObjectSupportedFlag
+    func isUnsignedRequestSupported() -> Bool {
+        return self.isUnsignedRequestSupportedFlag
     }
     
-    func isRequestUriSupported() -> Bool {
-        return self.isRequestUriSupportedFlag
+    func isSignedRequestSupported() -> Bool {
+        return self.isSignedRequestSupportedFlag
     }
 
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {

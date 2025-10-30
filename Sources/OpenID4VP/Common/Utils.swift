@@ -145,3 +145,9 @@ func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, classNam
                 )
     }
 }
+
+internal func validate(_ value: String, fieldPath: String,className: String) throws {
+    if !isNeitherNullNorEmpty(field: value) || (value == "null") {
+        throw InvalidInput(fieldPath: [fieldPath], className: className)
+    }
+}

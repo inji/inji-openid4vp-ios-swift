@@ -41,12 +41,12 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         return updatedWalletMetadata
     }
     
-    func isRequestUriSupported() -> Bool {
+    func isSignedRequestSupported() -> Bool {
         return true
     }
     
     
-    func isRequestObjectSupported() throws -> Bool {
+    func isUnsignedRequestSupported() throws -> Bool {
         if shouldValidateClient {
             let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? ""
             let preRegisteredVerifier = try verifier(clientId: clientId)

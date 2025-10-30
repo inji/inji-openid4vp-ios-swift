@@ -18,12 +18,12 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         return ClientIdScheme.did.rawValue
     }
     
-    func isRequestUriSupported() -> Bool {
+    func isSignedRequestSupported() -> Bool {
         return true
     }
     
     
-    func isRequestObjectSupported() -> Bool {
+    func isUnsignedRequestSupported() -> Bool {
         return false
     }
     
