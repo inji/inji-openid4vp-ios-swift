@@ -1,6 +1,6 @@
 import Foundation
 
-public struct VerifierResponse {
+public struct VerifierResponse : Codable {
     let statusCode: Int
     /// Holds redirect_uri from the Verifier response body
     let redirectUri: String?
@@ -16,7 +16,22 @@ public struct VerifierResponse {
         self.additionalParams = additionalParams
         self.headers = headers
     }
-        
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        statusCode = try container.decode(Int.self, forKey: .statusCode)
+        redirectUri = try container.decodeIfPresent(String.self, forKey: .redirectUri)
+        additionalParams = try container.decodeIfPresent(String.self, forKey: .additionalParams)
+        headers = try container.decode([String: String].self, forKey: .headers)
+        responseBody = ""
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case statusCode
+        case redirectUri
+        case additionalParams
+        case headers
+    }
     
     func isOk() -> Bool {
         return (200...299).contains(statusCode)
