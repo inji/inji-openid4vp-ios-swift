@@ -98,14 +98,14 @@ public class OpenID4VP {
         }
     }
     
-    public func sendErrorInfoToVerifier(error: Error) async throws -> NetworkResponse {
+    public func sendErrorInfoToVerifier(error: Error) async throws -> VerifierResponse {
        return try await authorizationResponseHandler.sendAuthorizationError(responseUri: self.responseUri, authorizationRequest: self.authorizationRequest, error: error)
     }
     
     private func safeSendError(error: Error) async {
         do {
             let verifierResponse = try await sendErrorInfoToVerifier(error: error)
-            (error as? OpenID4VPException)?.setNetworkResponse(verifierResponse)
+            (error as? OpenID4VPException)?.setVerifierResponse(verifierResponse)
         } catch {
             OpenID4VPException.error(error, className: className)
         }

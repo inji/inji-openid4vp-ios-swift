@@ -75,7 +75,7 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
-    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> NetworkResponse {
+    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> VerifierResponse {
         guard let responseUri = responseUri, !responseUri.isEmpty else {
             throw ErrorDispatchFailure(message: "Response URI is not set. Cannot send error to verifier.", className: Self.className)
         }        
@@ -107,8 +107,10 @@ public class AuthorizationResponseHandler {
                 bodyParams: errorPayload,
                 headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
             )
-            (error as? OpenID4VPException)?.setNetworkResponse(dispatchResult)
-            return dispatchResult
+            let verifierResponse: VerifierResponse = toVerifierResponse(dispatchResult)
+            
+            (error as? OpenID4VPException)?.setVerifierResponse(verifierResponse)
+            return verifierResponse
         } catch {
             throw ErrorDispatchFailure(
                 message: "Failed to send error to verifier: \(error)",

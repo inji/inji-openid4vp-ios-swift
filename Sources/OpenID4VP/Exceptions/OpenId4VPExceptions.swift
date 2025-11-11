@@ -5,10 +5,10 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     public let message: String
     public let className: String
     // holds the response received from the Verifier if the error is sent to the Verifier
-    public var networkResponse: NetworkResponse?
+    public var verifierResponse: VerifierResponse?
     
-    internal func setNetworkResponse(_ response: NetworkResponse) {
-        self.networkResponse = response
+    internal func setVerifierResponse(_ response: VerifierResponse) {
+        self.verifierResponse = response
     }
     
     private static var logTag = ""
