@@ -85,7 +85,7 @@ public class OpenID4VP {
     
     public func sendVPResponseToVerifier(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
-    ) async throws -> NetworkResponse {
+    ) async throws -> VerifierResponse {
         do {
             return try await authorizationResponseHandler.shareVP(
                 authorizationRequest: authorizationRequest,
@@ -115,7 +115,7 @@ public class OpenID4VP {
     public func shareVerifiablePresentation(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) async throws -> String {
-        return try await self.sendVPResponseToVerifier(vpTokenSigningResults: vpTokenSigningResults).body
+        return try await self.sendVPResponseToVerifier(vpTokenSigningResults: vpTokenSigningResults).body()
     }
     
     @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")

@@ -118,21 +118,22 @@ public class AuthorizationResponseHandler {
     }
     
     
-    public func shareVP(
+    func shareVP(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         responseUri: String
-    ) async throws -> NetworkResponse {
+    ) async throws -> VerifierResponse {
         let authorizationResponse = try createAuthorizationResponse(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults
         )
         
-        return try await sendAuthorizationResponse(
+        let response: NetworkResponse = try await sendAuthorizationResponse(
             authorizationRequest: authorizationRequest,
             authorizationResponse: authorizationResponse,
             responseUri: responseUri
         )
+        return toVerifierResponse(response)
     }
     
     private func createAuthorizationResponse(
@@ -486,5 +487,32 @@ public class AuthorizationResponseHandler {
             }
         }
         self.formatToCredentialInputDescriptorMapping = formatToCredentialInputDescriptorMapping
+    }
+    
+    private func toVerifierResponse(_ networkResponse: NetworkResponse) -> VerifierResponse {
+        let redirectUriKey = "redirect_uri"
+        
+        var redirectUri: String? = nil
+        var additionalParams: String? = networkResponse.body
+        
+        if let data = networkResponse.body.data(using: .utf8),
+           var json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            
+            redirectUri = json[redirectUriKey] as? String
+            
+            json.removeValue(forKey: redirectUriKey)
+            if let cleanedData = try? JSONSerialization.data(withJSONObject: json, options: []),
+               let cleanedString = String(data: cleanedData, encoding: .utf8) {
+                additionalParams = cleanedString
+            }
+        }
+        
+        return VerifierResponse(
+            statusCode: networkResponse.statusCode,
+            responseBody: networkResponse.body,
+            redirectUri: redirectUri,
+            additionalParams: additionalParams,
+            headers: networkResponse.headers
+        )
     }
 }
