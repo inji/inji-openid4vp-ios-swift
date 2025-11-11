@@ -83,7 +83,7 @@ public class OpenID4VP {
         }
     }
     
-    public func sendAuthorizationResponseToVerifier(
+    public func sendVPResponseToVerifier(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) async throws -> NetworkResponse {
         do {
@@ -98,24 +98,24 @@ public class OpenID4VP {
         }
     }
     
-    public func sendErrorResponseToVerifier(error: Error) async throws -> NetworkResponse {
+    public func sendErrorInfoToVerifier(error: Error) async throws -> NetworkResponse {
        return try await authorizationResponseHandler.sendAuthorizationError(responseUri: self.responseUri, authorizationRequest: self.authorizationRequest, error: error)
     }
     
     private func safeSendError(error: Error) async {
         do {
-            let verifierResponse = try await sendErrorResponseToVerifier(error: error)
+            let verifierResponse = try await sendErrorInfoToVerifier(error: error)
             (error as? OpenID4VPException)?.setNetworkResponse(verifierResponse)
         } catch {
             OpenID4VPException.error(error, className: className)
         }
     }
     
-    @available(*, deprecated, renamed: "sendAuthorizationResponseToVerifier", message: "This method does not support listening to the status code sent from the verifier. Replace with sendAuthorizationResponseToVerifier(vpTokenSigningResults)")
+    @available(*, deprecated, renamed: "sendVPResponseToVerifier", message: "This method does not support listening to the status code sent from the verifier. Replace with sendVPResponseToVerifier(vpTokenSigningResults)")
     public func shareVerifiablePresentation(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) async throws -> String {
-        return try await self.sendAuthorizationResponseToVerifier(vpTokenSigningResults: vpTokenSigningResults).body
+        return try await self.sendVPResponseToVerifier(vpTokenSigningResults: vpTokenSigningResults).body
     }
     
     @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")
@@ -178,7 +178,7 @@ public class OpenID4VP {
         }
     }
     
-    @available(*, deprecated, renamed: "sendErrorResponseToVerifier", message: "sendErrorToVerifier is now changed to sendErrorResponseToVerifier. Reason: This does not support listening the response from the verifier")
+    @available(*, deprecated, renamed: "sendErrorInfoToVerifier", message: "sendErrorToVerifier is now changed to sendErrorInfoToVerifier. Reason: This does not support listening the response from the verifier")
     public func sendErrorToVerifier(error: Error) async {
         await self.safeSendError(error: error)
     }

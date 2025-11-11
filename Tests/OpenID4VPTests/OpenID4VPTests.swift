@@ -505,25 +505,25 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(mockNetworkManager.recordedRequests.count == 2, "No requests should be recorded as responseUri is nil" )
     }
     
-    func testThrowErrorWhenResponseUriNotAvailableDuringSendErrorResponseToVerifier
+    func testThrowErrorWhenResponseUriNotAvailableDuringsendErrorInfoToVerifier
     () async throws {
         let error = AccessDenied(message: "Some error", className: "test")
         let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
         
-        // directly call sendErrorResponseToVerifier
-        await XCTAssertAsyncThrowsError(try await openID4VP.sendErrorResponseToVerifier(error: error)) { error in
+        // directly call sendErrorInfoToVerifier
+        await XCTAssertAsyncThrowsError(try await openID4VP.sendErrorInfoToVerifier(error: error)) { error in
             XCTAssertEqual(error.localizedDescription, "Failed to send error to verifier: Response URI is not set. Cannot send error to verifier.", "error_dispatch_failure")
         }
     }
     
-    func testSuccessWhenSendErrorResponseToVerifierCalled
+    func testSuccessWhensendErrorInfoToVerifierCalled
     () async throws {
         let error = AccessDenied(message: "Some error", className: "test")
         
         let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
         openID4VP.setResponseUri("https://mock-verifier.com")
         
-        await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorResponseToVerifier(error: error)) { result in
+        await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorInfoToVerifier(error: error)) { result in
             XCTAssertEqual(result.body, "Success: Request completed successfully.")
             XCTAssertEqual(result.statusCode, 200)
             XCTAssertEqual(result.headers, ["Content-Type": "text/json"])
@@ -535,7 +535,7 @@ class OpenID4VPTests: XCTestCase {
         let error = AccessDenied(message: "Some error", className: "test")
         let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
         
-        // directly call sendErrorResponseToVerifier
+        // directly call sendErrorInfoToVerifier
         await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorToVerifier(error: error)) {
             print("No error thrown even when responseUri is not set")
         }
