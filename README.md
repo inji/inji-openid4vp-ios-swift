@@ -12,8 +12,8 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 - [APIs](#apis)
   - [authenticateVerifier](#authenticateverifier)
   - [constructUnsignedVPToken](#constructUnsignedVPToken)
-  - [sendAuthorizationResponseToVerifier](#sendauthorizationresponsetoverifier)
-  - [sendErrorResponseToVerifier](#senderrorresponsetoverifier)
+  - [sendVPResponseToVerifier](#sendvpresponsetoverifier)
+  - [sendErrorInfoToVerifier](#senderrorinfotoverifier)
 
 ## OpenID4VP specification draft versions supported
 
@@ -22,18 +22,18 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 
 ## Supported features
 
-| Feature                                                    | Supported values                                                                                                                                                                                                                                                                                                                                 |
-|------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Device flow                                                | Cross device flow, Same device flow (only `direct_post` and `direct_post.jwt` supported)                                                                                                                                                                                                                                                         |
-| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                                                                                                                                                                          |
-| Signed authorization request verification algorithms       | Ed25519                                                                                                                                                                                                                                                                                                                                          |
-| Obtaining authorization request                            | - By value : both signed (via `request` param) and unsigned (via URL encoded parameters)<br/> - By reference ( via `request_uri` method)<br/>_Note: The use of signed or unsigned requests, is determined by the `client_id_scheme` associated with the client._ ([more details](#client-id-schemes-and-signed-unsigned-request-support-matrix)) |
-| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                                                                                                                                                                       |
-| Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                                                                                                                                                                        |
-| Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                                                                                                                                                                                                                                                                        |
-| Credential formats                                         | `ldp_vc`, `mso_mdoc`, `dc+sd-jwt`, `vc+sd-jwt`                                                                                                                                                                                                                                                                                                   |
-| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                                                                                                                                                                           |
-| Authorization Response type                                | `vp_token`                                                                                                                                                                                                                                                                                                                                       |
+| Feature                                                    | Supported values                                                                                                                                                                                                                                                                                                                                  |
+|------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Device flow                                                | Cross device flow, Same device flow (only `direct_post` and `direct_post.jwt` supported)                                                                                                                                                                                                                                                          |
+| Client id scheme                                           | `pre-registered`, `redirect_uri`, `did`                                                                                                                                                                                                                                                                                                           |
+| Signed authorization request verification algorithms       | Ed25519                                                                                                                                                                                                                                                                                                                                           |
+| Obtaining authorization request                            | - By value : both signed (via `request` param) and unsigned (via URL encoded parameters)<br/> - By reference ( via `request_uri` method)<br/>_Note: The use of signed or unsigned requests, is determined by the `client_id_scheme` associated with the client._ ([more details](#client-id-schemes-and-signed--unsigned-request-support-matrix)) |
+| Obtaining presentation definition in authorization request | By value, By reference (via `presentation_definition_uri`)                                                                                                                                                                                                                                                                                        |
+| Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                                                                                                                                                                         |
+| Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                                                                                                                                                                                                                                                                         |
+| Credential formats                                         | `ldp_vc`, `mso_mdoc`, `dc+sd-jwt`, `vc+sd-jwt`                                                                                                                                                                                                                                                                                                    |
+| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                                                                                                                                                                            |
+| Authorization Response type                                | `vp_token`                                                                                                                                                                                                                                                                                                                                        |
 
 ### Client ID Schemes and Signed / Unsigned request support matrix
 
@@ -354,12 +354,12 @@ let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUns
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
-### sendAuthorizationResponseToVerifier
+### sendVPResponseToVerifier
 - This function constructs a vp_token with proof using received VPTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
-- Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
+- Returns back the response received from the Verifier. Refer here for the structure of VerifierResponse - [VerifierResponse structure](#verifierresponse-structure)
 
 ```swift
-    let response = try await openID4VP.sendAuthorizationResponseToVerifier(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
+    let response = try await openID4VP.sendVPResponseToVerifier(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
 ```
 
 ###### Parameters
@@ -368,6 +368,18 @@ This method will also notify the Verifier about the error by sending it to the r
 |-----------------------|------------------------------------|:---------|:--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | vpTokenSigningResults | [FormatType: VPTokenSigningResult] | Yes      | N/A           | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
 
+### Response Parameters
+
+VerifierResponse contains the following properties:
+
+#### VerifierResponse structure
+
+| Name             | Type             | Description                                                                                                   |
+|------------------|------------------|---------------------------------------------------------------------------------------------------------------|
+| statusCode       | Int              | HTTP status code received from the Verifier                                                                   |
+| redirectUri      | String           | The redirect URI to which the wallet application needs to redirect after sending the response to the Verifier |     
+| additionalParams | Map<String, Any> | A map containing any additional response body parameters received from the Verifier                           |
+| headers          | Map<String, Any> | A map containing any headers received from the Verifier                                                       |
 
 ###### Example usage
 
@@ -388,7 +400,7 @@ let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
     ]
   )
 let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
-let response : NetworkResponse = try await openID4VP.sendAuthorizationResponseToVerifier(vpTokenSigningResults : vpTokenSigningResults)
+let response : VerifierResponse = try await openID4VP.sendVPResponseToVerifier(vpTokenSigningResults : vpTokenSigningResults)
 ```
 
 ###### Exceptions
@@ -402,7 +414,7 @@ let response : NetworkResponse = try await openID4VP.sendAuthorizationResponseTo
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
-### shareVerifiablePresentation (deprecated, use sendAuthorizationResponseToVerifier instead)
+### shareVerifiablePresentation (deprecated, use sendVPResponseToVerifier instead)
 - This function constructs a vp_token with proof using received VPTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
@@ -450,16 +462,16 @@ val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenS
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
-### sendErrorResponseToVerifier
+### sendErrorInfoToVerifier
 
 - Receives an exception and sends it's message to the Verifier via an HTTP POST request to the Verifier's response_uri endpoint.
-- Returns back the response body received from the Verifier.
+- Returns back the response received from the Verifier. Refer here for the structure of VerifierResponse - [VerifierResponse structure](#verifierresponse-structure)
 
 ```swift
 // Example: The user declines to share the requested credentials. In this case, Verifier needs to be informed about the scenario.
-// So call the sendErrorResponseToVerifier method with appropriate exception message to notify the Verifier.
+// So call the sendErrorInfoToVerifier method with appropriate exception message to notify the Verifier.
 
-let verifierResponse: NetworkResponse = openID4VP.sendErrorResponseToVerifier(
+let verifierResponse: VerifierResponse = openID4VP.sendErrorInfoToVerifier(
         AccessDenied(
             message = "User did not give consent to share the requested Credentials with the Verifier.",
             className = this.className
@@ -470,7 +482,7 @@ let verifierResponse: NetworkResponse = openID4VP.sendErrorResponseToVerifier(
 
 1. ErrorDispatchFailure is thrown if any issue occurs while sending the Authorization Error response to the Verifier.
 
-### sendErrorToVerifier (deprecated, use sendErrorResponseToVerifier instead)
+### sendErrorToVerifier (deprecated, use sendErrorInfoToVerifier instead)
 - Receives an exception and sends it's message to the Verifier via a HTTP POST request.
 
 ```
@@ -505,7 +517,7 @@ This exception has the following properties:
 
 1. errorCode: A unique code representing the type of error.
 2. message: A descriptive message providing details about the error.
-3. networkResponse: An optional property that holds the Verifier response obtained while sending the error to Verifier.
+3. verifierResponse: An optional property that holds the Verifier response obtained while sending the error to Verifier. Refer here for the structure of VerifierResponse - [VerifierResponse structure](#verifierresponse-structure)
 4. className: The name of the class where the exception occurred.
 
 
@@ -513,10 +525,10 @@ This exception has the following properties:
 
 The following methods are deprecated and will be removed in future releases. Please migrate to the suggested alternatives.
 
-| Method Name                 | Description                                   | Deprecated Since | Suggested Alternative                                                       |
-|-----------------------------|-----------------------------------------------|------------------|-----------------------------------------------------------------------------|
-| shareVerifiablePresentation | Sends VP (Authorization response) to verifier | 0.6.0            | [sendAuthorizationResponseToVerifier](#sendauthorizationresponsetoverifier) |
-| sendErrorToVerifier         | Sends Authorization error to the verifier     | 0.6.0            | [sendErrorResponseToVerifier](#senderrorresponsetoverifier)                 |
+| Method Name                 | Description                                   | Deprecated Since | Suggested Alternative                                 |
+|-----------------------------|-----------------------------------------------|------------------|-------------------------------------------------------|
+| shareVerifiablePresentation | Sends VP (Authorization response) to verifier | 0.6.0            | [sendVPResponseToVerifier](#sendvpresponsetoverifier) |
+| sendErrorToVerifier         | Sends Authorization error to the verifier     | 0.6.0            | [sendErrorInfoToVerifier](#senderrorinfotoverifier)   |
 
 ## Architecture decisions
 
