@@ -1,12 +1,12 @@
 import Foundation
 
 public struct VerifierResponse : Codable {
-    let statusCode: Int
+    public let statusCode: Int
     /// Holds redirect_uri from the Verifier response body
-    let redirectUri: String?
+    public let redirectUri: String?
     /// Holds additional parameters in JSON string format other than redirect_uri
-    let additionalParams: String?
-    let headers: [String: String]
+    public let additionalParams: String?
+    public let headers: [String: String]
     private let responseBody: String
     
     init(statusCode: Int, responseBody: String = "", redirectUri: String? = nil, additionalParams: String? = nil, headers: [String: String]) {
@@ -33,7 +33,7 @@ public struct VerifierResponse : Codable {
         case headers
     }
     
-    func isOk() -> Bool {
+    public func isOk() -> Bool {
         return (200...299).contains(statusCode)
     }
     
