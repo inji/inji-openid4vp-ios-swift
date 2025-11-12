@@ -20,6 +20,8 @@ class OpenID4VPTests: XCTestCase {
 
     let decodedClientMetadata =
         "{\"name\":\"dummyClient\"}"
+    let processedSuccessfullyMessage = "{\"message\":\"Some additional info\"}"
+    let responseUri = "https://mock-verifier.com"
 
     override func setUp() {
         super.setUp()
@@ -353,7 +355,7 @@ class OpenID4VPTests: XCTestCase {
     func testSendVPSuccess() async throws {
         mockNetworkManager.setMockResponse(
             for: "https://mock-verifier.com",
-            responseBody: "Success: Request completed successfully."
+            responseBody: "{\"message\":\"Some additional info\"}"
         )
 
         _ = try await openID4VP.authenticateVerifier(
@@ -377,7 +379,7 @@ class OpenID4VPTests: XCTestCase {
 
         let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
 
-        XCTAssertEqual(response, "Success: Request completed successfully.")
+        XCTAssertEqual(response, "{\"message\":\"Some additional info\"}")
     }
 
 
@@ -405,7 +407,7 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testShareVPSuccessWhenResponseModeIsDirectPostJwt() async throws {
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "Success: Request completed successfully.")
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com", responseBody: "{\"message\":\"Some additional info\"}")
 
         authorizationRequest = try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
         _ = try! await openID4VP.constructUnsignedVPToken(verifiableCredentials: verifiableCredentialsList, holderId: "wallet-holder-id", signatureSuite: "JsonWebSignature2020")
@@ -413,7 +415,7 @@ class OpenID4VPTests: XCTestCase {
 
         let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: vpTokenSigningResults)
 
-        XCTAssertEqual(response, "Success: Request completed successfully.")
+        XCTAssertEqual(response, "{\"message\":\"Some additional info\"}")
     }
 
     func testSendErrorToVerifier_withoutState() async {
@@ -505,28 +507,29 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertTrue(mockNetworkManager.recordedRequests.count == 2, "No requests should be recorded as responseUri is nil" )
     }
     
-    func testThrowErrorWhenResponseUriNotAvailableDuringSendErrorResponseToVerifier
+    func testThrowErrorWhenResponseUriNotAvailableDuringsendErrorInfoToVerifier
     () async throws {
         let error = AccessDenied(message: "Some error", className: "test")
         let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
         
-        // directly call sendErrorResponseToVerifier
-        await XCTAssertAsyncThrowsError(try await openID4VP.sendErrorResponseToVerifier(error: error)) { error in
+        // directly call sendErrorInfoToVerifier
+        await XCTAssertAsyncThrowsError(try await openID4VP.sendErrorInfoToVerifier(error: error)) { error in
             XCTAssertEqual(error.localizedDescription, "Failed to send error to verifier: Response URI is not set. Cannot send error to verifier.", "error_dispatch_failure")
         }
     }
     
-    func testSuccessWhenSendErrorResponseToVerifierCalled
+    func testSuccessWhensendErrorInfoToVerifierCalled
     () async throws {
         let error = AccessDenied(message: "Some error", className: "test")
+        mockNetworkManager.setMockResponse(for: responseUri,responseBody: processedSuccessfullyMessage)
         
         let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
-        openID4VP.setResponseUri("https://mock-verifier.com")
+        openID4VP.setResponseUri(responseUri)
         
-        await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorResponseToVerifier(error: error)) { result in
-            XCTAssertEqual(result.body, "Success: Request completed successfully.")
+        await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorInfoToVerifier(error: error)) { result in
+            XCTAssertEqual(result.body(), "{\"message\":\"Some additional info\"}")
             XCTAssertEqual(result.statusCode, 200)
-            XCTAssertEqual(result.headers, ["Content-Type": "text/json"])
+            XCTAssertEqual(result.headers, ["Content-Type": "application/json"])
         }
     }
     
@@ -535,19 +538,21 @@ class OpenID4VPTests: XCTestCase {
         let error = AccessDenied(message: "Some error", className: "test")
         let openID4VP = OpenID4VP(traceabilityId: "trace-id", networkManager: mockNetworkManager)
         
-        // directly call sendErrorResponseToVerifier
+        // directly call sendErrorInfoToVerifier
         await XCTAssertNoThrowAndVerifyAsync(try await openID4VP.sendErrorToVerifier(error: error)) {
             print("No error thrown even when responseUri is not set")
         }
     }
     
     func testThrownExceptionHavingVerifierResponse() async {
+        mockNetworkManager.setMockResponse(for: responseUri,responseBody: "{\"message\":\"Some additional info\",\"redirect_uri\":\"https://mock-verifier.com/redirect#response_code=200\"}")
+        
         await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testInvalidPresentationDefinitionVPRequest, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "Missing Input: presentation_definition->id param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest,
-                expectedVerifierResponse: NetworkResponse(statusCode: 200, body: "Success: Request completed successfully.", headers: ["Content-Type": "text/json"])
+                expectedVerifierResponse: VerifierResponse(statusCode: 200, responseBody: "{\"message\":\"Some additional info\",\"redirect_uri\":\"https://mock-verifier.com/redirect#response_code=200\"}", redirectUri: "https://mock-verifier.com/redirect#response_code=200", additionalParams: "{\"message\":\"Some additional info\"}", headers: ["Content-Type": "application/json"])
             )
         }
     }
