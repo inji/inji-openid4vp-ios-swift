@@ -36,6 +36,14 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
         ]
     }
     
+    func toAuthorizationErrorResponse(state: String?) -> AuthorizationErrorResponse {
+            return AuthorizationErrorResponse(
+                error: self.errorCode,
+                errorDescription: self.message,
+                state: state
+            )
+        }
+    
     static func setTraceabilityId(className: String, traceabilityId: String? = nil) {
         if let traceId = traceabilityId {
             self.traceabilityId = traceId
@@ -145,7 +153,6 @@ class InvalidInput: OpenID4VPException {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }
-
 
 
 // MARK: - JWS

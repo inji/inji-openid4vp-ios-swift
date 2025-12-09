@@ -11,7 +11,20 @@ protocol ResponseModeBasedHandler {
                                    producerInfo: String,
                                    recipientInfo: String
     ) async throws -> NetworkResponse
+    
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
+    
+    func finalizeAuthorizationResponse(
+            authorizationRequest: AuthorizationRequest,
+            authorizationResponse: AuthorizationResponse,
+            walletNonce: String
+        ) throws -> [String: String]
+
+        func finalizeAuthorizationResponse(
+            authorizationRequest: AuthorizationRequest,
+            authorizationResponse: AuthorizationErrorResponse,
+            walletNonce: String
+        ) throws -> [String: String]
 }
 
 extension ResponseModeBasedHandler {

@@ -1,8 +1,8 @@
+import CryptoKit
 import Foundation
 import JSONWebSignature
-import CryptoKit
 
-public struct AuthorizationRequest : Encodable {
+public struct AuthorizationRequest: Encodable {
     let clientId: String
     let clientIdScheme: String?
     var presentationDefinition: PresentationDefinition
@@ -12,7 +12,7 @@ public struct AuthorizationRequest : Encodable {
     let state: String?
     let redirectUri: String?
     let responseUri: String?
-    //As per spec, walletNonce is available if post call to request_uri is made with wallet_nonce (optional) in the request body. Library will add wallet_nonce to the request body in case of post call to request_uri.
+    // As per spec, walletNonce is available if post call to request_uri is made with wallet_nonce (optional) in the request body. Library will add wallet_nonce to the request body in case of post call to request_uri.
     let walletNonce: String?
     var clientMetadata: ClientMetadata?
     static let className = String(describing: AuthorizationRequest.self)
@@ -30,7 +30,7 @@ public struct AuthorizationRequest : Encodable {
         case response_uri
         case client_metadata
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(clientId, forKey: .client_id)
@@ -44,7 +44,7 @@ public struct AuthorizationRequest : Encodable {
         try container.encode(redirectUri, forKey: .redirect_uri)
         try container.encode(clientMetadata, forKey: .client_metadata)
     }
-    
+
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,
                                                       trustedVerifierJSON: [Verifier],
                                                       walletMetadata: WalletMetadata?,
@@ -52,9 +52,9 @@ public struct AuthorizationRequest : Encodable {
                                                       shouldValidateClient: Bool,
                                                       walletNonce: String,
                                                       networkManager: NetworkManaging
-                                                      ) async throws -> AuthorizationRequest {
+    ) async throws -> AuthorizationRequest {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
-        
+
         return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters,
                                                  trustedVerifiers: trustedVerifierJSON,
                                                  walletMetadata: walletMetadata,
@@ -63,28 +63,49 @@ public struct AuthorizationRequest : Encodable {
                                                  walletNonce: walletNonce,
                                                  networkManager: networkManager)
     }
+
     
-    private static func getAuthorizationRequest(authorizationRequestParameters : [String:Any],
-                                                trustedVerifiers : [Verifier],
+    static func validateAndCreateAuthorizationRequest(
+        authRequest: [String: Any],
+        trustedVerifiers: [Verifier],
+        walletMetadata: WalletMetadata?,
+        setResponseUri: @escaping (String) -> Void,
+        shouldValidateClient: Bool,
+        walletNonce: String,
+        networkManager: NetworkManaging
+    ) async throws -> AuthorizationRequest {
+        return try await getAuthorizationRequest(
+            authorizationRequestParameters: authRequest,
+            trustedVerifiers: trustedVerifiers,
+            walletMetadata: walletMetadata,
+            setResponseUri: setResponseUri,
+            shouldValidateClient: shouldValidateClient,
+            walletNonce: walletNonce,
+            networkManager: networkManager
+        )
+    }
+
+    private static func getAuthorizationRequest(authorizationRequestParameters: [String: Any],
+                                                trustedVerifiers: [Verifier],
                                                 walletMetadata: WalletMetadata?,
                                                 setResponseUri: @escaping (String) -> Void,
                                                 shouldValidateClient: Bool,
                                                 walletNonce: String,
                                                 networkManager: NetworkManaging
-                                                ) async throws -> AuthorizationRequest{
-        let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,                                                                                     trustedVerifiers: trustedVerifiers,
+    ) async throws -> AuthorizationRequest {
+        let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: trustedVerifiers,
                                                                              walletMetadata: walletMetadata,
                                                                              shouldValidateClient: shouldValidateClient,
                                                                              setResponseUri: setResponseUri,
                                                                              walletNonce: walletNonce,
                                                                              networkManager: networkManager)
-        
-        try await processAndValidateAuthorizationRequestParameter( authorizationRequestHandler)
-        
+
+        try await processAndValidateAuthorizationRequestParameter(authorizationRequestHandler)
+
         return authorizationRequestHandler.createAuthorizationRequest()
     }
-    
-    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler)async throws {
+
+    private static func processAndValidateAuthorizationRequestParameter(_ authorizationRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler) async throws {
         try authorizationRequestHandler.validateClientId()
         try await authorizationRequestHandler.fetchAuthorizationRequest()
         try authorizationRequestHandler.setResponseUrl()
