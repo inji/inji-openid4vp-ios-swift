@@ -114,6 +114,54 @@ let authorizationRequestParamsWithValue: [String: Any] = [
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition"
 ]
 
+func baseAuthRequest(clientId: String,
+                             clientIdScheme: String? = nil,
+                             responseUri: String) -> [String: Any] {
+    var request: [String: Any] = [
+        "response_type": "vp_token",
+        "response_mode": "iar_post",
+        "presentation_definition": [
+            "id": "vp token example",
+            "purpose": "Relying party is requesting your digital ID for the purpose of Self-Authentication",
+            "format": [
+                "ldp_vc": [
+                    "proof_type": ["RsaSignature2018"],
+                ],
+            ],
+            "input_descriptors": [
+                [
+                    "id": "id card credential",
+                    "format": [
+                        "ldp_vc": [
+                            "proof_type": ["Ed25519Signature2020", "RsaSignature2018"],
+                        ],
+                    ],
+                    "constraints": [
+                        "fields": [
+                            [
+                                "path": ["$.credentialSubject.email"],
+                                "filter": [
+                                    "type": "string",
+                                    "pattern": "@gmail.com",
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        "client_id": clientId,
+        "response_uri": responseUri,
+        "nonce": "wiuegqgd",
+    ]
+
+    if let scheme = clientIdScheme {
+        request["client_id_scheme"] = scheme
+    }
+
+    return request
+}
+
 let redirectUriSchemeClientIdDraft23: [String: String] = [
     "client_id": "redirect_uri:https://mock-verifier.com",
 ]
@@ -265,6 +313,32 @@ let clientMetadata: [String: Any] = [
                 "alg": "ECDH-ES",
                 "kid": "ed-key1"
             ],
+            [
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "use": "sig",
+                "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                "alg": "EdDSA",
+                "kid": "ed-key2"
+            ]]
+    ],
+    "vp_formats": [
+        "ldp_vp": [
+            "proof_type": [
+                "Ed25519Signature2018",
+                "Ed25519Signature2020"
+            ]
+        ]
+    ]
+]
+
+let clientMetadataWithWrongKey: [String: Any] = [
+    "client_name": "Requester name",
+    "logo_uri": "https://mock-verifier.com/logo",
+    "authorization_encrypted_response_alg": "ECDH-ES",
+    "authorization_encrypted_response_enc": "A256GCM",
+    "jwks": [
+        "keys": [
             [
                 "kty": "OKP",
                 "crv": "Ed25519",

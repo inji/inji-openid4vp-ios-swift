@@ -21,12 +21,12 @@ public class OpenID4VP {
         nonceProvider = NonceProvider()
     }
 
-    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil, nonceProvider: NonceProvider = NonceProvider()) {
+    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil, nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
         self.networkManager = networkManager ?? NetworkManager.shared
         self.nonceProvider = nonceProvider
 
         self.traceabilityId = traceabilityId
-        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: self.networkManager)
+        self.authorizationResponseHandler = authorizationResponseHandler ?? AuthorizationResponseHandler(networkManager: networkManager ?? NetworkManager.shared)
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }

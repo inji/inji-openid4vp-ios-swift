@@ -134,4 +134,144 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             )
         }
     }
+    
+
+    func testValidateAndParseRequestFieldsSucceedsWithIarPostResponseMode() async {
+        let params = createAuthorizationRequest(
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                redirectUriSchemeClientIdDraft23,
+                [
+                    "response_mode": "iar_post",
+                    "response_uri": "https://mock-verifier.com/redirect"
+                ]
+            )
+        ) as [String : Any]
+
+        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+            authorizationRequestParameters: params,
+            walletMetadata: walletMetadata,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+    }
+
+    func testValidateAndParseRequestFieldsSucceedsWithIarPostJwtResponseMode() async {
+        let params = createAuthorizationRequest(
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                redirectUriSchemeClientIdDraft23,
+                [
+                    "response_mode": "iar_post.jwt",
+                    "response_uri": "https://mock-verifier.com/redirect"
+                ]
+            )
+        ) as [String : Any]
+
+        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+            authorizationRequestParameters: params,
+            walletMetadata: walletMetadata,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+    }
+
+    func testValidateAndParseRequestFields_SucceedsWithIarPostWithoutResponseUri() async {
+        let params = createAuthorizationRequest(
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                redirectUriSchemeClientIdDraft23,
+                ["response_mode": "iar_post"]
+            )
+        ) as [String : Any]
+
+        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+            authorizationRequestParameters: params,
+            walletMetadata: walletMetadata,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+    }
+
+    func testValidateAndParseRequestFieldsSucceedsWithIarPostJwt_WithoutResponseUri() async {
+        let params = createAuthorizationRequest(
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                redirectUriSchemeClientIdDraft23,
+                ["response_mode": "iar_post.jwt"]
+            )
+        ) as [String : Any]
+
+        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+            authorizationRequestParameters: params,
+            walletMetadata: walletMetadata,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+    }
+
+    func testValidateAndParseRequestFieldsSucceedsWithIarPostMismatchedResponseUri() async {
+        let params = createAuthorizationRequest(
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                redirectUriSchemeClientIdDraft23,
+                [
+                    "response_mode": "iar_post",
+                    "response_uri": "https://different.com/response"
+                ]
+            )
+        ) as [String : Any]
+
+        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+            authorizationRequestParameters: params,
+            walletMetadata: walletMetadata,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+    }
+
+    func testValidateAndParseRequestFieldsSucceedsWithIarPostJwtMismatchedResponseUri() async {
+        let params = createAuthorizationRequest(
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                redirectUriSchemeClientIdDraft23,
+                [
+                    "response_mode": "iar_post.jwt",
+                    "response_uri": "https://different.com/response"
+                ]
+            )
+        ) as [String : Any]
+
+        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+            authorizationRequestParameters: params,
+            walletMetadata: walletMetadata,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+    }
+
 }
