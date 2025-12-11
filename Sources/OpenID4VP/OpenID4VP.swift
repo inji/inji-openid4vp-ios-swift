@@ -112,7 +112,7 @@ public class OpenID4VP {
         }
     }
     
-    func constructVPResponse(vpTokenSigningResults: [FormatType: VPTokenSigningResult]) -> [String: Any] {
+    public func constructVPResponse(vpTokenSigningResults: [FormatType: VPTokenSigningResult]) -> [String: Any] {
         do {
             return try authorizationResponseHandler.constructAuthorizationResponse(
                 authorizationRequest: authorizationRequest,
@@ -123,7 +123,7 @@ public class OpenID4VP {
         }
     }
 
-    func constructErrorInfo(exception: Error) -> [String: Any] {
+    public func constructErrorInfo(exception: Error) -> [String: Any] {
         return authorizationResponseHandler.constructAuthorizationErrorResponse(
             authorizationRequest: authorizationRequest,
             exception: exception
