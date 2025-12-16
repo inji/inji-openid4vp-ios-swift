@@ -46,20 +46,20 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
     }
     
-    func finalizeAuthorizationResponse(
+    func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
         walletNonce: String
     ) throws -> [String: String] {
         let responseParams = try authorizationResponse.toJsonEncodedMap()
-        return try encryptAndWrapResponse(
+        return try encryptResponse(
             authorizationRequest: authorizationRequest,
             responseParams: responseParams,
             walletNonce: walletNonce
         )
     }
     
-    func finalizeAuthorizationResponse(
+    func getAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationErrorResponse,
         walletNonce: String
@@ -67,7 +67,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         return authorizationResponse.toJsonEncodedMap()
     }
 
-    private func encryptAndWrapResponse(
+    private func encryptResponse(
         authorizationRequest: AuthorizationRequest,
         responseParams: [String: String],
         walletNonce: String

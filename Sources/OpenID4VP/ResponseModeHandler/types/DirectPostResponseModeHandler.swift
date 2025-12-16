@@ -7,7 +7,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         return
     }
     
-    func finalizeAuthorizationResponse(
+    func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
         walletNonce: String
@@ -15,7 +15,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         return try authorizationResponse.toJsonEncodedMap()
     }
 
-    func finalizeAuthorizationResponse(
+    func getAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationErrorResponse,
         walletNonce: String

@@ -90,7 +90,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             }
         }
     
-    func testShouldReturnFinalizeAuthorizationSuccessResponseSuccesfully() throws {
+    func testShouldReturnGetAuthorizationSuccessResponseSuccesfully() throws {
         let handler = DirectPostResponseModeHandler()
 
         let authorizationResponse = AuthorizationResponse(
@@ -99,7 +99,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             state: "sample-state"
         )
 
-        let result = try handler.finalizeAuthorizationResponse(
+        let result = try handler.getAuthorizationResponse(
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
             authorizationResponse: authorizationResponse,
             walletNonce: "mock-nonce"
@@ -110,7 +110,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         XCTAssertNotNil(result["presentation_submission"])
     }
 
-    func testShouldReturnFinalizeAuthorizationErrorResponseSuccesfully() throws {
+    func testShouldReturnGetAuthorizationErrorResponseSuccesfully() throws {
         let handler = DirectPostResponseModeHandler()
 
         let errorResponse = AuthorizationErrorResponse(
@@ -119,7 +119,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             state: "error-state"
         )
 
-        let result = handler.finalizeAuthorizationResponse(
+        let result = handler.getAuthorizationErrorResponse(
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
             authorizationResponse: errorResponse,
             walletNonce: "mock-nonce"

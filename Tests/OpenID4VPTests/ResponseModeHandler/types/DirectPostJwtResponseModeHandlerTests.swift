@@ -323,7 +323,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             state: "test-state"
         )
 
-        let result = try handler.finalizeAuthorizationResponse(
+        let result = try handler.getAuthorizationResponse(
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
             authorizationResponse: authorizationResponse,
             walletNonce: "mock-nonce"
@@ -337,7 +337,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                       "Expected encrypted JWE compact format result")
     }
     
-    func testFinalizeAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGiven() throws {
+    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGiven() throws {
         let handler = DirectPostJwtResponseModeHandler()
 
         let errorResponse = AuthorizationErrorResponse(
@@ -346,7 +346,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             state: "error-state"
         )
 
-        let result = try handler.finalizeAuthorizationResponse(
+        let result = try handler.getAuthorizationErrorResponse(
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
             authorizationResponse: errorResponse,
             walletNonce: "mock-nonce"
@@ -358,7 +358,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         XCTAssertNil(result["response"])
     }
     
-    func testFinalizeAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGivenAndStateIsNil() throws {
+    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGivenAndStateIsNil() throws {
         let handler = DirectPostJwtResponseModeHandler()
 
         let errorResponse = AuthorizationErrorResponse(
@@ -367,7 +367,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             state: nil
         )
 
-        let result = try handler.finalizeAuthorizationResponse(
+        let result = try handler.getAuthorizationErrorResponse(
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
             authorizationResponse: errorResponse,
             walletNonce: "mock-nonce"

@@ -145,7 +145,7 @@ public class AuthorizationResponseHandler {
 
         return try ResponseModeBasedHandlerFactory
             .get(responseMode: authorizationRequest.responseMode)
-            .finalizeAuthorizationResponse(
+            .getAuthorizationResponse(
                 authorizationRequest: authorizationRequest,
                 authorizationResponse: authorizationResponse,
                 walletNonce: walletNonce
@@ -170,7 +170,7 @@ public class AuthorizationResponseHandler {
 
         return try! ResponseModeBasedHandlerFactory
             .get(responseMode: authorizationRequest.responseMode)
-            .finalizeAuthorizationResponse(
+            .getAuthorizationErrorResponse(
                 authorizationRequest: authorizationRequest,
                 authorizationResponse: authorizationResponse,
                 walletNonce: walletNonce

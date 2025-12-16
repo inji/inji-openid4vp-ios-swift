@@ -14,13 +14,13 @@ protocol ResponseModeBasedHandler {
     
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
     
-    func finalizeAuthorizationResponse(
+    func getAuthorizationResponse(
             authorizationRequest: AuthorizationRequest,
             authorizationResponse: AuthorizationResponse,
             walletNonce: String
         ) throws -> [String: String]
 
-        func finalizeAuthorizationResponse(
+        func getAuthorizationErrorResponse(
             authorizationRequest: AuthorizationRequest,
             authorizationResponse: AuthorizationErrorResponse,
             walletNonce: String
