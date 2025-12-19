@@ -6,18 +6,18 @@ protocol BaseDidPublicKeyResolver {
 }
 
 // This should be moved to other module - vc-verifier once available
-class DidPublicKeyResolver : PublicKeyResolver {
+public class DidPublicKeyResolver : PublicKeyResolver {
     let networkManager: NetworkManaging
     static let className = String(describing: DidPublicKeyResolver.self)
     var className: String {
         return String(describing: DidPublicKeyResolver.self)
     }
     
-    init(networkManager: NetworkManaging) {
+    public init(networkManager: NetworkManaging) {
         self.networkManager = networkManager
     }
     
-    func resolve(uri: String, keyId : String? = nil) async throws -> PublicKeyType {
+    public func resolve(uri: String, keyId : String? = nil) async throws -> PublicKeyType {
         let kid = keyId ?? uri
         
         let parsedDID = try parseDid(uri)
