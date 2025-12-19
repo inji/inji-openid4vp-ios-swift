@@ -13,7 +13,7 @@ public class DidPublicKeyResolver : PublicKeyResolver {
         return String(describing: DidPublicKeyResolver.self)
     }
     
-    public init(networkManager: NetworkManaging) {
+    public init(networkManager: NetworkManaging = NetworkManager.shared) {
         self.networkManager = networkManager
     }
     
