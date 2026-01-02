@@ -16,7 +16,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     }
 
     func getAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest,
+        authorizationRequest: AuthorizationRequest?,
         authorizationResponse: AuthorizationErrorResponse,
         walletNonce: String
     ) -> [String: String] {

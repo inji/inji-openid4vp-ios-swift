@@ -153,23 +153,23 @@ public class AuthorizationResponseHandler {
     }
 
     func constructAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest,
+        authorizationRequest: AuthorizationRequest?,
         exception: Error
     ) -> [String: Any] {
         let authorizationResponse: AuthorizationErrorResponse
 
         if let openIDException = exception as? OpenID4VPException {
-            authorizationResponse = openIDException.toAuthorizationErrorResponse(state: authorizationRequest.state)
+            authorizationResponse = openIDException.toAuthorizationErrorResponse(state: authorizationRequest?.state)
         } else {
             let genericException = GenericFailure(
                 message: exception.localizedDescription.isEmpty ? "Unknown internal error" : exception.localizedDescription,
                 className: String(describing: OpenID4VP.self)
             )
-            authorizationResponse = genericException.toAuthorizationErrorResponse(state: authorizationRequest.state)
+            authorizationResponse = genericException.toAuthorizationErrorResponse(state: authorizationRequest?.state)
         }
 
         return try! ResponseModeBasedHandlerFactory
-            .get(responseMode: authorizationRequest.responseMode)
+            .get(responseMode: authorizationRequest?.responseMode ?? ResponseMode.directPost.rawValue)
             .getAuthorizationErrorResponse(
                 authorizationRequest: authorizationRequest,
                 authorizationResponse: authorizationResponse,
