@@ -119,7 +119,7 @@ func baseAuthRequest(clientId: String,
                              responseUri: String) -> [String: Any] {
     var request: [String: Any] = [
         "response_type": "vp_token",
-        "response_mode": "iar_post",
+        "response_mode": "iar-post",
         "presentation_definition": [
             "id": "vp token example",
             "purpose": "Relying party is requesting your digital ID for the purpose of Self-Authentication",

@@ -309,7 +309,7 @@ func jwkToPublicKey(_ jwk: JWK, className: String) throws -> PublicKeyType {
         
     default:
         throw PublicKeyResolutionFailed(
-            message: "KeyType - \(jwk.keyType.rawValue) is not supported. Supported: OKP, EC",
+            message: "KeyType - \(jwk.keyType.rawValue) is not supported. Supported: OKP, EC, RSA",
             className: className
         )
     }

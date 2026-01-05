@@ -143,7 +143,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                 authorizationRequestParamsWithValue,
                 redirectUriSchemeClientIdDraft23,
                 [
-                    "response_mode": "iar_post",
+                    "response_mode": "iar-post",
                     "response_uri": "https://mock-verifier.com/redirect"
                 ]
             )
@@ -167,7 +167,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                 authorizationRequestParamsWithValue,
                 redirectUriSchemeClientIdDraft23,
                 [
-                    "response_mode": "iar_post.jwt",
+                    "response_mode": "iar-post.jwt",
                     "response_uri": "https://mock-verifier.com/redirect"
                 ]
             )
@@ -190,7 +190,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
                 redirectUriSchemeClientIdDraft23,
-                ["response_mode": "iar_post"]
+                ["response_mode": "iar-post"]
             )
         ) as [String : Any]
 
@@ -211,7 +211,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
                 redirectUriSchemeClientIdDraft23,
-                ["response_mode": "iar_post.jwt"]
+                ["response_mode": "iar-post.jwt"]
             )
         ) as [String : Any]
 
@@ -233,7 +233,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                 authorizationRequestParamsWithValue,
                 redirectUriSchemeClientIdDraft23,
                 [
-                    "response_mode": "iar_post",
+                    "response_mode": "iar-post",
                     "response_uri": "https://different.com/response"
                 ]
             )
@@ -257,7 +257,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                 authorizationRequestParamsWithValue,
                 redirectUriSchemeClientIdDraft23,
                 [
-                    "response_mode": "iar_post.jwt",
+                    "response_mode": "iar-post.jwt",
                     "response_uri": "https://different.com/response"
                 ]
             )

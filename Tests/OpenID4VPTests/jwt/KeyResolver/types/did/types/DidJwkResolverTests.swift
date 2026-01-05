@@ -222,19 +222,11 @@ final class DidJwkResolverTests: XCTestCase {
         func testUnsupportedKeyType() async {
         let jwk = """
                 {
-                  "kty": "RSA",
-                  "use": "sig",
-                  "key_ops": [
-                    "sign",
-                    "verify"
-                  ],
-                  "alg": "RS256",
-                  "kid": "59efc7e0-1693-46b2-bbd5-17ea4e65cc21",
-                  "d": "KWv4ejQze_ZMa-AhBFOEbPdC57Ofai87oXu6_X6mXpayp8FPCjQknivvKu4Z30HsAOb-jW7m_RlGOVLbGMvOphIbgJJjuxbEahtWI_qlCDBkB5uu5W16PnCC5IeO62kbq3fct5sLqmgqQeJqf4Frh_7be2Gz-QeVhpQoXW8gQz4HP0-F5KaWv1GWlxELBhrbL1nssin8CdSfpzZHYKImYmcq7prYpkAYKbWR4L5-ILcRcNsrmYv3tqYWIZ5VPozWLLPv8sThUSZt_7rZa7zW7AFabTultsOEx5mN5A030LltdUkX_1c8IIh431oXpE5C_t5qjP13sYm6LLutibAZAQ",
-                  "n": "soCA2De2eaIk72DFw774EBZaNXAG9zlUt4n5JxSrP6XLdEiQjkLGRGtrLMw8BD0O_tal-6XZJh1pwar3LGvbq_stsmWcTgN-MlxikGAIqpQRpCcpoWdIhCdYSoL0EJB7KWbjTqQUBbhvrC6IlWkXL7ZC93f5_GyENgeGBPlc0yJNTUfDdE4zqXVd5gQ6Omak-AFWnW3-TbBvKF0E37vTYD2XKE3_o8WJ-cEPznB1S8tf6sM5YaAVkCBkiBB0oa4PHwE82w4Lrs9nTNmR627v566_OBq6WQOLb6y1FZalS7nCb9B8OuatiGvIVLEHpQfdaGEQ0Vce3fZA_nPjoBvchw",
-                  "e": "AQAB"
+                  "kty": "oct",
+                  "k": "GawgguFyGrWKav7AX4VKUg",
+                  "alg": "HS256",
+                  "key_ops": ["sign", "verify"]
                 }
-
             """
         let jwkBase64 = encodeBase64Url(jwk.data(using: .utf8)!)
         let unsupportedCurveDid = "did:jwk:\(jwkBase64)"
@@ -243,7 +235,7 @@ final class DidJwkResolverTests: XCTestCase {
 
         await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "KeyType - RSA is not supported. Supported: OKP, EC",
+                expectedMessage: "KeyType - oct is not supported. Supported: OKP, EC, RSA",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

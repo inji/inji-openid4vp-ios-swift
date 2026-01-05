@@ -15,8 +15,8 @@ final class ResponseModeBasedHandlerFactoryTests: XCTestCase {
     func testReturnOfResponseResponseHandlerWhenFactoryGetIsInvoked() throws {
         let responseModeHandler1: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "direct_post")
         let responseModeHandler2: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "direct_post.jwt")
-        let responseModeHandler3: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iar_post")
-        let responseModeHandler4: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iar_post.jwt")
+        let responseModeHandler3: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iar-post")
+        let responseModeHandler4: any ResponseModeBasedHandler = try ResponseModeBasedHandlerFactory.get(responseMode: "iar-post.jwt")
         
         XCTAssertTrue(responseModeHandler1 is DirectPostResponseModeHandler)
         XCTAssertTrue(responseModeHandler2 is DirectPostJwtResponseModeHandler)
