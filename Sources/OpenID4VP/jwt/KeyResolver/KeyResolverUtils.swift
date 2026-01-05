@@ -208,6 +208,52 @@ internal func toEdPublicKey(jwk: JWK) throws -> PublicKeyType {
     return try toEd25519Key(publicKeyData: publicKeyData)
 }
 
+internal func toRSAPublicKey(jwk: JWK) throws -> PublicKeyType {
+    guard
+        let modulus = jwk.n,
+        let exponent = jwk.e
+    else {
+        throw PublicKeyResolutionFailed(message:"Missing RSA parameters", className: className)
+    }
+    
+    let keyData = makeRSAPublicKey(modulus: modulus, exponent: exponent)
+    
+    let attributes: [String: Any] = [
+        kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+        kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+        kSecAttrKeySizeInBits as String: modulus.count * 8
+    ]
+    
+    guard let secKey = SecKeyCreateWithData(
+        keyData as CFData,
+        attributes as CFDictionary,
+        nil
+    ) else {
+        throw PublicKeyResolutionFailed(message: "Failed to create SecKey", className: className)
+    }
+    
+    return .secKey(secKey)
+}
+
+private func encodeLength(_ length: Int) -> Data {
+    if length < 128 {
+        return Data([UInt8(length)])
+    }
+    let bytes = withUnsafeBytes(of: length.bigEndian, Array.init).drop { $0 == 0 }
+    return Data([0x80 | UInt8(bytes.count)]) + bytes
+}
+
+private func encodeInteger(_ data: Data) -> Data {
+    let needsZero = data.first ?? 0 >= 0x80
+    let value = needsZero ? Data([0x00]) + data : data
+    return Data([0x02]) + encodeLength(value.count) + value
+}
+
+private func makeRSAPublicKey(modulus: Data, exponent: Data) -> Data {
+    let sequence = encodeInteger(modulus) + encodeInteger(exponent)
+    return Data([0x30]) + encodeLength(sequence.count) + sequence
+}
+
 internal func toECPublicKey(jwk: JWK) throws -> PublicKeyType {
     guard jwk.curve == .p256 else {
         throw PublicKeyResolutionFailed(
@@ -257,6 +303,9 @@ func jwkToPublicKey(_ jwk: JWK, className: String) throws -> PublicKeyType {
         
     case .ellipticCurve:
         return try toECPublicKey(jwk: jwk)
+    
+    case .rsa:
+        return try toRSAPublicKey(jwk: jwk)
         
     default:
         throw PublicKeyResolutionFailed(
