@@ -184,7 +184,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
 
-    func testValidateAndParseRequestFields_SucceedsWithIarPostWithoutResponseUri() async {
+    func testValidateAndParseRequestFieldsSucceedsWithIarPostWithoutResponseUri() async {
         let params = createAuthorizationRequest(
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
