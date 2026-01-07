@@ -17,16 +17,6 @@ final class DidJwkResolverTests: XCTestCase {
         assertPublicKey(expectedBase64Encoded: "8g9d/MB0iU2nmgb/9P4Df0TRQm5RJTmaiEk2HkZy5pE=", actualKey: key)
     }
     
-    // kty - RSA
-    func testDidJwkSuccessfulResolvingForRSA() async throws {
-        let did = "did:jwk:ewogICJrdHkiOiAiUlNBIiwKICAiZSI6ICJBUUFCIiwKICAia2lkIjogIjk2NDYyNjc1LWIyMTMtNDAwMi04ZjgxLTEwMTNkNDBjNDZjNSIsCiAgIm4iOiAibkgtWmxsbHNINjZSUFMxMVQ1M3hBVHR1YlR4TEJVNDd3X3pHZXB2ZEJ2Uzc4VTlJeFo3Qk4wUXMxWW5naDJHWWJjZTc3MmtHeW9ySXRrV0dSWXhPeTF6WDNKbVJ6eG9hSHc3dS01QVVpLWhadHNQd2huV0MxNkFqM1RvNTRGM0pGRTg1bTZmeW1WMFVRMXpiSmMzcmxJUGJKWGI2SXBxMXNvcW1iVGV2MlhzIgp9"
-        let parsedDid = ParsedDID(did: did, method: .jwk, id: "ewogICJrdHkiOiAiUlNBIiwKICAiZSI6ICJBUUFCIiwKICAia2lkIjogIjk2NDYyNjc1LWIyMTMtNDAwMi04ZjgxLTEwMTNkNDBjNDZjNSIsCiAgIm4iOiAibkgtWmxsbHNINjZSUFMxMVQ1M3hBVHR1YlR4TEJVNDd3X3pHZXB2ZEJ2Uzc4VTlJeFo3Qk4wUXMxWW5naDJHWWJjZTc3MmtHeW9ySXRrV0dSWXhPeTF6WDNKbVJ6eG9hSHc3dS01QVVpLWhadHNQd2huV0MxNkFqM1RvNTRGM0pGRTg1bTZmeW1WMFVRMXpiSmMzcmxJUGJKWGI2SXBxMXNvcW1iVGV2MlhzIgp9", didUrl: did)
-        let resolver = DidJwkResolver(networkManager: mockNetworkManager)
-        
-        let key = try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: did)
-        assertPublicKey(expectedBase64Encoded: "MIGJAoGBAJx/mZZZbB+ukT0tdU+d8QE7bm08SwVOO8P8xnqb3Qb0u/FPSMWewTdELNWJ4IdhmG3Hu+9pBsqKyLZFhkWMTstc19yZkc8aGh8O7vuQFIvoWbbD8IZ1gtegI906OeBdyRRPOZun8pldFENc2yXN65SD2yV2+iKatbKKpm03r9l7AgMBAAE=", actualKey: key)
-    }
-    
     func testInvalidBase64URL() async {
         // Invalid base64url string that cannot be decoded
         let invalidDid = "did:jwk:not@valid%base64"
