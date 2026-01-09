@@ -497,7 +497,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let response = handler.constructAuthorizationErrorResponse(
             authorizationRequest: authorizationRequest,
-            exception: error
+            exception: error,
+            walletNonce: "wallet-nonce"
         )
 
         XCTAssertEqual(response["error"] as? String, "invalid_request")
@@ -570,7 +571,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let response = handler.constructAuthorizationErrorResponse(
             authorizationRequest: authorizationRequest,
-            exception: error
+            exception: error,
+            walletNonce: "wallet-nonce"
         )
 
         XCTAssertEqual(response["error"] as? String, "invalid_request")
@@ -586,7 +588,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let response = handler.constructAuthorizationErrorResponse(
             authorizationRequest: authorizationRequest,
-            exception: error
+            exception: error,
+            walletNonce: "wallet-nonce"
         )
 
         XCTAssertEqual(response["error"] as? String, "invalid_request")

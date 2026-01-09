@@ -18,7 +18,8 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
 
     override func constructAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
-        exception: Error
+        exception: Error,
+        walletNonce: String
     ) -> [String: Any] {
         return expectedErrorResponse
     }

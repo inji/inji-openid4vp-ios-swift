@@ -154,8 +154,11 @@ public class AuthorizationResponseHandler {
 
     func constructAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
-        exception: Error
+        exception: Error,
+        walletNonce: String
     ) -> [String: Any] {
+        self.walletNonce = walletNonce
+        
         let authorizationResponse: AuthorizationErrorResponse
 
         if let openIDException = exception as? OpenID4VPException {
@@ -173,7 +176,7 @@ public class AuthorizationResponseHandler {
             .getAuthorizationErrorResponse(
                 authorizationRequest: authorizationRequest,
                 authorizationResponse: authorizationResponse,
-                walletNonce: walletNonce
+                walletNonce: self.walletNonce
             )
     }
 

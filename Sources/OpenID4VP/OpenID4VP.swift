@@ -125,8 +125,9 @@ public class OpenID4VP {
 
     public func constructErrorInfo(exception: Error) -> [String: Any] {
         return authorizationResponseHandler.constructAuthorizationErrorResponse(
-            authorizationRequest: authorizationRequest,
-            exception: exception
+            authorizationRequest: self.authorizationRequest,
+            exception: exception,
+            walletNonce: self.walletNonce
         )
     }
 
