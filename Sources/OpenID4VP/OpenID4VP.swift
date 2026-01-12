@@ -19,6 +19,7 @@ public class OpenID4VP {
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
         nonceProvider = NonceProvider()
+        self.walletNonce = nonceProvider.generateNonce()
     }
 
     internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil, nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {

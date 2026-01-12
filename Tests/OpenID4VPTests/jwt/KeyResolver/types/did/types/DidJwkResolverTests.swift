@@ -225,7 +225,7 @@ final class DidJwkResolverTests: XCTestCase {
 
         await XCTAssertAsyncThrowsError(try await resolver.extractPublicKey(parsedDID:parsedDid, keyId: unsupportedCurveDid)) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "KeyType - oct is not supported. Supported: OKP, EC, RSA",
+                expectedMessage: "KeyType - oct is not supported. Supported: OKP, EC",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
