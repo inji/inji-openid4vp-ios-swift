@@ -596,6 +596,23 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertNotNil(response["error_description"])
         XCTAssertEqual(response["state"] as? String, state)
     }
+    
+    func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructtionOfErrorFails() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment")
+
+        let error = NSError(domain: "test", code: 500)
+
+        let response = handler.constructAuthorizationErrorResponse(
+            authorizationRequest: authorizationRequest,
+            exception: error,
+            walletNonce: "wallet-nonce"
+        )
+
+        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertNotNil(response["error_description"])
+        XCTAssertTrue((((response["error_description"] as? String)?.starts(with: "Failed to construct error response:")) != nil))
+    }
 
 
 }

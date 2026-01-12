@@ -201,14 +201,14 @@ func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? 
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-public func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil) -> AuthorizationRequest {
+func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil) -> AuthorizationRequest {
     let responseType = responseType ?? ResponseType.vp_token.rawValue
     return AuthorizationRequest(
         clientId: "client_id",
         clientIdScheme: nil,
         presentationDefinition: mockPresentationDefinitionObject,
         responseType: responseType,
-        responseMode: responseMode.rawValue,
+        responseMode: responseModeValue ?? responseMode.rawValue,
         nonce: "nonce",
         state: "state",
         redirectUri: "1234",

@@ -170,14 +170,22 @@ public class AuthorizationResponseHandler {
             )
             authorizationResponse = genericException.toAuthorizationErrorResponse(state: authorizationRequest?.state)
         }
-
-        return try! ResponseModeBasedHandlerFactory
-            .get(responseMode: authorizationRequest?.responseMode ?? ResponseMode.directPost.rawValue)
-            .getAuthorizationErrorResponse(
-                authorizationRequest: authorizationRequest,
-                authorizationResponse: authorizationResponse,
-                walletNonce: self.walletNonce
-            )
+ 
+        do {
+            return try ResponseModeBasedHandlerFactory
+                .get(responseMode: authorizationRequest?.responseMode ?? ResponseMode.directPost.rawValue)
+                .getAuthorizationErrorResponse(
+                    authorizationRequest: authorizationRequest,
+                    authorizationResponse: authorizationResponse,
+                    walletNonce: self.walletNonce
+                )
+        } catch {
+            OpenID4VPException.error(error, className: Self.className)
+            return [
+                "error": "invalid_request",
+                "error_description": "Failed to construct error response: \(error.localizedDescription)"
+            ]
+        }
     }
 
     private func createAuthorizationResponse(
