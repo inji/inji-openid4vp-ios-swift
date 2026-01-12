@@ -597,7 +597,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertEqual(response["state"] as? String, state)
     }
     
-    func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructtionOfErrorFails() {
+    func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructionOfErrorFails() {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment")
         
