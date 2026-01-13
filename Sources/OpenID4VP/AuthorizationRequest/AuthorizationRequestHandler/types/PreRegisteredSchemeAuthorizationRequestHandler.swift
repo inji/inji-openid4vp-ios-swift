@@ -52,7 +52,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
             let preRegisteredVerifier = try verifier(clientId: clientId)
             return preRegisteredVerifier.allowUnsignedRequest
         }
-        return false
+        return true
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {

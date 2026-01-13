@@ -61,10 +61,10 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     }
 
 
-    func testisUnsignedRequestSupported_shouldValidateClientFalse_returnsFalse() {
+    func testisUnsignedRequestSupported_shouldValidateClientFalse_returnsTrue() {
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        XCTAssertFalse(try preRegistered.isUnsignedRequestSupported(), "Should return false when shouldValidateClient is false")
+        XCTAssertTrue(try preRegistered.isUnsignedRequestSupported(), "Should return true when shouldValidateClient is false")
     }
 
     func testisUnsignedRequestSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {

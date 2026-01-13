@@ -5,9 +5,9 @@ struct ResponseModeBasedHandlerFactory {
     
     static func get(responseMode: String?) throws -> ResponseModeBasedHandler {
         switch responseMode {
-        case ResponseMode.directPost.rawValue:
+        case ResponseMode.directPost.rawValue, ResponseMode.iarPost.rawValue:
             return DirectPostResponseModeHandler()
-        case ResponseMode.directPostJwt.rawValue:
+        case ResponseMode.directPostJwt.rawValue, ResponseMode.iarPostJwt.rawValue:
             return DirectPostJwtResponseModeHandler()
         default:
             throw InvalidData(

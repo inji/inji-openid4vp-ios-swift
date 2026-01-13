@@ -89,4 +89,46 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
                 )
             }
         }
+    
+    func testShouldReturnGetAuthorizationSuccessResponseSuccesfully() throws {
+        let handler = DirectPostResponseModeHandler()
+
+        let authorizationResponse = AuthorizationResponse(
+            vpToken: mockVPTokens,
+            presentationSubmission: mockPresentationSubmission,
+            state: "sample-state"
+        )
+
+        let result = try handler.getAuthorizationResponse(
+            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
+            authorizationResponse: authorizationResponse,
+            walletNonce: "mock-nonce"
+        )
+
+        XCTAssertEqual(result["state"], "sample-state")
+        XCTAssertNotNil(result["vp_token"])
+        XCTAssertNotNil(result["presentation_submission"])
+    }
+
+    func testShouldReturnGetAuthorizationErrorResponseSuccesfully() throws {
+        let handler = DirectPostResponseModeHandler()
+
+        let errorResponse = AuthorizationErrorResponse(
+            error: "invalid_request",
+            errorDescription: "Something went wrong",
+            state: "error-state"
+        )
+
+        let result = handler.getAuthorizationErrorResponse(
+            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
+            authorizationResponse: errorResponse,
+            walletNonce: "mock-nonce"
+        )
+
+        XCTAssertEqual(result["error"], "invalid_request")
+        XCTAssertEqual(result["error_description"], "Something went wrong")
+        XCTAssertEqual(result["state"], "error-state")
+    }
+
+
 }

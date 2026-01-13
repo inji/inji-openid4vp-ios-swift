@@ -45,6 +45,51 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             )
         }
     }
+    
+    func getAuthorizationResponse(
+        authorizationRequest: AuthorizationRequest,
+        authorizationResponse: AuthorizationResponse,
+        walletNonce: String
+    ) throws -> [String: String] {
+        let responseParams = try authorizationResponse.toJsonEncodedMap()
+        return try encryptResponse(
+            authorizationRequest: authorizationRequest,
+            responseParams: responseParams,
+            walletNonce: walletNonce
+        )
+    }
+    
+    func getAuthorizationErrorResponse(
+        authorizationRequest: AuthorizationRequest?,
+        authorizationResponse: AuthorizationErrorResponse,
+        walletNonce: String
+    ) throws -> [String: String] {
+        return authorizationResponse.toJsonEncodedMap()
+    }
+
+    private func encryptResponse(
+        authorizationRequest: AuthorizationRequest,
+        responseParams: [String: String],
+        walletNonce: String
+    ) throws -> [String: String] {
+        let clientMetadata = authorizationRequest.clientMetadata!
+
+        let verifierPublicKey = try getJwk(
+            clientMetadata.jwks!,
+            clientMetadata.authorizationEncryptedResponseAlg!
+        )
+
+        let jweHandler = JWEHandler(
+            contentEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseEnc!,
+            keyEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseAlg!,
+            publicKey: verifierPublicKey,
+            producerInfo: walletNonce,
+            recipientInfo: authorizationRequest.nonce
+        )
+
+        let encryptedBody = try jweHandler.generateEncryptedResponse(payload: responseParams)
+        return ["response": encryptedBody]
+    }
 
     private func validateWithWalletMetadata(clientAlg: String,
                                             clientEnc: String,
