@@ -65,7 +65,7 @@ public class OpenID4VP {
     }
 
     public func authenticateVerifier(
-        authRequest: [String: Any],
+        authorizationRequest: [String: Any],
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
@@ -76,7 +76,7 @@ public class OpenID4VP {
             authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
 
             let authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
-                authRequest: authRequest,
+                authRequest: authorizationRequest,
                 trustedVerifiers: trustedVerifiers,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,

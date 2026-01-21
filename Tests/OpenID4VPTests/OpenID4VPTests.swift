@@ -42,11 +42,11 @@ class OpenID4VPTests: XCTestCase {
 
     func testWalletNonceIsDifferentForEveryAuthenticateVerifierCall() async {
         let openID4VP = OpenID4VP(traceabilityId: "trace-id")
-        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifiers: preRegisteredVerifiers, shouldValidateClient: true)
         let firstMirror = Mirror(reflecting: openID4VP as Any)
         let firstNonce = firstMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
 
-        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifierJSON: preRegisteredVerifiers, shouldValidateClient: true)
+        _ = try! await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithRedirectUri, trustedVerifiers: preRegisteredVerifiers, shouldValidateClient: true)
         let secondMirror = Mirror(reflecting: openID4VP as Any)
         let secondNonce = secondMirror.children.first(where: { $0.label == "walletNonce" })?.value as? String
 
@@ -552,7 +552,7 @@ class OpenID4VPTests: XCTestCase {
 
         do {
             try await openID4VP.authenticateVerifier(
-                authRequest: authRequest,
+                authorizationRequest: authRequest,
                 trustedVerifiers: trustedVerifiers,
                 shouldValidateClient: true
             )
