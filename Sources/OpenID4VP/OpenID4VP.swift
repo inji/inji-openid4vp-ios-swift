@@ -38,7 +38,7 @@ public class OpenID4VP {
 
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
-        trustedVerifierJSON: [Verifier],
+        trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
         // Create a new wallet nonce for each request
@@ -50,7 +50,7 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifierJSON,
+                trustedVerifierJSON: trustedVerifiers,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
@@ -192,6 +192,36 @@ public class OpenID4VP {
             throw exception
         }
     }
+    
+    @available(*, deprecated, message: "Use authenticateVerifier with trustedVerifiers parameter instead. Reason: Parameter trustedVerifierJSON has been renamed to trustedVerifiers")
+    public func authenticateVerifier(
+        urlEncodedAuthorizationRequest: String,
+        trustedVerifierJSON: [Verifier],
+        shouldValidateClient: Bool = true
+    ) async throws -> AuthorizationRequest {
+        // Create a new wallet nonce for each request
+        walletNonce = nonceProvider.generateNonce()
+        authorizationRequest = nil
+        responseUri = nil
+        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
+
+        do {
+            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
+                trustedVerifierJSON: trustedVerifierJSON,
+                walletMetadata: walletMetadata,
+                setResponseUri: setResponseUri,
+                shouldValidateClient: shouldValidateClient,
+                walletNonce: walletNonce,
+                networkManager: networkManager
+            )
+            return authorizationRequest
+        } catch let exception {
+            await safeSendError(error: exception)
+            throw exception
+        }
+    }
+
 
     @available(*, deprecated, message: "Use constructUnsignedVPToken with [String: [FormatType: [Any]]] instead")
     public func constructVerifiablePresentationToken(
