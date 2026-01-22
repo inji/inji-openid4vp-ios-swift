@@ -512,7 +512,7 @@ let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
 
 let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
 
-let vpResponse : Map[String:Any] = try openID4VP.constructVPResponse(vpTokenSigningResults : vpTokenSigningResults)
+let vpResponse : [String:Any] = try openID4VP.constructVPResponse(vpTokenSigningResults : vpTokenSigningResults)
 ```
 
 ### sendVPResponseToVerifier
