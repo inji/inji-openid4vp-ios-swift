@@ -75,7 +75,7 @@ public class OpenID4VP {
             responseUri = nil
             authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
 
-            let authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+            let validatedAuthorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authorizationRequest,
                 trustedVerifiers: trustedVerifiers,
                 walletMetadata: walletMetadata,
@@ -85,8 +85,8 @@ public class OpenID4VP {
                 networkManager: networkManager
             )
 
-            self.authorizationRequest = authorizationRequest
-            return authorizationRequest
+            self.authorizationRequest = validatedAuthorizationRequest
+            return validatedAuthorizationRequest
         } catch let error as OpenID4VPException {
             await safeSendError(error: error)
             throw error
