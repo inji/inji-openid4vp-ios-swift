@@ -136,7 +136,7 @@ public class OpenID4VP {
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) async throws -> VerifierResponse {
         do {
-            return try await authorizationResponseHandler.shareVP(
+            return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults,
                 responseUri: responseUri!

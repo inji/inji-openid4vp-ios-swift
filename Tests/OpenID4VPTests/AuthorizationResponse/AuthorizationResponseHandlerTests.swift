@@ -80,7 +80,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
     
-    func testShareVPHasTheAuthorizationResponseAsExpected() async throws {
+    func testConstructAndSendAuthorizationResponseToVerifierHasTheAuthorizationResponseAsExpected() async throws {
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC()), AnyCodable(ldpVC(credentialType: "UniversityCredential"))]],
             "input_descriptor2": [.ldp_vc: [AnyCodable(ldpVC())]],
@@ -106,7 +106,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         
-        let result = try await handler.shareVP(
+        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
             responseUri: responseUri
@@ -119,7 +119,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertEqual(recordedRequest.requestBody?.keys.count, 3)
     }
     
-    func testShareVPSendingAuthorizationResponseWithMultipleVPFormatsSuccessfully() async throws {
+    func testConstructAndSendAuthorizationResponseToVerifierSendingAuthorizationResponseWithMultipleVPFormatsSuccessfully() async throws {
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
             "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
@@ -144,7 +144,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
         
-        let result = try await handler.shareVP(
+        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: mockAuthorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
             responseUri: responseUri
@@ -156,12 +156,12 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertNotNil(recordedRequest.requestBody?["response"])
     }
     
-    func testShareVPThrowErrorWhenResponseTypeIsNotSupportedByLibrary() async {
+    func testConstructAndSendAuthorizationResponseToVerifierThrowErrorWhenResponseTypeIsNotSupportedByLibrary() async {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment")
         
         do {
-            _ = try await handler.shareVP(
+            _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: [:],
                 responseUri: "https://client.example.org/cb"
@@ -175,7 +175,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
     
-    func testShareVPThrowErrorWhenRespectiveCredentialFormatIsNotAvailableInUnsignedVPTokens() async {
+    func testConstructAndSendAuthorizationResponseToVerifierThrowErrorWhenRespectiveCredentialFormatIsNotAvailableInUnsignedVPTokens() async {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
         let authorizationRequest = getMockAuthorizationRequest()
         _ = try? await handler.constructUnsignedVPToken(
@@ -188,7 +188,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
         
         do {
-            _ = try await handler.shareVP(
+            _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: [FormatType.ldp_vc: LdpVPTokenSigningResult(jws: "", proofValue: "", signatureAlgorithm: "")],
                 responseUri: "https://client.example.org/cb"
@@ -202,7 +202,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
     
-    func testShareVPToSharePresentationSubmissionOfLdpVCInExpectedFormat() async throws {
+    func testConstructAndSendAuthorizationResponseToVerifierToSharePresentationSubmissionOfLdpVCInExpectedFormat() async throws {
         // Arrange
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
@@ -282,7 +282,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "sign", algorithm: "ES256")]),
         ]
         
-        _ = try await handler.shareVP(
+        _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
             vpTokenSigningResults: mockVPTokenSigningResults,
             responseUri: responseUri
@@ -360,7 +360,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
         
         let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys.first!
-        let result = try await handler.shareVP(authorizationRequest: authorizationRequest, vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])], responseUri: responseUri)
+        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(authorizationRequest: authorizationRequest, vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])], responseUri: responseUri)
         
         XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
@@ -431,7 +431,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"]),
         ]
         
-        _ = try await handler.shareVP(
+        _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
             responseUri: responseUri
@@ -475,7 +475,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         do {
-            _ = try await handler.shareVP(
+            _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults,
                 responseUri: "https://client.example.org/cb"

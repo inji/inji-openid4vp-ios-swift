@@ -116,7 +116,7 @@ public class AuthorizationResponseHandler {
         }
     }
 
-    func shareVP(
+    func constructAndSendAuthorizationResponseToVerifier(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         responseUri: String
