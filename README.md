@@ -281,24 +281,41 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
 
 
 ```swift
-    let authorizationRequest : AuthorizationRequest = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifiers: [Verifier], shouldValidateClient: Bool)
+    let authorizationRequest : AuthorizationRequest = try openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifiers: [Verifier], shouldValidateClient: Bool)
+```
+
+``` swift
+//NOTE: New API contract
+let authorizationRequest: AuthorizationRequest = try openID4VP.authenticateVerifier(
+    urlEncodedAuthorizationRequest: String,
+    trustedVerifiers: [Verifier],
+    shouldValidateClient: false
+)
+
+//NOTE: Old API contract (with walletMetadata parameter) for backward compatibility
+let authorizationRequest: AuthorizationRequest = try openID4VP.authenticateVerifier(
+    urlEncodedAuthorizationRequest: String,
+    trustedVerifiers: [Verifier],
+    shouldValidateClient: false,
+    walletMetadata: WalletMetadata? = nil
+)
 ```
 
 ##### 2. Validates the Authorization request received as Map of parameters
 
 ```swift
-    let authorizationRequest : AuthorizationRequest = try authenticateVerifier(authorizationRequest: [String: Any], trustedVerifiers: [Verifier], shouldValidateClient: Bool)
+    let authorizationRequest : AuthorizationRequest = try openID4VP.authenticateVerifier(authorizationRequest: [String: Any], trustedVerifiers: [Verifier], shouldValidateClient: Bool)
 ```
 
 #### Parameters
 
-| Name                           | Type            | Required | Default Value | Description                                                                      |
-|--------------------------------|-----------------|:---------|:--------------|----------------------------------------------------------------------------------|
-| urlEncodedAuthorizationRequest | String          | Yes      | N/A           | URL Encoded authorization request.                                               |
-| authorizationRequest           | [String : Any]  | Yes      | N/A           | authorization request                                                            |
-| trustedVerifiers               | [Verifier]      | Yes      | N/A           | Array of verifiers to verify the client id of the verifier.                      |                               |                 |          |               |                                                                                  |
-| walletMetadata                 | WalletMetadata? | Yes      | N/A           | Optional WalletMetadata to be shared with Verifier                               |
-| shouldValidateClient           | Bool            | No       | true          | Optional Boolean to toggle client validation for pre-registered client id scheme |
+| Name                           | Type            | Required | Default Value | Description                                                                                                                                                                                                                                                                             |
+|--------------------------------|-----------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| urlEncodedAuthorizationRequest | String          | Yes      | N/A           | URL encoded query parameter string containing the Verifier's authorization request                                                                                                                                                                                                      |
+| authorizationRequest           | [String : Any]  | Yes      | N/A           | authorization request                                                                                                                                                                                                                                                                   |
+| trustedVerifiers               | [Verifier]      | Yes      | N/A           | A list of trusted Verifier objects each containing a clientId, responseUri, jwksUri and allowUnsignedRequest which is used to verify if the Authorization Request if from known Verifier (refer [here](#verifier-parameters) for more details)                                          |
+| walletMetadata (deprecated*)   | WalletMetadata? | No       | N/A           | Nullable WalletMetadata to be shared with Verifier (Note: Available in Old deprecated API contract, walletMetadata is now passed as a constructor parameter of OpenID4VP class)<br/>Note: Applicable only for authenticateVerifier method with urlEncodedAuthorizationRequest parameter |
+| shouldValidateClient           | Bool            | No       | true          | Boolean to toggle client validation for pre-registered client id scheme                                                                                                                                                                                                                 |
 
 > Only one of `urlEncodedAuthorizationRequest` or `authorizationRequest` is accepted per call, depending on the overload.
 
@@ -332,7 +349,6 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                 trustedVerifierJSON: trustedVerifiers,
-                walletMetadata: walletMetadata,
                 shouldValidateClient: true
             )
             
@@ -351,7 +367,6 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
                 authorizationRequest: authorizationRequestMap,
                 trustedVerifiers: trustedVerifiers,
-                walletMetadata: walletMetadata,
                 shouldValidateClient: true
             )
 ```
