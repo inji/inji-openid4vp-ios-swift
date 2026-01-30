@@ -19,7 +19,7 @@ public class OpenID4VP {
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
         nonceProvider = NonceProvider()
-        self.walletNonce = nonceProvider.generateNonce()
+        walletNonce = nonceProvider.generateNonce()
     }
 
     internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil, nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
@@ -112,23 +112,53 @@ public class OpenID4VP {
             throw error
         }
     }
-    
+
+    public func constructUnsignedVPTokenV2(
+        verifiableCredentials: [String: [FormatType: [AnyCodable]]],
+        holderId: String? = nil,
+        signatureSuite: String? = nil
+    ) async throws -> [UnsignedVPTokenV2] {
+        do {
+            return try await authorizationResponseHandler.constructUnsignedVPTokenV2(
+                credentialsMap: verifiableCredentials,
+                authorizationRequest: authorizationRequest,
+                responseUri: responseUri!,
+                holderId: holderId,
+                signatureSuite: signatureSuite,
+                walletNonce: walletNonce
+            )
+        } catch {
+            await safeSendError(error: error)
+            throw error
+        }
+    }
+
     public func constructVPResponse(vpTokenSigningResults: [FormatType: VPTokenSigningResult]) -> [String: Any] {
         do {
             return try authorizationResponseHandler.constructAuthorizationResponse(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults
             )
-        } catch let exception{
+        } catch let exception {
+            return constructErrorInfo(exception: exception)
+        }
+    }
+
+    public func constructVPResponseV2(vpTokenSigningResults: [VPTokenSigningResultV2]) -> [String: Any] {
+        do {
+            return try authorizationResponseHandler.constructVPResponseV2(
+                signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
+            )
+        } catch let exception {
             return constructErrorInfo(exception: exception)
         }
     }
 
     public func constructErrorInfo(exception: Error) -> [String: Any] {
         return authorizationResponseHandler.constructAuthorizationErrorResponse(
-            authorizationRequest: self.authorizationRequest,
+            authorizationRequest: authorizationRequest,
             exception: exception,
-            walletNonce: self.walletNonce
+            walletNonce: walletNonce
         )
     }
 
@@ -192,7 +222,7 @@ public class OpenID4VP {
             throw exception
         }
     }
-    
+
     @available(*, deprecated, message: "Use authenticateVerifier with trustedVerifiers parameter instead. Reason: Parameter trustedVerifierJSON has been renamed to trustedVerifiers")
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
@@ -221,7 +251,6 @@ public class OpenID4VP {
             throw exception
         }
     }
-
 
     @available(*, deprecated, message: "Use constructUnsignedVPToken with [String: [FormatType: [Any]]] instead")
     public func constructVerifiablePresentationToken(
@@ -262,4 +291,3 @@ public class OpenID4VP {
         await safeSendError(error: error)
     }
 }
-
