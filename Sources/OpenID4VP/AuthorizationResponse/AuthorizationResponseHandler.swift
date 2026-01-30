@@ -73,6 +73,49 @@ public class AuthorizationResponseHandler {
 
         return unsignedVPTokensExtracted
     }
+    
+    func constructUnsignedVPTokenV2(
+        credentialsMap: [String: [FormatType: [AnyCodable]]],
+        authorizationRequest: AuthorizationRequest,
+        responseUri: String,
+        holderId: String?,
+        signatureSuite: String?,
+        walletNonce: String
+    ) async throws -> [UnsignedVPTokenV2] {
+
+        _ = try await constructUnsignedVPToken(
+            credentialsMap: credentialsMap,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+
+        return try await flattenUnsignedTokensV2(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            formatMappings: formatToCredentialInputDescriptorMapping,
+            signatureSuite: signatureSuite
+        )
+    }
+
+    func constructVPResponseV2(
+        signingResults: [VPTokenSigningResultV2],
+        authorizationRequest: AuthorizationRequest
+    ) throws -> [String: String] {
+
+        let reconstructed = try reconstructSigningResultsV2(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            formatMappings: formatToCredentialInputDescriptorMapping,
+            signingResults: signingResults
+        )
+
+        return try constructAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: reconstructed
+        )
+    }
+
 
     func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> VerifierResponse {
         guard let responseUri = responseUri, !responseUri.isEmpty else {

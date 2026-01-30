@@ -151,3 +151,360 @@ internal func validate(_ value: String, fieldPath: String,className: String) thr
         throw InvalidInput(fieldPath: [fieldPath], className: className)
     }
 }
+
+func flattenUnsignedTokensV2(
+        unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
+        formatMappings: [FormatType: [CredentialInputDescriptorMapping]],
+        signatureSuite: String?
+    ) async throws -> [UnsignedVPTokenV2] {
+
+        var result: [UnsignedVPTokenV2] = []
+
+        for (format, pair) in unsignedVPTokenResults {
+            guard let mappings = formatMappings[format] else {
+                throw InvalidData(message: "Missing mapping for \(format)", className: "OpenID4VPUtils")
+            }
+
+            switch format {
+            case .ldp_vc:
+                result += try flattenLdpV2(pair.1, mappings, signatureSuite)
+
+            case .mso_mdoc:
+                result += try flattenMdocV2(pair.1, mappings)
+
+            case .dc_sd_jwt, .vc_sd_jwt:
+                result += try await flattenSdJwtV2(pair.1, mappings, format)
+            }
+        }
+
+        return result
+    }
+
+func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, alg: String) {
+
+    
+    guard let data = Data(base64Encoded: mdocCredential) else {
+        throw InvalidData(message: "Invalid base64 mdoc credential", className: "OpenID4VPUtils")
+    }
+
+    var decoded = try CBORDecoder(input: [UInt8](data)).decodeItem()
+
+    
+    guard case let CBOR.map(rootMap)? = decoded,
+          let issuerSigned = rootMap[CBOR.utf8String("issuerSigned")],
+          case let CBOR.map(issuerSignedMap) = issuerSigned else {
+        throw InvalidData(message: "issuerSigned missing", className: "OpenID4VPUtils")
+    }
+
+    
+    guard let issuerAuth = issuerSignedMap[CBOR.utf8String("issuerAuth")],
+          case let CBOR.array(issuerAuthArray) = issuerAuth,
+          issuerAuthArray.count > 2,
+          case let CBOR.byteString(payloadBytes) = issuerAuthArray[2] else {
+        throw InvalidData(message: "issuerAuth payload missing", className: "OpenID4VPUtils")
+    }
+
+    
+    decoded = try CBORDecoder(input: payloadBytes).decodeItem()
+
+    
+    if case let CBOR.tagged(tag, inner)? = decoded, tag.rawValue == 24 {
+        guard case let CBOR.byteString(innerBytes) = inner else {
+            throw InvalidData(message: "Tag 24 inner not bstr", className: "OpenID4VPUtils")
+        }
+        decoded = try CBORDecoder(input: innerBytes).decodeItem()
+    }
+
+    
+    guard case let CBOR.map(msoMap)? = decoded,
+          let deviceKeyInfo = msoMap[CBOR.utf8String("deviceKeyInfo")],
+          case let CBOR.map(deviceKeyInfoMap) = deviceKeyInfo,
+          let deviceKey = deviceKeyInfoMap[CBOR.utf8String("deviceKey")],
+          case let CBOR.map(deviceKeyMap) = deviceKey else {
+        throw InvalidData(message: "deviceKey missing", className: "OpenID4VPUtils")
+    }
+
+    
+    let keyBytes = Data(cborEncode(deviceKey))
+    let keyRef = keyBytes.toBase64UrlEncoded()
+
+    
+    if let algItem = deviceKeyMap[CBOR.unsignedInt(3)] ?? deviceKeyMap[CBOR.negativeInt(2)] {
+        let coseAlg = try readCoseInt(algItem)
+        switch coseAlg {
+        case -7: return (keyRef, "ES256")
+        case -8: return (keyRef, "EdDSA")
+        default:
+            throw InvalidData(message: "Unsupported COSE alg \(coseAlg)", className: "OpenID4VPUtils")
+        }
+    }
+
+    
+    guard let crvItem = deviceKeyMap[CBOR.negativeInt(1)] else { 
+        throw InvalidData(message: "crv missing for alg inference", className: "OpenID4VPUtils")
+    }
+
+    let crv = try readCoseInt(crvItem)
+    switch crv {
+    case 1: return (keyRef, "ES256")
+    case 6: return (keyRef, "EdDSA")
+    default:
+        throw InvalidData(message: "Unsupported crv \(crv)", className: "OpenID4VPUtils")
+    }
+}
+
+func readCoseInt(_ cbor: CBOR) throws -> Int {
+    switch cbor {
+    case .unsignedInt(let v): return Int(v)
+    case .negativeInt(let v): return -Int(v)
+    default:
+        throw InvalidData(message: "Invalid COSE integer type", className: "OpenID4VPUtils")
+    }
+}
+
+
+
+    // MARK: - RECONSTRUCT SIGNING RESULTS V2
+
+     func reconstructSigningResultsV2(
+        unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
+        formatMappings: [FormatType: [CredentialInputDescriptorMapping]],
+        signingResults: [VPTokenSigningResultV2]
+    ) throws -> [FormatType: VPTokenSigningResult] {
+
+        var iterator = signingResults.makeIterator()
+        var reconstructed: [FormatType: VPTokenSigningResult] = [:]
+
+        for (format, pair) in unsignedVPTokenResults {
+            let unsignedToken = pair.1
+            guard let mappings = formatMappings[format] else {
+                throw InvalidData(message: "Missing mapping for \(format)", className: "OpenID4VPUtils")
+            }
+
+            switch format {
+            case .ldp_vc:
+                reconstructed[format] = try reconstructLdpV2(&iterator)
+
+            case .mso_mdoc:
+                reconstructed[format] = try reconstructMdocV2(unsignedToken, mappings, &iterator)
+
+            case .dc_sd_jwt, .vc_sd_jwt:
+                reconstructed[format] = try reconstructSdJwtV2(unsignedToken, &iterator)
+            }
+        }
+
+        if iterator.next() != nil {
+            throw InvalidData(message: "Extra signing results provided", className: "OpenID4VPUtils")
+        }
+
+        return reconstructed
+    }
+
+    // MARK: - LDP
+
+private func flattenLdpV2(
+        _ unsignedToken: UnsignedVPToken,
+        _ mappings: [CredentialInputDescriptorMapping],
+        _ signatureSuite: String?
+    ) throws -> [UnsignedVPTokenV2] {
+
+        guard let ldp = unsignedToken as? UnsignedLdpVPToken else { fatalError() }
+
+        guard let credential = mappings.first?.credential.value as? [String: Any],
+              let subject = credential["credentialSubject"] as? [String: Any],
+              let holderKey = subject["id"] as? String else {
+            throw InvalidData(message: "Invalid LDP credential structure", className: "OpenID4VPUtils")
+        }
+
+        guard let suite = signatureSuite else {
+            throw InvalidData(message: "signatureSuite required for LDP", className: "OpenID4VPUtils")
+        }
+
+        return [
+            UnsignedVPTokenV2(
+                format: .ldp_vc,
+                holderKeyReference: holderKey,
+                signatureAlgorithm: suite,
+                dataToSign: ldp.dataToSign
+            )
+        ]
+    }
+
+    private  func reconstructLdpV2(
+        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>
+    ) throws -> VPTokenSigningResult {
+
+        guard let signed = iterator.next() else {
+            throw InvalidData(message: "Missing LDP signature", className: "OpenID4VPUtils")
+        }
+
+        return LdpVPTokenSigningResult(
+            proofValue: signed.signedData,
+            signatureAlgorithm: "Ed25519Signature2020"
+        )
+    }
+
+    // MARK: - MDOC
+
+    private  func flattenMdocV2(
+        _ unsignedToken: UnsignedVPToken,
+        _ mappings: [CredentialInputDescriptorMapping]
+    ) throws -> [UnsignedVPTokenV2] {
+
+        guard let mdoc = unsignedToken as? UnsignedMdocVPToken else { fatalError() }
+
+        return try mdoc.docTypeToDeviceAuthenticationBytes.map { (docType, bytes) in
+            guard let mapping = mappings.first(where: { $0.identifier == docType }) else {
+                throw InvalidData(message: "No mapping for docType \(docType)", className: "OpenID4VPUtils")
+            }
+
+            let (keyRef, alg) = try resolveMdocKeyAndAlg(mapping.credential.value as! String)
+
+            return UnsignedVPTokenV2(
+                format: .mso_mdoc,
+                holderKeyReference: keyRef,
+                signatureAlgorithm: alg,
+                dataToSign: bytes
+            )
+        }
+    }
+
+
+
+
+
+
+    private  func reconstructMdocV2(
+        _ unsignedToken: UnsignedVPToken,
+        _ mappings: [CredentialInputDescriptorMapping],
+        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>
+    ) throws -> VPTokenSigningResult {
+
+        guard let mdoc = unsignedToken as? UnsignedMdocVPToken else { fatalError() }
+
+        var map: [String: DeviceAuthentication] = [:]
+
+        for (docType, _) in mdoc.docTypeToDeviceAuthenticationBytes {
+            guard let signed = iterator.next() else {
+                throw InvalidData(message: "Missing mdoc signature for \(docType)", className: "OpenID4VPUtils")
+            }
+
+            let mapping = mappings.first(where: { $0.identifier == docType })!
+            let (_, alg) = try resolveMdocKeyAndAlg(mapping.credential.value as! String)
+
+            map[docType] = DeviceAuthentication(signature: signed.signedData, algorithm: alg)
+        }
+
+        return MdocVPTokenSigningResult(docTypeToDeviceAuthentication: map)
+    }
+
+    // MARK: - SD-JWT
+
+    private func flattenSdJwtV2(
+        _ unsignedToken: UnsignedVPToken,
+        _ mappings: [CredentialInputDescriptorMapping],
+        _ format: FormatType
+    ) async throws -> [UnsignedVPTokenV2] {
+
+        guard let sdjwt = unsignedToken as? UnsignedSdJwtVPToken else { fatalError() }
+
+        let uuidMap = Dictionary(uniqueKeysWithValues: mappings.compactMap { ($0.identifier, $0) })
+
+        var results: [UnsignedVPTokenV2] = []
+        results.reserveCapacity(sdjwt.uuidToUnsignedKBT.count)
+
+        for (uuid, kb) in sdjwt.uuidToUnsignedKBT {
+            guard let mapping = uuidMap[uuid] else {
+                throw InvalidData(message: "No SD-JWT mapping for uuid \(uuid)", className: "OpenID4VPUtils")
+            }
+
+            let (kid, alg) = try await resolveSdJwtKeyAndAlg(mapping.credential.value as! String)
+
+            results.append(
+                UnsignedVPTokenV2(
+                    format: format,
+                    holderKeyReference: kid,
+                    signatureAlgorithm: alg,
+                    dataToSign: kb
+                )
+            )
+        }
+
+        return results
+    }
+
+func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: String, alg: String) {
+
+    let parts = sdJwtCredential.split(separator: "~")
+    guard let sdJwt = parts.first else {
+        throw InvalidData(message: "Invalid SD-JWT credential format", className: "OpenID4VPUtils")
+    }
+
+    let jwsParts = sdJwt.split(separator: ".")
+    guard jwsParts.count >= 2 else {
+        throw InvalidData(message: "Invalid SD-JWT JWS format", className: "OpenID4VPUtils")
+    }
+
+    guard let payloadData = Data(base64UrlEncoded: String(jwsParts[1])) else {
+        throw InvalidData(message: "Invalid SD-JWT payload encoding", className: "OpenID4VPUtils")
+    }
+
+    guard let json = try JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
+          let cnf = json["cnf"] as? [String: Any],
+          let kid = cnf["kid"] as? String else {
+        throw InvalidData(message: "cnf.kid missing in SD-JWT", className: "OpenID4VPUtils")
+    }
+
+    // 🔐 Resolve DID public key
+    let resolver = DidPublicKeyResolver()
+    let publicKey = try await resolver.resolve(
+        uri: kid.trimmingCharacters(in: CharacterSet(charactersIn: "=")),
+        keyId: nil
+    )
+
+    // 🎯 Algorithm mapping — THIS is the correct parity with Kotlin
+    let alg: String
+
+    switch publicKey {
+    case .ed25519:
+        alg = "EdDSA"
+
+    case .secKey:
+        alg = "EdDSA"
+
+    default:
+        throw InvalidData(
+            message: "Unsupported key type \(publicKey)",
+            className: "OpenID4VPUtils"
+        )
+    }
+
+    return (kid, alg)
+}
+
+
+
+
+    private  func reconstructSdJwtV2(
+        _ unsignedToken: UnsignedVPToken,
+        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>
+    ) throws -> VPTokenSigningResult {
+
+        guard let sd = unsignedToken as? UnsignedSdJwtVPToken else { fatalError() }
+
+        var map: [String: String] = [:]
+
+        for (uuid, _) in sd.uuidToUnsignedKBT {
+            guard let signed = iterator.next() else {
+                throw InvalidData(message: "Missing SD-JWT signature for \(uuid)", className: "OpenID4VPUtils")
+            }
+            map[uuid] = signed.signedData
+        }
+
+        return SdJwtVpTokenSigningResult(uuidToKbJWTSignature: map)
+    }
+
+
+
+
+
