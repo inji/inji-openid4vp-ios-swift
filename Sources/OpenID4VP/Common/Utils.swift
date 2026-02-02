@@ -269,7 +269,8 @@ func readCoseInt(_ cbor: CBOR) throws -> Int {
      func reconstructSigningResultsV2(
         unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
         formatMappings: [FormatType: [CredentialInputDescriptorMapping]],
-        signingResults: [VPTokenSigningResultV2]
+        signingResults: [VPTokenSigningResultV2],
+        signatureSuite: String
     ) throws -> [FormatType: VPTokenSigningResult] {
 
         var iterator = signingResults.makeIterator()
@@ -283,7 +284,7 @@ func readCoseInt(_ cbor: CBOR) throws -> Int {
 
             switch format {
             case .ldp_vc:
-                reconstructed[format] = try reconstructLdpV2(&iterator)
+                reconstructed[format] = try reconstructLdpV2(&iterator, signatureSuite: signatureSuite)
 
             case .mso_mdoc:
                 reconstructed[format] = try reconstructMdocV2(unsignedToken, mappings, &iterator)
@@ -331,16 +332,25 @@ private func flattenLdpV2(
     }
 
     private  func reconstructLdpV2(
-        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>
+        _ iterator: inout IndexingIterator<[VPTokenSigningResultV2]>,
+        signatureSuite: String
     ) throws -> VPTokenSigningResult {
 
         guard let signed = iterator.next() else {
             throw InvalidData(message: "Missing LDP signature", className: "OpenID4VPUtils")
         }
 
+        if(signatureSuite == SignatureAlgorithm.jsonWebSignature2020.rawValue || signatureSuite == SignatureAlgorithm.rsaSignature2018.rawValue ||
+           signatureSuite == SignatureAlgorithm.ed25519Signature2018.rawValue){
+            return LdpVPTokenSigningResult(
+                jws: signed.signedData,
+                proofValue: nil,
+                signatureAlgorithm: signatureSuite
+            )
+        }
         return LdpVPTokenSigningResult(
             proofValue: signed.signedData,
-            signatureAlgorithm: "Ed25519Signature2020"
+            signatureAlgorithm: signatureSuite
         )
     }
 

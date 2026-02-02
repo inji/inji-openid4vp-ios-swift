@@ -4,6 +4,7 @@ import Foundation
 public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
     private var walletNonce: String = ""
+    private var signatureSuite: String = SignatureAlgorithm.ed25519Signature2020.rawValue
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
     private var unsignedVPTokenResults: [FormatType: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken)] = [:]
 
@@ -38,6 +39,7 @@ public class AuthorizationResponseHandler {
                 )
             }
         }
+        self.signatureSuite = signatureSuite ?? self.signatureSuite
 
         return try await createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
     }
@@ -107,7 +109,8 @@ public class AuthorizationResponseHandler {
         let reconstructed = try reconstructSigningResultsV2(
             unsignedVPTokenResults: unsignedVPTokenResults,
             formatMappings: formatToCredentialInputDescriptorMapping,
-            signingResults: signingResults
+            signingResults: signingResults,
+            signatureSuite: self.signatureSuite
         )
 
         return try constructAuthorizationResponse(
