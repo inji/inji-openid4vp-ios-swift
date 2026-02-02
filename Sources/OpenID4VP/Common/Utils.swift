@@ -155,6 +155,7 @@ internal func validate(_ value: String, fieldPath: String,className: String) thr
 func flattenUnsignedTokensV2(
         unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
         formatMappings: [FormatType: [CredentialInputDescriptorMapping]],
+        holderId: String?,
         signatureSuite: String?
     ) async throws -> [UnsignedVPTokenV2] {
 
@@ -167,7 +168,7 @@ func flattenUnsignedTokensV2(
 
             switch format {
             case .ldp_vc:
-                result += try flattenLdpV2(pair.1, mappings, signatureSuite)
+                result += try flattenLdpV2(pair.1, mappings, signatureSuite, holderId: holderId)
 
             case .mso_mdoc:
                 result += try flattenMdocV2(pair.1, mappings)
@@ -306,16 +307,16 @@ func readCoseInt(_ cbor: CBOR) throws -> Int {
 private func flattenLdpV2(
         _ unsignedToken: UnsignedVPToken,
         _ mappings: [CredentialInputDescriptorMapping],
-        _ signatureSuite: String?
+        _ signatureSuite: String?,
+        holderId: String?
     ) throws -> [UnsignedVPTokenV2] {
 
         guard let ldp = unsignedToken as? UnsignedLdpVPToken else { fatalError() }
 
-        guard let credential = mappings.first?.credential.value as? [String: Any],
-              let subject = credential["credentialSubject"] as? [String: Any],
-              let holderKey = subject["id"] as? String else {
-            throw InvalidData(message: "Invalid LDP credential structure", className: "OpenID4VPUtils")
-        }
+        let holdervalue = try holderId ??
+        (mappings.first?.credential.value as? [String: Any]).flatMap { ($0["credentialSubject"] as? [String: Any])?["id"] as? String } ??
+        { throw InvalidData(message: "Invalid LDP credential structure", className: "OpenID4VPUtils") }()
+
 
         guard let suite = signatureSuite else {
             throw InvalidData(message: "signatureSuite required for LDP", className: "OpenID4VPUtils")
@@ -324,7 +325,7 @@ private func flattenLdpV2(
         return [
             UnsignedVPTokenV2(
                 format: .ldp_vc,
-                holderKeyReference: holderKey,
+                holderKeyReference: holdervalue,
                 signatureAlgorithm: suite,
                 dataToSign: ldp.dataToSign
             )

@@ -97,6 +97,7 @@ public class AuthorizationResponseHandler {
         return try await flattenUnsignedTokensV2(
             unsignedVPTokenResults: unsignedVPTokenResults,
             formatMappings: formatToCredentialInputDescriptorMapping,
+            holderId: holderId,
             signatureSuite: signatureSuite
         )
     }
