@@ -257,7 +257,7 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
 func readCoseInt(_ cbor: CBOR) throws -> Int {
     switch cbor {
     case .unsignedInt(let v): return Int(v)
-    case .negativeInt(let v): return -Int(v)
+    case .negativeInt(let v): return -1 - Int(v)
     default:
         throw InvalidData(message: "Invalid COSE integer type", className: "OpenID4VPUtils")
     }
@@ -481,7 +481,7 @@ func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: S
         alg = "EdDSA"
 
     case .secKey:
-        alg = "EdDSA"
+        alg = "ES256"
 
     default:
         throw InvalidData(
