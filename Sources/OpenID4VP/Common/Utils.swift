@@ -184,8 +184,20 @@ func flattenUnsignedTokensV2(
 func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, alg: String) {
 
     
-    guard let data = Data(base64Encoded: mdocCredential) else {
-        throw InvalidData(message: "Invalid base64 mdoc credential", className: "OpenID4VPUtils")
+    var base64 = mdocCredential
+        .replacingOccurrences(of: "-", with: "+")
+        .replacingOccurrences(of: "_", with: "/")
+
+    let remainder = base64.count % 4
+    if remainder > 0 {
+        base64 += String(repeating: "=", count: 4 - remainder)
+    }
+
+    guard let data = Data(base64Encoded: base64) else {
+        throw InvalidData(
+            message: "Invalid base64url mdoc credential",
+            className: "OpenID4VPUtils"
+        )
     }
 
     var decoded = try CBORDecoder(input: [UInt8](data)).decodeItem()
@@ -230,7 +242,7 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
     let keyRef = keyBytes.toBase64UrlEncoded()
 
     
-    if let algItem = deviceKeyMap[CBOR.unsignedInt(3)] ?? deviceKeyMap[CBOR.negativeInt(2)] {
+    if let algItem = deviceKeyMap[CBOR.unsignedInt(3)]{
         let coseAlg = try readCoseInt(algItem)
         switch coseAlg {
         case -7: return (keyRef, "ES256")
@@ -241,7 +253,7 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
     }
 
     
-    guard let crvItem = deviceKeyMap[CBOR.negativeInt(1)] else { 
+    guard let crvItem = deviceKeyMap[CBOR.negativeInt(0)] else {
         throw InvalidData(message: "crv missing for alg inference", className: "OpenID4VPUtils")
     }
 
