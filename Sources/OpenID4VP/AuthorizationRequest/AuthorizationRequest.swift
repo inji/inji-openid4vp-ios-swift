@@ -46,7 +46,7 @@ public struct AuthorizationRequest: Encodable {
     }
 
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,
-                                                      trustedVerifierJSON: [Verifier],
+                                                      trustedVerifier: [Verifier],
                                                       walletMetadata: WalletMetadata?,
                                                       setResponseUri: @escaping (String) -> Void,
                                                       shouldValidateClient: Bool,
@@ -56,7 +56,7 @@ public struct AuthorizationRequest: Encodable {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
 
         return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters,
-                                                 trustedVerifiers: trustedVerifierJSON,
+                                                 trustedVerifiers: trustedVerifier,
                                                  walletMetadata: walletMetadata,
                                                  setResponseUri: setResponseUri,
                                                  shouldValidateClient: shouldValidateClient,

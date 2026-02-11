@@ -94,7 +94,7 @@ public class AuthorizationResponseHandler {
             walletNonce: walletNonce
         )
 
-        return try await flattenUnsignedTokensV2(
+        return try await flattenUnsignedVPTokens(
             unsignedVPTokenResults: unsignedVPTokenResults,
             formatMappings: formatToCredentialInputDescriptorMapping,
             holderId: holderId,
@@ -107,7 +107,7 @@ public class AuthorizationResponseHandler {
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
 
-        let reconstructed = try reconstructSigningResultsV2(
+        let reconstructed = try constructSigningResults(
             unsignedVPTokenResults: unsignedVPTokenResults,
             formatMappings: formatToCredentialInputDescriptorMapping,
             signingResults: signingResults,

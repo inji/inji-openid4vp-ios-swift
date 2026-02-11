@@ -50,7 +50,7 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifiers,
+                trustedVerifier: trustedVerifiers,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
@@ -209,7 +209,7 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifierJSON,
+                trustedVerifier: trustedVerifierJSON,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
@@ -238,7 +238,7 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifierJSON,
+                trustedVerifier: trustedVerifierJSON,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,

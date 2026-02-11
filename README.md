@@ -74,7 +74,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
    - Sample Authorization response structure:
    ```shell
     {
-      "response": <encryoted data of vp_token & presentation_submission>
+      "response": <encrypted data of vp_token & presentation_submission>
     }
     ```
 
@@ -348,7 +348,7 @@ let authorizationRequest: AuthorizationRequest = try openID4VP.authenticateVerif
         """
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifiers,
+                trustedVerifier: trustedVerifiers,
                 shouldValidateClient: true
             )
             
@@ -662,9 +662,9 @@ This method will also notify the Verifier about the error by sending it to the r
 // Example: The user declines to share the requested credentials. In this case, Verifier needs to be informed about the scenario.
 // So call the constructErrorInfo method with appropriate exception message to notify the Verifier.
 let errorInfo: [String: Any] = openID4VP.constructErrorInfo(
-        AccessDenied(
-            message = "User did not give consent to share the requested Credentials with the Verifier.",
-            className = this.className
+        exception: AccessDenied(
+            message: "User did not give consent to share the requested Credentials with the Verifier.",
+            className: "SomeClassName"
         )
 )
 ```
