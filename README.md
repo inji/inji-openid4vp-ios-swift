@@ -12,7 +12,9 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 - [APIs](#apis)
   - [authenticateVerifier](#authenticateverifier)
   - [constructUnsignedVPToken](#constructUnsignedVPToken)
+  - [constructVPResponse](#constructvpresponse)
   - [sendVPResponseToVerifier](#sendvpresponsetoverifier)
+  - [constructErrorInfo](#constructerrorinfo)
   - [sendErrorInfoToVerifier](#senderrorinfotoverifier)
 
 ## OpenID4VP specification draft versions supported
@@ -32,16 +34,16 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 | Authorization Response content encryption algorithms       | `A256GCM`                                                                                                                                                                                                                                                                                                                                         |
 | Authorization Response key encryption algorithms           | `ECDH-ES`                                                                                                                                                                                                                                                                                                                                         |
 | Credential formats                                         | `ldp_vc`, `mso_mdoc`, `dc+sd-jwt`, `vc+sd-jwt`                                                                                                                                                                                                                                                                                                    |
-| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses)                                                                                                                                                                                                                                                                            |
+| Authorization Response mode                                | `direct_post`, `direct_post.jwt` (with encrypted & unsigned responses) and `iar-post` (unencrypted response), `iar-post.jwt` (Encrypted and unsigned response)                                                                                                                                                                                    |
 | Authorization Response type                                | `vp_token`                                                                                                                                                                                                                                                                                                                                        |
 
 ### Client ID Schemes and Signed / Unsigned request support matrix
 
-| Client Id Scheme | Supports Unsigned request             | Supports Signed request | Notes                                                                                                                                                                                                                                    |
-|------------------|---------------------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `pre-registered` | depends ⚖️ on pre-registered Verifier | ✅                       | When `shouldValidateClient` is true, unsigned requests are allowed only if the pre-registered verifier's `allowUnsignedRequest` is true. Otherwise, unsigned requests are always allowed. For signed requests, the trusted verifier's `jwks_uri` is used for validation.                                                                                                  |
-| `redirect_uri`   | ✅                                     | ❌                       | Signed request is not supported, since this client ID scheme mandates unsigned Authorization Request as per the specification. [(reference)](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID3.html#section-5.10.4-2.1) |
-| `did`            | ❌                                     | ✅                       | Only signed Authorization Requests are allowed. Requests can be sent by value or by reference, but must always be signed.                                                                                                                |
+| Client Id Scheme | Supports Unsigned request             | Supports Signed request | Notes                                                                                                                                                                                                                                                                    |
+|------------------|---------------------------------------|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pre-registered` | depends ⚖️ on pre-registered Verifier | ✅                       | When `shouldValidateClient` is true, unsigned requests are allowed only if the pre-registered verifier's `allowUnsignedRequest` is true. Otherwise, unsigned requests are always allowed. For signed requests, the trusted verifier's `jwks_uri` is used for validation. |
+| `redirect_uri`   | ✅                                     | ❌                       | Signed request is not supported, since this client ID scheme mandates unsigned Authorization Request as per the specification. [(reference)](https://openid.net/specs/openid-4-verifiable-presentations-1_0-ID3.html#section-5.10.4-2.1)                                 |
+| `did`            | ❌                                     | ✅                       | Only signed Authorization Requests are allowed. Requests can be sent by value or by reference, but must always be signed.                                                                                                                                                |
 
 **Note:**
 - All `By Reference` requests are fetched using HTTP GET / POST method and expected to be _**signed**_ JWT.
@@ -57,6 +59,24 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
    - The response is encrypted using the public key provided in the client_metadata of the authorization request.
    - The created JWE's header contains the `apu` (producer info) as wallet generated nonce (with entropy 16 bytes) and `apv` (recipient info) as the verifier nonce i.e., the nonce received in the authorization request.
    > Note: If the Authorization request includes an `mso_mdoc` format VP, it can only use the `direct_post.jwt` response mode, as required by the ISO-18013-7 specification. Other supported response mode (`direct_post`) is not applicable.
+3. `iar-post` :
+   - Authorization Response is constructed in unencrypted format.
+   - Sample Authorization response structure:
+   ```shell
+    {
+      "vp_token": <verifiable-presentation-token>,
+      "presentation_submission": { ... }
+    }
+    ```
+4. `iar-post.jwt` :
+   - Authorization Response is constructed in encrypted format (and unsigned) using the public key provided in the client_metadata of the authorization request.
+   - The created JWE's header contains the apu (producer info) as wallet generated nonce (with entropy 16 bytes) and apv (recipient info) as the verifier nonce i.e., the nonce received in the authorization request.
+   - Sample Authorization response structure:
+   ```shell
+    {
+      "response": <encrypted data of vp_token & presentation_submission>
+    }
+    ```
 
 ## Specifications supported
 - The implementation follows OpenID for Verifiable Presentations - draft 21 and draft23 .[Specification-21](https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html) [Specification-23](https://openid.net/specs/openid-4-verifiable-presentations-1_0-23.html).
@@ -245,13 +265,124 @@ let walletMetadata = try WalletMetadata(presentationDefinitionURISupported: true
 ## APIs
 
 ### authenticateVerifier
- - Receives a list of trusted verifiers & Verifier's encoded Authorization request from consumer app(mobile wallet).
- - Takes an optional boolean to toggle the client validation.
- - Decodes and parse the request, extracts the clientId and verifies it against trusted verifier's list clientId.
- - If the data contains request_uri and request_uri_method as post, then the wallet metadata is shared in the request body while making an api call to request_uri for fetching authorization request.
- - The library also validates the incoming authorization request with the wallet metadata
- - Returns the validated Authorization request object
 
+ - Validates the Verifier's Authorization request received from the Wallet and returns the valid Authorization request object. 
+ - This method is overloaded to support different ways of Verifier's Authorization request data either as encoded string or as Map of parameters.
+ - This method does the following:
+   - Receives a list of trusted verifiers & Verifier's Authorization request from consumer (of the library, example - Wallet app).
+   - Takes an optional boolean to toggle the client validation.
+   - Decodes and parse the request, extracts the clientId and verifies it against trusted verifier's list clientId if clientId is identified to have `pre_registered` clientId scheme.
+   - If the data contains request_uri and request_uri_method as post, then the wallet metadata is shared in the request body while making an api call to request_uri for fetching authorization request.
+   - The library also validates the incoming authorization request with the wallet metadata passed during the instantiation of OpenID4VP class.
+
+#### Overloads
+
+##### 1. Validates the Authorization request received as URL Encoded string
+
+
+```swift
+    let authorizationRequest : AuthorizationRequest = try openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifiers: [Verifier], shouldValidateClient: Bool)
+```
+
+``` swift
+//NOTE: New API contract
+let authorizationRequest: AuthorizationRequest = try openID4VP.authenticateVerifier(
+    urlEncodedAuthorizationRequest: String,
+    trustedVerifiers: [Verifier],
+    shouldValidateClient: false
+)
+
+//NOTE: Old API contract (with walletMetadata parameter) for backward compatibility
+let authorizationRequest: AuthorizationRequest = try openID4VP.authenticateVerifier(
+    urlEncodedAuthorizationRequest: String,
+    trustedVerifiers: [Verifier],
+    shouldValidateClient: false,
+    walletMetadata: WalletMetadata? = nil
+)
+```
+
+##### 2. Validates the Authorization request received as Map of parameters
+
+```swift
+    let authorizationRequest : AuthorizationRequest = try openID4VP.authenticateVerifier(authorizationRequest: [String: Any], trustedVerifiers: [Verifier], shouldValidateClient: Bool)
+```
+
+#### Parameters
+
+| Name                           | Type            | Required | Default Value | Description                                                                                                                                                                                                                                                                             |
+|--------------------------------|-----------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| urlEncodedAuthorizationRequest | String          | Yes      | N/A           | URL encoded query parameter string containing the Verifier's authorization request                                                                                                                                                                                                      |
+| authorizationRequest           | [String : Any]  | Yes      | N/A           | authorization request                                                                                                                                                                                                                                                                   |
+| trustedVerifiers               | [Verifier]      | Yes      | N/A           | A list of trusted Verifier objects each containing a clientId, responseUri, jwksUri and allowUnsignedRequest which is used to verify if the Authorization Request if from known Verifier (refer [here](#verifier-parameters) for more details)                                          |
+| walletMetadata (deprecated*)   | WalletMetadata? | No       | N/A           | Nullable WalletMetadata to be shared with Verifier (Note: Available in Old deprecated API contract, walletMetadata is now passed as a constructor parameter of OpenID4VP class)<br/>Note: Applicable only for authenticateVerifier method with urlEncodedAuthorizationRequest parameter |
+| shouldValidateClient           | Bool            | No       | true          | Boolean to toggle client validation for pre-registered client id scheme                                                                                                                                                                                                                 |
+
+> Only one of `urlEncodedAuthorizationRequest` or `authorizationRequest` is accepted per call, depending on the overload.
+
+#### Usage Notes
+- Choose urlEncodedAuthorizationRequest for URL encoded authorization request strings.
+- Choose authorizationRequest for request available in a Map data type. 
+- trustedVerifiers, walletMetadata and shouldValidateClient behavior is consistent across both overloads.
+
+#### Response Parameters
+
+| Type                 | Description                                 |
+|----------------------|---------------------------------------------|
+| AuthorizationRequest | The validated Authorization Request object. |
+
+#### Example usage
+
+```swift
+ let trustedVerifiers: [Verifier] = [
+  Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com/response"], jwksUri: "https://mock-verifier.com/.well-known/jwks.json", allowUnsignedRequest: false)
+]
+
+// Usage with URL Encoded Authorization Request
+
+ let urlEncodedAuthorizationRequest: String = """
+        openid4vp://authorize?
+          client_id=did%3Aweb%verifier.inji.net%3Av1%3Averify
+          &client_metadata=...
+          &request_uri=https%3A%2F%2Fclient.example.org%2Frequest%2Fvapof4ql2i7m41m68uep
+          &request_uri_method=post HTTP/1.1
+        """
+ let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
+                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
+                trustedVerifier: trustedVerifiers,
+                shouldValidateClient: true
+            )
+            
+// Usage with Map of parameters Authorization Request
+
+ let authorizationRequestMap: [String: Any] = [
+    "client_id": "mock-client",
+    "response_type": "vp_token",
+    "response_mode": "direct_post",
+    "presentation_definition": [/*...*/],
+    "nonce": "random-nonce",
+    "state": "random-state",
+    "redirect_uri": "https://mock-verifier.com/response"
+]
+
+ let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
+                authorizationRequest: authorizationRequestMap,
+                trustedVerifiers: trustedVerifiers,
+                shouldValidateClient: true
+            )
+```
+
+### authenticateVerifier (deprecated)
+- Receives a list of trusted verifiers & Verifier's encoded Authorization request from consumer app(mobile wallet).
+- Takes an optional boolean to toggle the client validation.
+- Decodes and parse the request, extracts the clientId and verifies it against trusted verifier's list clientId.
+- If the data contains request_uri and request_uri_method as post, then the wallet metadata is shared in the request body while making an api call to request_uri for fetching authorization request.
+- The library also validates the incoming authorization request with the wallet metadata
+- Returns the validated Authorization request object
+
+> **Note:**
+> 
+> Replace with <br/>```let authorizationRequest : AuthorizationRequest = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier], shouldValidateClient: Bool)```
+> (trustedVerifierJSON parameter name is changed to trustedVerifiers)
 
 ```swift
     let authorizationRequest : AuthorizationRequest = try authenticateVerifier(urlEncodedAuthorizationRequest: String, trustedVerifierJSON: [Verifier], shouldValidateClient: Bool)
@@ -354,8 +485,53 @@ let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUns
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
+### constructVPResponse
+
+- This function constructs the VP response (with `vp_token` and `presentation_submission`) as per the response mode (refer [here](#notes-on-supported-response-modes) for more details on response mode) with the provided signed data (vpTokenSigningResults).
+- Returns back the constructed VPResponse.
+
+
+```swift
+    let vpResponse : [String : Any] = try openID4VP.constructVPResponse(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
+```
+
+#### Parameters
+
+| Name                  | Type                               | Required | Default Value | Description                                                                                                                                                   |
+|-----------------------|------------------------------------|:---------|:--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | Yes      | N/A           | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
+
+#### Response Parameters
+
+| Type           | Description                                                                                                              |
+|----------------|--------------------------------------------------------------------------------------------------------------------------|
+| [String : Any] | A map containing the constructed VP response with vp_token and presentation_submission which can be sent to the Verifier |
+
+#### Example usage
+
+```swift
+let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
+    jws : createJWS(unsignedLdpVPToken), // If signature algorithm is , "JsonWebSignature2020" / "Ed25519Signature2018" / "RSASignature2018" then jws should be sent
+    proofValue : <proofValue>,  // If signature algorithm is "Ed25519Signature2020", then proofValue should be sent
+    signatureAlgorithm : "<signatureAlgorithm>",
+)
+
+let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
+    docTypeToDeviceAuthentication: [
+        "<docType>": DeviceAuthentication(
+            signature: createSignature(unsignedMdocVPToken.docTypeToDeviceAuthenticationBytes("<docType>")), 
+            algorithm: "<mdocAuthenticationAlgorithm>",
+        )
+    ]
+  )
+
+let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
+
+let vpResponse : [String:Any] = try openID4VP.constructVPResponse(vpTokenSigningResults : vpTokenSigningResults)
+```
+
 ### sendVPResponseToVerifier
-- This function constructs a vp_token with proof using received VPTokenSigningResult, then sends it and the presentation_submission to the Verifier via a HTTP POST request.
+- This function constructs the VP response (with `vp_token` and `presentation_submission`) as per the response mode (refer [here](#notes-on-supported-response-modes) for more details on response mode) with the provided signed data (vpTokenSigningResults), then sends it to the Verifier via a HTTP POST request.
 - Returns back the response received from the Verifier. Refer here for the structure of VerifierResponse - [VerifierResponse structure](#verifierresponse-structure)
 
 ```swift
@@ -385,10 +561,9 @@ VerifierResponse contains the following properties:
 
 ```swift
 let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws : createJWS(unsignedLdpVPToken),
-    signatureAlgorithm : "RsaSignature2018",
-    publicKey : "<publicKey>",
-    domain : "<domain>"
+    jws : createJWS(unsignedLdpVPToken), // If signature algorithm is , "JsonWebSignature2020" / "Ed25519Signature2018" / "RSASignature2018" then jws should be sent
+    proofValue : <proofValue>,  // If signature algorithm is "Ed25519Signature2020", then proofValue should be sent
+    signatureAlgorithm : "<signatureAlgorithm>",
 )
 
 let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
@@ -433,10 +608,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ```swift
 let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws : createJWS(unsignedLdpVPToken),
-    signatureAlgorithm : "RsaSignature2018",
-    publicKey : "<publicKey>",
-    domain : "<domain>"
+    jws : createJWS(unsignedLdpVPToken), // If signature algorithm is , "JsonWebSignature2020" / "Ed25519Signature2018" / "RSASignature2018" then jws should be sent
+    proofValue : <proofValue>,  // If signature algorithm is "Ed25519Signature2020", then proofValue should be sent
+    signatureAlgorithm : "<signatureAlgorithm>",
 )
 
 let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
@@ -461,6 +635,39 @@ val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenS
 
 
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
+
+### constructErrorInfo
+
+- Receives an exception and constructs an error response map containing error code, message and optional state to be sent to the Verifier.
+
+```swift
+    let errorInfo: [String: Any] = openID4VP.constructErrorInfo(exception: Error)
+```
+
+###### Parameters
+
+| Name      | Type  | Description                   | Required | Default Value |
+|-----------|-------|-------------------------------|:---------|:--------------|
+| exception | Error | Contains the exception object | Yes      | N/A           | 
+
+###### Response Parameters
+
+| Type           | Description                                                                                                                                                                  |
+|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [String : Any] | Map contaning the error response including the properties `error`, `error_description` and `state` (Optional - available if authorization request is validated successfully) |
+
+###### Example usage
+
+```swift
+// Example: The user declines to share the requested credentials. In this case, Verifier needs to be informed about the scenario.
+// So call the constructErrorInfo method with appropriate exception message to notify the Verifier.
+let errorInfo: [String: Any] = openID4VP.constructErrorInfo(
+        exception: AccessDenied(
+            message: "User did not give consent to share the requested Credentials with the Verifier.",
+            className: "SomeClassName"
+        )
+)
+```
 
 ### sendErrorInfoToVerifier
 
@@ -525,10 +732,11 @@ This exception has the following properties:
 
 The following methods are deprecated and will be removed in future releases. Please migrate to the suggested alternatives.
 
-| Method Name                 | Description                                   | Deprecated Since | Suggested Alternative                                 |
-|-----------------------------|-----------------------------------------------|------------------|-------------------------------------------------------|
-| shareVerifiablePresentation | Sends VP (Authorization response) to verifier | 0.6.0            | [sendVPResponseToVerifier](#sendvpresponsetoverifier) |
-| sendErrorToVerifier         | Sends Authorization error to the verifier     | 0.6.0            | [sendErrorInfoToVerifier](#senderrorinfotoverifier)   |
+| Method Name                                                                                          | Description                                                | Deprecated Since | Suggested Alternative                                 |
+|------------------------------------------------------------------------------------------------------|------------------------------------------------------------|------------------|-------------------------------------------------------|
+| shareVerifiablePresentation                                                                          | Sends VP (Authorization response) to verifier              | 0.6.0            | [sendVPResponseToVerifier](#sendvpresponsetoverifier) |
+| sendErrorToVerifier                                                                                  | Sends Authorization error to the verifier                  | 0.6.0            | [sendErrorInfoToVerifier](#senderrorinfotoverifier)   |
+| authenticateVerifier <br/>(Parameter Name changed from `trustedVerifiersJSON` to `trustedVerifiers`) | Validates and authenticates the Authorization (VP) Request | 0.7.0            | [authenticateVerifier](#authenticateverifier)         |
 
 ## Architecture decisions
 
