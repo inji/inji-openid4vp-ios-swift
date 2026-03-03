@@ -156,7 +156,7 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
   **Note** : Fetching Verifiable Credentials by passing [Scope](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#name-using-scope-parameter-to-re) param in Authorization Request is not supported by this library.
 
 ## Installation
-- In your swift application go to file > add package dependency > add the  https://github.com/mosip/inji-openid4vp-ios-swift.git in git search bar> add package
+- In your swift application go to file > add package dependency > add the  https://github.com/inji/inji-openid4vp-ios-swift.git in git search bar> add package
 - Import the library and use
 
 ## 🚨 Breaking Changes
@@ -912,9 +912,9 @@ The following methods are deprecated and will be removed in future releases. Ple
 
 ## Architecture decisions
 
-Architecture decisions are noted as ADRs [here](https://github.com/mosip/inji-openid4vp/tree/master/doc).
+Architecture decisions are documented in the [INJI OpenID4VP ADR directory](https://github.com/inji/inji-openid4vp/tree/master/doc).
 
 ## Also available in
 
 This library is also available in the following languages
-- [kotlin](https://github.com/mosip/inji-openid4vp/tree/master/kotlin)
+- [kotlin](https://github.com/inji/inji-openid4vp/tree/master/kotlin)
