@@ -19,7 +19,7 @@ public class OpenID4VP {
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
         nonceProvider = NonceProvider()
-        self.walletNonce = nonceProvider.generateNonce()
+        walletNonce = nonceProvider.generateNonce()
     }
 
     internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil, nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
@@ -38,7 +38,7 @@ public class OpenID4VP {
 
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
-        trustedVerifierJSON: [Verifier],
+        trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
         // Create a new wallet nonce for each request
@@ -50,7 +50,7 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifierJSON,
+                trustedVerifier: trustedVerifiers,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
@@ -65,7 +65,7 @@ public class OpenID4VP {
     }
 
     public func authenticateVerifier(
-        authRequest: [String: Any],
+        authorizationRequest: [String: Any],
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
@@ -75,8 +75,8 @@ public class OpenID4VP {
             responseUri = nil
             authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
 
-            let authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
-                authRequest: authRequest,
+            let validatedAuthorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+                authRequest: authorizationRequest,
                 trustedVerifiers: trustedVerifiers,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,
@@ -85,8 +85,8 @@ public class OpenID4VP {
                 networkManager: networkManager
             )
 
-            self.authorizationRequest = authorizationRequest
-            return authorizationRequest
+            self.authorizationRequest = validatedAuthorizationRequest
+            return validatedAuthorizationRequest
         } catch let error as OpenID4VPException {
             await safeSendError(error: error)
             throw error
@@ -112,23 +112,53 @@ public class OpenID4VP {
             throw error
         }
     }
-    
+
+    public func constructUnsignedVPTokenV2(
+        verifiableCredentials: [String: [FormatType: [AnyCodable]]],
+        holderId: String? = nil,
+        signatureSuite: String? = nil
+    ) async throws -> [UnsignedVPTokenV2] {
+        do {
+            return try await authorizationResponseHandler.constructUnsignedVPTokenV2(
+                credentialsMap: verifiableCredentials,
+                authorizationRequest: authorizationRequest,
+                responseUri: responseUri!,
+                holderId: holderId,
+                signatureSuite: signatureSuite,
+                walletNonce: walletNonce
+            )
+        } catch {
+            await safeSendError(error: error)
+            throw error
+        }
+    }
+
     public func constructVPResponse(vpTokenSigningResults: [FormatType: VPTokenSigningResult]) -> [String: Any] {
         do {
             return try authorizationResponseHandler.constructAuthorizationResponse(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults
             )
-        } catch let exception{
+        } catch let exception {
+            return constructErrorInfo(exception: exception)
+        }
+    }
+
+    public func constructVPResponseV2(vpTokenSigningResults: [VPTokenSigningResultV2]) -> [String: Any] {
+        do {
+            return try authorizationResponseHandler.constructVPResponseV2(
+                signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
+            )
+        } catch let exception {
             return constructErrorInfo(exception: exception)
         }
     }
 
     public func constructErrorInfo(exception: Error) -> [String: Any] {
         return authorizationResponseHandler.constructAuthorizationErrorResponse(
-            authorizationRequest: self.authorizationRequest,
+            authorizationRequest: authorizationRequest,
             exception: exception,
-            walletNonce: self.walletNonce
+            walletNonce: walletNonce
         )
     }
 
@@ -136,7 +166,7 @@ public class OpenID4VP {
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) async throws -> VerifierResponse {
         do {
-            return try await authorizationResponseHandler.shareVP(
+            return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults,
                 responseUri: responseUri!
@@ -179,7 +209,7 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifierJSON: trustedVerifierJSON,
+                trustedVerifier: trustedVerifierJSON,
                 walletMetadata: walletMetadata,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
@@ -189,6 +219,35 @@ public class OpenID4VP {
             return authorizationRequest
         } catch let exception {
             await sendErrorToVerifier(error: exception)
+            throw exception
+        }
+    }
+
+    @available(*, deprecated, message: "Use authenticateVerifier with trustedVerifiers parameter instead. Reason: Parameter trustedVerifierJSON has been renamed to trustedVerifiers")
+    public func authenticateVerifier(
+        urlEncodedAuthorizationRequest: String,
+        trustedVerifierJSON: [Verifier],
+        shouldValidateClient: Bool = true
+    ) async throws -> AuthorizationRequest {
+        // Create a new wallet nonce for each request
+        walletNonce = nonceProvider.generateNonce()
+        authorizationRequest = nil
+        responseUri = nil
+        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
+
+        do {
+            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
+                trustedVerifier: trustedVerifierJSON,
+                walletMetadata: walletMetadata,
+                setResponseUri: setResponseUri,
+                shouldValidateClient: shouldValidateClient,
+                walletNonce: walletNonce,
+                networkManager: networkManager
+            )
+            return authorizationRequest
+        } catch let exception {
+            await safeSendError(error: exception)
             throw exception
         }
     }
@@ -232,4 +291,3 @@ public class OpenID4VP {
         await safeSendError(error: error)
     }
 }
-
