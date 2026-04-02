@@ -22,7 +22,7 @@ public struct JWEHandler {
         //TODO: Perform key agreement based on keyEncryptionAlgorithm
         let encrypter = try EncryptionProvider.getEncrypter(contentEncryptionAlgorithm)
         let keyAgreement = try KeyAgreementFactory.createKeyAgreement(for: publicKey)
-        let sharedKey = try keyAgreement.deriveKey(publicKey: publicKey.x ?? Data())
+        let sharedKey = try keyAgreement.deriveKey(publicKey: publicKey.x ?? Data(), algorithm: contentEncryptionAlgorithm, apu: producerInfo, apv: recipientInfo)
 
         let (ciphertext, nonce, tag) = try encrypter.encrypt(payloadData, with: sharedKey)
 
