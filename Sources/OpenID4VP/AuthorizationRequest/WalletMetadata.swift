@@ -1,20 +1,5 @@
 import Foundation
 
-@usableFromInline
-internal struct WalletMetadataDefaults: Codable {
-    @usableFromInline static let presentationDefinitionURISupported: Bool = true
-    @usableFromInline static let vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
-        .ldp_vc: VPFormatSupported(algValuesSupported: []),
-        .ldp_vp: VPFormatSupported(algValuesSupported: []),
-        .mso_mdoc: VPFormatSupported(algValuesSupported: []),
-    ]
-    @usableFromInline static let clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did]
-    @usableFromInline static let requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = [.edDsa]
-    @usableFromInline static let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm] = [.ecdhEs]
-    @usableFromInline static let authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm] = [.A256GCM]
-    @usableFromInline static let responseTypesSupported: [ResponseType] = [.vp_token]
-}
-
 public struct WalletMetadata: Codable {
     let presentationDefinitionURISupported: Bool
     let vpFormatsSupported: [VPFormatType: VPFormatSupported]
@@ -57,7 +42,7 @@ public struct WalletMetadata: Codable {
     
     public init(
         presentationDefinitionURISupported: Bool = WalletMetadataDefaults.presentationDefinitionURISupported,
-        vpFormatsSupported: [VPFormatType: VPFormatSupported] = WalletMetadataDefaults.vpFormatsSupported,
+        vpFormatsSupported: [VPFormatType: VPFormatSupported] = WalletMetadataDefaults.vpFormatsSupportedSpecVersionDraft23,
         clientIdSchemesSupported: [ClientIdScheme] = WalletMetadataDefaults.clientIdSchemesSupported,
         requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = WalletMetadataDefaults.requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported,
@@ -76,61 +61,6 @@ public struct WalletMetadata: Codable {
     }
 }
 
-private func parseClientIdSchemesSupported(_ clientIdSchemesSupported: [String]?) throws -> [ClientIdScheme] {
-    guard let schemes = clientIdSchemesSupported else {
-        return [.preRegistered]
-    }
-    return try schemes.compactMap { try parseEnum(valueName: "ClientIdScheme", $0, as: ClientIdScheme.self) }
-}
-
-private func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws -> [VPFormatType: VPFormatSupported] {
-    if vpFormatsSupported.keys.contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
-        throw InvalidData(
-            message: "vp_formats_supported cannot have empty keys.",
-            className: WalletMetadata.className
-        )
-    }
-    
-    
-    return try vpFormatsSupported.reduce(into: [VPFormatType: VPFormatSupported]()) { result, entry in
-        let parsedVPFormatType = try parseEnum(valueName: "VPFormatType", entry.key, as: VPFormatType.self)
-        result[parsedVPFormatType] = entry.value
-    }
-}
-
-func parseEnum<E: RawRepresentable>(valueName: String, _ value: E.RawValue, as type: E.Type) throws -> E {
-    guard let enumCase = E(rawValue: value) else {
-        throw InvalidData(
-            message: "Invalid \(valueName) value: \(value). Its is not supported by the library.",
-            className: WalletMetadata.className
-        )
-    }
-    
-    return enumCase
-}
-
-
-private func parseRequestObjectSigningAlgValuesSupported(_ requestObjectSigningAlgValuesSupported: [String]?) throws -> [RequestSigningAlgorithm]? {
-    guard let algs = requestObjectSigningAlgValuesSupported else {
-        return nil
-    }
-    return try algs.compactMap { try parseEnum(valueName: "RequestSigningAlgorithm", $0, as: RequestSigningAlgorithm.self) }
-}
-
-private func parseAuthorizationEncryptionAlgValuesSupported(_ authorizationEncryptionAlgValuesSupported: [String]?) throws -> [KeyManagementAlgorithm]? {
-    guard let algs = authorizationEncryptionAlgValuesSupported else {
-        return nil
-    }
-    return try algs.compactMap { try parseEnum(valueName: "KeyManagementAlgorithm", $0, as: KeyManagementAlgorithm.self) }
-}
-
-private func parseAuthorizationEncryptionEncValuesSupported(_ authorizationEncryptionEncValuesSupported: [String]?) throws -> [ContentEncryptionAlgorithm]? {
-    guard let encs = authorizationEncryptionEncValuesSupported else {
-        return nil
-    }
-    return try encs.compactMap { try parseEnum(valueName: "ContentEncryptionAlgorithm", $0, as: ContentEncryptionAlgorithm.self) }
-}
-
 public struct VPFormatSupported: Codable {
     let algValuesSupported: [String]?
     
@@ -140,14 +70,5 @@ public struct VPFormatSupported: Codable {
     
     public init(algValuesSupported: [String]? = nil) {
         self.algValuesSupported = algValuesSupported
-    }
-}
-
-private func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VPFormatSupported]) throws {
-    if vpFormatsSupported.isEmpty {
-        throw InvalidData(
-            message: "vp_formats_supported should at least have one supported vp_format",
-            className: WalletMetadata.className
-        )
     }
 }
