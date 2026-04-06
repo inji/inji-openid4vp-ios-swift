@@ -4,8 +4,20 @@ protocol ResponseModeBasedHandler {
     func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws
+    func validate(clientMetadata: ClientMetadataV2?,
+                  walletMetadata: WalletMetadataV2,
+                  shouldValidateWithWalletMetadata: Bool) throws
+    
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest,
                                    authorizationResponse: AuthorizationResponse,
+                                   url: String,
+                                   networkManager: NetworkManaging,
+                                   producerInfo: String,
+                                   recipientInfo: String
+    ) async throws -> NetworkResponse
+    
+    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequestV2,
+                                   authorizationResponse: AuthorizationResponseV2,
                                    url: String,
                                    networkManager: NetworkManaging,
                                    producerInfo: String,

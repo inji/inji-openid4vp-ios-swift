@@ -5,23 +5,23 @@ private let className = "UnsignedLdpVPTokenBuilder"
 public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     private let id: String
     private let holder: String
-    private let challenge: String
-    private let domain: String
     private let signatureSuite: String
-    
+    public let specVersion: SpecVersion
+    public let authorizationRequest: AuthorizationRequestV2
+
     static let internalPath: String = "verifiableCredential"
-    
+
     public init(
+        authorizationRequest: AuthorizationRequestV2,
+        specVersion: SpecVersion,
         id: String,
         holder: String,
-        challenge: String,
-        domain: String,
         signatureSuite: String
     ) {
+        self.authorizationRequest = authorizationRequest
+        self.specVersion = specVersion
         self.id = id
         self.holder = holder
-        self.challenge = challenge
-        self.domain = domain
         self.signatureSuite = signatureSuite
     }
     
@@ -47,8 +47,8 @@ public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         let proof = Proof(
             type: signatureSuite,
             created: nil,
-            challenge: challenge,
-            domain: holder,
+            challenge: authorizationRequest.nonce,
+            domain: authorizationRequest.clientId,
             verificationMethod: holder, proofValue: nil
         )
         

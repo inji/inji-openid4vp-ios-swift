@@ -32,10 +32,25 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {}
+    
+    func validate(clientMetadata: ClientMetadataV2?,
+                  walletMetadata: WalletMetadataV2,
+                  shouldValidateWithWalletMetadata: Bool) throws {}
 
     func sendAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
+        url: String,
+        networkManager: any NetworkManaging,
+        producerInfo: String,
+        recipientInfo: String
+    ) async throws -> NetworkResponse {
+        fatalError("Not needed for unit testing constructAuthorizationResponse")
+    }
+    
+    func sendAuthorizationResponse(
+        authorizationRequest: AuthorizationRequestV2,
+        authorizationResponse: AuthorizationResponseV2,
         url: String,
         networkManager: any NetworkManaging,
         producerInfo: String,

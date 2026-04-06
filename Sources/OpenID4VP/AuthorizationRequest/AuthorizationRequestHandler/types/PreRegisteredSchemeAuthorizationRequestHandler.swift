@@ -55,7 +55,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     
     func processWalletMetadata() throws -> WalletMetadataV2 {
         try validateRequestObjectSigningAlgSupported(walletMetadataV2, className: className)
-        return updatedWalletMetadata
+        return walletMetadataV2
     }
     
     func isSignedRequestSupported() -> Bool {

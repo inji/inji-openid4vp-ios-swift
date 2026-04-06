@@ -547,3 +547,7 @@ func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: S
 
         return SdJwtVpTokenSigningResult(uuidToKbJWTSignature: map)
     }
+
+func getEncryptionKey(_ jwks: JWKSet, _ alg: String) throws -> JWK {
+    return jwks.keys.first(where: { $0.algorithm == alg && $0.publicKeyUse == .encryption})!
+}

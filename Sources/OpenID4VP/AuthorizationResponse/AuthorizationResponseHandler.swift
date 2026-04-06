@@ -7,6 +7,7 @@ public class AuthorizationResponseHandler {
     private var signatureSuite: String = SignatureAlgorithm.ed25519Signature2020.rawValue
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
     private var unsignedVPTokenResults: [FormatType: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken)] = [:]
+    private var specVersion: SpecVersion = .v1
 
     public static let className = String(describing: AuthorizationResponseHandler.self)
 
@@ -21,6 +22,40 @@ public class AuthorizationResponseHandler {
                                   signatureSuite: String?,
                                   walletNonce: String
     ) async throws -> [FormatType: UnsignedVPToken] {
+        let hasLdpVc = credentialsMap.values.contains { formatMap in
+            formatMap.keys.contains(.ldp_vc)
+        }
+        if hasLdpVc {
+            // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
+            if isNullOrEmpty(holderId) {
+                throw InvalidData(
+                    message: "Holder ID cannot be null or empty for LDP VC format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+            if isNullOrEmpty(signatureSuite) {
+                throw InvalidData(
+                    message: "Signature Suite cannot be null or empty for LDP VC format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+        }
+        self.signatureSuite = signatureSuite ?? self.signatureSuite
+
+        return try await createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
+    }
+    
+    func constructUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
+                                  authorizationRequest: AuthorizationRequestV2,
+                                  responseUri: String,
+                                  holderId: String?,
+                                  signatureSuite: String?,
+                                  walletNonce: String
+    ) async throws -> [FormatType: UnsignedVPToken] {
+        if authorizationRequest as? AuthorizationRequestDraft23 != nil {
+            self.specVersion = .draft23
+        }
+        
         let hasLdpVc = credentialsMap.values.contains { formatMap in
             formatMap.keys.contains(.ldp_vc)
         }
@@ -76,6 +111,38 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
+    private func createUnsignedVPToken(
+        credentialsMap: [String: [FormatType: [AnyCodable]]],
+        authorizationRequest: AuthorizationRequestV2,
+        responseUri: String,
+        walletNonce: String,
+        holderId: String?,
+        signatureSuite: String?
+    ) async throws -> [FormatType: UnsignedVPToken] {
+        if credentialsMap.isEmpty {
+            throw InvalidData(
+                message: "Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.",
+                className: AuthorizationResponseHandler.className
+            )
+        }
+
+        self.walletNonce = walletNonce
+
+        unsignedVPTokenResults = try await createUnsignedVPTokens(
+            credentialsMap: credentialsMap,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite
+        )
+
+        let unsignedVPTokensExtracted: [FormatType: UnsignedVPToken] = unsignedVPTokenResults.mapValues { innerMap in
+            innerMap.1
+        }
+
+        return unsignedVPTokensExtracted
+    }
+    
     func constructUnsignedVPTokenV2(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
@@ -101,7 +168,34 @@ public class AuthorizationResponseHandler {
             signatureSuite: signatureSuite
         )
     }
+    
+    func constructUnsignedVPTokenV3(
+        credentialsMap: [String: [FormatType: [AnyCodable]]],
+        authorizationRequest: AuthorizationRequestV2,
+        responseUri: String,
+        holderId: String?,
+        signatureSuite: String?,
+        walletNonce: String
+    ) async throws -> [UnsignedVPTokenV2] {
 
+        _ = try await constructUnsignedVPToken(
+            credentialsMap: credentialsMap,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+
+        return try await flattenUnsignedVPTokens(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            formatMappings: formatToCredentialInputDescriptorMapping,
+            holderId: holderId,
+            signatureSuite: signatureSuite
+        )
+    }
+
+    // TODO: enable draft23 and spec v1.0 support for construct VP response and error response
     func constructVPResponseV2(
         signingResults: [VPTokenSigningResultV2],
         authorizationRequest: AuthorizationRequest
@@ -180,7 +274,68 @@ public class AuthorizationResponseHandler {
         )
         return toVerifierResponse(response)
     }
+    
+//    func constructVPResponseV2(
+//        signingResults: [VPTokenSigningResultV2],
+//        authorizationRequest: AuthorizationRequestV2
+//    ) throws -> [String: String] {
+//
+//        let reconstructed = try constructSigningResults(
+//            unsignedVPTokenResults: unsignedVPTokenResults,
+//            formatMappings: formatToCredentialInputDescriptorMapping,
+//            signingResults: signingResults,
+//            signatureSuite: self.signatureSuite
+//        )
+//
+//        return try constructAuthorizationResponse(
+//            authorizationRequest: authorizationRequest,
+//            vpTokenSigningResults: reconstructed
+//        )
+//    }
+    
+    func constructAndSendAuthorizationResponseToVerifier(
+        authorizationRequest: AuthorizationRequestV2,
+        vpTokenSigningResults: [VPTokenSigningResultV2],
+        responseUri: String
+    ) async throws -> VerifierResponse {
+        let reconstructedVpTokenSigningResult : [FormatType : VPTokenSigningResult] = try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            formatMappings: formatToCredentialInputDescriptorMapping,
+            signingResults: vpTokenSigningResults,
+            signatureSuite: self.signatureSuite
+        )
 
+        let authorizationResponse = try createAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: reconstructedVpTokenSigningResult
+        )
+
+        let response: NetworkResponse = try await sendAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            authorizationResponse: authorizationResponse,
+            responseUri: responseUri
+        )
+        return toVerifierResponse(response)
+    }
+
+//    func constructAuthorizationResponse(
+//        authorizationRequest: AuthorizationRequestV2,
+//        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
+//    ) throws -> [String: String] {
+//        let authorizationResponse = try createAuthorizationResponse(
+//            authorizationRequest: authorizationRequest,
+//            vpTokenSigningResults: vpTokenSigningResults
+//        )
+//
+//        return try ResponseModeBasedHandlerFactory
+//            .get(responseMode: authorizationRequest.responseMode)
+//            .getAuthorizationResponse(
+//                authorizationRequest: authorizationRequest,
+//                authorizationResponse: authorizationResponse,
+//                walletNonce: walletNonce
+//            )
+//    }
+    
     func constructAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
@@ -259,6 +414,27 @@ public class AuthorizationResponseHandler {
             )
         }
     }
+    
+    private func createAuthorizationResponse(
+        authorizationRequest: AuthorizationRequestV2,
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
+    ) throws -> AuthorizationResponseV2 {
+        switch authorizationRequest.responseType {
+        case ResponseType.vp_token.rawValue:
+            return try VersionLogic.from(authorizationRequest).createVPTokenResponse(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: vpTokenSigningResults,
+                unsignedVPTokenResults: unsignedVPTokenResults,
+                formatToCredentialInputDescriptorMapping: formatToCredentialInputDescriptorMapping,
+                handler: self
+            )
+        default:
+            throw InvalidData(
+                message: "Provided response_type - \(authorizationRequest.responseType) is not supported",
+                className: AuthorizationResponseHandler.className
+            )
+        }
+    }
 
     private func createVPTokenAndPresentationSubmission(
         vpTokenSigningResults: [FormatType: VPTokenSigningResult],
@@ -291,7 +467,7 @@ public class AuthorizationResponseHandler {
                 )
             }
 
-            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: credentialFormat)
+            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: credentialFormat, specVersion: .draft23)
 
             let (vpTokens, descriptorMaps, nextRootIndex) = try vpTokenBuilder.build(
                 credentialInputDescriptorMappings: credentialInputDescriptorMappings,
@@ -311,6 +487,63 @@ public class AuthorizationResponseHandler {
         sanitizeDescriptorMap(&finalDescriptorMappings, isSingleVPToken: finalVpTokens.count == 1)
         let presentationSubmission = PresentationSubmission(
             definitionId: authorizationRequest.presentationDefinition.id,
+            descriptorMap: finalDescriptorMappings
+        )
+
+        return (vpToken, presentationSubmission)
+    }
+    
+    private func createVPTokenAndPresentationSubmission(
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
+        authorizationRequest: AuthorizationRequestV2,
+        unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
+        formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]]
+    ) throws -> (VPTokenType, PresentationSubmission) {
+        if Set(unsignedVPTokenResults.keys) != Set(vpTokenSigningResults.keys) {
+            throw InvalidData(
+                message: "VPTokenSigningResult not provided for the required formats",
+                className: Self.className
+            )
+        }
+
+        var finalVpTokens: [VPToken] = []
+        var finalDescriptorMappings: [DescriptorMap] = []
+        var rootIndex = 0
+
+        for (credentialFormat, credentialInputDescriptorMappings) in formatToCredentialInputDescriptorMapping {
+            guard let vpTokenSigningResult = vpTokenSigningResults[credentialFormat] else {
+                throw InvalidData(
+                    message: "unable to find the related credential format - \(credentialFormat) in the vpTokenSigningResults map",
+                    className: Self.className
+                )
+            }
+            guard let unsignedVPTokenResult = unsignedVPTokenResults[credentialFormat] else {
+                throw InvalidData(
+                    message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokenResults map",
+                    className: Self.className
+                )
+            }
+
+            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: credentialFormat, specVersion: specVersion)
+
+            let (vpTokens, descriptorMaps, nextRootIndex) = try vpTokenBuilder.build(
+                credentialInputDescriptorMappings: credentialInputDescriptorMappings,
+                unsignedVPTokenResult: unsignedVPTokenResult,
+                vpTokenSigningResult: vpTokenSigningResult,
+                rootIndex: rootIndex
+            )
+            finalVpTokens.append(contentsOf: vpTokens)
+            finalDescriptorMappings.append(contentsOf: descriptorMaps)
+            rootIndex = nextRootIndex
+        }
+
+        let vpToken: VPTokenType = (finalVpTokens.count == 1)
+            ? .vpTokenElement(finalVpTokens[0])
+            : .vpTokenArray(finalVpTokens)
+
+        sanitizeDescriptorMap(&finalDescriptorMappings, isSingleVPToken: finalVpTokens.count == 1)
+        let presentationSubmission = PresentationSubmission(
+            definitionId: VersionLogic.from(authorizationRequest).getPresentationDefinitionId(authorizationRequest),
             descriptorMap: finalDescriptorMappings
         )
 
@@ -351,6 +584,22 @@ public class AuthorizationResponseHandler {
                 recipientInfo: authorizationRequest.nonce
             )
     }
+    
+    private func sendAuthorizationResponse(
+        authorizationRequest: AuthorizationRequestV2,
+        authorizationResponse: AuthorizationResponseV2,
+        responseUri: String
+    ) async throws -> NetworkResponse {
+        return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
+            .sendAuthorizationResponse(
+                authorizationRequest: authorizationRequest,
+                authorizationResponse: authorizationResponse,
+                url: responseUri,
+                networkManager: networkManager,
+                producerInfo: walletNonce,
+                recipientInfo: authorizationRequest.nonce
+            )
+    }
 
     private func createUnsignedVPTokens(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
@@ -359,9 +608,38 @@ public class AuthorizationResponseHandler {
         holderId: String?,
         signatureSuite: String?
     ) async throws -> [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)] {
+        let authorizationRequestV2 = AuthorizationRequestDraft23(
+            clientId: authorizationRequest.clientId,
+            responseType: authorizationRequest.responseType,
+            responseMode: authorizationRequest.responseMode,
+            responseUri: authorizationRequest.responseUri,
+            redirectUri: authorizationRequest.redirectUri,
+            nonce: authorizationRequest.nonce,
+            walletNonce: authorizationRequest.walletNonce,
+            state: authorizationRequest.state,
+            presentationDefinition: authorizationRequest.presentationDefinition,
+            clientMetadata: authorizationRequest.clientMetadata
+        )
+        return try await createUnsignedVPTokens(
+            credentialsMap: credentialsMap,
+            authorizationRequest: authorizationRequestV2,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite
+        )
+    }
+
+    private func createUnsignedVPTokens(
+        credentialsMap: [String: [FormatType: [AnyCodable]]],
+        authorizationRequest: AuthorizationRequestV2,
+        responseUri: String,
+        holderId: String?,
+        signatureSuite: String?
+    ) async throws -> [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)] {
         createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
 
         var unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)] = [:]
+        let specVersion: SpecVersion = authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .v1
 
         for format in formatToCredentialInputDescriptorMapping.keys {
             guard var credentialsArray = formatToCredentialInputDescriptorMapping[format] else {
@@ -370,32 +648,26 @@ public class AuthorizationResponseHandler {
             switch format {
             case .ldp_vc:
                 let token = try await UnsignedLdpVPTokenBuilder(
+                    authorizationRequest: authorizationRequest,
+                    specVersion: specVersion,
                     id: UUIDGenerator.generateUUID(),
                     holder: holderId ?? "",
-                    challenge: authorizationRequest.nonce,
-                    domain: authorizationRequest.clientId,
                     signatureSuite: signatureSuite ?? "Ed25519Signature2020"
-                ).build(
-                    credentialInputDescriptorMappings: &credentialsArray
-                )
+                ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             case .mso_mdoc:
                 let token = try await UnsignedMdocVPTokenBuilder(
-                    clientId: authorizationRequest.clientId,
+                    authorizationRequest: authorizationRequest,
+                    specVersion: specVersion,
                     responseUri: responseUri,
-                    verifierNonce: authorizationRequest.nonce,
                     mdocGeneratedNonce: walletNonce
-                ).build(
-                    credentialInputDescriptorMappings: &credentialsArray
-                )
+                ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
-
             case .dc_sd_jwt, .vc_sd_jwt:
                 let token = try await UnsignedSdJwtVPTokenBuilder(
-                    clientId: authorizationRequest.clientId, authorizationRequestNonce: authorizationRequest.nonce
-                ).build(
-                    credentialInputDescriptorMappings: &credentialsArray
-                )
+                    authorizationRequest: authorizationRequest,
+                    specVersion: specVersion
+                ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             }
             formatToCredentialInputDescriptorMapping[format] = credentialsArray
@@ -611,5 +883,47 @@ public class AuthorizationResponseHandler {
             additionalParams: additionalParams,
             headers: networkResponse.headers
         )
+    }
+
+    private enum VersionLogic {
+        case draft23, specV1
+
+        static func from(_ authorizationRequest: AuthorizationRequestV2) -> VersionLogic {
+            return authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .specV1
+        }
+
+        func createVPTokenResponse(
+            authorizationRequest: AuthorizationRequestV2,
+            vpTokenSigningResults: [FormatType: VPTokenSigningResult],
+            unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
+            formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]],
+            handler: AuthorizationResponseHandler
+        ) throws -> AuthorizationResponseV2 {
+            switch self {
+            case .draft23:
+                let (vpToken, presentationSubmission) = try handler.createVPTokenAndPresentationSubmission(
+                    vpTokenSigningResults: vpTokenSigningResults,
+                    authorizationRequest: authorizationRequest,
+                    unsignedVPTokenResults: unsignedVPTokenResults,
+                    formatToCredentialInputDescriptorMapping: formatToCredentialInputDescriptorMapping
+                )
+                return .dif(
+                    vpToken: vpToken,
+                    presentationSubmission: presentationSubmission,
+                    state: authorizationRequest.state
+                )
+            case .specV1:
+                return .dcql(vpToken: [:], state: authorizationRequest.state)
+            }
+        }
+
+        func getPresentationDefinitionId(_ authorizationRequest: AuthorizationRequestV2) -> String {
+            switch self {
+            case .draft23:
+                return (authorizationRequest as? AuthorizationRequestDraft23)?.presentationDefinition.id ?? ""
+            case .specV1:
+                return ""
+            }
+        }
     }
 }

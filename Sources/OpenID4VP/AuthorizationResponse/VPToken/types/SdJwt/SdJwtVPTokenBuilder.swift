@@ -2,6 +2,11 @@ import Foundation
 
 class SdJwtVPTokenBuilder : VPTokenBuilder {
     private let className = String(describing: SdJwtVPTokenBuilder.self)
+    let specVersion: SpecVersion
+
+    init(specVersion: SpecVersion) {
+        self.specVersion = specVersion
+    }
     
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],

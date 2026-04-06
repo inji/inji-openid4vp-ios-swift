@@ -85,8 +85,7 @@ public struct WalletMetadataV2: Codable {
             return try encodeAsJSON(self, fieldName: "wallet_metadata", className: Self.className)
         case .draft23:
             let walletMetadata = try? WalletMetadata(
-                // TODO: populate algValues supported with specific alg values
-                vpFormatsSupported: self.vpFormatsSupported.mapValues { try cast($0, to: VPFormatSupported.self) },
+                vpFormatsSupported: self.vpFormatsSupported.mapValues { VPFormatSupported(algValuesSupported: $0.mergedAlgValues) },
                 // If prefix is not decentralized identifier, default to did as other schemes are same
                 clientIdSchemesSupported: self.clientIdPrefixesSupported.map { ClientIdScheme(rawValue: $0.rawValue) ?? .did },
                 requestObjectSigningAlgValuesSupported: self.requestObjectSigningAlgValuesSupported,
@@ -95,6 +94,23 @@ public struct WalletMetadataV2: Codable {
                 responseTypesSupported: self.responseTypesSupported
             )
             return try encodeAsJSON(walletMetadata, fieldName: "wallet_metadata", className: Self.className)
+        }
+    }
+}
+
+private extension VPFormatSupportedV2 {
+    var mergedAlgValues: [String]? {
+        switch self {
+        case let ldp as LdpVcFormatSupported:
+            return ldp.proofTypeValues.map { $0.rawValue }
+        case let mdoc as MsoMdocVcFormatSupported:
+            let merged = (mdoc.issuerAuthAlgValues ?? []) + (mdoc.deviceAuthAlgValues ?? [])
+            return merged.isEmpty ? nil : merged
+        case let sdJwt as SdJwtVcFormatSupported:
+            let merged = (sdJwt.sdJwtAlgValues ?? []) + (sdJwt.kbJwtAlgValues ?? [])
+            return merged.isEmpty ? nil : merged
+        default:
+            return nil
         }
     }
 }

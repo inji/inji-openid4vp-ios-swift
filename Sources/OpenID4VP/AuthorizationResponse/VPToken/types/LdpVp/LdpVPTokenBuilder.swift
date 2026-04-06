@@ -2,6 +2,11 @@ import Foundation
 
 class LdpVPTokenBuilder: VPTokenBuilder {
     private let className = "LdpVPTokenBuilder"
+    let specVersion: SpecVersion
+
+    init(specVersion: SpecVersion) {
+        self.specVersion = specVersion
+    }
 
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],

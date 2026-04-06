@@ -86,18 +86,19 @@ public class OpenID4VPV2 {
         }
     }
     
-    // public func sendVPResponseToVerifier(
-    //     vpTokenSigningResults: [VPTokenSigningResultV2]
-    // ) async throws -> VerifierResponse {
-    //     do {
-    //         return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
-    //             authorizationRequest: authorizationRequest,
-    //             vpTokenSigningResults: vpTokenSigningResults,
-    //             responseUri: responseUri!
-    //         )
-    //     } catch {
-    //         await safeSendError(error: error)
-    //         throw error
-    //     }
-    // }
+     public func sendVPResponseToVerifier(
+         vpTokenSigningResults: [VPTokenSigningResultV2]
+     ) async throws -> VerifierResponse {
+         do {
+             return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
+                 authorizationRequest: authorizationRequest,
+                 vpTokenSigningResults: vpTokenSigningResults,
+                 responseUri: responseUri!
+             )
+         } catch {
+//            TODO: uncomment safe send error
+//             await safeSendError(error: error)
+             throw error
+         }
+     }
 }

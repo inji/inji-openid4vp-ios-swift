@@ -3,29 +3,25 @@
 import XCTest
 
 final class VPTokenFactoryTests: XCTestCase {
-    /// Test credential format - ldp_vc
-
     func testGetVPTokenBuilder_WithLdpVcFormat() throws {
-        let builder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: .ldp_vc)
-
+        let builder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: .ldp_vc, specVersion: .draft23)
         XCTAssertTrue(builder is LdpVPTokenBuilder)
+        XCTAssertEqual(builder.specVersion, .draft23)
     }
 
-    /// Test credential format - mso_mdoc
     func testGetVPTokenBuilder_WithMdocFormat() throws {
-        let builder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: FormatType.mso_mdoc)
-
+        let builder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: FormatType.mso_mdoc, specVersion: .v1)
         XCTAssertTrue(builder is MdocVPTokenBuilder)
+        XCTAssertEqual(builder.specVersion, .v1)
     }
-    
-    /// Test credential format - SD-JWT
+
     func testGetVPTokenBuilder_WithSdJwtFormat() throws {
-        let vcSdJwtBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: FormatType.vc_sd_jwt)
-        
+        let vcSdJwtBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: FormatType.vc_sd_jwt, specVersion: .draft23)
         XCTAssertTrue(vcSdJwtBuilder is SdJwtVPTokenBuilder)
-        
-        let dcSdJwtBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: FormatType.dc_sd_jwt)
-        
+        XCTAssertEqual(vcSdJwtBuilder.specVersion, .draft23)
+
+        let dcSdJwtBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: FormatType.dc_sd_jwt, specVersion: .v1)
         XCTAssertTrue(dcSdJwtBuilder is SdJwtVPTokenBuilder)
+        XCTAssertEqual(dcSdJwtBuilder.specVersion, .v1)
     }
 }
