@@ -1,0 +1,106 @@
+import Foundation
+import JSONWebKey
+
+public struct ClientMetadataV2: Codable {
+    let clientName: String?
+    let logoUri: String?
+    let vpFormatsSupported: [String: VPFormatSupportedV2]
+    let authorizationEncryptedResponseAlg: String?
+    let authorizationEncryptedResponseEncValuesSupported: [String]?
+    let jwks: JWKSet?
+
+    static let className = String(describing: ClientMetadataV2.self)
+
+    enum CodingKeys: String, CodingKey {
+        case clientName = "client_name"
+        case logoUri = "logo_uri"
+        case vpFormatsSupported = "vp_formats_supported"
+        case authorizationEncryptedResponseAlg = "authorization_encrypted_response_alg"
+        case authorizationEncryptedResponseEncValues = "encrypted_response_enc_values_supported"
+        case jwks
+    }
+
+    public init(
+        clientName: String? = nil,
+        logoUri: String? = nil,
+        vpFormatsSupported: [String: VPFormatSupportedV2],
+        authorizationEncryptedResponseAlg: String? = nil,
+        authorizationEncryptedResponseEncValuesSupported: [String]? = nil,
+        jwks: JWKSet? = nil
+    ) {
+        self.clientName = clientName
+        self.logoUri = logoUri
+        self.vpFormatsSupported = vpFormatsSupported
+        self.authorizationEncryptedResponseAlg = authorizationEncryptedResponseAlg
+        self.authorizationEncryptedResponseEncValuesSupported = authorizationEncryptedResponseEncValuesSupported
+        self.jwks = jwks
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.clientName = try container.decodeIfPresent(String.self, forKey: .clientName)
+        self.logoUri = try container.decodeIfPresent(String.self, forKey: .logoUri)
+        self.authorizationEncryptedResponseAlg = try container.decodeIfPresent(String.self, forKey: .authorizationEncryptedResponseAlg)
+        self.authorizationEncryptedResponseEncValuesSupported = try container.decodeIfPresent([String].self, forKey: .authorizationEncryptedResponseEncValues)
+        self.jwks = try container.decodeIfPresent(JWKSet.self, forKey: .jwks)
+
+        let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
+        var decodedFormats: [String: VPFormatSupportedV2] = [:]
+        for key in vpFormatsContainer.allKeys {
+            switch key {
+            case .ldp_vc, .ldp_vp:
+                decodedFormats[key.rawValue] = try vpFormatsContainer.decode(LdpVcFormatSupported.self, forKey: key)
+            case .mso_mdoc:
+                decodedFormats[key.rawValue] = try vpFormatsContainer.decode(MsoMdocVcFormatSupported.self, forKey: key)
+            case .dc_sd_jwt, .vc_sd_jwt:
+                decodedFormats[key.rawValue] = try vpFormatsContainer.decode(SdJwtVcFormatSupported.self, forKey: key)
+            }
+        }
+        self.vpFormatsSupported = decodedFormats
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(clientName, forKey: .clientName)
+        try container.encodeIfPresent(logoUri, forKey: .logoUri)
+        try container.encodeIfPresent(authorizationEncryptedResponseAlg, forKey: .authorizationEncryptedResponseAlg)
+        try container.encodeIfPresent(authorizationEncryptedResponseEncValuesSupported, forKey: .authorizationEncryptedResponseEncValues)
+        try container.encodeIfPresent(jwks, forKey: .jwks)
+
+        var vpFormatsContainer = container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
+        for (key, value) in vpFormatsSupported {
+            guard let formatType = VPFormatType(rawValue: key) else { continue }
+            switch formatType {
+            case .ldp_vc, .ldp_vp:
+                if let typed = value as? LdpVcFormatSupported {
+                    try vpFormatsContainer.encode(typed, forKey: formatType)
+                }
+            case .mso_mdoc:
+                if let typed = value as? MsoMdocVcFormatSupported {
+                    try vpFormatsContainer.encode(typed, forKey: formatType)
+                }
+            case .dc_sd_jwt, .vc_sd_jwt:
+                if let typed = value as? SdJwtVcFormatSupported {
+                    try vpFormatsContainer.encode(typed, forKey: formatType)
+                }
+            }
+        }
+    }
+    
+    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadataV2 {
+        if let encodedData = clientMetadata as? Data {
+            return try toClientMetadata(encodedData)
+        } else if let data = clientMetadata as? String {
+            guard let encodedData = data.data(using: .utf8) else {
+                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadata.className)
+            }
+            return try toClientMetadata(encodedData)
+        } else {
+            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadata.className)
+        }
+    }
+    
+    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadataV2 {
+        return try encodedData.toInstance(as: ClientMetadataV2.self)
+    }
+}

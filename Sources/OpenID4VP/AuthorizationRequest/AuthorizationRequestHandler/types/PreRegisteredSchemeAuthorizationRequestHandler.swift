@@ -5,8 +5,11 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     let trustedVerifiers: [Verifier]
     let shouldValidateClient: Bool
     
-    init(trustedVerifiers: [Verifier],
+    init(clientId: String,
+         specVersion: SpecVersion,
+         trustedVerifiers: [Verifier],
          authorizationRequestParameters: [String: Any],
+         walletMetadataV2: WalletMetadataV2,
          walletMetadata: WalletMetadata?,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
@@ -14,7 +17,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
          networkManager: NetworkManaging) {
         self.trustedVerifiers = trustedVerifiers
         self.shouldValidateClient = shouldValidateClient
-        super.init(authorizationRequestParameters: authorizationRequestParameters,
+        super.init(clientId: clientId,
+                   specVersion: specVersion,
+                   authorizationRequestParameters: authorizationRequestParameters,
+                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -27,6 +33,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         return ClientIdScheme.preRegistered.rawValue
     }
     
+    func clientIdPrefix() -> String {
+        return ClientIdPrefix.preRegistered.rawValue
+    }
+    
     override func validateClientId() throws {
         if shouldValidateClient {
             guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String }) else {
@@ -36,8 +46,15 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     }
     
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
+        //TODO:  if the Client Identifier Prefix permits signed Request Objects, the Wallet SHOULD list supported cryptographic algorithms for securing the Request Object through the request_object_signing_alg_values_supported parameter.
+        // This is not handled here properly update it - pre-registered allows signed request
         var updatedWalletMetadata = walletMetadata
         updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
+        return updatedWalletMetadata
+    }
+    
+    func processWalletMetadata() throws -> WalletMetadataV2 {
+        try validateRequestObjectSigningAlgSupported(walletMetadataV2, className: className)
         return updatedWalletMetadata
     }
     

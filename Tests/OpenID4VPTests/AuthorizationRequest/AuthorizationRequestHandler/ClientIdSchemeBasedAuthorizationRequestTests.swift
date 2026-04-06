@@ -640,297 +640,297 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     
     //Fetch info for sending response (error or authorization response) to verifier
-    func testResponseUrlSetSuccessfullyForResponseModeDirectPost(){
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23))  as [String : Any]
-        let expectation = expectation(description: "Handler should be called with expected parameter")
-        var responseUri: String?
-        let mockSetResponseUri: (String) -> Void = { value in
-            responseUri = value
-            expectation.fulfill()
-        }
-        
-        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        try? clientIdSchemeBasedAuthorizationRequestHandler.setResponseUrl()
-        
-        wait(for: [expectation], timeout: 2.0)
-        XCTAssertEqual(responseUri, "https://mock-verifier.com", "Handler was called with unexpected parameter")
-    }
-    
-    func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
-        let testCases: [TestCase<[String: String?], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        ]
-        
-        for testCase in testCases {
-            let authorizationRequestParameters = createAuthorizationRequest(
-                paramList: authRequestWithPreRegisteredByValueDraft23,
-                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
-            ) as [String: Any]
-            
-            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
-                authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
-                setResponseUri: mockSetResponseUri,
-                walletNonce: "mock-nonce",
-                networkManager: mockNetworkManager
-            )
-            
-            XCTAssertThrowsError(try handler.setResponseUrl()) { error in
-                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
-            }
-        }
-    }
-    
-    
-    //Validate fields in authorization request which are mandatory
-    
-    func testParseAndValidateAuthorizationRequestWithPresentationDefinitionByReferenceSupport() async{
-        decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
-        decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
-        let presentationDefinition = convertToJsonString(presentationDefinition)
-        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
-        
-        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        do{
-            try await mockAuthHandler.validateAndParseRequestFields()
-            
-            assertDictionariesEqual(expected: [
-                "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
-                "presentation_definition": decodedPresentationDefinition!,
-                "response_uri": "https://mock-verifier.com",
-                "state": "+mRQe1d6pBoJqF6Ab28klg==",
-                "response_type": "vp_token",
-                "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
-                "client_metadata": decodedClientMetadata!,
-                "client_id": "redirect_uri:https://mock-verifier.com",
-                "response_mode": "direct_post",
-            ], actual: mockAuthHandler.authorizationRequestParameters)
-        } catch {
-            XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
-        }
-    }
-    
-    func testParseAndValidateAuthorizationRequestWithPresentationDefinitionByValueSupport() async{
-        decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
-        decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
-        let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
-            applicableFields: authRequestWithRedirectUriByValue
-        )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
-        
-        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        do{
-            try await mockAuthHandler.validateAndParseRequestFields()
-            
-            assertDictionariesEqual(expected: [
-                "client_metadata": decodedClientMetadata!,
-                "response_mode": "direct_post",
-                "client_id": "redirect_uri:https://mock-verifier.com",
-                "response_uri": "https://mock-verifier.com",
-                "presentation_definition": decodedPresentationDefinition!,
-                "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
-                "state": "+mRQe1d6pBoJqF6Ab28klg==",
-                "response_type": "vp_token"
-            ], actual: mockAuthHandler.authorizationRequestParameters)
-        } catch {
-            XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
-        }
-    }
-    
-    func testInvalidRequestFieldThrowErrorForResponseTypeField() async {
-        let testCases: [TestCase<[String: Any?], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        ]
-        
-        for testCase in testCases {
-            let authorizationRequestParameters = createAuthorizationRequest(
-                paramList: authRequestWithPreRegisteredByValueDraft23,
-                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
-            ) as [String: Any]
-            
-            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
-                authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
-                setResponseUri: mockSetResponseUri,
-                walletNonce: "mock-nonce",
-                networkManager: mockNetworkManager
-            )
-            
-            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
-                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
-            }
-        }
-    }
-    
-    
-    func testInvalidRequestFieldErrorForStateField() async {
-        let testCases: [TestCase<[String: Any], Void>] = [
-            TestCase(input: ["state": "null"], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["state": ""], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["state": "nil"], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        ]
-        
-        for testCase in testCases {
-            let authorizationRequestParameters = createAuthorizationRequest(
-                paramList: authRequestWithPreRegisteredByValueDraft23,
-                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
-            ) as [String: Any]
-            
-            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
-                authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
-                setResponseUri: mockSetResponseUri,
-                walletNonce: "mock-nonce",
-                networkManager: mockNetworkManager
-            )
-            
-            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
-                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
-            }
-        }
-    }
-    
-    
-    func testInvalidRequestFieldErrorForResponseModeField() async {
-        let testCases: [TestCase<[String: Any], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        ]
-        
-        for testCase in testCases {
-            let authorizationRequestParameters = createAuthorizationRequest(
-                paramList: authRequestWithPreRegisteredByValueDraft23,
-                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
-            ) as [String: Any]
-            
-            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
-                authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
-                setResponseUri: mockSetResponseUri,
-                walletNonce: "mock-nonce",
-                networkManager: mockNetworkManager
-            )
-            
-            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
-                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
-            }
-        }
-    }
-    
-    
-    func testInvalidRequestFieldErrorForNonceField() async {
-        let testCases: [TestCase<[String: Any?], Void>] = [
-            TestCase(input: ["nonce": "null"], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["nonce": ""], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["nonce": "nil"], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: ["nonce": nil], expectedError: "Missing Input: nonce param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        ]
-        
-        for testCase in testCases {
-            let authorizationRequestParameters = createAuthorizationRequest(
-                paramList: authRequestWithPreRegisteredByValueDraft23,
-                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
-            ) as [String: Any]
-            
-            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
-                authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
-                setResponseUri: mockSetResponseUri,
-                walletNonce: "mock-nonce",
-                networkManager: mockNetworkManager
-            )
-            
-            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
-                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
-            }
-        }
-    }
-    
-    func testShouldThrowInvalidDataErrorWhenResponseTypeInAuthorizationRequestIsNotSupported() async {
-        decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
-        decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
-        let presentationDefinition = convertToJsonString(presentationDefinition)
-        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, ["response_type": "vp_token id_token"])) as [String : Any]
-        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
-        
-        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncThrowsError(try await mockAuthHandler.validateAndParseRequestFields()) { error in
-            assertOpenID4VPException(error,
-                                     expectedMessage: "response type - vp_token id_token is not supported",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
-    func testShouldThrowErrorWhenInvalidClientMetadataIsProvided() async{
-        let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["client_metadata": "{}"])
-        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
-            assertOpenID4VPException(error,
-                                     expectedMessage: "Error during client metadata decoding - Missing Input: client_metadata->vp_formats param is required",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
-    func testShouldThrowErrorWhenBothPresenentationDefinitionAndPresenentationDefinitionUriArePresent() async{
-        let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition", "presentation_definition": presentationDefinition])
-        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
-            assertOpenID4VPException(error,
-                                     expectedMessage: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
-    func assertJSONStringEqual(expected: String, actual: String) {
-        guard let expectedData = expected.data(using: .utf8),
-              let actualData = actual.data(using: .utf8) else {
-            XCTFail("Failed to convert JSON strings to Data")
-            return
-        }
-        
-        guard let expectedDict = try? JSONSerialization.jsonObject(with: expectedData, options: []) as? [String: Any],
-              let actualDict = try? JSONSerialization.jsonObject(with: actualData, options: []) as? [String: Any] else {
-            XCTFail("Failed to convert JSON Data to Dictionary")
-            return
-        }
-        
-        XCTAssertTrue(NSDictionary(dictionary: expectedDict).isEqual(to: actualDict), "JSONs do not match")
-    }
-    
-    func testShouldThrowErrorWhenPresenentationDefinitionUriIsPresentButNotSupportedByWallet() async throws {
-        let requestUriResponse: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriWithPresentationDefinitionUri , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        let authorizationRequestParameters: [String : Any] = mergeMaps(requestUriResponse,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition"])
-        
-        let walletMetadata = try createWalletMetadataV2(presentationDefinitionURISupported: false)
-        
-        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        clientIdSchemeBasedAuthorizationRequestHandler.shouldValidateWithWalletMetadata = true
-        
-        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
-            assertOpenID4VPException(error,
-                                     expectedMessage: "presentation_definition_uri is not supported",
-                                     expectedCode: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
-            )
-        }
-    }
+//    func testResponseUrlSetSuccessfullyForResponseModeDirectPost(){
+//        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23))  as [String : Any]
+//        let expectation = expectation(description: "Handler should be called with expected parameter")
+//        var responseUri: String?
+//        let mockSetResponseUri: (String) -> Void = { value in
+//            responseUri = value
+//            expectation.fulfill()
+//        }
+//        
+//        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+//        try? clientIdSchemeBasedAuthorizationRequestHandler.setResponseUrl()
+//        
+//        wait(for: [expectation], timeout: 2.0)
+//        XCTAssertEqual(responseUri, "https://mock-verifier.com", "Handler was called with unexpected parameter")
+//    }
+//    
+//    func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
+//        let testCases: [TestCase<[String: String?], Void>] = [
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+//        ]
+//        
+//        for testCase in testCases {
+//            let authorizationRequestParameters = createAuthorizationRequest(
+//                paramList: authRequestWithPreRegisteredByValueDraft23,
+//                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
+//            ) as [String: Any]
+//            
+//            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
+//                authorizationRequestParameters: authorizationRequestParameters,
+//                walletMetadata: nil,
+//                setResponseUri: mockSetResponseUri,
+//                walletNonce: "mock-nonce",
+//                networkManager: mockNetworkManager
+//            )
+//            
+//            XCTAssertThrowsError(try handler.setResponseUrl()) { error in
+//                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
+//            }
+//        }
+//    }
+//    
+//    
+//    //Validate fields in authorization request which are mandatory
+//    
+//    func testParseAndValidateAuthorizationRequestWithPresentationDefinitionByReferenceSupport() async{
+//        decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
+//        decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
+//        let presentationDefinition = convertToJsonString(presentationDefinition)
+//        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+//        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
+//        
+//        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+//        do{
+//            try await mockAuthHandler.validateAndParseRequestFields()
+//            
+//            assertDictionariesEqual(expected: [
+//                "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
+//                "presentation_definition": decodedPresentationDefinition!,
+//                "response_uri": "https://mock-verifier.com",
+//                "state": "+mRQe1d6pBoJqF6Ab28klg==",
+//                "response_type": "vp_token",
+//                "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
+//                "client_metadata": decodedClientMetadata!,
+//                "client_id": "redirect_uri:https://mock-verifier.com",
+//                "response_mode": "direct_post",
+//            ], actual: mockAuthHandler.authorizationRequestParameters)
+//        } catch {
+//            XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
+//        }
+//    }
+//    
+//    func testParseAndValidateAuthorizationRequestWithPresentationDefinitionByValueSupport() async{
+//        decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
+//        decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
+//        let authorizationRequestObject = createAuthorizationRequestObject(
+//            clientIdScheme: .redirectUri,
+//            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
+//            applicableFields: authRequestWithRedirectUriByValue
+//        )
+//        let authorizationRequestParameters = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+//        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",responseBody: authorizationRequestObject)
+//        
+//        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+//        do{
+//            try await mockAuthHandler.validateAndParseRequestFields()
+//            
+//            assertDictionariesEqual(expected: [
+//                "client_metadata": decodedClientMetadata!,
+//                "response_mode": "direct_post",
+//                "client_id": "redirect_uri:https://mock-verifier.com",
+//                "response_uri": "https://mock-verifier.com",
+//                "presentation_definition": decodedPresentationDefinition!,
+//                "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
+//                "state": "+mRQe1d6pBoJqF6Ab28klg==",
+//                "response_type": "vp_token"
+//            ], actual: mockAuthHandler.authorizationRequestParameters)
+//        } catch {
+//            XCTFail("Error should not occur but got error \(error) - \(error.localizedDescription)")
+//        }
+//    }
+//    
+//    func testInvalidRequestFieldThrowErrorForResponseTypeField() async {
+//        let testCases: [TestCase<[String: Any?], Void>] = [
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+//        ]
+//        
+//        for testCase in testCases {
+//            let authorizationRequestParameters = createAuthorizationRequest(
+//                paramList: authRequestWithPreRegisteredByValueDraft23,
+//                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
+//            ) as [String: Any]
+//            
+//            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
+//                authorizationRequestParameters: authorizationRequestParameters,
+//                walletMetadata: nil,
+//                setResponseUri: mockSetResponseUri,
+//                walletNonce: "mock-nonce",
+//                networkManager: mockNetworkManager
+//            )
+//            
+//            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+//                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
+//            }
+//        }
+//    }
+//    
+//    
+//    func testInvalidRequestFieldErrorForStateField() async {
+//        let testCases: [TestCase<[String: Any], Void>] = [
+//            TestCase(input: ["state": "null"], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: ["state": ""], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: ["state": "nil"], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+//        ]
+//        
+//        for testCase in testCases {
+//            let authorizationRequestParameters = createAuthorizationRequest(
+//                paramList: authRequestWithPreRegisteredByValueDraft23,
+//                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
+//            ) as [String: Any]
+//            
+//            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
+//                authorizationRequestParameters: authorizationRequestParameters,
+//                walletMetadata: nil,
+//                setResponseUri: mockSetResponseUri,
+//                walletNonce: "mock-nonce",
+//                networkManager: mockNetworkManager
+//            )
+//            
+//            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+//                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
+//            }
+//        }
+//    }
+//    
+//    
+//    func testInvalidRequestFieldErrorForResponseModeField() async {
+//        let testCases: [TestCase<[String: Any], Void>] = [
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+//        ]
+//        
+//        for testCase in testCases {
+//            let authorizationRequestParameters = createAuthorizationRequest(
+//                paramList: authRequestWithPreRegisteredByValueDraft23,
+//                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
+//            ) as [String: Any]
+//            
+//            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
+//                authorizationRequestParameters: authorizationRequestParameters,
+//                walletMetadata: nil,
+//                setResponseUri: mockSetResponseUri,
+//                walletNonce: "mock-nonce",
+//                networkManager: mockNetworkManager
+//            )
+//            
+//            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+//                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
+//            }
+//        }
+//    }
+//    
+//    
+//    func testInvalidRequestFieldErrorForNonceField() async {
+//        let testCases: [TestCase<[String: Any?], Void>] = [
+//            TestCase(input: ["nonce": "null"], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: ["nonce": ""], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: ["nonce": "nil"], expectedError: "Invalid Input: nonce value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+//            TestCase(input: ["nonce": nil], expectedError: "Missing Input: nonce param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+//        ]
+//        
+//        for testCase in testCases {
+//            let authorizationRequestParameters = createAuthorizationRequest(
+//                paramList: authRequestWithPreRegisteredByValueDraft23,
+//                requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, testCase.input)
+//            ) as [String: Any]
+//            
+//            let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
+//                authorizationRequestParameters: authorizationRequestParameters,
+//                walletMetadata: nil,
+//                setResponseUri: mockSetResponseUri,
+//                walletNonce: "mock-nonce",
+//                networkManager: mockNetworkManager
+//            )
+//            
+//            await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+//                assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
+//            }
+//        }
+//    }
+//    
+//    func testShouldThrowInvalidDataErrorWhenResponseTypeInAuthorizationRequestIsNotSupported() async {
+//        decodedClientMetadata = createInstance(clientMetadata, as: ClientMetadata.self)
+//        decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
+//        let presentationDefinition = convertToJsonString(presentationDefinition)
+//        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, ["response_type": "vp_token id_token"])) as [String : Any]
+//        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/presentation-definition",responseBody: presentationDefinition)
+//        
+//        let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(authorizationRequestParameters: authorizationRequestParameters, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+//        
+//        await XCTAssertAsyncThrowsError(try await mockAuthHandler.validateAndParseRequestFields()) { error in
+//            assertOpenID4VPException(error,
+//                                     expectedMessage: "response type - vp_token id_token is not supported",
+//                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+//            )
+//        }
+//    }
+//    
+//    func testShouldThrowErrorWhenInvalidClientMetadataIsProvided() async{
+//        let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["client_metadata": "{}"])
+//        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+//        
+//        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
+//            assertOpenID4VPException(error,
+//                                     expectedMessage: "Error during client metadata decoding - Missing Input: client_metadata->vp_formats param is required",
+//                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+//            )
+//        }
+//    }
+//    
+//    func testShouldThrowErrorWhenBothPresenentationDefinitionAndPresenentationDefinitionUriArePresent() async{
+//        let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition", "presentation_definition": presentationDefinition])
+//        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+//        
+//        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
+//            assertOpenID4VPException(error,
+//                                     expectedMessage: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
+//                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+//            )
+//        }
+//    }
+//    
+//    func assertJSONStringEqual(expected: String, actual: String) {
+//        guard let expectedData = expected.data(using: .utf8),
+//              let actualData = actual.data(using: .utf8) else {
+//            XCTFail("Failed to convert JSON strings to Data")
+//            return
+//        }
+//        
+//        guard let expectedDict = try? JSONSerialization.jsonObject(with: expectedData, options: []) as? [String: Any],
+//              let actualDict = try? JSONSerialization.jsonObject(with: actualData, options: []) as? [String: Any] else {
+//            XCTFail("Failed to convert JSON Data to Dictionary")
+//            return
+//        }
+//        
+//        XCTAssertTrue(NSDictionary(dictionary: expectedDict).isEqual(to: actualDict), "JSONs do not match")
+//    }
+//    
+//    func testShouldThrowErrorWhenPresenentationDefinitionUriIsPresentButNotSupportedByWallet() async throws {
+//        let requestUriResponse: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriWithPresentationDefinitionUri , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+//        let authorizationRequestParameters: [String : Any] = mergeMaps(requestUriResponse,["presentation_definition_uri": "https://mock-verifier.com/presentation-definition"])
+//        
+//        let walletMetadata = try createWalletMetadataV2(presentationDefinitionURISupported: false)
+//        
+//        let clientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+//        clientIdSchemeBasedAuthorizationRequestHandler.shouldValidateWithWalletMetadata = true
+//        
+//        await XCTAssertAsyncThrowsError(try await clientIdSchemeBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
+//            assertOpenID4VPException(error,
+//                                     expectedMessage: "presentation_definition_uri is not supported",
+//                                     expectedCode: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
+//            )
+//        }
+//    }
     
     func testShouldThrowErrorWhenTransactionDataIsPresentInAuthorizationRequest() async {
         let authorizationRequestParameters: [String: Any] = mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.transactionData.rawValue: ["foo": "bar"]])

@@ -14,6 +14,9 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging,
+         clientId: String = "mock-client",
+         specVersion: SpecVersion = .v1,
+         walletMetadataV2: WalletMetadataV2 = WalletMetadataV2(),
          isSignedRequestSupported: Bool = true,
          isUnsignedRequestSupported: Bool = true) {
         self.isSignedRequestSupportedFlag = isSignedRequestSupported
@@ -24,7 +27,10 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
             self.clientIdSchemeValue = "unknown"
         }
         
-        super.init(authorizationRequestParameters: authorizationRequestParameters,
+        super.init(clientId: clientId,
+                   specVersion: specVersion,
+                   authorizationRequestParameters: authorizationRequestParameters,
+                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -59,9 +65,14 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     func isSignedRequestSupported() -> Bool {
         return self.isSignedRequestSupportedFlag
     }
-
+    
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
         return walletMetadata
     }
+    
+    func processWalletMetadata() throws -> WalletMetadataV2 {
+        return WalletMetadataV2()
+    }
+    
     var capturedRequestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?
 }

@@ -30,3 +30,32 @@ func parseAndValidateClientMetadata(authorizationRequest: [String: Any],
     
     return mutableParams
 }
+
+func parseAndValidateClientMetadataV2(authorizationRequest: [String: Any],
+                                    shouldValidateWithWalletMetadata: Bool,
+                                    walletMetadata: WalletMetadataV2) throws -> [String: Any] {
+    let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
+    var mutableParams = authorizationRequest
+    if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata.rawValue] {
+        if let clientMetadataInstance = clientMetadata as? ClientMetadataV2 {
+            mutableParams[clientMetadataKey] = clientMetadataInstance
+        }
+        else if let clientMetadataObject = clientMetadata as? NSDictionary{
+            let data = try JSONSerialization.data(withJSONObject: clientMetadataObject, options: [])
+            let clientMetadata = try ClientMetadataV2.deserializeAndValidate(clientMetadata: data)
+            mutableParams[clientMetadataKey] = clientMetadata
+        } else if let clientMetaString = clientMetadata as? String {
+            let clientMetadata = try ClientMetadataV2.deserializeAndValidate(clientMetadata: clientMetaString)
+            mutableParams[clientMetadataKey] = clientMetadata
+        } else {
+            throw InvalidData(message: "client_metadata must be of type String or Map", className: className)
+        }
+    }
+    
+    let responseMode = authorizationRequest[AuthorizationRequestFieldConstants.responseMode.rawValue] as? String
+    try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).validate(clientMetadata: (mutableParams[clientMetadataKey] as? ClientMetadataV2),
+                                                                                 walletMetadata: walletMetadata,
+                                                                                 shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata)
+    
+    return mutableParams
+}

@@ -82,27 +82,89 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                     setResponseUri: @escaping (String) -> Void,
                                     walletNonce: String,
                                     networkManager: NetworkManaging
-                                    ) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
-    let clientIdScheme = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
+    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
+    let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
     
-    switch clientIdScheme {
-    case ClientIdScheme.preRegistered.rawValue:
-        return PreRegisteredSchemeAuthorizationRequestHandler(trustedVerifiers: trustedVerifiers,
+    let clientIdPrefix = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+    let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: trustedVerifiers)
+    
+    switch clientIdPrefix {
+    case ClientIdPrefix.preRegistered.rawValue:
+        return PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId,
+                                                              specVersion: specVersion,
+                                                              trustedVerifiers: trustedVerifiers,
                                                               authorizationRequestParameters: authorizationRequestParameters,
+                                                              walletMetadataV2: WalletMetadataV2(),
                                                               walletMetadata: walletMetadata,
                                                               shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
                                                               walletNonce: walletNonce,
                                                               networkManager: networkManager)
-    case ClientIdScheme.did.rawValue:
-        return DidSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
+    case ClientIdScheme.did.rawValue, ClientIdPrefix.did.rawValue:
+        return DidSchemeAuthorizationRequestHandler(clientId: clientId,
+                                                    specVersion: specVersion,
+                                                    authorizationRequestParameters: authorizationRequestParameters,
+                                                    walletMetadataV2: WalletMetadataV2(),
                                                     walletMetadata: walletMetadata,
                                                     setResponseUri: setResponseUri,
                                                     walletNonce: walletNonce,
                                                     networkManager: networkManager)
-    case ClientIdScheme.redirectUri.rawValue:
-        return RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
+    case ClientIdPrefix.redirectUri.rawValue:
+        return RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,
+                                                            specVersion: specVersion,
+                                                            authorizationRequestParameters: authorizationRequestParameters,
+                                                            walletMetadataV2: WalletMetadataV2(),
                                                             walletMetadata: walletMetadata,
+                                                            setResponseUri: setResponseUri,
+                                                            walletNonce: walletNonce,
+                                                            networkManager: networkManager)
+    default:
+        throw InvalidData(message: "Given client_id_scheme is not supported" ,className: AuthorizationRequest.className)
+    }
+}
+
+func getAuthorizationRequestHandlerV2(authorizationRequestParameters: [String:Any],
+                                    trustedVerifiers : [Verifier],
+                                    walletMetadata: WalletMetadataV2,
+                                    shouldValidateClient: Bool,
+                                    setResponseUri: @escaping (String) -> Void,
+                                    walletNonce: String,
+                                    networkManager: NetworkManaging
+) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
+    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
+    let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
+    
+    let clientIdPrefix = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+    let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: trustedVerifiers)
+    
+    switch clientIdPrefix {
+    case ClientIdPrefix.preRegistered.rawValue:
+        return PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId,
+                                                              specVersion: specVersion,
+                                                              trustedVerifiers: trustedVerifiers,
+                                                              authorizationRequestParameters: authorizationRequestParameters,
+                                                              walletMetadataV2: walletMetadata,
+                                                              walletMetadata: nil,
+                                                              shouldValidateClient: shouldValidateClient,
+                                                              setResponseUri: setResponseUri,
+                                                              walletNonce: walletNonce,
+                                                              networkManager: networkManager)
+    case ClientIdScheme.did.rawValue, ClientIdPrefix.did.rawValue:
+        return DidSchemeAuthorizationRequestHandler(clientId: clientId,
+                                                    specVersion: specVersion,
+                                                    authorizationRequestParameters: authorizationRequestParameters,
+                                                    walletMetadataV2: walletMetadata,
+                                                    walletMetadata: nil,
+                                                    setResponseUri: setResponseUri,
+                                                    walletNonce: walletNonce,
+                                                    networkManager: networkManager)
+    case ClientIdPrefix.redirectUri.rawValue:
+        return RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,
+                                                            specVersion: specVersion,
+                                                            authorizationRequestParameters: authorizationRequestParameters,
+                                                            walletMetadataV2: walletMetadata,
+                                                            walletMetadata: nil,
                                                             setResponseUri: setResponseUri,
                                                             walletNonce: walletNonce,
                                                             networkManager: networkManager)
@@ -190,6 +252,24 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdSchemeAttached: String
     }
 }
 
+func validateRequestObjectSigningAlgSupported(_ walletMetadata: WalletMetadataV2, className: String) throws {
+    guard walletMetadata.requestObjectSigningAlgValuesSupported != nil else {
+        throw InvalidData(
+            message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
+            className: className
+        )
+    }
+}
+
+func validateRequestObjectSigningAlgSupported(_ walletMetadata: WalletMetadata, className: String) throws {
+    guard walletMetadata.requestObjectSigningAlgValuesSupported != nil else {
+        throw InvalidData(
+            message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
+            className: className
+        )
+    }
+}
+
 func validateResponseTypeSupported(_ responseType: String) throws {
     guard ResponseType(rawValue: responseType) != nil else {
         throw InvalidData(
@@ -197,4 +277,31 @@ func validateResponseTypeSupported(_ responseType: String) throws {
             className: AuthorizationRequest.className
         )
     }
+}
+
+internal func findSpecVersionUsingRequestParameters(_ authorizationRequestParameters: [String : Any]) -> SpecVersion {
+    // In case of By value mode of Request - understand the spec version based on presence of `dcql_query`
+    if authorizationRequestParameters[AuthorizationRequestFieldConstants.dcqlQuery.rawValue] != nil {
+        return .v1
+    }
+    return .draft23
+}
+
+internal func findSpecVersion(clientId: String, clientIdPrefix: String, authorizationRequestParameters: [String: Any], trustedVerifiers: [Verifier]) -> SpecVersion {
+    // In case of By reference mode of Request - get the client ID and understand the spec version
+    if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] != nil) {
+        if clientIdPrefix == ClientIdScheme.did.rawValue {
+            return .draft23
+        } else if clientIdPrefix == ClientIdPrefix.did.rawValue {
+            return .v1
+        } else if clientIdPrefix == ClientIdPrefix.preRegistered.rawValue {
+            let trustedVerifier = trustedVerifiers.first { $0.clientId == clientId }
+            if let trustedVerifier = trustedVerifier {
+                return trustedVerifier.specVersion
+            }
+            return .v1
+        }
+    }
+    
+    return findSpecVersionUsingRequestParameters(authorizationRequestParameters)
 }

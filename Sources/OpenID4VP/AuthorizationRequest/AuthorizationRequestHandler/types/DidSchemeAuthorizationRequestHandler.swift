@@ -1,11 +1,17 @@
 import Foundation
 class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
-    override init(authorizationRequestParameters: [String: Any],
+    override init(clientId: String,
+                  specVersion: SpecVersion,
+                  authorizationRequestParameters: [String: Any],
+                  walletMetadataV2: WalletMetadataV2,
                   walletMetadata: WalletMetadata? = nil,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
-        super.init(authorizationRequestParameters: authorizationRequestParameters,
+        super.init(clientId: clientId,
+                   specVersion: specVersion,
+                   authorizationRequestParameters: authorizationRequestParameters,
+                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -16,6 +22,10 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     
     func clientIdScheme() -> String {
         return ClientIdScheme.did.rawValue
+    }
+
+    func clientIdPrefix() -> String {
+        return ClientIdPrefix.did.rawValue
     }
     
     func isSignedRequestSupported() -> Bool {
@@ -39,6 +49,11 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         return try await keyResolver.resolve(uri: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String, keyId: keyId)
     }
     
+    func processWalletMetadata() throws -> WalletMetadataV2 {
+        try validateRequestObjectSigningAlgSupported(walletMetadataV2, className: className)
+        return walletMetadataV2
+    }
+
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
         if(walletMetadata.requestObjectSigningAlgValuesSupported == nil) {
             throw InvalidData(message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
@@ -47,3 +62,4 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         return walletMetadata
     }
 }
+

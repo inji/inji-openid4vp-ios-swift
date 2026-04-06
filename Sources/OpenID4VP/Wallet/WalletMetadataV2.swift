@@ -78,6 +78,25 @@ public struct WalletMetadataV2: Codable {
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
         self.responseTypesSupported = responseTypesSupported
     }
+    
+    internal func encode(specVersion: SpecVersion) throws -> String {
+        switch specVersion {
+        case .v1:
+            return try encodeAsJSON(self, fieldName: "wallet_metadata", className: Self.className)
+        case .draft23:
+            let walletMetadata = try? WalletMetadata(
+                // TODO: populate algValues supported with specific alg values
+                vpFormatsSupported: self.vpFormatsSupported.mapValues { try cast($0, to: VPFormatSupported.self) },
+                // If prefix is not decentralized identifier, default to did as other schemes are same
+                clientIdSchemesSupported: self.clientIdPrefixesSupported.map { ClientIdScheme(rawValue: $0.rawValue) ?? .did },
+                requestObjectSigningAlgValuesSupported: self.requestObjectSigningAlgValuesSupported,
+                authorizationEncryptionAlgValuesSupported: self.authorizationEncryptionAlgValuesSupported,
+                authorizationEncryptionEncValuesSupported: self.authorizationEncryptionEncValuesSupported,
+                responseTypesSupported: self.responseTypesSupported
+            )
+            return try encodeAsJSON(walletMetadata, fieldName: "wallet_metadata", className: Self.className)
+        }
+    }
 }
 
 private func cast<T>(_ value: Any, to type: T.Type) throws -> T {
@@ -85,4 +104,8 @@ private func cast<T>(_ value: Any, to type: T.Type) throws -> T {
         throw UnsupportedTypeDecoding(message: "Failed to cast value to \(T.self)", className: WalletMetadataV2.className)
     }
     return casted
+}
+
+private func encodeAsJSON<T: Encodable>(_ value: T, fieldName: String, className: String) throws -> String {
+    return try encode(value, fieldName: fieldName, className: className)
 }

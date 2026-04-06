@@ -1,11 +1,17 @@
 import Foundation
 class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
-    override init(authorizationRequestParameters: [String: Any],
+    override init(clientId: String,
+                  specVersion: SpecVersion,
+                  authorizationRequestParameters: [String: Any],
+                  walletMetadataV2: WalletMetadataV2,
                   walletMetadata: WalletMetadata?,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
-        super.init(authorizationRequestParameters: authorizationRequestParameters,
+        super.init(clientId: clientId,
+                   specVersion: specVersion,
+                   authorizationRequestParameters: authorizationRequestParameters,
+                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -16,6 +22,10 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
 
     func clientIdScheme() -> String {
         return ClientIdScheme.redirectUri.rawValue
+    }
+    
+    func clientIdPrefix() -> String {
+        return ClientIdPrefix.redirectUri.rawValue
     }
     
     func isSignedRequestSupported() -> Bool {
@@ -32,6 +42,12 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     
     func process(walletMetadata: WalletMetadata) -> WalletMetadata {
         var updatedWalletMetadata = walletMetadata
+        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
+        return updatedWalletMetadata
+    }
+    
+    func processWalletMetadata() throws -> WalletMetadataV2 {
+        var updatedWalletMetadata = walletMetadataV2
         updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
         return updatedWalletMetadata
     }
