@@ -9,7 +9,6 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
          specVersion: SpecVersion,
          trustedVerifiers: [Verifier],
          authorizationRequestParameters: [String: Any],
-         walletMetadataV2: WalletMetadataV2?,
          walletMetadata: WalletMetadata?,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
@@ -20,7 +19,6 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -40,20 +38,12 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
     override func validateClientId() throws {
         if shouldValidateClient {
             guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String }) else {
-                throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: AuthorizationRequest.className)
+                throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
             }
         }
     }
     
-    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
-        //TODO:  if the Client Identifier Prefix permits signed Request Objects, the Wallet SHOULD list supported cryptographic algorithms for securing the Request Object through the request_object_signing_alg_values_supported parameter.
-        // This is not handled here properly update it - pre-registered allows signed request
-        var updatedWalletMetadata = walletMetadata
-        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
-        return updatedWalletMetadata
-    }
-    
-    func process(walletMetadata: WalletMetadataV2) throws -> WalletMetadataV2 {
+    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
         try validateRequestObjectSigningAlgSupported(walletMetadata, className: className)
         return walletMetadata
     }
@@ -99,7 +89,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
             guard preRegisteredClient.responseUris.contains(responseUri) else {
                 throw InvalidVerifier(
                     message: "response_uri trust cannot be established",
-                    className: AuthorizationRequest.className
+                    className: className
                 )
             }
             

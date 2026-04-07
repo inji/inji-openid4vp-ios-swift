@@ -12,7 +12,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
 
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadataV2()
+//        walletMetadata = try createWalletMetadataV2()
     }
     
     // Support for Authorization request by reference or by value

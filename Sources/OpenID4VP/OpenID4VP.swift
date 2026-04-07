@@ -3,16 +3,16 @@ import Foundation
 public class OpenID4VP {
     public let traceabilityId: String
     let networkManager: NetworkManaging
-    var authorizationRequest: AuthorizationRequestV2!
+    var authorizationRequest: AuthorizationRequest!
     private var responseUri: String?
     private var authorizationResponseHandler: AuthorizationResponseHandler
-    private let walletMetadata: WalletMetadataV2?
+    private let walletMetadata: WalletMetadata?
     private var walletNonce: String = ""
     private let nonceProvider: NonceProvider
 
     private let className = String(describing: type(of: OpenID4VP.self))
 
-    public init(traceabilityId: String, walletMetadata: WalletMetadataV2? = nil) {
+    public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
         networkManager = NetworkManager.shared
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
@@ -22,7 +22,7 @@ public class OpenID4VP {
         walletNonce = nonceProvider.generateNonce()
     }
 
-    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadataV2 = WalletMetadataV2(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
+    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata = WalletMetadata(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
         self.networkManager = networkManager ?? NetworkManager.shared
         self.nonceProvider = nonceProvider
 
@@ -40,7 +40,7 @@ public class OpenID4VP {
         urlEncodedAuthorizationRequest: String,
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
-    ) async throws -> AuthorizationRequestV2 {
+    ) async throws -> AuthorizationRequest {
         // Create a new wallet nonce for each request
         walletNonce = nonceProvider.generateNonce()
         authorizationRequest = nil
@@ -48,7 +48,7 @@ public class OpenID4VP {
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
 
         do {
-            authorizationRequest = try await AuthorizationRequestV2.validateAndCreateAuthorizationRequest(
+            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                 trustedVerifier: trustedVerifiers,
                 walletMetadata: walletMetadata,
@@ -69,14 +69,14 @@ public class OpenID4VP {
         authorizationRequest: [String: Any],
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
-    ) async throws -> AuthorizationRequestV2 {
+    ) async throws -> AuthorizationRequest {
         do {
             walletNonce = nonceProvider.generateNonce()
             self.authorizationRequest = nil
             responseUri = nil
             authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
 
-            let validatedAuthorizationRequest = try await AuthorizationRequestV2.validateAndCreateAuthorizationRequest(
+            let validatedAuthorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authorizationRequest,
                 trustedVerifiers: trustedVerifiers,
                 walletMetadata: walletMetadata,
@@ -120,7 +120,7 @@ public class OpenID4VP {
         signatureSuite: String? = nil
     ) async throws -> [UnsignedVPTokenV2] {
         do {
-            return try await authorizationResponseHandler.constructUnsignedVPTokenV3(
+            return try await authorizationResponseHandler.constructUnsignedVPTokenV2(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri!,

@@ -1,24 +1,24 @@
 import Foundation
 
 struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
-    let className = String(describing: DirectPostResponseModeHandler.self)
+    static let className = String(describing: DirectPostResponseModeHandler.self)
     
-    func validate(clientMetadata: ClientMetadata?,
+    func validate(clientMetadata: ClientMetadataSpecVersionDraft23?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
         return
     }
     
-    func validate(clientMetadata: ClientMetadataV2?,
-                  walletMetadata: WalletMetadataV2?,
+    func validate(clientMetadata: ClientMetadataSpecVersion1?,
+                  walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
-        if let enc = clientMetadata?.authorizationEncryptedResponseEncValuesSupported {
-            throw InvalidData(message: "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'", className: className)
+        if clientMetadata?.authorizationEncryptedResponseEncValuesSupported != nil {
+            throw InvalidData(message: "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'", className: Self.className)
         }
     }
     
     func getAuthorizationResponse(
-        authorizationRequest: AuthorizationRequestV2,
+        authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponseV2,
         walletNonce: String
     ) throws -> [String: String] {
@@ -26,34 +26,15 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     }
 
     func getAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequestV2?,
+        authorizationRequest: AuthorizationRequest?,
         authorizationResponse: AuthorizationErrorResponse,
         walletNonce: String
     ) -> [String: String] {
         return authorizationResponse.toJsonEncodedMap()
     }
-
     
     func sendAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponse,
-        url: String,
-        networkManager: any NetworkManaging,
-        producerInfo: String,
-        recipientInfo: String
-    ) async throws -> NetworkResponse {
-        let requestBody: [String: String] = try authorizationResponse.toJsonEncodedMap()
-
-        return try await networkManager.sendHTTPRequest(
-            url: url,
-            method: .post,
-            bodyParams: requestBody,
-            headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
-        )
-    }
-    
-    func sendAuthorizationResponse(
-        authorizationRequest: AuthorizationRequestV2,
         authorizationResponse: AuthorizationResponseV2,
         url: String,
         networkManager: any NetworkManaging,

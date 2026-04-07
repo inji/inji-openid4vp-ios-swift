@@ -12,7 +12,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     private var walletMetadata: WalletMetadata!
 
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadataV2()
+//        walletMetadata = try createWalletMetadataV2()
     }
 
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
@@ -23,7 +23,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
 
     func testSendAuthorizationResponseForDirectPostResponseMode() async throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
-        let authorizationResponse: AuthorizationResponse = AuthorizationResponse(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
+        let authorizationResponse: AuthorizationResponseV2 = .dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
         mockNetworkManager.clearResponses()
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
 
@@ -69,7 +69,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             }
             """
 
-            let clientMetadata = try JSONDecoder().decode(ClientMetadata.self, from: Data(clientMetadataStr.utf8))
+            let clientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersionDraft23.self, from: Data(clientMetadataStr.utf8))
             let handler = DirectPostJwtResponseModeHandler()
 
             

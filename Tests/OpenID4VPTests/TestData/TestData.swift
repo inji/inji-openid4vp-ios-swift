@@ -295,7 +295,7 @@ let presentationDefinition: [String: Any] = [
 let mockPresentationDefinitionObject = createInstance(presentationDefinition, as: PresentationDefinition.self)
 
 let vpFormatsMap: [String: VPFormatSupported] = [
-    "ldp_vc": VPFormatSupported(algValuesSupported: ["Ed25519Signature2018", "Ed25519Signature2020"])
+    "ldp_vc": LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2018, .ed25519Signature2020])
 ]
 
 let clientMetadata: [String: Any] = [
@@ -332,6 +332,40 @@ let clientMetadata: [String: Any] = [
     ]
 ]
 
+let clientMetadataV2: [String: Any] = [
+    "client_name": "Requester name",
+    "logo_uri": "https://mock-verifier.com/logo",
+    "authorization_encrypted_response_alg": "ECDH-ES",
+    "authorization_encrypted_response_enc_values_supported": ["A256GCM"],
+    "jwks": [
+        "keys": [
+            [
+                "kty": "OKP",
+                "crv": "X25519",
+                "use": "enc",
+                "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                "alg": "ECDH-ES",
+                "kid": "ed-key1"
+            ],
+            [
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "use": "sig",
+                "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                "alg": "EdDSA",
+                "kid": "ed-key2"
+            ]]
+    ],
+    "vp_formats_supported": [
+        "ldp_vp": [
+            "proof_type_values": [
+                "Ed25519Signature2018",
+                "Ed25519Signature2020"
+            ]
+        ]
+    ]
+]
+
 let clientMetadataWithWrongKey: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
@@ -358,7 +392,9 @@ let clientMetadataWithWrongKey: [String: Any] = [
     ]
 ]
 
-let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadata.self)
+let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadataSpecVersionDraft23.self)
+
+let mockClientMetadataObjectV2 = createInstance(clientMetadataV2, as: ClientMetadataSpecVersion1.self)
 
 let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
     jws: "validJWS", proofValue: "hdjbhdsjdshjv",

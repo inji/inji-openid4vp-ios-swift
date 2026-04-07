@@ -1,12 +1,12 @@
 import XCTest
 @testable import OpenID4VP
 
-final class WalletMetadataV2Tests: XCTestCase {
+final class WalletMetadataTests: XCTestCase {
     func testInitWithAllFields() {
         let ldpVc = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
         let msoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
         let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["alg3"], kbJwtAlgValues: ["alg4"])
-        let vpFormats: [VPFormatType: VPFormatSupportedV2] = [
+        let vpFormats: [VPFormatType: VPFormatSupported] = [
             .ldp_vc: ldpVc,
             .mso_mdoc: msoMdoc,
             .dc_sd_jwt: sdJwt
@@ -16,7 +16,7 @@ final class WalletMetadataV2Tests: XCTestCase {
         let keyAlgs: [KeyManagementAlgorithm] = [.ecdhEs]
         let encAlgs: [ContentEncryptionAlgorithm] = [.A256GCM]
         let responseTypes: [ResponseType] = [.vp_token]
-        let metadata = WalletMetadataV2(
+        let metadata = WalletMetadata(
             vpFormatsSupported: vpFormats,
             clientIdPrefixesSupported: clientIdPrefixes,
             requestObjectSigningAlgValuesSupported: requestAlgs,
@@ -33,7 +33,7 @@ final class WalletMetadataV2Tests: XCTestCase {
     }
 
     func testInitWithDefaults() {
-        let metadata = WalletMetadataV2()
+        let metadata = WalletMetadata()
         XCTAssertFalse(metadata.vpFormatsSupported.isEmpty)
         XCTAssertFalse(metadata.clientIdPrefixesSupported.isEmpty)
         XCTAssertNotNil(metadata.requestObjectSigningAlgValuesSupported)
@@ -46,12 +46,12 @@ final class WalletMetadataV2Tests: XCTestCase {
         let ldpVc = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
         let msoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
         let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["alg3"], kbJwtAlgValues: ["alg4"])
-        let vpFormats: [VPFormatType: VPFormatSupportedV2] = [
+        let vpFormats: [VPFormatType: VPFormatSupported] = [
             .ldp_vc: ldpVc,
             .mso_mdoc: msoMdoc,
             .dc_sd_jwt: sdJwt
         ]
-        let metadata = WalletMetadataV2(
+        let metadata = WalletMetadata(
             vpFormatsSupported: vpFormats,
             clientIdPrefixesSupported: [.preRegistered],
             requestObjectSigningAlgValuesSupported: [.edDsa],
@@ -62,7 +62,7 @@ final class WalletMetadataV2Tests: XCTestCase {
         let encoder = JSONEncoder()
         let data = try encoder.encode(metadata)
         let decoder = JSONDecoder()
-        let decoded = try decoder.decode(WalletMetadataV2.self, from: data)
+        let decoded = try decoder.decode(WalletMetadata.self, from: data)
         XCTAssertEqual(decoded.vpFormatsSupported.count, 3)
         XCTAssertEqual(decoded.clientIdPrefixesSupported, [.preRegistered])
         XCTAssertEqual(decoded.requestObjectSigningAlgValuesSupported, [.edDsa])
@@ -73,8 +73,8 @@ final class WalletMetadataV2Tests: XCTestCase {
 
     func testNilOptionals() {
         let ldpVc = LdpVcFormatSupported()
-        let vpFormats: [VPFormatType: VPFormatSupportedV2] = [ .ldp_vc: ldpVc ]
-        let metadata = WalletMetadataV2(
+        let vpFormats: [VPFormatType: VPFormatSupported] = [ .ldp_vc: ldpVc ]
+        let metadata = WalletMetadata(
             vpFormatsSupported: vpFormats,
             clientIdPrefixesSupported: [.preRegistered],
             requestObjectSigningAlgValuesSupported: nil,
@@ -99,6 +99,6 @@ final class WalletMetadataV2Tests: XCTestCase {
         """
         let data = jsonString.data(using: .utf8)!
         let decoder = JSONDecoder()
-        XCTAssertThrowsError(try decoder.decode(WalletMetadataV2.self, from: data))
+        XCTAssertThrowsError(try decoder.decode(WalletMetadata.self, from: data))
     }
 }

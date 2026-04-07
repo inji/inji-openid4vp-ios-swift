@@ -4,7 +4,7 @@ import JSONWebKey
 import SwiftCBOR
 
 struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
-    let authorizationRequest: AuthorizationRequestV2
+    let authorizationRequest: AuthorizationRequest
     let specVersion: SpecVersion
     private let responseUri: String
     private let mdocGeneratedNonce: String
@@ -14,7 +14,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     static let className = String(describing: UnsignedMdocVPTokenBuilder.self)
 
     init(
-        authorizationRequest: AuthorizationRequestV2,
+        authorizationRequest: AuthorizationRequest,
         specVersion: SpecVersion,
         responseUri: String,
         mdocGeneratedNonce: String
@@ -96,7 +96,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     private enum VersionLogic {
         case specV1, draft23
         
-        func buildOpenID4VPHandover(authorizationRequest: AuthorizationRequestV2, mdocGeneratedNonce: String, responseUri: String) throws -> CBOR {
+        func buildOpenID4VPHandover(authorizationRequest: AuthorizationRequest, mdocGeneratedNonce: String, responseUri: String) throws -> CBOR {
             switch self {
             case .draft23:
                 let clientIdToHash = CBOR.array([.utf8String(authorizationRequest.clientId), .utf8String(mdocGeneratedNonce)])

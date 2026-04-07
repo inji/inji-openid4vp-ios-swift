@@ -1,15 +1,15 @@
 import Foundation
 import JSONWebKey
 
-public struct ClientMetadataV2: Codable {
+public struct ClientMetadataSpecVersion1: Codable {
     let clientName: String?
     let logoUri: String?
-    let vpFormatsSupported: [String: VPFormatSupportedV2]
+    let vpFormatsSupported: [String: VPFormatSupported]
     let authorizationEncryptedResponseAlg: String?
     let authorizationEncryptedResponseEncValuesSupported: [String]?
     let jwks: JWKSet?
 
-    static let className = String(describing: ClientMetadataV2.self)
+    static let className = String(describing: ClientMetadataSpecVersion1.self)
 
     enum CodingKeys: String, CodingKey {
         case clientName = "client_name"
@@ -23,7 +23,7 @@ public struct ClientMetadataV2: Codable {
     public init(
         clientName: String? = nil,
         logoUri: String? = nil,
-        vpFormatsSupported: [String: VPFormatSupportedV2],
+        vpFormatsSupported: [String: VPFormatSupported],
         authorizationEncryptedResponseAlg: String? = nil,
         authorizationEncryptedResponseEncValuesSupported: [String]? = nil,
         jwks: JWKSet? = nil
@@ -45,7 +45,7 @@ public struct ClientMetadataV2: Codable {
         self.jwks = try container.decodeIfPresent(JWKSet.self, forKey: .jwks)
 
         let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
-        var decodedFormats: [String: VPFormatSupportedV2] = [:]
+        var decodedFormats: [String: VPFormatSupported] = [:]
         for key in vpFormatsContainer.allKeys {
             switch key {
             case .ldp_vc, .ldp_vp:
@@ -87,20 +87,20 @@ public struct ClientMetadataV2: Codable {
         }
     }
     
-    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadataV2 {
+    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadataSpecVersion1 {
         if let encodedData = clientMetadata as? Data {
             return try toClientMetadata(encodedData)
         } else if let data = clientMetadata as? String {
             guard let encodedData = data.data(using: .utf8) else {
-                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadata.className)
+                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadataSpecVersionDraft23.className)
             }
             return try toClientMetadata(encodedData)
         } else {
-            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadata.className)
+            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadataSpecVersionDraft23.className)
         }
     }
     
-    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadataV2 {
-        return try encodedData.toInstance(as: ClientMetadataV2.self)
+    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadataSpecVersion1 {
+        return try encodedData.toInstance(as: ClientMetadataSpecVersion1.self)
     }
 }

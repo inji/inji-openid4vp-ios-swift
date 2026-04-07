@@ -3,15 +3,13 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadataV2: WalletMetadataV2?,
-                  walletMetadata: WalletMetadata? = nil,
+                  walletMetadata: WalletMetadata?,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -46,20 +44,29 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
         
-        return try await keyResolver.resolve(uri: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String, keyId: keyId)
+        return try await keyResolver.resolve(uri: VersionLogic.of(specVersion).didUrl(clientId: clientId), keyId: keyId)
     }
     
-    func process(walletMetadata: WalletMetadataV2) throws -> WalletMetadataV2 {
+    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
         try validateRequestObjectSigningAlgSupported(walletMetadata, className: className)
         return walletMetadata
     }
+    
+    private enum VersionLogic {
+        case draft23, specV1
 
-    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
-        if(walletMetadata.requestObjectSigningAlgValuesSupported == nil) {
-            throw InvalidData(message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
-                              className: className)
+        static func of(_ specVersion: SpecVersion) -> VersionLogic {
+            return specVersion == .draft23 ? .draft23 : .specV1
         }
-        return walletMetadata
+        
+        func didUrl(clientId: String) -> String {
+            switch self {
+            case .draft23:
+                return clientId
+            case .specV1:
+                return extractClientIdPartOnly(clientId)
+            }
+        }
     }
 }
 

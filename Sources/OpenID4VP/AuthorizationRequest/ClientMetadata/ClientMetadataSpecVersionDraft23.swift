@@ -1,14 +1,14 @@
 import Foundation
 import JSONWebKey
 
-public struct ClientMetadata: Codable {
+public struct ClientMetadataSpecVersionDraft23: Codable {
     let clientName: String?
     let logoUri:String?
     let authorizationEncryptedResponseAlg: String?
     let authorizationEncryptedResponseEnc: String?
     let vpFormats: [String: [String: [String]]]
     let jwks: JWKSet?
-    static let className = String(describing: ClientMetadata.self)
+    static let className = String(describing: ClientMetadataSpecVersionDraft23.self)
     
     enum CodingKeys: String, CodingKey {
         case clientName = "client_name"
@@ -41,7 +41,7 @@ public struct ClientMetadata: Codable {
                 String.self,
                 forKey: .clientName,
                 fieldPath: ["client_metadata", "client_name"],
-                className: ClientMetadata.className,
+                className: ClientMetadataSpecVersionDraft23.className,
                 isMandatory: false
             )
             
@@ -49,7 +49,7 @@ public struct ClientMetadata: Codable {
                 String.self,
                 forKey: .logoUri,
                 fieldPath: ["client_metadata", "logo_uri"],
-                className: ClientMetadata.className,
+                className: ClientMetadataSpecVersionDraft23.className,
                 isMandatory: false
             )
             
@@ -57,7 +57,7 @@ public struct ClientMetadata: Codable {
                 String.self,
                 forKey: .authorizationEncryptedResponseAlg,
                 fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
-                className: ClientMetadata.className,
+                className: ClientMetadataSpecVersionDraft23.className,
                 isMandatory: false
             )
             
@@ -65,7 +65,7 @@ public struct ClientMetadata: Codable {
                 String.self,
                 forKey: .authorizationEncryptedResponseEnc,
                 fieldPath: ["client_metadata", "authorization_encrypted_response_enc"],
-                className: ClientMetadata.className,
+                className: ClientMetadataSpecVersionDraft23.className,
                 isMandatory: false
             )
             
@@ -73,7 +73,7 @@ public struct ClientMetadata: Codable {
                 [String: [String: [String]]].self,
                 forKey: .vpFormats,
                 fieldPath: ["client_metadata", "vp_formats"],
-                className: ClientMetadata.className,
+                className: ClientMetadataSpecVersionDraft23.className,
                 isMandatory: true
             )!
             
@@ -81,38 +81,38 @@ public struct ClientMetadata: Codable {
                 JWKSet.self,
                 forKey: .jwks,
                 fieldPath: ["client_metadata", "jwks"],
-                className: ClientMetadata.className,
+                className: ClientMetadataSpecVersionDraft23.className,
                 isMandatory: false
             )
             try validate(self)
         } catch {
-            throw wrapError(error, customError: { message in InvalidData(message: "Error during client metadata decoding - \(message)", className: ClientMetadata.className) })
+            throw wrapError(error, customError: { message in InvalidData(message: "Error during client metadata decoding - \(message)", className: ClientMetadataSpecVersionDraft23.className) })
         }
     }
     
-    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadata {
+    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadataSpecVersionDraft23 {
         if let encodedData = clientMetadata as? Data {
             return try toClientMetadata(encodedData)
         } else if let data = clientMetadata as? String {
             guard let encodedData = data.data(using: .utf8) else {
-                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadata.className)
+                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadataSpecVersionDraft23.className)
             }
             return try toClientMetadata(encodedData)
         } else {
-            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadata.className)
+            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadataSpecVersionDraft23.className)
         }
     }
     
-    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadata {
-        return try encodedData.toInstance(as: ClientMetadata.self)
+    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadataSpecVersionDraft23 {
+        return try encodedData.toInstance(as: ClientMetadataSpecVersionDraft23.self)
     }
     
-    private func validate(_ decodedClientMetadata: ClientMetadata) throws{
+    private func validate(_ decodedClientMetadata: ClientMetadataSpecVersionDraft23) throws{
         
-        try validateField(decodedClientMetadata.clientName, ["client_metadata", "client_name"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.logoUri, ["client_metadata", "logo_uri"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.authorizationEncryptedResponseAlg, ["client_metadata", "authorization_encrypted_response_alg"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.authorizationEncryptedResponseEnc, ["client_metadata", "authorization_encrypted_response_enc"], ClientMetadata.className)
-        try validateField(decodedClientMetadata.vpFormats, ["client_metadata", "vp_formats"], ClientMetadata.className)
+        try validateField(decodedClientMetadata.clientName, ["client_metadata", "client_name"], ClientMetadataSpecVersionDraft23.className)
+        try validateField(decodedClientMetadata.logoUri, ["client_metadata", "logo_uri"], ClientMetadataSpecVersionDraft23.className)
+        try validateField(decodedClientMetadata.authorizationEncryptedResponseAlg, ["client_metadata", "authorization_encrypted_response_alg"], ClientMetadataSpecVersionDraft23.className)
+        try validateField(decodedClientMetadata.authorizationEncryptedResponseEnc, ["client_metadata", "authorization_encrypted_response_enc"], ClientMetadataSpecVersionDraft23.className)
+        try validateField(decodedClientMetadata.vpFormats, ["client_metadata", "vp_formats"], ClientMetadataSpecVersionDraft23.className)
     }
 }

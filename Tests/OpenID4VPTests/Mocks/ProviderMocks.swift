@@ -11,13 +11,13 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
 
-    override func constructAuthorizationResponse(authorizationRequest authRequest: AuthorizationRequestV2,
+    override func constructAuthorizationResponse(authorizationRequest authRequest: AuthorizationRequest,
                                                  vpTokenSigningResults signingResult: [FormatType: VPTokenSigningResult]) -> [String: String] {
         return expectedResponse
     }
 
     override func constructAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequestV2?,
+        authorizationRequest: AuthorizationRequest?,
         exception: Error,
         walletNonce: String
     ) -> [String: Any] {
@@ -29,27 +29,16 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     var expectedSuccessResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
 
-    func validate(clientMetadata: ClientMetadata?,
+    func validate(clientMetadata: ClientMetadataSpecVersionDraft23?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     
-    func validate(clientMetadata: ClientMetadataV2?,
-                  walletMetadata: WalletMetadataV2?,
+    func validate(clientMetadata: ClientMetadataSpecVersion1?,
+                  walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {}
-
-    func sendAuthorizationResponse(
-        authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponse,
-        url: String,
-        networkManager: any NetworkManaging,
-        producerInfo: String,
-        recipientInfo: String
-    ) async throws -> NetworkResponse {
-        fatalError("Not needed for unit testing constructAuthorizationResponse")
-    }
     
     func sendAuthorizationResponse(
-        authorizationRequest: AuthorizationRequestV2,
+        authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponseV2,
         url: String,
         networkManager: any NetworkManaging,
@@ -60,17 +49,9 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     }
 
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws {}
-
-    func getAuthorizationResponse(
-        authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponse,
-        walletNonce: String
-    ) throws -> [String: String] {
-        return expectedSuccessResponse
-    }
     
     func getAuthorizationResponse(
-        authorizationRequest: AuthorizationRequestV2,
+        authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponseV2,
         walletNonce: String
     ) throws -> [String: String] {
@@ -78,7 +59,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     }
 
     func getAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequestV2?,
+        authorizationRequest: AuthorizationRequest?,
         authorizationResponse: AuthorizationErrorResponse,
         walletNonce: String
     ) throws -> [String: String] {

@@ -23,7 +23,7 @@ class DidWebResolver : BaseDidPublicKeyResolver {
             if(!response.isOK){
                 throw InvalidData(
                     message: "Error while resolving did, status code: \(response.statusCode) with body: \(response.body)",
-                    className: AuthorizationRequest.className
+                    className: Self.className
                 )
             }
             guard let responseBody = response.body.data(using: .utf8) else {

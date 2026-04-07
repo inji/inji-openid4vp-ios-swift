@@ -10,13 +10,12 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     private var extractPublicKeyError: OpenID4VPException?
     
     init(authorizationRequestParameters: [String: Any],
-         walletMetadata: WalletMetadata? = nil,
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging,
          clientId: String = "mock-client",
          specVersion: SpecVersion = .v1,
-         walletMetadataV2: WalletMetadataV2 = WalletMetadataV2(),
+         walletMetadata: WalletMetadata = WalletMetadata(),
          isSignedRequestSupported: Bool = true,
          isUnsignedRequestSupported: Bool = true) {
         self.isSignedRequestSupportedFlag = isSignedRequestSupported
@@ -30,7 +29,6 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -66,12 +64,8 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         return self.isSignedRequestSupportedFlag
     }
     
-    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
-        return walletMetadata
-    }
-    
-    func process(walletMetadata: WalletMetadataV2) throws -> WalletMetadataV2 {
-        return WalletMetadataV2()
+    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
+        return WalletMetadata()
     }
     
     var capturedRequestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?

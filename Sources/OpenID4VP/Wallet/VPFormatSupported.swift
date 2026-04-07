@@ -1,6 +1,7 @@
-public protocol VPFormatSupportedV2: Codable {}
+public protocol VPFormatSupported: Codable {}
 
-public struct LdpVcFormatSupported: VPFormatSupportedV2, Codable {
+public struct LdpVcFormatSupported: VPFormatSupported, Codable {
+    //TODO: Expose a separate enum for ProofType or accept as string
     let proofTypeValues: [SignatureAlgorithm]?
     let cryptoSuiteValues: [String]?
     
@@ -9,7 +10,7 @@ public struct LdpVcFormatSupported: VPFormatSupportedV2, Codable {
         case cryptoSuiteValues = "cryptosuite_values"
     }
     
-    init(proofTypeValues: [SignatureAlgorithm] = [.ed25519Signature2020, .jsonWebSignature2020], cryptoSuiteValues: [String]? = nil) {
+    public init(proofTypeValues: [SignatureAlgorithm] = [.ed25519Signature2020, .jsonWebSignature2020], cryptoSuiteValues: [String]? = nil) {
         self.proofTypeValues = proofTypeValues
         self.cryptoSuiteValues = cryptoSuiteValues
     }
@@ -43,7 +44,7 @@ public struct LdpVcFormatSupported: VPFormatSupportedV2, Codable {
     }
 }
 
-public struct MsoMdocVcFormatSupported: VPFormatSupportedV2, Codable {
+public struct MsoMdocVcFormatSupported: VPFormatSupported, Codable {
     let issuerAuthAlgValues: [Int]?
     let deviceAuthAlgValues: [Int]?
     
@@ -52,14 +53,14 @@ public struct MsoMdocVcFormatSupported: VPFormatSupportedV2, Codable {
         case deviceAuthAlgValues = "deviceauth_alg_values"
     }
     
-    init(issuerAuthAlgValues: [Int]? = nil, deviceAuthAlgValues: [Int]? = nil) {
+    public init(issuerAuthAlgValues: [Int]? = nil, deviceAuthAlgValues: [Int]? = nil) {
         self.issuerAuthAlgValues = issuerAuthAlgValues
         self.deviceAuthAlgValues = deviceAuthAlgValues
     }
 }
 
 
-public struct SdJwtVcFormatSupported: VPFormatSupportedV2, Codable {
+public struct SdJwtVcFormatSupported: VPFormatSupported, Codable {
     let sdJwtAlgValues: [String]?
     let kbJwtAlgValues: [String]?
     
@@ -68,7 +69,7 @@ public struct SdJwtVcFormatSupported: VPFormatSupportedV2, Codable {
         case kbJwtAlgValues = "kb-jwt_alg_values"
     }
     
-    init(sdJwtAlgValues: [String]? = nil, kbJwtAlgValues: [String]? = nil) {
+    public init(sdJwtAlgValues: [String]? = nil, kbJwtAlgValues: [String]? = nil) {
         self.sdJwtAlgValues = sdJwtAlgValues
         self.kbJwtAlgValues = kbJwtAlgValues
     }

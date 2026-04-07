@@ -7,12 +7,12 @@ public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     private let holder: String
     private let signatureSuite: String
     public let specVersion: SpecVersion
-    public let authorizationRequest: AuthorizationRequestV2
+    public let authorizationRequest: AuthorizationRequest
 
     static let internalPath: String = "verifiableCredential"
 
     public init(
-        authorizationRequest: AuthorizationRequestV2,
+        authorizationRequest: AuthorizationRequest,
         specVersion: SpecVersion,
         id: String,
         holder: String,

@@ -74,8 +74,7 @@ extension KeyedDecodingContainer {
     }
 }
 
-
-func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any],
+func getAuthorizationRequestHandlerV2(authorizationRequestParameters: [String:Any],
                                     trustedVerifiers : [Verifier],
                                     walletMetadata: WalletMetadata?,
                                     shouldValidateClient: Bool,
@@ -95,7 +94,6 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               specVersion: specVersion,
                                                               trustedVerifiers: trustedVerifiers,
                                                               authorizationRequestParameters: authorizationRequestParameters,
-                                                              walletMetadataV2: WalletMetadataV2(),
                                                               walletMetadata: walletMetadata,
                                                               shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
@@ -105,7 +103,6 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
         return DidSchemeAuthorizationRequestHandler(clientId: clientId,
                                                     specVersion: specVersion,
                                                     authorizationRequestParameters: authorizationRequestParameters,
-                                                    walletMetadataV2: WalletMetadataV2(),
                                                     walletMetadata: walletMetadata,
                                                     setResponseUri: setResponseUri,
                                                     walletNonce: walletNonce,
@@ -114,57 +111,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
         return RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,
                                                             specVersion: specVersion,
                                                             authorizationRequestParameters: authorizationRequestParameters,
-                                                            walletMetadataV2: WalletMetadataV2(),
                                                             walletMetadata: walletMetadata,
-                                                            setResponseUri: setResponseUri,
-                                                            walletNonce: walletNonce,
-                                                            networkManager: networkManager)
-    default:
-        throw InvalidData(message: "Given client_id_scheme is not supported" ,className: AuthorizationRequest.className)
-    }
-}
-
-func getAuthorizationRequestHandlerV2(authorizationRequestParameters: [String:Any],
-                                    trustedVerifiers : [Verifier],
-                                    walletMetadata: WalletMetadataV2?,
-                                    shouldValidateClient: Bool,
-                                    setResponseUri: @escaping (String) -> Void,
-                                    walletNonce: String,
-                                    networkManager: NetworkManaging
-) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
-    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
-    let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
-    
-    let clientIdPrefix = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
-    let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: trustedVerifiers)
-    
-    switch clientIdPrefix {
-    case ClientIdPrefix.preRegistered.rawValue:
-        return PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId,
-                                                              specVersion: specVersion,
-                                                              trustedVerifiers: trustedVerifiers,
-                                                              authorizationRequestParameters: authorizationRequestParameters,
-                                                              walletMetadataV2: walletMetadata,
-                                                              walletMetadata: nil,
-                                                              shouldValidateClient: shouldValidateClient,
-                                                              setResponseUri: setResponseUri,
-                                                              walletNonce: walletNonce,
-                                                              networkManager: networkManager)
-    case ClientIdScheme.did.rawValue, ClientIdPrefix.did.rawValue:
-        return DidSchemeAuthorizationRequestHandler(clientId: clientId,
-                                                    specVersion: specVersion,
-                                                    authorizationRequestParameters: authorizationRequestParameters,
-                                                    walletMetadataV2: walletMetadata,
-                                                    walletMetadata: nil,
-                                                    setResponseUri: setResponseUri,
-                                                    walletNonce: walletNonce,
-                                                    networkManager: networkManager)
-    case ClientIdPrefix.redirectUri.rawValue:
-        return RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,
-                                                            specVersion: specVersion,
-                                                            authorizationRequestParameters: authorizationRequestParameters,
-                                                            walletMetadataV2: walletMetadata,
-                                                            walletMetadata: nil,
                                                             setResponseUri: setResponseUri,
                                                             walletNonce: walletNonce,
                                                             networkManager: networkManager)
@@ -249,15 +196,6 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdSchemeAttached: String
     } else {
         // client_id_scheme is optional (Fallback client_id_scheme - pre-registered) i.e., a : character is not present in the Client Identifier
         return clientIdWithClientIdSchemeAttached
-    }
-}
-
-func validateRequestObjectSigningAlgSupported(_ walletMetadata: WalletMetadataV2, className: String) throws {
-    guard walletMetadata.requestObjectSigningAlgValuesSupported != nil else {
-        throw InvalidData(
-            message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
-            className: className
-        )
     }
 }
 

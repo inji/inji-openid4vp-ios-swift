@@ -1,13 +1,13 @@
 import Foundation
 
-public struct WalletMetadataV2: Codable {
-    let vpFormatsSupported: [VPFormatType: VPFormatSupportedV2]
+public struct WalletMetadata: Codable {
+    let vpFormatsSupported: [VPFormatType: VPFormatSupported]
     let clientIdPrefixesSupported: [ClientIdPrefix]
     var requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]?
     let authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]?
     let authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]?
     let responseTypesSupported: [ResponseType]
-    static let className = String(describing: WalletMetadataV2.self)
+    static let className = String(describing: WalletMetadata.self)
     
     enum CodingKeys: String, CodingKey {
         case vpFormatsSupported = "vp_formats_supported"
@@ -21,7 +21,7 @@ public struct WalletMetadataV2: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
-        var decodedFormats: [VPFormatType: VPFormatSupportedV2] = [:]
+        var decodedFormats: [VPFormatType: VPFormatSupported] = [:]
         for key in vpFormatsContainer.allKeys {
             switch key {
             case .ldp_vc, .ldp_vp:
@@ -64,7 +64,7 @@ public struct WalletMetadataV2: Codable {
     }
     
     public init(
-        vpFormatsSupported: [VPFormatType: VPFormatSupportedV2] = WalletMetadataDefaults.vpFormatsSupportedSpecVersion1,
+        vpFormatsSupported: [VPFormatType: VPFormatSupported] = WalletMetadataDefaults.vpFormatsSupported,
         clientIdPrefixesSupported: [ClientIdPrefix] = WalletMetadataDefaults.clientIdPrefixesSupported,
         requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = WalletMetadataDefaults.requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported,
@@ -84,29 +84,45 @@ public struct WalletMetadataV2: Codable {
         case .v1:
             return try encodeAsJSON(self, fieldName: "wallet_metadata", className: Self.className)
         case .draft23:
-            //TODO: populate holder binding values as alg_values
-            let walletMetadata = try? WalletMetadata(
-                vpFormatsSupported: self.vpFormatsSupported.mapValues { VPFormatSupported(algValuesSupported: $0.mergedAlgValues) },
-                // If prefix is not decentralized identifier, default to did as other schemes are same
-                clientIdSchemesSupported: self.clientIdPrefixesSupported.map { ClientIdScheme(rawValue: $0.rawValue) ?? .did },
-                requestObjectSigningAlgValuesSupported: self.requestObjectSigningAlgValuesSupported,
-                authorizationEncryptionAlgValuesSupported: self.authorizationEncryptionAlgValuesSupported,
-                authorizationEncryptionEncValuesSupported: self.authorizationEncryptionEncValuesSupported,
-                responseTypesSupported: self.responseTypesSupported
-            )
-            return try encodeAsJSON(walletMetadata, fieldName: "wallet_metadata", className: Self.className)
+            var walletMetadataDict: [String: Any] = [:]
+            
+            let vpFormats: [String: [String: [String]]] = self.vpFormatsSupported.reduce(into: [:]) { result, item in
+                let formatKey = item.key.rawValue
+                if let algValues = item.value.mergedAlgValues {
+                    result[formatKey] = ["alg_values_supported": algValues]
+                } else {
+                    result[formatKey] = [:]
+                }
+            }
+            walletMetadataDict["presentation_definition_uri_supported"] = true
+            walletMetadataDict["vp_formats_supported"] = vpFormats
+            walletMetadataDict["client_id_schemes_supported"] = self.clientIdPrefixesSupported.map { ClientIdScheme(rawValue: $0.rawValue) ?? .did }.map { $0.rawValue }
+            if let requestAlgs = self.requestObjectSigningAlgValuesSupported {
+                walletMetadataDict["request_object_signing_alg_values_supported"] = requestAlgs.map { $0.rawValue }
+            }
+            if let encAlgs = self.authorizationEncryptionAlgValuesSupported {
+                walletMetadataDict["authorization_encryption_alg_values_supported"] = encAlgs.map { $0.rawValue }
+            }
+            if let encValues = self.authorizationEncryptionEncValuesSupported {
+                walletMetadataDict["authorization_encryption_enc_values_supported"] = encValues.map { $0.rawValue }
+            }
+            walletMetadataDict["response_types_supported"] = self.responseTypesSupported.map { $0.rawValue }
+            
+            let jsonData = try JSONSerialization.data(withJSONObject: walletMetadataDict)
+            return String(data: jsonData, encoding: .utf8) ?? ""
         }
     }
 }
 
-private extension VPFormatSupportedV2 {
+private extension VPFormatSupported {
     var mergedAlgValues: [String]? {
         switch self {
         case let ldp as LdpVcFormatSupported:
             return ldp.proofTypeValues?.map { $0.rawValue }
         case let mdoc as MsoMdocVcFormatSupported:
             let merged = (mdoc.issuerAuthAlgValues ?? []) + (mdoc.deviceAuthAlgValues ?? [])
-            return []
+            //TODO: fic mdoc issuer algorithm values
+            return nil
         case let sdJwt as SdJwtVcFormatSupported:
             let merged = (sdJwt.sdJwtAlgValues ?? []) + (sdJwt.kbJwtAlgValues ?? [])
             return merged.isEmpty ? nil : merged
@@ -118,7 +134,7 @@ private extension VPFormatSupportedV2 {
 
 private func cast<T>(_ value: Any, to type: T.Type) throws -> T {
     guard let casted = value as? T else {
-        throw UnsupportedTypeDecoding(message: "Failed to cast value to \(T.self)", className: WalletMetadataV2.className)
+        throw UnsupportedTypeDecoding(message: "Failed to cast value to \(T.self)", className: WalletMetadata.className)
     }
     return casted
 }
@@ -126,3 +142,4 @@ private func cast<T>(_ value: Any, to type: T.Type) throws -> T {
 private func encodeAsJSON<T: Encodable>(_ value: T, fieldName: String, className: String) throws -> String {
     return try encode(value, fieldName: fieldName, className: className)
 }
+

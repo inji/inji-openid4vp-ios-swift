@@ -201,64 +201,78 @@ func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? 
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil) -> AuthorizationRequest {
+func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1) -> AuthorizationRequest {
     let responseType = responseType ?? ResponseType.vp_token.rawValue
-    return AuthorizationRequest(
-        clientId: "client_id",
-        clientIdScheme: nil,
-        presentationDefinition: mockPresentationDefinitionObject,
-        responseType: responseType,
-        responseMode: responseModeValue ?? responseMode.rawValue,
-        nonce: "nonce",
-        state: "state",
-        redirectUri: "1234",
-        responseUri: "https://mock-verifier.com",
-        walletNonce: nil,
-        clientMetadata: mockClientMetadataObject
-    )
-}
-
-@available(*, deprecated, renamed: "createWalletMetadataV2", message: "This uses deprecated WalletMetadata initializer. Use `createWalletMetadataV2` instead")
-func createWalletMetadataV1(
-    presentationDefinitionURISupported: Bool = true,
-        vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
-        clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
-        requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
-        authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
-        authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
-    ) throws -> WalletMetadata {
-        return try WalletMetadata(
-            presentationDefinitionURISupported: presentationDefinitionURISupported,
-            vpFormatsSupported: vpFormatsSupported,
-            clientIdSchemesSupported: clientIdSchemesSupported,
-            requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
-            authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
-            authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+    
+    if(specVersion == .draft23) {
+        return AuthorizationRequestSpecVersionDraft23(
+            clientId: "client_id",
+            responseType: responseType,
+            responseMode: responseModeValue ?? responseMode.rawValue,
+            responseUri: "https://mock-verifier.com",
+            redirectUri: "1234",
+            nonce: "nonce",
+            walletNonce: nil,
+            state: "state",
+            presentationDefinition: mockPresentationDefinitionObject,
+            clientMetadata: mockClientMetadataObject
         )
     }
 
-
-func createWalletMetadataV2(
-    presentationDefinitionURISupported: Bool = true,
-    vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
-        .ldp_vc: VPFormatSupported(algValuesSupported: ["EdDSA"]),
-        .ldp_vp: VPFormatSupported(algValuesSupported: ["EdDSA"]),
-        .mso_mdoc: VPFormatSupported(algValuesSupported: ["EdDSA"])
-    ],
-    clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did],
-    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
-    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
-    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM]
-) throws -> WalletMetadata {
-    return try WalletMetadata(
-        presentationDefinitionURISupported: presentationDefinitionURISupported,
-        vpFormatsSupported: vpFormatsSupported,
-        clientIdSchemesSupported: clientIdSchemesSupported,
-        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
-        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
-        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+    return AuthorizationRequestSpecVersion1(
+        clientId: "client_id",
+        responseType: responseType,
+        responseMode: responseModeValue ?? responseMode.rawValue,
+        responseUri: "https://mock-verifier.com",
+        redirectUri: "1234",
+        nonce: "nonce",
+        walletNonce: nil,
+        state: "state",
+        clientMetadata: mockClientMetadataObjectV2
     )
 }
+//
+//@available(*, deprecated, renamed: "createWalletMetadataV2", message: "This uses deprecated WalletMetadata initializer. Use `createWalletMetadataV2` instead")
+//func createWalletMetadataV1(
+//    presentationDefinitionURISupported: Bool = true,
+//        vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
+//        clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
+//        requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
+//        authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
+//        authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
+//    ) throws -> WalletMetadata {
+//        return try WalletMetadata(
+//            presentationDefinitionURISupported: presentationDefinitionURISupported,
+//            vpFormatsSupported: vpFormatsSupported,
+//            clientIdSchemesSupported: clientIdSchemesSupported,
+//            requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
+//            authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
+//            authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+//        )
+//    }
+
+
+//func createWalletMetadataV2(
+//    presentationDefinitionURISupported: Bool = true,
+//    vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
+//        .ldp_vc: VPFormatSupported(algValuesSupported: ["EdDSA"]),
+//        .ldp_vp: VPFormatSupported(algValuesSupported: ["EdDSA"]),
+//        .mso_mdoc: VPFormatSupported(algValuesSupported: ["EdDSA"])
+//    ],
+//    clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did],
+//    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
+//    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
+//    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM]
+//) throws -> WalletMetadata {
+//    return try WalletMetadata(
+//        presentationDefinitionURISupported: presentationDefinitionURISupported,
+//        vpFormatsSupported: vpFormatsSupported,
+//        clientIdSchemesSupported: clientIdSchemesSupported,
+//        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
+//        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
+//        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
+//    )
+//}
 
 func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
     "https://www.w3.org/2018/credentials/v1",
@@ -294,3 +308,4 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
     ]
     return data
 }
+

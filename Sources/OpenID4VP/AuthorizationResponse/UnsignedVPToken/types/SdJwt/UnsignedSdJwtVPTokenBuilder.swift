@@ -3,13 +3,13 @@ import Foundation
 private let keyBindingJWT = "kb+jwt"
 
 struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
-    let authorizationRequest: AuthorizationRequestV2
+    let authorizationRequest: AuthorizationRequest
     let specVersion: SpecVersion
     private let networkManager: any NetworkManaging
 
     private static let className = "UnsignedSdJwTVPTokenBuilder"
 
-    init(authorizationRequest: AuthorizationRequestV2, specVersion: SpecVersion, networkManager: any NetworkManaging = NetworkManager()) {
+    init(authorizationRequest: AuthorizationRequest, specVersion: SpecVersion, networkManager: any NetworkManaging = NetworkManager()) {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.networkManager = networkManager

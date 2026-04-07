@@ -62,24 +62,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
     
-    func testConstructUnsignedVPTokenV1Success() async throws {
-        let verifiableCredentials: [String: [String]] = [
-            "input_descriptor1": ["{\"credentialSubject\"...}"],
-        ]
-        
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
-        
-        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPTokenV1(
-            verifiableCredentials: verifiableCredentials,
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri,
-            walletNonce: walletNonce
-        )) { result in
-            XCTAssertTrue(result.contains("credentialSubject"))
-        }
-    }
-    
     func testConstructAndSendAuthorizationResponseToVerifierHasTheAuthorizationResponseAsExpected() async throws {
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC()), AnyCodable(ldpVC(credentialType: "UniversityCredential"))]],

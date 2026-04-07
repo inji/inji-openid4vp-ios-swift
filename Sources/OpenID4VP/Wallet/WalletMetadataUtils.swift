@@ -5,7 +5,7 @@ internal func parseClientIdPrefixesSupported(_ clientIdPrefixesSupported: [Strin
     return try schemes.compactMap { try parseEnum(valueName: "ClientIdPrefix", $0, as: ClientIdPrefix.self) }
 }
 
-internal func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupportedV2]) throws -> [VPFormatType: VPFormatSupportedV2] {
+internal func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws -> [VPFormatType: VPFormatSupported] {
     if vpFormatsSupported.keys.contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
         throw InvalidData(
             message: "vp_formats_supported cannot have empty keys.",
@@ -14,7 +14,7 @@ internal func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSup
     }
     
     
-    return try vpFormatsSupported.reduce(into: [VPFormatType: VPFormatSupportedV2]()) { result, entry in
+    return try vpFormatsSupported.reduce(into: [VPFormatType: VPFormatSupported]()) { result, entry in
         let parsedVPFormatType = try parseEnum(valueName: "VPFormatType", entry.key, as: VPFormatType.self)
         result[parsedVPFormatType] = entry.value
     }
@@ -42,16 +42,6 @@ internal func parseAuthorizationEncryptionEncValuesSupported(_ authorizationEncr
     return try encs.compactMap { try parseEnum(valueName: "ContentEncryptionAlgorithm", $0, as: ContentEncryptionAlgorithm.self) }
 }
 
-internal func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VPFormatSupportedV2]) throws {
-    if vpFormatsSupported.isEmpty {
-        throw InvalidData(
-            message: "vp_formats_supported should at least have one supported vp_format",
-            className: WalletMetadataV2.className
-        )
-    }
-}
-
-
 internal func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VPFormatSupported]) throws {
     if vpFormatsSupported.isEmpty {
         throw InvalidData(
@@ -61,27 +51,11 @@ internal func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VP
     }
 }
 
-
 internal func parseClientIdSchemesSupported(_ clientIdSchemesSupported: [String]?) throws -> [ClientIdScheme] {
     guard let schemes = clientIdSchemesSupported else {
         return [.preRegistered]
     }
     return try schemes.compactMap { try parseEnum(valueName: "ClientIdScheme", $0, as: ClientIdScheme.self) }
-}
-
-internal func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws -> [VPFormatType: VPFormatSupported] {
-    if vpFormatsSupported.keys.contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
-        throw InvalidData(
-            message: "vp_formats_supported cannot have empty keys.",
-            className: WalletMetadata.className
-        )
-    }
-    
-    
-    return try vpFormatsSupported.reduce(into: [VPFormatType: VPFormatSupported]()) { result, entry in
-        let parsedVPFormatType = try parseEnum(valueName: "VPFormatType", entry.key, as: VPFormatType.self)
-        result[parsedVPFormatType] = entry.value
-    }
 }
 
 internal func parseEnum<E: RawRepresentable>(valueName: String, _ value: E.RawValue, as type: E.Type) throws -> E {
@@ -98,13 +72,8 @@ internal func parseEnum<E: RawRepresentable>(valueName: String, _ value: E.RawVa
 @usableFromInline
 internal struct WalletMetadataDefaults: Codable {
     @usableFromInline static let presentationDefinitionURISupported: Bool = true
-    
-    @usableFromInline static let vpFormatsSupportedSpecVersionDraft23: [VPFormatType: VPFormatSupported] = [
-        .ldp_vc: VPFormatSupported(algValuesSupported: []),
-        .ldp_vp: VPFormatSupported(algValuesSupported: []),
-        .mso_mdoc: VPFormatSupported(algValuesSupported: []),
-    ]
-    @usableFromInline static let vpFormatsSupportedSpecVersion1: [VPFormatType: VPFormatSupportedV2] = [
+
+    @usableFromInline static let vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
         .ldp_vc: LdpVcFormatSupported(),
         .mso_mdoc: MsoMdocVcFormatSupported(),
         .dc_sd_jwt: SdJwtVcFormatSupported()

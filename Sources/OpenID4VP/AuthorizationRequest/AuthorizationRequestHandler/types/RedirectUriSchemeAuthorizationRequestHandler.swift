@@ -3,7 +3,6 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadataV2: WalletMetadataV2?,
                   walletMetadata: WalletMetadata?,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
@@ -11,7 +10,6 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadataV2: walletMetadataV2,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -40,13 +38,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_scheme", className: className)
     }
     
-    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
-        var updatedWalletMetadata = walletMetadata
-        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
-        return updatedWalletMetadata
-    }
-    
-    func process(walletMetadata: WalletMetadataV2)  throws -> WalletMetadataV2 {
+    func process(walletMetadata: WalletMetadata)  throws -> WalletMetadata {
         var updatedWalletMetadata = walletMetadata
         updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
         return updatedWalletMetadata
