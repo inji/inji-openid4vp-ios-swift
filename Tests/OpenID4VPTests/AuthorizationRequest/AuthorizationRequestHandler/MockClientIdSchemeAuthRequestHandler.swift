@@ -70,7 +70,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         return walletMetadata
     }
     
-    func processWalletMetadata() throws -> WalletMetadataV2 {
+    func process(walletMetadata: WalletMetadataV2) throws -> WalletMetadataV2 {
         return WalletMetadataV2()
     }
     

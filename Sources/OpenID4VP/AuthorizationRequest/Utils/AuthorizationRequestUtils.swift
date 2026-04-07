@@ -126,7 +126,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
 
 func getAuthorizationRequestHandlerV2(authorizationRequestParameters: [String:Any],
                                     trustedVerifiers : [Verifier],
-                                    walletMetadata: WalletMetadataV2,
+                                    walletMetadata: WalletMetadataV2?,
                                     shouldValidateClient: Bool,
                                     setResponseUri: @escaping (String) -> Void,
                                     walletNonce: String,

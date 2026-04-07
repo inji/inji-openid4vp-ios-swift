@@ -10,7 +10,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     }
     
     func validate(clientMetadata: ClientMetadataV2?,
-                  walletMetadata: WalletMetadataV2,
+                  walletMetadata: WalletMetadataV2?,
                   shouldValidateWithWalletMetadata: Bool) throws {
         if let enc = clientMetadata?.authorizationEncryptedResponseEncValuesSupported {
             throw InvalidData(message: "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'", className: className)
@@ -18,15 +18,15 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     }
     
     func getAuthorizationResponse(
-        authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponse,
+        authorizationRequest: AuthorizationRequestV2,
+        authorizationResponse: AuthorizationResponseV2,
         walletNonce: String
     ) throws -> [String: String] {
         return try authorizationResponse.toJsonEncodedMap()
     }
 
     func getAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest?,
+        authorizationRequest: AuthorizationRequestV2?,
         authorizationResponse: AuthorizationErrorResponse,
         walletNonce: String
     ) -> [String: String] {

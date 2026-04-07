@@ -9,7 +9,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
          specVersion: SpecVersion,
          trustedVerifiers: [Verifier],
          authorizationRequestParameters: [String: Any],
-         walletMetadataV2: WalletMetadataV2,
+         walletMetadataV2: WalletMetadataV2?,
          walletMetadata: WalletMetadata?,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
@@ -53,9 +53,9 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         return updatedWalletMetadata
     }
     
-    func processWalletMetadata() throws -> WalletMetadataV2 {
-        try validateRequestObjectSigningAlgSupported(walletMetadataV2, className: className)
-        return walletMetadataV2
+    func process(walletMetadata: WalletMetadataV2) throws -> WalletMetadataV2 {
+        try validateRequestObjectSigningAlgSupported(walletMetadata, className: className)
+        return walletMetadata
     }
     
     func isSignedRequestSupported() -> Bool {

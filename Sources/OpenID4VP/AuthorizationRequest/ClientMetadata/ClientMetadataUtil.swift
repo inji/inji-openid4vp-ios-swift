@@ -33,7 +33,7 @@ func parseAndValidateClientMetadata(authorizationRequest: [String: Any],
 
 func parseAndValidateClientMetadataV2(authorizationRequest: [String: Any],
                                     shouldValidateWithWalletMetadata: Bool,
-                                    walletMetadata: WalletMetadataV2) throws -> [String: Any] {
+                                    walletMetadata: WalletMetadataV2?) throws -> [String: Any] {
     let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
     var mutableParams = authorizationRequest
     if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata.rawValue] {

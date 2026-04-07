@@ -198,7 +198,7 @@ public class AuthorizationResponseHandler {
     // TODO: enable draft23 and spec v1.0 support for construct VP response and error response
     func constructVPResponseV2(
         signingResults: [VPTokenSigningResultV2],
-        authorizationRequest: AuthorizationRequest
+        authorizationRequest: AuthorizationRequestV2
     ) throws -> [String: String] {
 
         let reconstructed = try constructSigningResults(
@@ -256,9 +256,69 @@ public class AuthorizationResponseHandler {
             )
         }
     }
+    
+    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequestV2?, error: Error) async throws -> VerifierResponse {
+        guard let responseUri = responseUri, !responseUri.isEmpty else {
+            throw ErrorDispatchFailure(message: "Response URI is not set. Cannot send error to verifier.", className: Self.className)
+        }
+
+        var errorPayload: [String: String] = [:]
+
+        let resolvedError: OpenID4VPException
+        if let openidError = error as? OpenID4VPException {
+            resolvedError = openidError
+        } else {
+            resolvedError = GenericFailure(
+                message: "\(error)",
+                className: String(describing: OpenID4VP.self)
+            )
+        }
+
+        errorPayload.merge(resolvedError.toErrorResponse()) { _, new in new }
+
+        if let state = authorizationRequest?.state, !state.isEmpty {
+            errorPayload["state"] = state
+        }
+
+        do {
+            let dispatchResult = try await networkManager.sendHTTPRequest(
+                url: responseUri,
+                method: .post,
+                bodyParams: errorPayload,
+                headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
+            )
+            let verifierResponse: VerifierResponse = toVerifierResponse(dispatchResult)
+
+            (error as? OpenID4VPException)?.setVerifierResponse(verifierResponse)
+            return verifierResponse
+        } catch {
+            throw ErrorDispatchFailure(
+                message: "Failed to send error to verifier: \(error)",
+                className: Self.className
+            )
+        }
+    }
 
     func constructAndSendAuthorizationResponseToVerifier(
         authorizationRequest: AuthorizationRequest,
+        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
+        responseUri: String
+    ) async throws -> VerifierResponse {
+        let authorizationResponse = try createAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: vpTokenSigningResults
+        )
+
+        let response: NetworkResponse = try await sendAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            authorizationResponse: authorizationResponse,
+            responseUri: responseUri
+        )
+        return toVerifierResponse(response)
+    }
+    
+    func constructAndSendAuthorizationResponseToVerifier(
+        authorizationRequest: AuthorizationRequestV2,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult],
         responseUri: String
     ) async throws -> VerifierResponse {
@@ -337,7 +397,7 @@ public class AuthorizationResponseHandler {
 //    }
     
     func constructAuthorizationResponse(
-        authorizationRequest: AuthorizationRequest,
+        authorizationRequest: AuthorizationRequestV2,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) throws -> [String: String] {
         let authorizationResponse = try createAuthorizationResponse(
@@ -355,7 +415,7 @@ public class AuthorizationResponseHandler {
     }
 
     func constructAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest?,
+        authorizationRequest: AuthorizationRequestV2?,
         exception: Error,
         walletNonce: String
     ) -> [String: Any] {

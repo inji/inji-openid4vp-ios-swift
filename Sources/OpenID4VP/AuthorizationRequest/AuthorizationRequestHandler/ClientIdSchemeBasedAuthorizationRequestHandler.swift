@@ -3,7 +3,7 @@ import Foundation
 
 protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
-    func processWalletMetadata() throws -> WalletMetadataV2
+    func process(walletMetadata: WalletMetadataV2) throws -> WalletMetadataV2
     func isSignedRequestSupported() -> Bool
     func isUnsignedRequestSupported() throws -> Bool
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
@@ -15,7 +15,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     let clientId: String
     var authorizationRequestParameters: [String: Any]
     let walletMetadata: WalletMetadata?
-    let walletMetadataV2: WalletMetadataV2
+    let walletMetadataV2: WalletMetadataV2?
     let setResponseUri: (String) -> Void
     let walletNonce: String
     let networkManager: NetworkManaging
@@ -29,7 +29,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     init(clientId: String,
          specVersion: SpecVersion,
          authorizationRequestParameters: [String: Any],
-         walletMetadataV2: WalletMetadataV2,
+         walletMetadataV2: WalletMetadataV2?,
          walletMetadata: WalletMetadata?,
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
@@ -207,13 +207,13 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
             headers[Header.contentType.rawValue] = ContentTypes.applicationFormUrlEncoded.rawValue
             
             
-            try isClientIdSchemeSupported(walletMetadata: walletMetadataV2)
-            
-            let processedWalletMetadataV2 = try delegate.processWalletMetadata()
-            body?["wallet_metadata"] = try processedWalletMetadataV2.encode(specVersion: specVersion)
-            shouldValidateWithWalletMetadata = true
-            
-            
+            if let walletMetadata = walletMetadataV2 {
+                try isClientIdSchemeSupported(walletMetadata: walletMetadata)
+                
+                let processedWalletMetadataV2 = try delegate.process(walletMetadata: walletMetadata)
+                body?["wallet_metadata"] = try processedWalletMetadataV2.encode(specVersion: specVersion)
+                shouldValidateWithWalletMetadata = true
+            }
         }
         var response:  NetworkResponse
         do{
@@ -318,9 +318,9 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         
         authorizationRequestParameters = try versionLogic.parseClientMetadata(authorizationRequestParameters: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadataV2: walletMetadataV2, walletMetadata: walletMetadata)
         
-        let presentationDefinitionUriSupported = !shouldValidateWithWalletMetadata || walletMetadata?.presentationDefinitionURISupported ?? true
+        let presentationDefinitionUriSupported = shouldValidateWithWalletMetadata
         
-        authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, presentationDefinitionUriSupported, networkManager)
+        try await versionLogic.validatePresentationExchangeRequest(authorizationRequestParameters: &authorizationRequestParameters, presentationDefinitionUriSupported: presentationDefinitionUriSupported, networkManager: networkManager as! NetworkManager)
     }
     
     final func setResponseUrl() throws {
@@ -399,18 +399,24 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     private enum VersionLogic {
         case specV1, draft23
         
-        func validatePresentationExchangeRequest(authorizationRequestParameters: inout [String: Any], networkManager: NetworkManager) async throws {
+        func validatePresentationExchangeRequest(authorizationRequestParameters: inout [String: Any], presentationDefinitionUriSupported: Bool, networkManager: NetworkManager) async throws {
             switch self {
             case .specV1:
                 //                TODO: Parse and validate DCQL query
+                // require_cryptographic_holder_binding - is false in all credential queries and not direct post then, state can be optional else required
+                // TODO: add check for state parameter based on presence of require_cryptographic_holder_binding
+                let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
+                if responseMode == ResponseMode.directPost.rawValue {
+                    try validateAttribute(AuthorizationRequestFieldConstants.state.rawValue, values: authorizationRequestParameters)
+                }
                 return
             case .draft23:
-                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, true, networkManager)
+                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, presentationDefinitionUriSupported, networkManager)
             }
         }
         
         // parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
-        func parseClientMetadata(authorizationRequestParameters: [String: Any], shouldValidateWithWalletMetadata: Bool, walletMetadataV2: WalletMetadataV2, walletMetadata: WalletMetadata?) throws -> [String: Any] {
+        func parseClientMetadata(authorizationRequestParameters: [String: Any], shouldValidateWithWalletMetadata: Bool, walletMetadataV2: WalletMetadataV2?, walletMetadata: WalletMetadata?) throws -> [String: Any] {
             switch self {
             case .draft23:
                 return try parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)

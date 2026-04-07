@@ -96,16 +96,6 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     private enum VersionLogic {
         case specV1, draft23
         
-        func validatePresentationExchangeRequest(authorizationRequestParameters: inout [String: Any], networkManager: NetworkManager) async throws {
-            switch self {
-            case .specV1:
-                //                TODO: Parse and validate DCQL query
-                return
-            case .draft23:
-                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, true, networkManager)
-            }
-        }
-        
         func buildOpenID4VPHandover(authorizationRequest: AuthorizationRequestV2, mdocGeneratedNonce: String, responseUri: String) throws -> CBOR {
             switch self {
             case .draft23:

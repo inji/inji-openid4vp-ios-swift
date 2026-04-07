@@ -4,7 +4,7 @@ import XCTest
 final class WalletMetadataV2Tests: XCTestCase {
     func testInitWithAllFields() {
         let ldpVc = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
-        let msoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: ["alg1"], deviceAuthAlgValues: ["alg2"])
+        let msoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
         let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["alg3"], kbJwtAlgValues: ["alg4"])
         let vpFormats: [VPFormatType: VPFormatSupportedV2] = [
             .ldp_vc: ldpVc,
@@ -44,7 +44,7 @@ final class WalletMetadataV2Tests: XCTestCase {
 
     func testEncodingAndDecoding() throws {
         let ldpVc = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
-        let msoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: ["alg1"], deviceAuthAlgValues: ["alg2"])
+        let msoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
         let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["alg3"], kbJwtAlgValues: ["alg4"])
         let vpFormats: [VPFormatType: VPFormatSupportedV2] = [
             .ldp_vc: ldpVc,
@@ -91,7 +91,7 @@ final class WalletMetadataV2Tests: XCTestCase {
         let jsonString = """
         {
             "vp_formats_supported": {
-                "ldp_vc": { "issuerauth_alg_values": ["alg1"], "deviceauth_alg_values": ["alg2"] }
+                "ldp_vc": { "issuerauth_alg_values": [-7], "deviceauth_alg_values": [-9] }
             },
             "client_id_prefixes_supported": ["pre-registered"],
             "response_types_supported": ["vp_token"]

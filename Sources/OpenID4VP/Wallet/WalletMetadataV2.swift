@@ -84,6 +84,7 @@ public struct WalletMetadataV2: Codable {
         case .v1:
             return try encodeAsJSON(self, fieldName: "wallet_metadata", className: Self.className)
         case .draft23:
+            //TODO: populate holder binding values as alg_values
             let walletMetadata = try? WalletMetadata(
                 vpFormatsSupported: self.vpFormatsSupported.mapValues { VPFormatSupported(algValuesSupported: $0.mergedAlgValues) },
                 // If prefix is not decentralized identifier, default to did as other schemes are same
@@ -102,10 +103,10 @@ private extension VPFormatSupportedV2 {
     var mergedAlgValues: [String]? {
         switch self {
         case let ldp as LdpVcFormatSupported:
-            return ldp.proofTypeValues.map { $0.rawValue }
+            return ldp.proofTypeValues?.map { $0.rawValue }
         case let mdoc as MsoMdocVcFormatSupported:
             let merged = (mdoc.issuerAuthAlgValues ?? []) + (mdoc.deviceAuthAlgValues ?? [])
-            return merged.isEmpty ? nil : merged
+            return []
         case let sdJwt as SdJwtVcFormatSupported:
             let merged = (sdJwt.sdJwtAlgValues ?? []) + (sdJwt.kbJwtAlgValues ?? [])
             return merged.isEmpty ? nil : merged

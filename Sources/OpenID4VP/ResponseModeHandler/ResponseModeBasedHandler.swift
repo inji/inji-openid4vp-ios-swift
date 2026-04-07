@@ -5,7 +5,7 @@ protocol ResponseModeBasedHandler {
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws
     func validate(clientMetadata: ClientMetadataV2?,
-                  walletMetadata: WalletMetadataV2,
+                  walletMetadata: WalletMetadataV2?,
                   shouldValidateWithWalletMetadata: Bool) throws
     
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest,
@@ -27,13 +27,13 @@ protocol ResponseModeBasedHandler {
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
     
     func getAuthorizationResponse(
-            authorizationRequest: AuthorizationRequest,
-            authorizationResponse: AuthorizationResponse,
+            authorizationRequest: AuthorizationRequestV2,
+            authorizationResponse: AuthorizationResponseV2,
             walletNonce: String
         ) throws -> [String: String]
 
         func getAuthorizationErrorResponse(
-            authorizationRequest: AuthorizationRequest?,
+            authorizationRequest: AuthorizationRequestV2?,
             authorizationResponse: AuthorizationErrorResponse,
             walletNonce: String
         ) throws -> [String: String]

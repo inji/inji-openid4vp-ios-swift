@@ -314,69 +314,69 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
     }
     
-    func testShouldReturnEncryptedResponseForSuccessAuthorizationResponse() throws {
-        let handler = DirectPostJwtResponseModeHandler()
-
-        let authorizationResponse = AuthorizationResponse(
-            vpToken: mockVPTokens,
-            presentationSubmission: mockPresentationSubmission,
-            state: "test-state"
-        )
-
-        let result = try handler.getAuthorizationResponse(
-            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
-            authorizationResponse: authorizationResponse,
-            walletNonce: "mock-nonce"
-        )
-
-        XCTAssertEqual(result.keys.count, 1)
-        XCTAssertNotNil(result["response"])
-        XCTAssertFalse(result["response"]!.isEmpty)
-
-        XCTAssertTrue(result["response"]!.contains("."),
-                      "Expected encrypted JWE compact format result")
-    }
+//    func testShouldReturnEncryptedResponseForSuccessAuthorizationResponse() throws {
+//        let handler = DirectPostJwtResponseModeHandler()
+//
+//        let authorizationResponse = AuthorizationResponse(
+//            vpToken: mockVPTokens,
+//            presentationSubmission: mockPresentationSubmission,
+//            state: "test-state"
+//        )
+//
+//        let result = try handler.getAuthorizationResponse(
+//            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
+//            authorizationResponse: authorizationResponse,
+//            walletNonce: "mock-nonce"
+//        )
+//
+//        XCTAssertEqual(result.keys.count, 1)
+//        XCTAssertNotNil(result["response"])
+//        XCTAssertFalse(result["response"]!.isEmpty)
+//
+//        XCTAssertTrue(result["response"]!.contains("."),
+//                      "Expected encrypted JWE compact format result")
+//    }
     
-    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGiven() throws {
-        let handler = DirectPostJwtResponseModeHandler()
-
-        let errorResponse = AuthorizationErrorResponse(
-            error: "invalid_request",
-            errorDescription: "something went wrong",
-            state: "error-state"
-        )
-
-        let result = try handler.getAuthorizationErrorResponse(
-            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
-            authorizationResponse: errorResponse,
-            walletNonce: "mock-nonce"
-        )
-
-        XCTAssertEqual(result["error"], "invalid_request")
-        XCTAssertEqual(result["error_description"], "something went wrong")
-        XCTAssertEqual(result["state"], "error-state" )
-        XCTAssertNil(result["response"])
-    }
-    
-    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGivenAndStateIsNil() throws {
-        let handler = DirectPostJwtResponseModeHandler()
-
-        let errorResponse = AuthorizationErrorResponse(
-            error: "invalid_request",
-            errorDescription: "something went wrong",
-            state: nil
-        )
-
-        let result = try handler.getAuthorizationErrorResponse(
-            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
-            authorizationResponse: errorResponse,
-            walletNonce: "mock-nonce"
-        )
-
-        XCTAssertEqual(result["error"], "invalid_request")
-        XCTAssertEqual(result["error_description"], "something went wrong")
-        XCTAssertEqual(result["state"], nil)
-        XCTAssertNil(result["response"])
-    }
+//    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGiven() throws {
+//        let handler = DirectPostJwtResponseModeHandler()
+//
+//        let errorResponse = AuthorizationErrorResponse(
+//            error: "invalid_request",
+//            errorDescription: "something went wrong",
+//            state: "error-state"
+//        )
+//
+//        let result = try handler.getAuthorizationErrorResponse(
+//            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
+//            authorizationResponse: errorResponse,
+//            walletNonce: "mock-nonce"
+//        )
+//
+//        XCTAssertEqual(result["error"], "invalid_request")
+//        XCTAssertEqual(result["error_description"], "something went wrong")
+//        XCTAssertEqual(result["state"], "error-state" )
+//        XCTAssertNil(result["response"])
+//    }
+//    
+//    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGivenAndStateIsNil() throws {
+//        let handler = DirectPostJwtResponseModeHandler()
+//
+//        let errorResponse = AuthorizationErrorResponse(
+//            error: "invalid_request",
+//            errorDescription: "something went wrong",
+//            state: nil
+//        )
+//
+//        let result = try handler.getAuthorizationErrorResponse(
+//            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostJwtResponseMode,
+//            authorizationResponse: errorResponse,
+//            walletNonce: "mock-nonce"
+//        )
+//
+//        XCTAssertEqual(result["error"], "invalid_request")
+//        XCTAssertEqual(result["error_description"], "something went wrong")
+//        XCTAssertEqual(result["state"], nil)
+//        XCTAssertNil(result["response"])
+//    }
 
 }

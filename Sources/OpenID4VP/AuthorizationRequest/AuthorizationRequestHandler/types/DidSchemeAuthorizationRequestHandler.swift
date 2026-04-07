@@ -3,7 +3,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadataV2: WalletMetadataV2,
+                  walletMetadataV2: WalletMetadataV2?,
                   walletMetadata: WalletMetadata? = nil,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
@@ -49,9 +49,9 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         return try await keyResolver.resolve(uri: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String, keyId: keyId)
     }
     
-    func processWalletMetadata() throws -> WalletMetadataV2 {
-        try validateRequestObjectSigningAlgSupported(walletMetadataV2, className: className)
-        return walletMetadataV2
+    func process(walletMetadata: WalletMetadataV2) throws -> WalletMetadataV2 {
+        try validateRequestObjectSigningAlgSupported(walletMetadata, className: className)
+        return walletMetadata
     }
 
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {

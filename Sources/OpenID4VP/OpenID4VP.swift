@@ -3,16 +3,16 @@ import Foundation
 public class OpenID4VP {
     public let traceabilityId: String
     let networkManager: NetworkManaging
-    var authorizationRequest: AuthorizationRequest!
+    var authorizationRequest: AuthorizationRequestV2!
     private var responseUri: String?
     private var authorizationResponseHandler: AuthorizationResponseHandler
-    private let walletMetadata: WalletMetadata?
+    private let walletMetadata: WalletMetadataV2?
     private var walletNonce: String = ""
     private let nonceProvider: NonceProvider
 
     private let className = String(describing: type(of: OpenID4VP.self))
 
-    public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
+    public init(traceabilityId: String, walletMetadata: WalletMetadataV2? = nil) {
         self.traceabilityId = traceabilityId
         networkManager = NetworkManager.shared
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
@@ -22,7 +22,7 @@ public class OpenID4VP {
         walletNonce = nonceProvider.generateNonce()
     }
 
-    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata? = nil, nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
+    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadataV2 = WalletMetadataV2(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
         self.networkManager = networkManager ?? NetworkManager.shared
         self.nonceProvider = nonceProvider
 
@@ -35,12 +35,12 @@ public class OpenID4VP {
     public func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
     }
-
+    
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
-    ) async throws -> AuthorizationRequest {
+    ) async throws -> AuthorizationRequestV2 {
         // Create a new wallet nonce for each request
         walletNonce = nonceProvider.generateNonce()
         authorizationRequest = nil
@@ -48,7 +48,7 @@ public class OpenID4VP {
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
 
         do {
-            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+            authorizationRequest = try await AuthorizationRequestV2.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                 trustedVerifier: trustedVerifiers,
                 walletMetadata: walletMetadata,
@@ -64,18 +64,19 @@ public class OpenID4VP {
         }
     }
 
+
     public func authenticateVerifier(
         authorizationRequest: [String: Any],
         trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
-    ) async throws -> AuthorizationRequest {
+    ) async throws -> AuthorizationRequestV2 {
         do {
             walletNonce = nonceProvider.generateNonce()
             self.authorizationRequest = nil
             responseUri = nil
             authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
 
-            let validatedAuthorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+            let validatedAuthorizationRequest = try await AuthorizationRequestV2.validateAndCreateAuthorizationRequest(
                 authRequest: authorizationRequest,
                 trustedVerifiers: trustedVerifiers,
                 walletMetadata: walletMetadata,
@@ -119,7 +120,7 @@ public class OpenID4VP {
         signatureSuite: String? = nil
     ) async throws -> [UnsignedVPTokenV2] {
         do {
-            return try await authorizationResponseHandler.constructUnsignedVPTokenV2(
+            return try await authorizationResponseHandler.constructUnsignedVPTokenV3(
                 credentialsMap: verifiableCredentials,
                 authorizationRequest: authorizationRequest,
                 responseUri: responseUri!,
@@ -176,6 +177,21 @@ public class OpenID4VP {
             throw error
         }
     }
+    
+    public func sendVPResponseToVerifier(
+        vpTokenSigningResults: [VPTokenSigningResultV2]
+    ) async throws -> VerifierResponse {
+        do {
+            return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: vpTokenSigningResults,
+                responseUri: responseUri!
+            )
+        } catch {
+             await safeSendError(error: error)
+            throw error
+        }
+    }
 
     public func sendErrorInfoToVerifier(error: Error) async throws -> VerifierResponse {
         return try await authorizationResponseHandler.sendAuthorizationError(responseUri: responseUri, authorizationRequest: authorizationRequest, error: error)
@@ -197,97 +213,97 @@ public class OpenID4VP {
         return try await sendVPResponseToVerifier(vpTokenSigningResults: vpTokenSigningResults).body()
     }
 
-    @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")
-    public func authenticateVerifier(
-        urlEncodedAuthorizationRequest: String,
-        trustedVerifierJSON: [Verifier],
-        shouldValidateClient: Bool = false,
-        walletMetadata: WalletMetadata? = nil
-    ) async throws -> AuthorizationRequest {
-        // Create a new wallet nonce for each request
-        walletNonce = nonceProvider.generateNonce()
-        do {
-            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
-                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifier: trustedVerifierJSON,
-                walletMetadata: walletMetadata,
-                setResponseUri: setResponseUri,
-                shouldValidateClient: shouldValidateClient,
-                walletNonce: walletNonce,
-                networkManager: networkManager
-            )
-            return authorizationRequest
-        } catch let exception {
-            await sendErrorToVerifier(error: exception)
-            throw exception
-        }
-    }
-
-    @available(*, deprecated, message: "Use authenticateVerifier with trustedVerifiers parameter instead. Reason: Parameter trustedVerifierJSON has been renamed to trustedVerifiers")
-    public func authenticateVerifier(
-        urlEncodedAuthorizationRequest: String,
-        trustedVerifierJSON: [Verifier],
-        shouldValidateClient: Bool = true
-    ) async throws -> AuthorizationRequest {
-        // Create a new wallet nonce for each request
-        walletNonce = nonceProvider.generateNonce()
-        authorizationRequest = nil
-        responseUri = nil
-        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
-
-        do {
-            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
-                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifier: trustedVerifierJSON,
-                walletMetadata: walletMetadata,
-                setResponseUri: setResponseUri,
-                shouldValidateClient: shouldValidateClient,
-                walletNonce: walletNonce,
-                networkManager: networkManager
-            )
-            return authorizationRequest
-        } catch let exception {
-            await safeSendError(error: exception)
-            throw exception
-        }
-    }
-
-    @available(*, deprecated, message: "Use constructUnsignedVPToken with [String: [FormatType: [Any]]] instead")
-    public func constructVerifiablePresentationToken(
-        verifiableCredentials: [String: [String]]
-    ) async throws -> String {
-        do {
-            return try await authorizationResponseHandler.constructUnsignedVPTokenV1(
-                verifiableCredentials: verifiableCredentials,
-                authorizationRequest: authorizationRequest,
-                responseUri: responseUri!,
-                walletNonce: walletNonce
-            )
-        } catch {
-            await sendErrorToVerifier(error: error)
-            throw error
-        }
-    }
-
-    @available(*, deprecated, message: "Supports only direct POST response mode for LDP VC. Use shareVerifiablePresentation with VPTokenSigningResults instead")
-    public func shareVerifiablePresentation(
-        vpResponseMetadata: VPResponseMetadata
-    ) async throws -> String {
-        do {
-            return try await authorizationResponseHandler.shareVPV1(
-                vpResponseMetadata: vpResponseMetadata,
-                nonce: authorizationRequest.nonce,
-                state: authorizationRequest.state,
-                responseUri: responseUri!, presentationDefinitionId: authorizationRequest.presentationDefinition.id
-            )
-        } catch {
-            await sendErrorToVerifier(error: error)
-            throw error
-        }
-    }
-
-    @available(*, deprecated, renamed: "sendErrorInfoToVerifier", message: "sendErrorToVerifier is now changed to sendErrorInfoToVerifier. Reason: This does not support listening the response from the verifier")
-    public func sendErrorToVerifier(error: Error) async {
-        await safeSendError(error: error)
-    }
+//    @available(*, deprecated, message: "Use authenticateVerifier without WalletMetadata instead. Reason: WalletMetadata is moved to OpenID4VP constructor instead of being passed as parameter")
+//    public func authenticateVerifier(
+//        urlEncodedAuthorizationRequest: String,
+//        trustedVerifierJSON: [Verifier],
+//        shouldValidateClient: Bool = false,
+//        walletMetadata: WalletMetadata? = nil
+//    ) async throws -> AuthorizationRequest {
+//        // Create a new wallet nonce for each request
+//        walletNonce = nonceProvider.generateNonce()
+//        do {
+//            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+//                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
+//                trustedVerifier: trustedVerifierJSON,
+//                walletMetadata: walletMetadata,
+//                setResponseUri: setResponseUri,
+//                shouldValidateClient: shouldValidateClient,
+//                walletNonce: walletNonce,
+//                networkManager: networkManager
+//            )
+//            return authorizationRequest
+//        } catch let exception {
+//            await sendErrorToVerifier(error: exception)
+//            throw exception
+//        }
+//    }
+//
+//    @available(*, deprecated, message: "Use authenticateVerifier with trustedVerifiers parameter instead. Reason: Parameter trustedVerifierJSON has been renamed to trustedVerifiers")
+//    public func authenticateVerifier(
+//        urlEncodedAuthorizationRequest: String,
+//        trustedVerifierJSON: [Verifier],
+//        shouldValidateClient: Bool = true
+//    ) async throws -> AuthorizationRequest {
+//        // Create a new wallet nonce for each request
+//        walletNonce = nonceProvider.generateNonce()
+//        authorizationRequest = nil
+//        responseUri = nil
+//        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
+//
+//        do {
+//            authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
+//                urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
+//                trustedVerifier: trustedVerifierJSON,
+//                walletMetadata: walletMetadata,
+//                setResponseUri: setResponseUri,
+//                shouldValidateClient: shouldValidateClient,
+//                walletNonce: walletNonce,
+//                networkManager: networkManager
+//            )
+//            return authorizationRequest
+//        } catch let exception {
+//            await safeSendError(error: exception)
+//            throw exception
+//        }
+//    }
+//
+//    @available(*, deprecated, message: "Use constructUnsignedVPToken with [String: [FormatType: [Any]]] instead")
+//    public func constructVerifiablePresentationToken(
+//        verifiableCredentials: [String: [String]]
+//    ) async throws -> String {
+//        do {
+//            return try await authorizationResponseHandler.constructUnsignedVPTokenV1(
+//                verifiableCredentials: verifiableCredentials,
+//                authorizationRequest: authorizationRequest,
+//                responseUri: responseUri!,
+//                walletNonce: walletNonce
+//            )
+//        } catch {
+//            await sendErrorToVerifier(error: error)
+//            throw error
+//        }
+//    }
+//
+//    @available(*, deprecated, message: "Supports only direct POST response mode for LDP VC. Use shareVerifiablePresentation with VPTokenSigningResults instead")
+//    public func shareVerifiablePresentation(
+//        vpResponseMetadata: VPResponseMetadata
+//    ) async throws -> String {
+//        do {
+//            return try await authorizationResponseHandler.shareVPV1(
+//                vpResponseMetadata: vpResponseMetadata,
+//                nonce: authorizationRequest.nonce,
+//                state: authorizationRequest.state,
+//                responseUri: responseUri!, presentationDefinitionId: authorizationRequest.presentationDefinition.id
+//            )
+//        } catch {
+//            await sendErrorToVerifier(error: error)
+//            throw error
+//        }
+//    }
+//
+//    @available(*, deprecated, renamed: "sendErrorInfoToVerifier", message: "sendErrorToVerifier is now changed to sendErrorInfoToVerifier. Reason: This does not support listening the response from the verifier")
+//    public func sendErrorToVerifier(error: Error) async {
+//        await safeSendError(error: error)
+//    }
 }

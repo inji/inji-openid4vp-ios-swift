@@ -1,17 +1,39 @@
 public protocol VPFormatSupportedV2: Codable {}
 
 public struct LdpVcFormatSupported: VPFormatSupportedV2, Codable {
-    let proofTypeValues: [SignatureAlgorithm]
+    let proofTypeValues: [SignatureAlgorithm]?
     let cryptoSuiteValues: [String]?
     
     enum CodingKeys: String, CodingKey {
-        case proofTypeValues = "proof_types_values"
+        case proofTypeValues = "proof_type_values"
         case cryptoSuiteValues = "cryptosuite_values"
     }
     
     init(proofTypeValues: [SignatureAlgorithm] = [.ed25519Signature2020, .jsonWebSignature2020], cryptoSuiteValues: [String]? = nil) {
         self.proofTypeValues = proofTypeValues
         self.cryptoSuiteValues = cryptoSuiteValues
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        if container.contains(.proofTypeValues) {
+            var proofTypesArray = try container.nestedUnkeyedContainer(forKey: .proofTypeValues)
+            var validProofTypes: [SignatureAlgorithm] = []
+            
+            while !proofTypesArray.isAtEnd {
+                let rawValue = try proofTypesArray.decode(String.self)
+                if let signatureAlgorithm = SignatureAlgorithm(rawValue: rawValue) {
+                    validProofTypes.append(signatureAlgorithm)
+                }
+            }
+            
+            self.proofTypeValues = validProofTypes.isEmpty ? nil : validProofTypes
+        } else {
+            self.proofTypeValues = nil
+        }
+        
+        self.cryptoSuiteValues = try container.decodeIfPresent([String].self, forKey: .cryptoSuiteValues)
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -22,15 +44,15 @@ public struct LdpVcFormatSupported: VPFormatSupportedV2, Codable {
 }
 
 public struct MsoMdocVcFormatSupported: VPFormatSupportedV2, Codable {
-    let issuerAuthAlgValues: [String]?
-    let deviceAuthAlgValues: [String]?
+    let issuerAuthAlgValues: [Int]?
+    let deviceAuthAlgValues: [Int]?
     
     enum CodingKeys: String, CodingKey {
         case issuerAuthAlgValues = "issuerauth_alg_values"
         case deviceAuthAlgValues = "deviceauth_alg_values"
     }
     
-    init(issuerAuthAlgValues: [String]? = nil, deviceAuthAlgValues: [String]? = nil) {
+    init(issuerAuthAlgValues: [Int]? = nil, deviceAuthAlgValues: [Int]? = nil) {
         self.issuerAuthAlgValues = issuerAuthAlgValues
         self.deviceAuthAlgValues = deviceAuthAlgValues
     }

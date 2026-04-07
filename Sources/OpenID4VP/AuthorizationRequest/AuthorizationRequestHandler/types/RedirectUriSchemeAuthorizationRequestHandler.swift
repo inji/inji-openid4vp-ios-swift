@@ -3,7 +3,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadataV2: WalletMetadataV2,
+                  walletMetadataV2: WalletMetadataV2?,
                   walletMetadata: WalletMetadata?,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
@@ -46,8 +46,8 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         return updatedWalletMetadata
     }
     
-    func processWalletMetadata() throws -> WalletMetadataV2 {
-        var updatedWalletMetadata = walletMetadataV2
+    func process(walletMetadata: WalletMetadataV2)  throws -> WalletMetadataV2 {
+        var updatedWalletMetadata = walletMetadata
         updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
         return updatedWalletMetadata
     }

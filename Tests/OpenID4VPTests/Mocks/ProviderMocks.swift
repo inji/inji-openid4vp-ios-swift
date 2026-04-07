@@ -11,13 +11,13 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
 
-    override func constructAuthorizationResponse(authorizationRequest authRequest: AuthorizationRequest,
+    override func constructAuthorizationResponse(authorizationRequest authRequest: AuthorizationRequestV2,
                                                  vpTokenSigningResults signingResult: [FormatType: VPTokenSigningResult]) -> [String: String] {
         return expectedResponse
     }
 
     override func constructAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest?,
+        authorizationRequest: AuthorizationRequestV2?,
         exception: Error,
         walletNonce: String
     ) -> [String: Any] {
@@ -34,7 +34,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
                   shouldValidateWithWalletMetadata: Bool) throws {}
     
     func validate(clientMetadata: ClientMetadataV2?,
-                  walletMetadata: WalletMetadataV2,
+                  walletMetadata: WalletMetadataV2?,
                   shouldValidateWithWalletMetadata: Bool) throws {}
 
     func sendAuthorizationResponse(
@@ -68,9 +68,17 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     ) throws -> [String: String] {
         return expectedSuccessResponse
     }
+    
+    func getAuthorizationResponse(
+        authorizationRequest: AuthorizationRequestV2,
+        authorizationResponse: AuthorizationResponseV2,
+        walletNonce: String
+    ) throws -> [String: String] {
+        return expectedSuccessResponse
+    }
 
     func getAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest?,
+        authorizationRequest: AuthorizationRequestV2?,
         authorizationResponse: AuthorizationErrorResponse,
         walletNonce: String
     ) throws -> [String: String] {
