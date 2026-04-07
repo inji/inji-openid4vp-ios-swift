@@ -86,12 +86,12 @@ public struct WalletMetadata: Codable {
         case .draft23:
             var walletMetadataDict: [String: Any] = [:]
             
-            let vpFormats: [String: [String: [String]]] = self.vpFormatsSupported.reduce(into: [:]) { result, item in
-                let formatKey = item.key.rawValue
-                if let algValues = item.value.mergedAlgValues {
-                    result[formatKey] = ["alg_values_supported": algValues]
+            let vpFormats: [String: [String: [String]]] = self.vpFormatsSupported.reduce(into: [:]) { result, vpFormatSupported in
+                let credentialFormat = vpFormatSupported.key.rawValue
+                if let algValues = vpFormatSupported.value.toAlgValuesSupported() {
+                    result[credentialFormat] = ["alg_values_supported": algValues]
                 } else {
-                    result[formatKey] = [:]
+                    result[credentialFormat] = [:]
                 }
             }
             walletMetadataDict["presentation_definition_uri_supported"] = true
@@ -110,24 +110,6 @@ public struct WalletMetadata: Codable {
             
             let jsonData = try JSONSerialization.data(withJSONObject: walletMetadataDict)
             return String(data: jsonData, encoding: .utf8) ?? ""
-        }
-    }
-}
-
-private extension VPFormatSupported {
-    var mergedAlgValues: [String]? {
-        switch self {
-        case let ldp as LdpVcFormatSupported:
-            return ldp.proofTypeValues?.map { $0.rawValue }
-        case let mdoc as MsoMdocVcFormatSupported:
-            let merged = (mdoc.issuerAuthAlgValues ?? []) + (mdoc.deviceAuthAlgValues ?? [])
-            //TODO: fic mdoc issuer algorithm values
-            return nil
-        case let sdJwt as SdJwtVcFormatSupported:
-            let merged = (sdJwt.sdJwtAlgValues ?? []) + (sdJwt.kbJwtAlgValues ?? [])
-            return merged.isEmpty ? nil : merged
-        default:
-            return nil
         }
     }
 }

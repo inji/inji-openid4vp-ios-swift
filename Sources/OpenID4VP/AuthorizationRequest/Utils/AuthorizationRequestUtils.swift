@@ -85,7 +85,7 @@ func getAuthorizationRequestHandlerV2(authorizationRequestParameters: [String:An
     try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
     let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
     
-    let clientIdPrefix = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+    let clientIdPrefix = try extractClientIdPrefix(authorizationRequestParams: authorizationRequestParameters)
     let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: trustedVerifiers)
     
     switch clientIdPrefix {
@@ -165,7 +165,7 @@ func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) t
     }
 }
 
-func extractClientIdScheme(authorizationRequestParams: [String:Any]) throws -> String {
+func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> String {
     if let scheme = authorizationRequestParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String {
         try validateField(scheme, [AuthorizationRequestFieldConstants.clientIdScheme.rawValue], AuthorizationRequest.className)
         return scheme

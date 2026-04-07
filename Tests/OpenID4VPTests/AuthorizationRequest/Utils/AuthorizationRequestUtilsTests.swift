@@ -128,18 +128,20 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     
     ///Extraction of client identifier scheme from Authorization request client_id property
     
-    func testExtractClientIdSchemeWithValidInput(){
-        let result1 = try! extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"mock-client"])
-        let result2 = try! extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"redirect_uri:https://mock-verifier.com"])
-        let result3 = try! extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"did:example#1"])
+    func testExtractClientIdPrefixWithValidInput(){
+        let result1 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"mock-client"])
+        let result2 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"redirect_uri:https://mock-verifier.com"])
+        let result3 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"did:example#1"])
+        let result4 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"decentralized_identifier:did:example#1"])
         
         XCTAssertEqual(result1, "pre-registered")
         XCTAssertEqual(result2, "redirect_uri")
         XCTAssertEqual(result3, "did")
+        XCTAssertEqual(result4, "decentralized_identifier")
     }
     
     func testExtractClientidThrowErrorWhenClientIdIsEmpty(){
-        XCTAssertThrowsError(try extractClientIdScheme(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:""])){ error in
+        XCTAssertThrowsError(try extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:""])){ error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Invalid Input: client_id value cannot be empty or null",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest

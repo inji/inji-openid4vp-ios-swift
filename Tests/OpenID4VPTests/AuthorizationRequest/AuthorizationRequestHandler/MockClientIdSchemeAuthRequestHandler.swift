@@ -21,7 +21,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
         self.isSignedRequestSupportedFlag = isSignedRequestSupported
         self.isUnsignedRequestSupportedFlag = isUnsignedRequestSupported
         do {
-            self.clientIdSchemeValue = try extractClientIdScheme(authorizationRequestParams: authorizationRequestParameters)
+            self.clientIdSchemeValue = try extractClientIdPrefix(authorizationRequestParams: authorizationRequestParameters)
         } catch {
             self.clientIdSchemeValue = "unknown"
         }

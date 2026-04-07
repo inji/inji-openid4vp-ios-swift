@@ -1,4 +1,6 @@
-public protocol VPFormatSupported: Codable {}
+public protocol VPFormatSupported: Codable {
+    func toAlgValuesSupported() -> [String]?
+}
 
 public struct LdpVcFormatSupported: VPFormatSupported, Codable {
     //TODO: Expose a separate enum for ProofType or accept as string
@@ -42,11 +44,22 @@ public struct LdpVcFormatSupported: VPFormatSupported, Codable {
         try container.encode(proofTypeValues, forKey: .proofTypeValues)
         try container.encodeIfPresent(cryptoSuiteValues, forKey: .cryptoSuiteValues)
     }
+    
+    public func toAlgValuesSupported() -> [String]? {
+        if let proofTypeValues = proofTypeValues {
+            return proofTypeValues.map { $0.rawValue }
+        }
+        return nil
+    }
 }
 
 public struct MsoMdocVcFormatSupported: VPFormatSupported, Codable {
     let issuerAuthAlgValues: [Int]?
     let deviceAuthAlgValues: [Int]?
+    private let algorithmValueNameMap: [Int: String] = [
+        -7: "ES256",
+         -9: "ESP256"
+    ]
     
     enum CodingKeys: String, CodingKey {
         case issuerAuthAlgValues = "issuerauth_alg_values"
@@ -56,6 +69,13 @@ public struct MsoMdocVcFormatSupported: VPFormatSupported, Codable {
     public init(issuerAuthAlgValues: [Int]? = nil, deviceAuthAlgValues: [Int]? = nil) {
         self.issuerAuthAlgValues = issuerAuthAlgValues
         self.deviceAuthAlgValues = deviceAuthAlgValues
+    }
+    
+    public func toAlgValuesSupported() -> [String]? {
+        if let deviceAuthAlgValues = deviceAuthAlgValues {
+            return deviceAuthAlgValues.map { algorithmValueNameMap[$0] ?? "Unknown(\($0))" }
+        }
+        return nil
     }
 }
 
@@ -72,5 +92,9 @@ public struct SdJwtVcFormatSupported: VPFormatSupported, Codable {
     public init(sdJwtAlgValues: [String]? = nil, kbJwtAlgValues: [String]? = nil) {
         self.sdJwtAlgValues = sdJwtAlgValues
         self.kbJwtAlgValues = kbJwtAlgValues
+    }
+    
+    public func toAlgValuesSupported() -> [String]? {
+        return kbJwtAlgValues
     }
 }
