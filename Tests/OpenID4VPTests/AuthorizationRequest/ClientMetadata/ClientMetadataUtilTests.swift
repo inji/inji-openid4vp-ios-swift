@@ -5,6 +5,7 @@ final class ClientMetadataUtilTests: XCTestCase {
     private let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
     private let responseModeKey = AuthorizationRequestFieldConstants.responseMode.rawValue
     
+    // Spec version Draft 23 client metadata parsing tests
     func testParsingOfClientMetadataAvailableAsString() throws {
         let clientMetadataString = """
                 {
@@ -74,6 +75,87 @@ final class ClientMetadataUtilTests: XCTestCase {
     }
     
     
+    // Spec version v1 client metadata parsing tests
+
+    func testV1ParsingOfClientMetadataAvailableAsString() throws {
+        let clientMetadataString = """
+            {
+                "client_name": "Valid Client",
+                "logo_uri": "https://example.com/logo.png",
+                "authorization_encrypted_response_alg": "ECDH-ES",
+                "encrypted_response_enc_values_supported": ["A256GCM"],
+                "vp_formats_supported": { "ldp_vc": { "proof_type_values": ["Ed25519Signature2020"] } },
+                "jwks": { "keys": [{ "kty": "EC", "use": "enc", "alg": "ECDH-ES", "kid": "1", "crv": "P-256", "x": "ur76rg", "y": "ur76rg" }] }
+            }
+        """
+
+        let authorizationRequest = createAuthorizationRequest(clientMetadata: clientMetadataString)
+
+        let updatedAuthorizationRequest = try ClientMetadataVersionLogic.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)
+
+        XCTAssertNotNil(updatedAuthorizationRequest[clientMetadataKey])
+        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadataSpecVersion1)
+    }
+
+    func testV1ParsingOfClientMetadataAvailableAsDictionary() throws {
+        let clientMetadataDict: NSDictionary = [
+            "client_name": "Valid Client",
+            "logo_uri": "https://example.com/logo.png",
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "encrypted_response_enc_values_supported": ["A256GCM"],
+            "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]],
+            "jwks": ["keys": [["kty": "EC", "use": "enc", "alg": "ECDH-ES", "kid": "1", "crv": "P-256", "x": "ur76rg", "y": "ur76rg"]]]
+        ]
+        let authorizationRequest = createAuthorizationRequest(clientMetadata: clientMetadataDict)
+
+        let updatedAuthorizationRequest = try ClientMetadataVersionLogic.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)
+
+        XCTAssertNotNil(updatedAuthorizationRequest[clientMetadataKey])
+        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadataSpecVersion1)
+    }
+
+    func testV1ParsingOfClientMetadataWhenAlreadyClientMetadataSpecVersion1Instance() throws {
+        let clientMetadataInstance = ClientMetadataSpecVersion1(
+            vpFormatsSupported: ["ldp_vc": LdpVcFormatSupported()]
+        )
+        let authorizationRequest = createAuthorizationRequest(clientMetadata: clientMetadataInstance)
+
+        let updatedAuthorizationRequest = try ClientMetadataVersionLogic.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)
+
+        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadataSpecVersion1)
+    }
+
+    func testV1ParsingOfClientMetadataWhenClientMetadataAvailableButNotOfExpectedType() throws {
+        let authorizationRequest = createAuthorizationRequest(clientMetadata: 12345)
+        XCTAssertThrowsError(try ClientMetadataVersionLogic.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "client_metadata must be of type String or Map",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testV1ParsingOfClientMetadataNotThrowErrorWhenClientMetadataNotPresentAndResponseModeIsDirectPost() throws {
+        let authorizationRequest = createAuthorizationRequest()
+
+        XCTAssertNoThrowAndVerify(try ClientMetadataVersionLogic.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)) { result in
+            XCTAssertNil(result[clientMetadataKey], "Client metadata should not be present when not provided")
+        }
+    }
+
+    func testV1ParsingOfClientMetadataThrowErrorWhenClientMetadataNotPresentAndResponseModeIsDirectPostJwt() throws {
+        let authorizationRequest = createAuthorizationRequest(responseMode: ResponseMode.directPostJwt.rawValue)
+
+        XCTAssertThrowsError(try ClientMetadataVersionLogic.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "client_metadata must be present for given response mode",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
     private func createAuthorizationRequest(clientMetadata: Any? = nil, responseMode: String = ResponseMode.directPost.rawValue) -> [String: Any] {
         if let clientMetadata = clientMetadata {
             return [
@@ -85,4 +167,3 @@ final class ClientMetadataUtilTests: XCTestCase {
         return [responseModeKey: responseMode]
     }
 }
-

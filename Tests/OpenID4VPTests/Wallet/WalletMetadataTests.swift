@@ -86,19 +86,138 @@ final class WalletMetadataTests: XCTestCase {
         XCTAssertNil(metadata.authorizationEncryptionAlgValuesSupported)
         XCTAssertNil(metadata.authorizationEncryptionEncValuesSupported)
     }
+    
+    func testEncodeOfWalletMetadataSpecVersion1() throws {
+        let metadata = WalletMetadata(
+            vpFormatsSupported: [
+                .ldp_vc: LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020]),
+                .mso_mdoc: MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
+            ],
+            clientIdPrefixesSupported: [.preRegistered, .decentralizedIdentifier],
+            requestObjectSigningAlgValuesSupported: [.edDsa],
+            authorizationEncryptionAlgValuesSupported: [.ecdhEs],
+            authorizationEncryptionEncValuesSupported: [.A256GCM],
+            responseTypesSupported: [.vp_token]
+        )
+        let encoded = try metadata.encode(specVersion: .v1)
+        let json = try JSONSerialization.jsonObject(with: encoded.data(using: .utf8)!) as! [String: Any]
 
-    func testInvalidCastThrows() {
-        let jsonString = """
-        {
-            "vp_formats_supported": {
-                "ldp_vc": { "issuerauth_alg_values": [-7], "deviceauth_alg_values": [-9] }
-            },
-            "client_id_prefixes_supported": ["pre-registered"],
-            "response_types_supported": ["vp_token"]
-        }
-        """
-        let data = jsonString.data(using: .utf8)!
-        let decoder = JSONDecoder()
-        XCTAssertThrowsError(try decoder.decode(WalletMetadata.self, from: data))
+        XCTAssertNotNil(json["vp_formats_supported"])
+        XCTAssertNotNil(json["client_id_prefixes_supported"])
+        XCTAssertNotNil(json["request_object_signing_alg_values_supported"])
+        XCTAssertNotNil(json["authorization_encryption_alg_values_supported"])
+        XCTAssertNotNil(json["authorization_encryption_enc_values_supported"])
+        XCTAssertNotNil(json["response_types_supported"])
+
+        let clientIdPrefixes = json["client_id_prefixes_supported"] as! [String]
+        XCTAssertTrue(clientIdPrefixes.contains("pre-registered"))
+        XCTAssertTrue(clientIdPrefixes.contains("decentralized_identifier"))
+
+        let requestAlgs = json["request_object_signing_alg_values_supported"] as! [String]
+        XCTAssertEqual(requestAlgs, ["EdDSA"])
+
+        let encAlgs = json["authorization_encryption_alg_values_supported"] as! [String]
+        XCTAssertEqual(encAlgs, ["ECDH-ES"])
+
+        let encValues = json["authorization_encryption_enc_values_supported"] as! [String]
+        XCTAssertEqual(encValues, ["A256GCM"])
+
+        let responseTypes = json["response_types_supported"] as! [String]
+        XCTAssertEqual(responseTypes, ["vp_token"])
+    }
+
+    func testEncodeOfWalletMetadataSpecVersionDraft_23() throws {
+        let metadata = WalletMetadata(
+            vpFormatsSupported: [
+                .ldp_vc: LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020]),
+                .mso_mdoc: MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9]),
+                .dc_sd_jwt: SdJwtVcFormatSupported()
+            ],
+            clientIdPrefixesSupported: [.preRegistered, .redirectUri, .decentralizedIdentifier],
+            requestObjectSigningAlgValuesSupported: [.edDsa],
+            authorizationEncryptionAlgValuesSupported: [.ecdhEs],
+            authorizationEncryptionEncValuesSupported: [.A256GCM],
+            responseTypesSupported: [.vp_token]
+        )
+        let encoded = try metadata.encode(specVersion: .draft23)
+        let json = try JSONSerialization.jsonObject(with: encoded.data(using: .utf8)!) as! [String: Any]
+
+        XCTAssertEqual(json["presentation_definition_uri_supported"] as? Bool, true)
+
+        let vpFormats = json["vp_formats_supported"] as! [String: Any]
+        XCTAssertNotNil(vpFormats["ldp_vc"])
+        XCTAssertNotNil(vpFormats["mso_mdoc"])
+        let ldpVcFormat = vpFormats["ldp_vc"] as! [String: Any]
+        let ldpAlgValues = ldpVcFormat["alg_values_supported"] as! [String]
+        XCTAssertTrue(ldpAlgValues.contains("Ed25519Signature2020"))
+        let mdocFormat = vpFormats["mso_mdoc"] as! [String: Any]
+        let mdocAlgValues = mdocFormat["alg_values_supported"] as! [String]
+        XCTAssertTrue(mdocAlgValues.contains("ESP256"))
+        let dcSdJwtVcFormat = vpFormats["dc+sd-jwt"] as! [String: Any]
+        XCTAssertTrue(dcSdJwtVcFormat.isEmpty)
+
+        let clientIdSchemes = json["client_id_schemes_supported"] as! [String]
+        XCTAssertTrue(clientIdSchemes.contains("pre-registered"))
+        XCTAssertTrue(clientIdSchemes.contains("redirect_uri"))
+        XCTAssertTrue(clientIdSchemes.contains("did"))
+
+        let requestAlgs = json["request_object_signing_alg_values_supported"] as! [String]
+        XCTAssertEqual(requestAlgs, ["EdDSA"])
+
+        let encAlgs = json["authorization_encryption_alg_values_supported"] as! [String]
+        XCTAssertEqual(encAlgs, ["ECDH-ES"])
+
+        let encValues = json["authorization_encryption_enc_values_supported"] as! [String]
+        XCTAssertEqual(encValues, ["A256GCM"])
+
+        let responseTypes = json["response_types_supported"] as! [String]
+        XCTAssertEqual(responseTypes, ["vp_token"])
+    }
+
+    func testEncodeOfWalletMetadataSpecVersionDraft_23OmitsNilOptionals() throws {
+        let metadata = WalletMetadata(
+            vpFormatsSupported: [.ldp_vc: LdpVcFormatSupported()],
+            clientIdPrefixesSupported: [.preRegistered],
+            requestObjectSigningAlgValuesSupported: nil,
+            authorizationEncryptionAlgValuesSupported: nil,
+            authorizationEncryptionEncValuesSupported: nil,
+            responseTypesSupported: [.vp_token]
+        )
+        let encoded = try metadata.encode(specVersion: .draft23)
+        let json = try JSONSerialization.jsonObject(with: encoded.data(using: .utf8)!) as! [String: Any]
+
+        XCTAssertNil(json["request_object_signing_alg_values_supported"])
+        XCTAssertNil(json["authorization_encryption_alg_values_supported"])
+        XCTAssertNil(json["authorization_encryption_enc_values_supported"])
+    }
+
+    func testEncodeOfWalletMetadataSpecVersion1OmitsNilOptionals() throws {
+        let metadata = WalletMetadata(
+            vpFormatsSupported: [.ldp_vc: LdpVcFormatSupported()],
+            clientIdPrefixesSupported: [.preRegistered],
+            requestObjectSigningAlgValuesSupported: nil,
+            authorizationEncryptionAlgValuesSupported: nil,
+            authorizationEncryptionEncValuesSupported: nil,
+            responseTypesSupported: [.vp_token]
+        )
+        let encoded = try metadata.encode(specVersion: .v1)
+        let json = try JSONSerialization.jsonObject(with: encoded.data(using: .utf8)!) as! [String: Any]
+
+        XCTAssertNil(json["request_object_signing_alg_values_supported"])
+        XCTAssertNil(json["authorization_encryption_alg_values_supported"])
+        XCTAssertNil(json["authorization_encryption_enc_values_supported"])
+    }
+
+    func testEncodeOfWalletMetadataSpecVersionDraft_23MapsDecentralizedIdentifierToDid() throws {
+        let metadata = WalletMetadata(
+            vpFormatsSupported: [.ldp_vc: LdpVcFormatSupported()],
+            clientIdPrefixesSupported: [.decentralizedIdentifier],
+            responseTypesSupported: [.vp_token]
+        )
+        let encoded = try metadata.encode(specVersion: .draft23)
+        let json = try JSONSerialization.jsonObject(with: encoded.data(using: .utf8)!) as! [String: Any]
+
+        let clientIdSchemes = json["client_id_schemes_supported"] as! [String]
+        XCTAssertEqual(clientIdSchemes, ["did"])
     }
 }

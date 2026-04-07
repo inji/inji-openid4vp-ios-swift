@@ -1,7 +1,7 @@
 import XCTest
 @testable import OpenID4VP
 
-final class ClientMetadataValidationTests: XCTestCase {
+final class ClientMetadataSpecVersionDraft23Tests: XCTestCase {
     func testThrowErrorOnValidationOfInvalidClientMetadataNew() {
             let testCases: [TestCase] = [
                 TestCase(
