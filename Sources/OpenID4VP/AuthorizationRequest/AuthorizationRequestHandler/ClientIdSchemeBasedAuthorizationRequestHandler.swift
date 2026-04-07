@@ -273,7 +273,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     private func isClientIdPrefixSupported(walletMetadata: WalletMetadata) throws {
         let clientIdPrefix = delegate.clientIdScheme()
         var walletSupportedClientIdPrefixes = walletMetadata.clientIdPrefixesSupported.compactMap { $0.rawValue }
-        if walletSupportedClientIdPrefixes.contains(ClientIdPrefix.did.rawValue) {
+        if walletSupportedClientIdPrefixes.contains(ClientIdPrefix.decentralizedIdentifier.rawValue) {
             walletSupportedClientIdPrefixes.append(ClientIdScheme.did.rawValue)
         }
         if !walletSupportedClientIdPrefixes.contains(clientIdPrefix) {

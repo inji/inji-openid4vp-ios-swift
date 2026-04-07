@@ -23,7 +23,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
     }
 
     func clientIdPrefix() -> String {
-        return ClientIdPrefix.did.rawValue
+        return ClientIdPrefix.decentralizedIdentifier.rawValue
     }
     
     func isSignedRequestSupported() -> Bool {

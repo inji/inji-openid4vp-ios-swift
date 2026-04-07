@@ -106,7 +106,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchAuthorizationRequestByReferenceWhenRespectiveClientIdSchemeSupportsSignedRequest() async{
         let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .did,
+            clientIdScheme: .decentralizedIdentifier,
             authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23),
             applicableFields: authRequestWithRedirectUriByValue
         )
@@ -379,7 +379,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchAuthoruizationRequestPopulateAuthorizationRequestFieldWithRequestUriResponseWhenAllValidationsSucceeds() async{
         let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .did,
+            clientIdScheme: .decentralizedIdentifier,
             authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23),
             applicableFields: authRequestWithDidByValue
         )

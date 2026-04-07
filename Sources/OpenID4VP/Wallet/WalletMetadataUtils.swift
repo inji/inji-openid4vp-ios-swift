@@ -79,8 +79,7 @@ internal struct WalletMetadataDefaults: Codable {
         .dc_sd_jwt: SdJwtVcFormatSupported()
     ]
     
-    @usableFromInline static let clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did]
-    @usableFromInline static let clientIdPrefixesSupported: [ClientIdPrefix] = [.preRegistered, .redirectUri, .did]
+    @usableFromInline static let clientIdPrefixesSupported: [ClientIdPrefix] = [.preRegistered, .redirectUri, .decentralizedIdentifier]
     
     @usableFromInline static let requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm] = [.edDsa]
     

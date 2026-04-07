@@ -11,7 +11,7 @@ final class WalletMetadataTests: XCTestCase {
             .mso_mdoc: msoMdoc,
             .dc_sd_jwt: sdJwt
         ]
-        let clientIdPrefixes: [ClientIdPrefix] = [.preRegistered, .redirectUri, .did]
+        let clientIdPrefixes: [ClientIdPrefix] = [.preRegistered, .redirectUri, .decentralizedIdentifier]
         let requestAlgs: [RequestSigningAlgorithm] = [.edDsa]
         let keyAlgs: [KeyManagementAlgorithm] = [.ecdhEs]
         let encAlgs: [ContentEncryptionAlgorithm] = [.A256GCM]

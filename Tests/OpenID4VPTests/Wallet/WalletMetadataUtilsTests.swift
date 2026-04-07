@@ -12,7 +12,7 @@ final class WalletMetadataUtilsTests: XCTestCase {
 
     func testParseClientIdPrefixesSupportedParsesValidValues() throws {
         let result = try parseClientIdPrefixesSupported(["pre-registered", "redirect_uri", "decentralized_identifier"])
-        XCTAssertEqual(result, [.preRegistered, .redirectUri, .did])
+        XCTAssertEqual(result, [.preRegistered, .redirectUri, .decentralizedIdentifier])
     }
 
     func testParseClientIdPrefixesSupportedThrowsForUnsupportedValue() {
@@ -233,8 +233,7 @@ final class WalletMetadataUtilsTests: XCTestCase {
         XCTAssertTrue(WalletMetadataDefaults.presentationDefinitionURISupported)
 //        XCTAssertFalse(WalletMetadataDefaults.vpFormatsSupportedSpecVersionDraft23.isEmpty)
         XCTAssertFalse(WalletMetadataDefaults.vpFormatsSupported.isEmpty)
-        XCTAssertEqual(WalletMetadataDefaults.clientIdSchemesSupported, [.preRegistered, .redirectUri, .did])
-        XCTAssertEqual(WalletMetadataDefaults.clientIdPrefixesSupported, [.preRegistered, .redirectUri, .did])
+        XCTAssertEqual(WalletMetadataDefaults.clientIdPrefixesSupported, [.preRegistered, .redirectUri, .decentralizedIdentifier])
         XCTAssertEqual(WalletMetadataDefaults.requestObjectSigningAlgValuesSupported, [.edDsa])
         XCTAssertEqual(WalletMetadataDefaults.authorizationEncryptionAlgValuesSupported, [.ecdhEs])
         XCTAssertEqual(WalletMetadataDefaults.authorizationEncryptionEncValuesSupported, [.A256GCM])

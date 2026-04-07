@@ -27,7 +27,7 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
 func createUrlEncodedAuthorizationRequest(
     requestParams: [String: Any?],
     verifierSentAuthRequestByReference: Bool? = false,
-    clientIdScheme: ClientIdScheme,
+    clientIdScheme: ClientIdPrefix,
     applicableFields: [String]? = nil,
     draftVersion: Int = 23
 ) -> String {
@@ -93,7 +93,7 @@ func createAuthorizationRequest(
 }
 
 func createAuthorizationRequestObject(
-    clientIdScheme: ClientIdScheme,
+    clientIdScheme: ClientIdPrefix,
     authorizationRequestParams: [String: Any],
     jwsHeaderData: [String: Any]? = nil,
     applicableFields: [String]? = nil,

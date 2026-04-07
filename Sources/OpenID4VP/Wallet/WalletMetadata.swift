@@ -96,7 +96,7 @@ public struct WalletMetadata: Codable {
             }
             walletMetadataDict["presentation_definition_uri_supported"] = true
             walletMetadataDict["vp_formats_supported"] = vpFormats
-            walletMetadataDict["client_id_schemes_supported"] = self.clientIdPrefixesSupported.map { ClientIdScheme(rawValue: $0.rawValue) ?? .did }.map { $0.rawValue }
+            walletMetadataDict["client_id_schemes_supported"] = self.clientIdPrefixesSupported.map { ClientIdPrefix.toClientIdScheme($0) }
             if let requestAlgs = self.requestObjectSigningAlgValuesSupported {
                 walletMetadataDict["request_object_signing_alg_values_supported"] = requestAlgs.map { $0.rawValue }
             }

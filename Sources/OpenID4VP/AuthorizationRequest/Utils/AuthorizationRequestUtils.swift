@@ -99,7 +99,7 @@ func getAuthorizationRequestHandlerV2(authorizationRequestParameters: [String:An
                                                               setResponseUri: setResponseUri,
                                                               walletNonce: walletNonce,
                                                               networkManager: networkManager)
-    case ClientIdScheme.did.rawValue, ClientIdPrefix.did.rawValue:
+    case ClientIdScheme.did.rawValue, ClientIdPrefix.decentralizedIdentifier.rawValue:
         return DidSchemeAuthorizationRequestHandler(clientId: clientId,
                                                     specVersion: specVersion,
                                                     authorizationRequestParameters: authorizationRequestParameters,
@@ -230,7 +230,7 @@ internal func findSpecVersion(clientId: String, clientIdPrefix: String, authoriz
     if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] != nil) {
         if clientIdPrefix == ClientIdScheme.did.rawValue {
             return .draft23
-        } else if clientIdPrefix == ClientIdPrefix.did.rawValue {
+        } else if clientIdPrefix == ClientIdPrefix.decentralizedIdentifier.rawValue {
             return .v1
         } else if clientIdPrefix == ClientIdPrefix.preRegistered.rawValue {
             let trustedVerifier = trustedVerifiers.first { $0.clientId == clientId }
