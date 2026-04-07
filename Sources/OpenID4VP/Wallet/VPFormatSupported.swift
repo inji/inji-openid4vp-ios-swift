@@ -3,7 +3,6 @@ public protocol VPFormatSupported: Codable {
 }
 
 public struct LdpVcFormatSupported: VPFormatSupported, Codable {
-    //TODO: Expose a separate enum for ProofType or accept as string
     let proofTypeValues: [ProofType]?
     let cryptoSuiteValues: [String]?
     
@@ -12,7 +11,7 @@ public struct LdpVcFormatSupported: VPFormatSupported, Codable {
         case cryptoSuiteValues = "cryptosuite_values"
     }
     
-    public init(proofTypeValues: [ProofType] = [.ed25519Signature2020, .jsonWebSignature2020], cryptoSuiteValues: [String]? = nil) {
+    public init(proofTypeValues: [ProofType]? = [.ed25519Signature2020, .jsonWebSignature2020], cryptoSuiteValues: [String]? = nil) {
         self.proofTypeValues = proofTypeValues
         self.cryptoSuiteValues = cryptoSuiteValues
     }

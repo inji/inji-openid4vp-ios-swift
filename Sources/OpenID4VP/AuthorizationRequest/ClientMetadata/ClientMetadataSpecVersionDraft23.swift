@@ -19,20 +19,6 @@ public struct ClientMetadataSpecVersionDraft23: Codable {
         case jwks
     }
     
-    public init(clientName: String? = nil,
-                logoUri: String? = nil,
-                authorizationEncryptedResponseAlg: String? = nil,
-                authorizationEncryptedResponseEnc: String? = nil,
-                vpFormats: [String: [String: [String]]],
-                jwks: JWKSet? = nil) {
-        self.clientName = clientName
-        self.logoUri = logoUri
-        self.authorizationEncryptedResponseAlg = authorizationEncryptedResponseAlg
-        self.authorizationEncryptedResponseEnc = authorizationEncryptedResponseEnc
-        self.vpFormats = vpFormats
-        self.jwks = jwks
-    }
-    
     public init(from decoder: any Decoder) throws {
         do {
             let container = try decoder.container(keyedBy: CodingKeys.self)
