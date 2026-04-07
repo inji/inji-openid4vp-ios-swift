@@ -295,7 +295,7 @@ let presentationDefinition: [String: Any] = [
 let mockPresentationDefinitionObject = createInstance(presentationDefinition, as: PresentationDefinition.self)
 
 let vpFormatsMap: [String: VPFormatSupported] = [
-    "ldp_vc": LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2018, .ed25519Signature2020])
+    "ldp_vc": LdpVcFormatSupported(proofTypeValues: [ .ed25519Signature2020])
 ]
 
 let clientMetadata: [String: Any] = [

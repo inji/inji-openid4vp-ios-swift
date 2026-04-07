@@ -107,7 +107,6 @@ public class AuthorizationResponseHandler {
         )
     }
 
-    // TODO: enable draft23 and spec v1.0 support for construct VP response and error response
     func constructVPResponseV2(
         signingResults: [VPTokenSigningResultV2],
         authorizationRequest: AuthorizationRequest

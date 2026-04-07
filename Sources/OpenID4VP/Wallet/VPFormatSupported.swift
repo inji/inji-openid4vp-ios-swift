@@ -2,7 +2,7 @@ public protocol VPFormatSupported: Codable {}
 
 public struct LdpVcFormatSupported: VPFormatSupported, Codable {
     //TODO: Expose a separate enum for ProofType or accept as string
-    let proofTypeValues: [SignatureAlgorithm]?
+    let proofTypeValues: [ProofType]?
     let cryptoSuiteValues: [String]?
     
     enum CodingKeys: String, CodingKey {
@@ -10,7 +10,7 @@ public struct LdpVcFormatSupported: VPFormatSupported, Codable {
         case cryptoSuiteValues = "cryptosuite_values"
     }
     
-    public init(proofTypeValues: [SignatureAlgorithm] = [.ed25519Signature2020, .jsonWebSignature2020], cryptoSuiteValues: [String]? = nil) {
+    public init(proofTypeValues: [ProofType] = [.ed25519Signature2020, .jsonWebSignature2020], cryptoSuiteValues: [String]? = nil) {
         self.proofTypeValues = proofTypeValues
         self.cryptoSuiteValues = cryptoSuiteValues
     }
@@ -20,11 +20,11 @@ public struct LdpVcFormatSupported: VPFormatSupported, Codable {
         
         if container.contains(.proofTypeValues) {
             var proofTypesArray = try container.nestedUnkeyedContainer(forKey: .proofTypeValues)
-            var validProofTypes: [SignatureAlgorithm] = []
+            var validProofTypes: [ProofType] = []
             
             while !proofTypesArray.isAtEnd {
                 let rawValue = try proofTypesArray.decode(String.self)
-                if let signatureAlgorithm = SignatureAlgorithm(rawValue: rawValue) {
+                if let signatureAlgorithm = ProofType.fromValue(rawValue) {
                     validProofTypes.append(signatureAlgorithm)
                 }
             }
