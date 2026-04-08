@@ -17,10 +17,6 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
         delegate = self
         super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
     }
-    
-    func clientIdScheme() -> String {
-        return ClientIdScheme.did.rawValue
-    }
 
     func clientIdPrefix() -> String {
         return ClientIdPrefix.decentralizedIdentifier.rawValue

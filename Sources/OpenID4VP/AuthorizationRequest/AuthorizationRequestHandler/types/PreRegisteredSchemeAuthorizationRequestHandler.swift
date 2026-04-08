@@ -26,11 +26,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         delegate = self
         super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
     }
-    
-    func clientIdScheme() -> String {
-        return ClientIdScheme.preRegistered.rawValue
-    }
-    
+
     func clientIdPrefix() -> String {
         return ClientIdPrefix.preRegistered.rawValue
     }

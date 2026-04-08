@@ -6,7 +6,7 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func isSignedRequestSupported() -> Bool
     func isUnsignedRequestSupported() throws -> Bool
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
-    func clientIdScheme() -> String
+    func clientIdPrefix() -> String
 }
 
 class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
@@ -108,7 +108,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         try validate(request, fieldPath: AuthorizationRequestFieldConstants.request.rawValue, className: className)
         guard (delegate.isSignedRequestSupported()) else {
             throw InvalidData(
-                message: "Signed request (via request) is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                message: "Signed request (via request) is not supported for given client_id_scheme - \(delegate.clientIdPrefix())",
                 className: className
             )
         }
@@ -124,7 +124,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     private func handleRequestObjectByReference(_ requestUri: String) async throws {
         guard (delegate.isSignedRequestSupported()) else {
             throw InvalidData(
-                message: "Signed request (via request_uri) is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                message: "Signed request (via request_uri) is not supported for given client_id_scheme - \(delegate.clientIdPrefix())",
                 className: className
             )
         }
@@ -179,7 +179,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     private func handleUrlEncodedRequest() throws {
         guard (try delegate.isUnsignedRequestSupported()) else {
             throw InvalidData(
-                message: "unsigned request is not supported for given client_id_scheme - \(delegate.clientIdScheme())",
+                message: "unsigned request is not supported for given client_id_scheme - \(delegate.clientIdPrefix())",
                 className: className
             )
         }
@@ -271,7 +271,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     private func isClientIdPrefixSupported(walletMetadata: WalletMetadata) throws {
-        let clientIdPrefix = delegate.clientIdScheme()
+        let clientIdPrefix = delegate.clientIdPrefix()
         var walletSupportedClientIdPrefixes = walletMetadata.clientIdPrefixesSupported.compactMap { $0.rawValue }
         if walletSupportedClientIdPrefixes.contains(ClientIdPrefix.decentralizedIdentifier.rawValue) {
             walletSupportedClientIdPrefixes.append(ClientIdScheme.did.rawValue)

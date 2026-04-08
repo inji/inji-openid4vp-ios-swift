@@ -74,7 +74,7 @@ extension KeyedDecodingContainer {
     }
 }
 
-func getAuthorizationRequestHandlerV2(authorizationRequestParameters: [String:Any],
+func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any],
                                     trustedVerifiers : [Verifier],
                                     walletMetadata: WalletMetadata?,
                                     shouldValidateClient: Bool,

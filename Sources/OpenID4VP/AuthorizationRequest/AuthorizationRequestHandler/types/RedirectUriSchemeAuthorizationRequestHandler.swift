@@ -17,10 +17,6 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         delegate = self
         super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
     }
-
-    func clientIdScheme() -> String {
-        return ClientIdScheme.redirectUri.rawValue
-    }
     
     func clientIdPrefix() -> String {
         return ClientIdPrefix.redirectUri.rawValue

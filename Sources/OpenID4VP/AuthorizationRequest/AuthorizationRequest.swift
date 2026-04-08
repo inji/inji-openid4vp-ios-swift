@@ -104,7 +104,7 @@ public class AuthorizationRequest: Encodable {
                                                 walletNonce: String,
                                                 networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
-        let authorizationRequestHandler = try getAuthorizationRequestHandlerV2(authorizationRequestParameters: authorizationRequestParameters,
+        let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
                                                                                trustedVerifiers: trustedVerifiers,
                                                                                walletMetadata: walletMetadata,
                                                                                shouldValidateClient: shouldValidateClient,
