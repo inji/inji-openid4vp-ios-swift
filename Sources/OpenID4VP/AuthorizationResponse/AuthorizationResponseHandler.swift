@@ -303,7 +303,7 @@ public class AuthorizationResponseHandler {
     private func createAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
-    ) throws -> AuthorizationResponseV2 {
+    ) throws -> AuthorizationResponse {
         switch authorizationRequest.responseType {
         case ResponseType.vp_token.rawValue:
             return try VersionLogic.from(authorizationRequest).createVPTokenResponse(
@@ -399,7 +399,7 @@ public class AuthorizationResponseHandler {
     
     private func sendAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponseV2,
+        authorizationResponse: AuthorizationResponse,
         responseUri: String
     ) async throws -> NetworkResponse {
         return try await ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
@@ -519,7 +519,7 @@ public class AuthorizationResponseHandler {
             unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)],
             formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]],
             handler: AuthorizationResponseHandler
-        ) throws -> AuthorizationResponseV2 {
+        ) throws -> AuthorizationResponse {
             switch self {
             case .draft23:
                 let (vpToken, presentationSubmission) = try handler.createVPTokenAndPresentationSubmission(

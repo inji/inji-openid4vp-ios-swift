@@ -83,7 +83,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponseV2,
+        authorizationResponse: AuthorizationResponse,
         walletNonce: String
     ) throws -> [String: String] {
         let responseParams = try authorizationResponse.toJsonEncodedMap()
@@ -138,7 +138,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
     }
     
-    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponseV2, url: String, networkManager: any NetworkManaging, producerInfo: String,
+    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging, producerInfo: String,
                                    recipientInfo: String) async throws -> NetworkResponse {
         let bodyParams = try authorizationResponse.toJsonEncodedMap()
         let versionLogic = VersionLogic.from(authorizationRequest)

@@ -2,32 +2,7 @@ import Foundation
 
 fileprivate let className = String(describing: AuthorizationResponse.self)
 
-struct AuthorizationResponse {
-    let vpToken: VPTokenType
-    let presentationSubmission: PresentationSubmission
-    let state: String?
-    
-    
-    
-    func toJsonEncodedMap() throws -> [String: String] {
-        var bodyParams: [String: String] = [:]
-        
-        bodyParams["vp_token"] = try vpToken.encodedString(fieldName: "vp_token", className: className)
-        bodyParams["presentation_submission"] = try encode(
-            presentationSubmission,
-            fieldName: "presentation_submission",
-            className: className
-        )
-        
-        if let state = state {
-            bodyParams["state"] = state
-        }
-        
-        return bodyParams
-    }
-}
-
-enum AuthorizationResponseV2 {
+enum AuthorizationResponse {
     // Spec v1.0 compliant : DCQL structure
     case dcql(vpToken: [String: Any], state: String?)
     

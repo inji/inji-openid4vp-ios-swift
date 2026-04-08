@@ -10,7 +10,7 @@ protocol ResponseModeBasedHandler {
                   shouldValidateWithWalletMetadata: Bool) throws
     
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest,
-                                   authorizationResponse: AuthorizationResponseV2,
+                                   authorizationResponse: AuthorizationResponse,
                                    url: String,
                                    networkManager: NetworkManaging,
                                    producerInfo: String,
@@ -21,7 +21,7 @@ protocol ResponseModeBasedHandler {
     
     func getAuthorizationResponse(
             authorizationRequest: AuthorizationRequest,
-            authorizationResponse: AuthorizationResponseV2,
+            authorizationResponse: AuthorizationResponse,
             walletNonce: String
         ) throws -> [String: String]
 

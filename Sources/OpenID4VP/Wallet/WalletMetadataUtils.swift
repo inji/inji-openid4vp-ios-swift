@@ -5,21 +5,6 @@ internal func parseClientIdPrefixesSupported(_ clientIdPrefixesSupported: [Strin
     return try schemes.compactMap { try parseEnum(valueName: "ClientIdPrefix", $0, as: ClientIdPrefix.self) }
 }
 
-internal func parseVPFormatsSupported(_ vpFormatsSupported: [String: VPFormatSupported]) throws -> [VPFormatType: VPFormatSupported] {
-    if vpFormatsSupported.keys.contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
-        throw InvalidData(
-            message: "vp_formats_supported cannot have empty keys.",
-            className: WalletMetadata.className
-        )
-    }
-    
-    
-    return try vpFormatsSupported.reduce(into: [VPFormatType: VPFormatSupported]()) { result, entry in
-        let parsedVPFormatType = try parseEnum(valueName: "VPFormatType", entry.key, as: VPFormatType.self)
-        result[parsedVPFormatType] = entry.value
-    }
-}
-
 
 internal func parseRequestObjectSigningAlgValuesSupported(_ requestObjectSigningAlgValuesSupported: [String]?) throws -> [RequestSigningAlgorithm]? {
     guard let algs = requestObjectSigningAlgValuesSupported else {

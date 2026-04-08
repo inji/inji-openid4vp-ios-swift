@@ -20,22 +20,7 @@ public struct WalletMetadata: Codable {
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
-        var decodedFormats: [VPFormatType: VPFormatSupported] = [:]
-        for key in vpFormatsContainer.allKeys {
-            switch key {
-            case .ldp_vc, .ldp_vp:
-                let value = try vpFormatsContainer.decode(LdpVcFormatSupported.self, forKey: key)
-                decodedFormats[key] = value
-            case .mso_mdoc:
-                let value = try vpFormatsContainer.decode(MsoMdocVcFormatSupported.self, forKey: key)
-                decodedFormats[key] = value
-            case .dc_sd_jwt, .vc_sd_jwt:
-                let value = try vpFormatsContainer.decode(SdJwtVcFormatSupported.self, forKey: key)
-                decodedFormats[key] = value
-            }
-        }
-        self.vpFormatsSupported = decodedFormats
+        self.vpFormatsSupported = try WalletMetadata.parseVPFormatsSupported(from: container)
         self.clientIdPrefixesSupported = try container.decode([ClientIdPrefix].self, forKey: .clientIdPrefixesSupported)
         self.requestObjectSigningAlgValuesSupported = try container.decodeIfPresent([RequestSigningAlgorithm].self, forKey: .requestObjectSigningAlgValuesSupported)
         self.authorizationEncryptionAlgValuesSupported = try container.decodeIfPresent([KeyManagementAlgorithm].self, forKey: .authorizationEncryptionAlgValuesSupported)
@@ -79,6 +64,23 @@ public struct WalletMetadata: Codable {
         self.responseTypesSupported = responseTypesSupported
     }
     
+    private static func parseVPFormatsSupported(from container: KeyedDecodingContainer<CodingKeys>) throws -> [VPFormatType: VPFormatSupported] {
+        let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
+        var decodedFormats: [VPFormatType: VPFormatSupported] = [:]
+        for key in vpFormatsContainer.allKeys {
+            switch key {
+            case .ldp_vc, .ldp_vp:
+                decodedFormats[key] = try vpFormatsContainer.decode(LdpVcFormatSupported.self, forKey: key)
+            case .mso_mdoc:
+                decodedFormats[key] = try vpFormatsContainer.decode(MsoMdocVcFormatSupported.self, forKey: key)
+            case .dc_sd_jwt, .vc_sd_jwt:
+                decodedFormats[key] = try vpFormatsContainer.decode(SdJwtVcFormatSupported.self, forKey: key)
+            }
+        }
+        return decodedFormats
+    }
+    
+    
     internal func encode(specVersion: SpecVersion) throws -> String {
         switch specVersion {
         case .v1:
@@ -86,12 +88,12 @@ public struct WalletMetadata: Codable {
         case .draft23:
             var walletMetadataDict: [String: Any] = [:]
             
-            let vpFormats: [String: [String: [String]]] = self.vpFormatsSupported.reduce(into: [:]) { result, vpFormatSupported in
-                let credentialFormat = vpFormatSupported.key.rawValue
-                if let algValues = vpFormatSupported.value.toAlgValuesSupported() {
-                    result[credentialFormat] = ["alg_values_supported": algValues]
+            let vpFormats: [String: [String: [String]]] = self.vpFormatsSupported.reduce(into: [:]) { result, item in
+                let formatKey = item.key.rawValue
+                if let algValues = item.value.toAlgValuesSupported() {
+                    result[formatKey] = ["alg_values_supported": algValues]
                 } else {
-                    result[credentialFormat] = [:]
+                    result[formatKey] = [:]
                 }
             }
             walletMetadataDict["presentation_definition_uri_supported"] = true
