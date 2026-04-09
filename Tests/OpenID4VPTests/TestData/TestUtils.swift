@@ -29,20 +29,22 @@ func createUrlEncodedAuthorizationRequest(
     verifierSentAuthRequestByReference: Bool? = false,
     clientIdScheme: ClientIdPrefix,
     applicableFields: [String]? = nil,
-    draftVersion: Int = 23
+    specVersion: SpecVersion = .draft23,
+    addEncryptionClientMetadataParams: Bool = true
 ) -> String {
     let paramList: [String]
     if verifierSentAuthRequestByReference == true {
-        if draftVersion == 23 {
-            paramList = authRequestParamsByReferenceDraft23
-        } else {
-            paramList = authRequestParamsByReferenceDraft21
-        }
+//        if specVersion == .draft23 || specVersion == .v1 {
+//            paramList = authRequestParamsByReference
+//        } else {
+//            paramList = authRequestParamsByReferenceDraft21
+//        }
+        paramList = applicableFields ?? authRequestParamsByReference
     } else {
         paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     }
     
-    let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams)
+    let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams, specVersion: specVersion, addEncryptionClientMetadataParams: addEncryptionClientMetadataParams)
     let queryString = encodeToQueryParameters(authorizationRequestParam)
     
     return "OPENID4VP://authorize?\(queryString)"
@@ -74,12 +76,46 @@ private func encodeToQueryParameters(_ parameters: [String: Any?]) -> String {
 func createAuthorizationRequest(
     paramList: [String],
     requestParams: [String: Any?],
-    isSigned: Bool = false
+    isSigned: Bool = false,
+    specVersion: SpecVersion = .v1,
+    isPresentationExchangeByReference: Bool = false,
+    addEncryptionClientMetadataParams: Bool = true
 ) -> [String: Any?] {
+    var requestParamsKeysList = paramList
+    if(specVersion == .v1) {
+        requestParamsKeysList = requestParamsKeysList + ["dcql_query"]
+    } else {
+        if(isPresentationExchangeByReference) {
+            requestParamsKeysList = requestParamsKeysList + ["presentation_definition_uri"]
+        } else {
+            requestParamsKeysList = requestParamsKeysList + ["presentation_definition"]
+        }
+    }
     var authorizationRequestParam: [String: Any?] = [:]
-    for param in paramList {
+    for param in requestParamsKeysList {
         if let value = requestParams[param], value != nil {
-            authorizationRequestParam[param] = value
+            // the value is version specific pick the internal value accordingly
+            if let versionSpecificValue = (value as? [SpecVersion: Any]) {
+                authorizationRequestParam[param] = versionSpecificValue[specVersion]
+            } else {
+                authorizationRequestParam[param] = value
+            }
+            
+        }
+    }
+    
+    if(!addEncryptionClientMetadataParams) {
+        if let clientMetadata = authorizationRequestParam["client_metadata"] as? [String: Any] {
+            var modifiedClientMetadata = clientMetadata
+            // Draft 23 specific encryption metadata fields
+            modifiedClientMetadata["authorization_signed_response_alg"] = nil
+            modifiedClientMetadata["authorization_encrypted_response_alg"] = nil
+            modifiedClientMetadata["authorization_encrypted_response_enc"] = nil
+            
+            // Spec version 1 specific encryption metadata fields
+            modifiedClientMetadata["encrypted_response_enc_values_supported"] = nil
+            
+            authorizationRequestParam["client_metadata"] = modifiedClientMetadata
         }
     }
     if(isSigned){
@@ -97,10 +133,15 @@ func createAuthorizationRequestObject(
     authorizationRequestParams: [String: Any],
     jwsHeaderData: [String: Any]? = nil,
     applicableFields: [String]? = nil,
-    addValidSignature: Bool = true
+    addValidSignature: Bool = true,
+    specVersion: SpecVersion = .v1
 ) -> String {
-    
-    let parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+    var parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+    if(specVersion == .v1) {
+        parametersList += ["dcql_query"]
+    } else {
+        parametersList += ["presentation_definition"]
+    }
     let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
     //    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
     
@@ -194,7 +235,7 @@ func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
     return (try? decoder.decode(T.self, from: jsonData!))!
 }
 
-func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil) -> (body: String, httpUrlResponse: HTTPURLResponse) {    
+func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil, specVersion: SpecVersion = .v1) -> (body: String, httpUrlResponse: HTTPURLResponse) {
     let defaultHttpUrlResponse = httpUrlResponseForJWS
     let modifiedResponse: HTTPURLResponse = httpUrlResponse ?? defaultHttpUrlResponse
     
@@ -215,7 +256,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
             walletNonce: nil,
             state: "state",
             presentationDefinition: mockPresentationDefinitionObject,
-            clientMetadata: mockClientMetadataObject
+            clientMetadata: mockClientMetadataSpecVersionDraft23[.directPostJwt]
         )
     }
 
@@ -228,51 +269,32 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
         nonce: "nonce",
         walletNonce: nil,
         state: "state",
-        clientMetadata: mockClientMetadataObjectV2
+        clientMetadata: mockClientMetadataSpecVersion1[responseMode]
     )
 }
-//
-//@available(*, deprecated, renamed: "createWalletMetadataV2", message: "This uses deprecated WalletMetadata initializer. Use `createWalletMetadataV2` instead")
-//func createWalletMetadataV1(
-//    presentationDefinitionURISupported: Bool = true,
-//        vpFormatsSupported: [String: VPFormatSupported] = ["ldp_vc": VPFormatSupported(algValuesSupported: ["ES256", "EdDSA"])],
-//        clientIdSchemesSupported: [String] = ["pre-registered","did","redirect_uri"],
-//        requestObjectSigningAlgValuesSupported: [String]? = ["EdDSA"],
-//        authorizationEncryptionAlgValuesSupported: [String]? = ["ECDH-ES"],
-//        authorizationEncryptionEncValuesSupported: [String]? = ["A256GCM"]
-//    ) throws -> WalletMetadata {
-//        return try WalletMetadata(
-//            presentationDefinitionURISupported: presentationDefinitionURISupported,
-//            vpFormatsSupported: vpFormatsSupported,
-//            clientIdSchemesSupported: clientIdSchemesSupported,
-//            requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
-//            authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
-//            authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
-//        )
-//    }
 
-
-//func createWalletMetadataV2(
-//    presentationDefinitionURISupported: Bool = true,
-//    vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
-//        .ldp_vc: VPFormatSupported(algValuesSupported: ["EdDSA"]),
-//        .ldp_vp: VPFormatSupported(algValuesSupported: ["EdDSA"]),
-//        .mso_mdoc: VPFormatSupported(algValuesSupported: ["EdDSA"])
-//    ],
-//    clientIdSchemesSupported: [ClientIdScheme] = [.preRegistered, .redirectUri, .did],
-//    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
-//    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
-//    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM]
-//) throws -> WalletMetadata {
-//    return try WalletMetadata(
-//        presentationDefinitionURISupported: presentationDefinitionURISupported,
-//        vpFormatsSupported: vpFormatsSupported,
-//        clientIdSchemesSupported: clientIdSchemesSupported,
-//        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
-//        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
-//        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported
-//    )
-//}
+func createWalletMetadata(
+    vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
+        .ldp_vc: LdpVcFormatSupported(),
+        .mso_mdoc: MsoMdocVcFormatSupported(),
+        .dc_sd_jwt: SdJwtVcFormatSupported()
+    ],
+    clientIdPrefixesSupported: [ClientIdPrefix] = [.preRegistered, .redirectUri, .decentralizedIdentifier],
+    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
+    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
+    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM],
+    responseTypesSupported: [ResponseType] = [.vp_token],
+    responseMode: ResponseMode = .directPost
+) throws -> WalletMetadata {
+    return WalletMetadata(
+        vpFormatsSupported: vpFormatsSupported,
+        clientIdPrefixesSupported: WalletMetadataDefaults.clientIdPrefixesSupported,
+        requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
+        authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
+        authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,
+        responseTypesSupported: responseTypesSupported
+    )
+}
 
 func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
     "https://www.w3.org/2018/credentials/v1",

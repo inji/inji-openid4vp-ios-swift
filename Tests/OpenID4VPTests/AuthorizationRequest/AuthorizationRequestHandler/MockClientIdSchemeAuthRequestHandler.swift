@@ -15,7 +15,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
          networkManager: NetworkManaging,
          clientId: String = "mock-client",
          specVersion: SpecVersion = .v1,
-         walletMetadata: WalletMetadata = WalletMetadata(),
+         walletMetadata: WalletMetadata? = nil,
          isSignedRequestSupported: Bool = true,
          isUnsignedRequestSupported: Bool = true) {
         self.isSignedRequestSupportedFlag = isSignedRequestSupported
@@ -50,7 +50,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
             throw extractPublicKeyError!
         }
         
-        if(clientIdPrefixValue == ClientIdScheme.did.rawValue){
+        if(clientIdPrefixValue == ClientIdScheme.did.rawValue || clientIdPrefixValue == ClientIdPrefix.decentralizedIdentifier.rawValue){
             return try PublicKeyType.ed25519(Curve25519.Signing.PublicKey(rawRepresentation: [248, 92, 183, 148, 198, 169, 205, 29, 240, 165, 166, 13, 8, 90, 182, 244, 96, 196, 159, 243, 104, 71, 122, 65, 177, 206, 117, 214, 173, 66, 198, 172]))
         }
         return PublicKeyType.ed25519(publicKey)

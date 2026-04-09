@@ -11,8 +11,6 @@ final class ClientMetadataUtilTests: XCTestCase {
                 {
                     "client_name": "Valid Client",
                     "logo_uri": "https://example.com/logo.png",
-                    "authorization_encrypted_response_alg": "RSA-OAEP",
-                    "authorization_encrypted_response_enc": "A256GCM",
                     "vp_formats": { "format1": { "type1": ["value1"] } },
                     "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg" }] }
                 }
@@ -30,8 +28,6 @@ final class ClientMetadataUtilTests: XCTestCase {
         let clientMetadataDict: [String: Any] = [
             "client_name": "Valid Client",
             "logo_uri": "https://example.com/logo.png",
-            "authorization_encrypted_response_alg": "RSA-OAEP",
-            "authorization_encrypted_response_enc": "A256GCM",
             "vp_formats": ["format1": ["type1": ["value1"]]],
             "jwks": ["keys": [["kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76rg"]]]
         ]
@@ -82,8 +78,6 @@ final class ClientMetadataUtilTests: XCTestCase {
             {
                 "client_name": "Valid Client",
                 "logo_uri": "https://example.com/logo.png",
-                "authorization_encrypted_response_alg": "ECDH-ES",
-                "encrypted_response_enc_values_supported": ["A256GCM"],
                 "vp_formats_supported": { "ldp_vc": { "proof_type_values": ["Ed25519Signature2020"] } },
                 "jwks": { "keys": [{ "kty": "EC", "use": "enc", "alg": "ECDH-ES", "kid": "1", "crv": "P-256", "x": "ur76rg", "y": "ur76rg" }] }
             }
@@ -101,8 +95,6 @@ final class ClientMetadataUtilTests: XCTestCase {
         let clientMetadataDict: NSDictionary = [
             "client_name": "Valid Client",
             "logo_uri": "https://example.com/logo.png",
-            "authorization_encrypted_response_alg": "ECDH-ES",
-            "encrypted_response_enc_values_supported": ["A256GCM"],
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]],
             "jwks": ["keys": [["kty": "EC", "use": "enc", "alg": "ECDH-ES", "kid": "1", "crv": "P-256", "x": "ur76rg", "y": "ur76rg"]]]
         ]

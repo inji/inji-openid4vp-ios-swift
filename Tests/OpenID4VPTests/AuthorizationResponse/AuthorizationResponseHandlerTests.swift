@@ -7,8 +7,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let responseUri = "https://mock-verifier.com"
     let holderId = "wallet-holder-id"
     let walletNonce = "mock-nonce"
-    let signatureSuite = "JsonWebSignature2020"
+    let signatureSuite = SignatureAlgorithm.ed25519Signature2020.rawValue
     
+    // MARK: - OVP Spec Version Draft 23
     // MARK: Credential format = ldp_vc
     
     func testConstructUnsignedVPTokenThrowsErrorIncaseOfInvalidHoldersIdWithLdpVCAvailable() async throws {
@@ -18,7 +19,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         for holderId in invalidHolderIdTestCases {
             await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
@@ -44,7 +45,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         for invalidSignatureSuite in invalidsignatureSuiteTestCases {
             await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
@@ -69,7 +70,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         
         _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -108,7 +109,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let mockAuthorizationRequest = getMockAuthorizationRequest(responseMode: .directPostJwt)
+        let mockAuthorizationRequest = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
         
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         
@@ -152,33 +153,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         } catch {
             assertOpenID4VPException(error,
                                      expectedMessage: "Provided response_type - fragment is not supported",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
-    func testConstructAndSendAuthorizationResponseToVerifierThrowErrorWhenRespectiveCredentialFormatIsNotAvailableInUnsignedVPTokens() async {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
-        _ = try? await handler.constructUnsignedVPToken(
-            credentialsMap: [:],
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri,
-            holderId: holderId,
-            signatureSuite: signatureSuite,
-            walletNonce: walletNonce
-        )
-        
-        do {
-            _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
-                authorizationRequest: authorizationRequest,
-                vpTokenSigningResults: [FormatType.ldp_vc: LdpVPTokenSigningResult(jws: "", proofValue: "", signatureAlgorithm: "")],
-                responseUri: "https://client.example.org/cb"
-            )
-            XCTFail("Expected error not thrown")
-        } catch {
-            assertOpenID4VPException(error,
-                                     expectedMessage: "VPTokenSigningResult not provided for the required formats",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -265,7 +239,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
-            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
             vpTokenSigningResults: mockVPTokenSigningResults,
             responseUri: responseUri
         )
@@ -331,7 +305,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let unsignedVpTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
@@ -363,7 +337,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         
         await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -391,7 +365,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let unsignedVPTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
@@ -435,7 +409,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ]
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-        let authorizationRequest = getMockAuthorizationRequest()
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let unsignedVPTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
@@ -471,130 +445,437 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
     }
     
-//    func testConstructAuthorizationErrorResponseMapsErrorCorrectly() {
-//        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-//        let authorizationRequest = getMockAuthorizationRequest()
-//        let error = InvalidData(message: "Invalid input data", className: "Test")
-//        
-//        
-//        let response = handler.constructAuthorizationErrorResponse(
-//            authorizationRequest: authorizationRequest,
-//            exception: error,
-//            walletNonce: "wallet-nonce"
-//        )
-//        
-//        XCTAssertEqual(response["error"] as? String, "invalid_request")
-//        XCTAssertEqual(response["error_description"] as? String, "Invalid input data")
-//        XCTAssertEqual(response["state"] as? String, state)
-//    }
-//    
+    func testConstructAuthorizationErrorResponseMapsErrorCorrectly() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
+        let error = InvalidData(message: "Invalid input data", className: "Test")
+        
+        
+        let response = handler.constructAuthorizationErrorResponse(
+            authorizationRequest: authorizationRequest,
+            exception: error,
+            walletNonce: "wallet-nonce"
+        )
+        
+        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertEqual(response["error_description"] as? String, "Invalid input data")
+        XCTAssertEqual(response["state"] as? String, state)
+    }
     
-//    func testConstructAuthorizationResponseSuccess() async throws {
-//        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
-//            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
-//        ]
-//        
-//        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-//        let authorizationRequest = getMockAuthorizationRequest(responseMode: .directPost)
-//        
-//        _ = try await handler.constructUnsignedVPToken(
-//            credentialsMap: verifiableCredentials,
-//            authorizationRequest: authorizationRequest,
-//            responseUri: responseUri,
-//            holderId: holderId,
-//            signatureSuite: signatureSuite,
-//            walletNonce: walletNonce
-//        )
-//        
-//        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-//            .ldp_vc: LdpVPTokenSigningResult(
-//                jws: "testJWS",
-//                proofValue: "",
-//                signatureAlgorithm: "JsonWebSignature2020"
-//            )
-//        ]
-//        
-//        let authorizationResponse = try handler.constructAuthorizationResponse(
-//            authorizationRequest: authorizationRequest,
-//            vpTokenSigningResults: vpTokenSigningResults
-//        )
-//        
-//        XCTAssertNotNil(authorizationResponse["vp_token"])
-//        XCTAssertNotNil(authorizationResponse["presentation_submission"])
-//        XCTAssertEqual(authorizationResponse["state"], state)
-//    }
-//    
-//    func testConstructAuthorizationResponseThrowsErrorForUnsupportedResponseType() {
-//        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-//        let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment")
-//        
-//        XCTAssertThrowsError(
-//            try handler.constructAuthorizationResponse(
-//                authorizationRequest: authorizationRequest,
-//                vpTokenSigningResults: [:]
-//            )
-//        ) { error in
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "Provided response_type - fragment is not supported",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
     
-//    func testConstructAuthorizationErrorResponseWithOpenIDException() {
-//        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-//        let authorizationRequest = getMockAuthorizationRequest()
-//        
-//        let error = InvalidData(
-//            message: "Invalid input data",
-//            className: "TestClass"
-//        )
-//        
-//        let response = handler.constructAuthorizationErrorResponse(
-//            authorizationRequest: authorizationRequest,
-//            exception: error,
-//            walletNonce: "wallet-nonce"
-//        )
-//        
-//        XCTAssertEqual(response["error"] as? String, "invalid_request")
-//        XCTAssertEqual(response["error_description"] as? String, "Invalid input data")
-//        XCTAssertEqual(response["state"] as? String, state)
-//    }
-//    
-//    func testConstructAuthorizationErrorResponseWithGenericError() {
-//        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-//        let authorizationRequest = getMockAuthorizationRequest()
-//        
-//        let error = NSError(domain: "test", code: 500)
-//        
-//        let response = handler.constructAuthorizationErrorResponse(
-//            authorizationRequest: authorizationRequest,
-//            exception: error,
-//            walletNonce: "wallet-nonce"
-//        )
-//        
-//        XCTAssertEqual(response["error"] as? String, "invalid_request")
-//        XCTAssertNotNil(response["error_description"])
-//        XCTAssertEqual(response["state"] as? String, state)
-//    }
-//    
-//    func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructionOfErrorFails() {
-//        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
-//        let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment")
-//        
-//        let error = NSError(domain: "test", code: 500)
-//        
-//        let response = handler.constructAuthorizationErrorResponse(
-//            authorizationRequest: authorizationRequest,
-//            exception: error,
-//            walletNonce: "wallet-nonce"
-//        )
-//        
-//        XCTAssertEqual(response["error"] as? String, "invalid_request")
-//        XCTAssertNotNil(response["error_description"])
-//        XCTAssertTrue((response["error_description"] as? String)?.starts(with: "Failed to construct error response:") == true)
-//    }
-//    
+    func testConstructAuthorizationResponseSuccess() async throws {
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+        ]
+        
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(responseMode: .directPost, specVersion: .draft23)
+        
+        _ = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+        
+        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
+            .ldp_vc: LdpVPTokenSigningResult(
+                jws: "testJWS",
+                proofValue: "",
+                signatureAlgorithm: "JsonWebSignature2020"
+            )
+        ]
+        
+        let authorizationResponse = try handler.constructAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: vpTokenSigningResults
+        )
+        
+        XCTAssertNotNil(authorizationResponse["vp_token"])
+        XCTAssertNotNil(authorizationResponse["presentation_submission"])
+        XCTAssertEqual(authorizationResponse["state"], state)
+    }
     
+    func testConstructAuthorizationResponseThrowsErrorForUnsupportedResponseType() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .draft23)
+        
+        XCTAssertThrowsError(
+            try handler.constructAuthorizationResponse(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: [:]
+            )
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Provided response_type - fragment is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testConstructAuthorizationErrorResponseWithOpenIDException() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
+        
+        let error = InvalidData(
+            message: "Invalid input data",
+            className: "TestClass"
+        )
+        
+        let response = handler.constructAuthorizationErrorResponse(
+            authorizationRequest: authorizationRequest,
+            exception: error,
+            walletNonce: "wallet-nonce"
+        )
+        
+        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertEqual(response["error_description"] as? String, "Invalid input data")
+        XCTAssertEqual(response["state"] as? String, state)
+    }
+    
+    func testConstructAuthorizationErrorResponseWithGenericError() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
+        
+        let error = NSError(domain: "test", code: 500)
+        
+        let response = handler.constructAuthorizationErrorResponse(
+            authorizationRequest: authorizationRequest,
+            exception: error,
+            walletNonce: "wallet-nonce"
+        )
+        
+        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertNotNil(response["error_description"])
+        XCTAssertEqual(response["state"] as? String, state)
+    }
+    
+    func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructionOfErrorFails() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment", )
+        
+        let error = NSError(domain: "test", code: 500)
+        
+        let response = handler.constructAuthorizationErrorResponse(
+            authorizationRequest: authorizationRequest,
+            exception: error,
+            walletNonce: "wallet-nonce"
+        )
+        
+        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertNotNil(response["error_description"])
+        XCTAssertTrue((response["error_description"] as? String)?.starts(with: "Failed to construct error response:") == true)
+    }
+    
+    // MARK: - OVP Spec Version 1
+    // Credential format = ldp_vc
+
+    func testV1ConstructUnsignedVPTokenThrowsErrorForInvalidHolderIdWithLdpVC() async throws {
+        let invalidHolderIdTestCases: [String?] = ["", " ", "  ", "null", nil]
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+        for holderId in invalidHolderIdTestCases {
+            await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
+                credentialsMap: verifiableCredentials,
+                authorizationRequest: authorizationRequest,
+                responseUri: responseUri,
+                holderId: holderId,
+                signatureSuite: "JsonWebSignature2020",
+                walletNonce: walletNonce
+            )) { error in
+                assertOpenID4VPException(error,
+                    expectedMessage: "Holder ID cannot be null or empty for LDP VC format",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            }
+        }
+    }
+
+    func testV1ConstructUnsignedVPTokenThrowsErrorForInvalidSignatureSuiteWithLdpVC() async throws {
+        let invalidSignatureSuites: [String?] = ["", " ", "  ", "null", nil]
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+        for invalidSignatureSuite in invalidSignatureSuites {
+            await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
+                credentialsMap: verifiableCredentials,
+                authorizationRequest: authorizationRequest,
+                responseUri: responseUri,
+                holderId: holderId,
+                signatureSuite: invalidSignatureSuite,
+                walletNonce: walletNonce
+            )) { error in
+                assertOpenID4VPException(error,
+                    expectedMessage: "Signature Suite cannot be null or empty for LDP VC format",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            }
+        }
+    }
+
+    func testV1ConstructAndSendAuthorizationResponseHasExpectedBody() async throws {
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC()), AnyCodable(ldpVC(credentialType: "UniversityCredential"))]],
+            "input_descriptor2": [.ldp_vc: [AnyCodable(ldpVC())]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+
+        _ = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+
+        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
+            .ldp_vc: LdpVPTokenSigningResult(jws: "testJWS", proofValue: "", signatureAlgorithm: "JsonWebSignature2020")
+        ]
+
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
+
+        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: vpTokenSigningResults,
+            responseUri: responseUri
+        )
+
+        XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
+        XCTAssertEqual(recordedRequest.requestBody?["state"] as? String, state)
+        XCTAssertNotNil(recordedRequest.requestBody?["vp_token"])
+        XCTAssertEqual(recordedRequest.requestBody?.keys.count, 2)
+    }
+
+    func testV1ConstructAndSendAuthorizationResponseThrowsForUnsupportedResponseType() async {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        // spec version v1, unsupported response type
+        let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .v1)
+
+        await XCTAssertAsyncThrowsError(try await handler.constructAndSendAuthorizationResponseToVerifier(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: [:],
+            responseUri: "https://client.example.org/cb"
+        )) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Provided response_type - fragment is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest)
+        }
+    }
+
+    // MARK: - Spec Version 1 - Credential format = SD-JWT
+
+    func testV1ConstructUnsignedVPTokenWithSdJwtSuccess() async throws {
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+
+        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )) { result in
+            XCTAssertEqual(result.keys.count, 1)
+            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
+            XCTAssertEqual((result.values.first as? UnsignedSdJwtVPToken)?.uuidToUnsignedKBT.count, 1)
+        }
+    }
+
+    func testV1SharingOfSdJwtWithHolderBindingSuccess() async throws {
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+        let unsignedVpTokens = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+
+        let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys.first!
+        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])],
+            responseUri: responseUri
+        )
+
+        XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
+        XCTAssertEqual(recordedRequest.requestBody?["state"] as? String, state)
+        XCTAssertNotNil(recordedRequest.requestBody?["vp_token"])
+        XCTAssertEqual(recordedRequest.requestBody?.keys.count, 2)
+    }
+
+    // MARK: - Spec Version 1 - constructUnsignedVPToken
+
+    func testV1ConstructUnsignedVPTokenWithAllFormatsSuccess() async throws {
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+            "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+
+        await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )) { result in
+            XCTAssertTrue(result.keys.contains(.ldp_vc))
+            XCTAssertTrue(result.keys.contains(.mso_mdoc))
+            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
+            XCTAssertTrue(result.keys.contains(.dc_sd_jwt))
+        }
+    }
+
+    func testV1ShareAuthorizationResponseWithAllFormatsSuccess() async throws {
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
+            "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+            "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+        let unsignedVPTokens = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
+        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
+
+        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
+            .ldp_vc: LdpVPTokenSigningResult(jws: "testJWS", proofValue: "", signatureAlgorithm: "JsonWebSignature2020"),
+            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
+            .vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [vcSdJwtUuids[0]: "ayuht"]),
+            .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"]),
+        ]
+
+        _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: vpTokenSigningResults,
+            responseUri: responseUri
+        )
+
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!.requestBody
+        XCTAssertEqual(recordedRequest?["state"] as? String, state)
+        XCTAssertNotNil(recordedRequest?["vp_token"])
+    }
+
+    // MARK: - Spec Version 1 - constructAuthorizationResponse
+
+    func testV1ConstructAuthorizationResponseSuccess() async throws {
+        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
+            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
+        ]
+
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(responseMode: .directPost, specVersion: .v1)
+
+        _ = try await handler.constructUnsignedVPToken(
+            credentialsMap: verifiableCredentials,
+            authorizationRequest: authorizationRequest,
+            responseUri: responseUri,
+            holderId: holderId,
+            signatureSuite: signatureSuite,
+            walletNonce: walletNonce
+        )
+
+        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
+            .ldp_vc: LdpVPTokenSigningResult(jws: "testJWS", proofValue: "", signatureAlgorithm: "JsonWebSignature2020")
+        ]
+
+        let authorizationResponse = try handler.constructAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: vpTokenSigningResults
+        )
+
+        XCTAssertNotNil(authorizationResponse["vp_token"])
+        XCTAssertEqual(authorizationResponse["state"], state)
+    }
+
+    func testV1ConstructAuthorizationResponseThrowsForUnsupportedResponseType() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .v1)
+
+        XCTAssertThrowsError(try handler.constructAuthorizationResponse(
+            authorizationRequest: authorizationRequest,
+            vpTokenSigningResults: [:]
+        )) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Provided response_type - fragment is not supported",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest)
+        }
+    }
+
+    // MARK: - Spec Version 1 - constructAuthorizationErrorResponse
+
+    func testV1ConstructAuthorizationErrorResponseMapsErrorCorrectly() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+        let error = InvalidData(message: "Invalid input data", className: "Test")
+
+        let response = handler.constructAuthorizationErrorResponse(
+            authorizationRequest: authorizationRequest,
+            exception: error,
+            walletNonce: "wallet-nonce"
+        )
+
+        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertEqual(response["error_description"] as? String, "Invalid input data")
+        XCTAssertEqual(response["state"] as? String, state)
+    }
+
+    func testV1ConstructAuthorizationErrorResponseWithGenericError() {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
+        let error = NSError(domain: "test", code: 500)
+
+        let response = handler.constructAuthorizationErrorResponse(
+            authorizationRequest: authorizationRequest,
+            exception: error,
+            walletNonce: "wallet-nonce"
+        )
+
+        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertNotNil(response["error_description"])
+        XCTAssertEqual(response["state"] as? String, state)
+    }
 }

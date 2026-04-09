@@ -22,7 +22,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         XCTAssertEqual(metadata.clientName, "Client")
         XCTAssertEqual(metadata.logoUri, "https://example.com/logo.png")
         XCTAssertEqual(metadata.vpFormatsSupported.count, 1)
-        XCTAssertEqual(metadata.authorizationEncryptedResponseAlg, "ECDH-ES")
         XCTAssertEqual(metadata.authorizationEncryptedResponseEncValuesSupported, ["A256GCM"])
         XCTAssertNil(metadata.jwks)
     }
@@ -33,7 +32,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         )
         XCTAssertNil(metadata.clientName)
         XCTAssertNil(metadata.logoUri)
-        XCTAssertNil(metadata.authorizationEncryptedResponseAlg)
         XCTAssertNil(metadata.authorizationEncryptedResponseEncValuesSupported)
         XCTAssertNil(metadata.jwks)
     }
@@ -45,7 +43,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
         XCTAssertEqual(decoded.clientName, "Test Client")
         XCTAssertEqual(decoded.logoUri, "https://example.com/logo.png")
-        XCTAssertEqual(decoded.authorizationEncryptedResponseAlg, "ECDH-ES")
         XCTAssertEqual(decoded.authorizationEncryptedResponseEncValuesSupported, ["A256GCM"])
         XCTAssertNotNil(decoded.jwks)
         XCTAssertEqual(decoded.vpFormatsSupported.count, 1)
@@ -57,7 +54,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
         XCTAssertNil(decoded.clientName)
         XCTAssertNil(decoded.logoUri)
-        XCTAssertNil(decoded.authorizationEncryptedResponseAlg)
         XCTAssertNil(decoded.authorizationEncryptedResponseEncValuesSupported)
         XCTAssertNil(decoded.jwks)
     }
@@ -116,7 +112,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
             clientName: "Client",
             logoUri: "https://example.com/logo.png",
             vpFormatsSupported: ["ldp_vc": ldp],
-            authorizationEncryptedResponseAlg: "ECDH-ES",
             authorizationEncryptedResponseEncValuesSupported: ["A256GCM"],
             jwks: nil
         )
@@ -124,7 +119,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
         XCTAssertEqual(decoded.clientName, original.clientName)
         XCTAssertEqual(decoded.logoUri, original.logoUri)
-        XCTAssertEqual(decoded.authorizationEncryptedResponseAlg, original.authorizationEncryptedResponseAlg)
         XCTAssertEqual(decoded.authorizationEncryptedResponseEncValuesSupported, original.authorizationEncryptedResponseEncValuesSupported)
         XCTAssertEqual(decoded.vpFormatsSupported.count, original.vpFormatsSupported.count)
     }
@@ -211,7 +205,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         vpFormatsSupported: String = """
         {"ldp_vc": {"proof_type_values": ["Ed25519Signature2020"]}}
         """,
-        authorizationEncryptedResponseAlg: String? = "\"ECDH-ES\"",
         authorizationEncryptedResponseEncValues: String? = "[\"A256GCM\"]",
         jwks: String? = nil
     ) -> Data {
@@ -220,7 +213,6 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
             clientName.map { "\"client_name\": \($0)" },
             logoUri.map { "\"logo_uri\": \($0)" },
             "\"vp_formats_supported\": \(vpFormatsSupported)",
-            authorizationEncryptedResponseAlg.map { "\"authorization_encrypted_response_alg\": \($0)" },
             authorizationEncryptedResponseEncValues.map { "\"encrypted_response_enc_values_supported\": \($0)" },
             jwksField
         ].compactMap { $0 }

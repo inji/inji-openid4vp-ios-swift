@@ -12,18 +12,18 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     private var walletMetadata: WalletMetadata!
 
     override func setUpWithError() throws {
-//        walletMetadata = try createWalletMetadataV2()
+        walletMetadata = try createWalletMetadata()
     }
 
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
 
-        XCTAssertNoThrow(try directPostAuthorizationResponseModeHandler.validate(clientMetadata: mockClientMetadataObject, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true))
+        XCTAssertNoThrow(try directPostAuthorizationResponseModeHandler.validate(clientMetadata: mockClientMetadataSpecVersionDraft23[.directPost], walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true))
     }
 
     func testSendAuthorizationResponseForDirectPostResponseMode() async throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
-        let authorizationResponse: AuthorizationResponseV2 = .dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
+        let authorizationResponse: AuthorizationResponse = .dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
         mockNetworkManager.clearResponses()
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
 
@@ -90,45 +90,80 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             }
         }
     
-//    func testShouldReturnGetAuthorizationSuccessResponseSuccesfully() throws {
-//        let handler = DirectPostResponseModeHandler()
-//
-//        let authorizationResponse = AuthorizationResponse(
-//            vpToken: mockVPTokens,
-//            presentationSubmission: mockPresentationSubmission,
-//            state: "sample-state"
-//        )
-//
-//        let result = try handler.getAuthorizationResponse(
-//            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
-//            authorizationResponse: authorizationResponse,
-//            walletNonce: "mock-nonce"
-//        )
-//
-//        XCTAssertEqual(result["state"], "sample-state")
-//        XCTAssertNotNil(result["vp_token"])
-//        XCTAssertNotNil(result["presentation_submission"])
-//    }
+    func testShouldReturnGetAuthorizationSuccessResponseSuccesfully() throws {
+        let handler = DirectPostResponseModeHandler()
 
-//    func testShouldReturnGetAuthorizationErrorResponseSuccesfully() throws {
-//        let handler = DirectPostResponseModeHandler()
-//
-//        let errorResponse = AuthorizationErrorResponse(
-//            error: "invalid_request",
-//            errorDescription: "Something went wrong",
-//            state: "error-state"
-//        )
-//
-//        let result = handler.getAuthorizationErrorResponse(
-//            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
-//            authorizationResponse: errorResponse,
-//            walletNonce: "mock-nonce"
-//        )
-//
-//        XCTAssertEqual(result["error"], "invalid_request")
-//        XCTAssertEqual(result["error_description"], "Something went wrong")
-//        XCTAssertEqual(result["state"], "error-state")
-//    }
+        let authorizationResponse: AuthorizationResponse = AuthorizationResponse.dif(
+            vpToken: mockVPTokens,
+            presentationSubmission: mockPresentationSubmission,
+            state: "sample-state"
+        )
 
+        let result = try handler.getAuthorizationResponse(
+            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
+            authorizationResponse: authorizationResponse,
+            walletNonce: "mock-nonce"
+        )
 
+        XCTAssertEqual(result["state"], "sample-state")
+        XCTAssertNotNil(result["vp_token"])
+        XCTAssertNotNil(result["presentation_submission"])
+    }
+
+    func testShouldReturnGetAuthorizationErrorResponseSuccesfully() throws {
+        let handler = DirectPostResponseModeHandler()
+
+        let errorResponse = AuthorizationErrorResponse(
+            error: "invalid_request",
+            errorDescription: "Something went wrong",
+            state: "error-state"
+        )
+
+        let result = handler.getAuthorizationErrorResponse(
+            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
+            authorizationResponse: errorResponse,
+            walletNonce: "mock-nonce"
+        )
+
+        XCTAssertEqual(result["error"], "invalid_request")
+        XCTAssertEqual(result["error_description"], "Something went wrong")
+        XCTAssertEqual(result["state"], "error-state")
+    }
+
+    func testThrowErrorWhenEncryptionRelatedPropertiesAvailableInVerifierMetadata() throws {
+        let handler = DirectPostResponseModeHandler()
+        let expectedMessage = "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'"
+
+        let draft23ClientMetadataStr = """
+        {
+            "client_name": "Test",
+            "logo_uri": "https://example.com/logo.png",
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "authorization_encrypted_response_enc": "A256GCM",
+            "jwks": { "keys": [{ "kty": "OKP", "crv": "Ed25519", "use": "sig", "alg": "ECDH-ES", "kid": "key1", "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc" }] },
+            "vp_formats": { "ldp_vc": { "proof_type": ["Ed25519Signature2020"] } }
+        }
+        """
+        let draft23ClientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersionDraft23.self, from: Data(draft23ClientMetadataStr.utf8))
+        XCTAssertThrowsError(
+            try handler.validate(clientMetadata: draft23ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
+        ) { error in
+            assertOpenID4VPException(error, expectedMessage: expectedMessage, expectedCode: OpenID4VPErrorCodes.invalidRequest)
+        }
+
+        let v1ClientMetadataStr = """
+        {
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "encrypted_response_enc_values_supported": ["A256GCM"],
+            "jwks": { "keys": [{ "kty": "OKP", "crv": "Ed25519", "use": "sig", "alg": "ECDH-ES", "kid": "key1", "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc" }] },
+            "vp_formats_supported": { "ldp_vc": { "proof_type_values": ["Ed25519Signature2020"] } }
+        }
+        """
+        let v1ClientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: Data(v1ClientMetadataStr.utf8))
+        XCTAssertThrowsError(
+            try handler.validate(clientMetadata: v1ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
+        ) { error in
+            assertOpenID4VPException(error, expectedMessage: expectedMessage, expectedCode: OpenID4VPErrorCodes.invalidRequest)
+        }
+    }
 }

@@ -110,8 +110,12 @@ let authorizationRequestParamsWithValue: [String: Any] = [
     "response_mode": "direct_post",
     "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
     "state": "+mRQe1d6pBoJqF6Ab28klg==",
-    "client_metadata": (clientMetadata),
-    "presentation_definition_uri": "https://mock-verifier.com/presentation-definition"
+    "client_metadata": [
+        SpecVersion.v1: clientMetadataSpecVersion1,
+        SpecVersion.draft23: clientMetadataSpecVersionDraft23
+    ],
+    "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
+    "dcql_query": ["credentials": "test-dummy"]
 ]
 
 func baseAuthRequest(clientId: String,
@@ -162,16 +166,8 @@ func baseAuthRequest(clientId: String,
     return request
 }
 
-let redirectUriSchemeClientIdDraft23: [String: String] = [
+let redirectUriSchemeClientIdParameter: [String: String] = [
     "client_id": "redirect_uri:https://mock-verifier.com",
-]
-
-let DidSchemeClientIdDraft23: [String: String] = [
-    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-]
-
-let preRegisteredSchemeClientIdDraft23: [String: String] = [
-    "client_id": "mock-client",
 ]
 
 let redirectUriSchemeClientIdDraft21: [String: String] = [
@@ -179,17 +175,29 @@ let redirectUriSchemeClientIdDraft21: [String: String] = [
     "client_id_scheme": "redirect_uri",
 ]
 
-let DidSchemeClientIdDraft21: [String: String] = [
-    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
-    "client_id_scheme": "did",
+let DidSchemeClientIdParameters: [SpecVersion: [String: String]] = [
+    .draft23 : ["client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs"],
+    .v1: ["client_id": "decentralized_identifier:did:web:inji-ovp:inji-mock-services:openid4vp-service:docs", "client_id_scheme": "did"]
+]
+
+let preRegisteredSchemeClientIdParameters: [String: String] = [
+    "client_id": "mock-client",
 ]
 
 let preRegisteredSchemeClientIdDraft21: [String: String] = [
     "client_id": "mock-client",
     "client_id_scheme": "pre-registered",
 ]
+let DidSchemeClientIdDraft21: [String: String] = [
+    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+    "client_id_scheme": "did",
+]
 
-let authRequestParamsByReferenceDraft23 : [String] = [
+let DidSchemeClientIdDraft23: [String: String] = [
+    "client_id": "did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
+]
+
+let authRequestParamsByReference : [String] = [
     "client_id",
     "request_uri",
     "request_uri_method"
@@ -205,7 +213,6 @@ let authRequestParamsByReferenceDraft21 : [String] = [
 let authRequestWithRedirectUriByValue : [String] = [
     "client_id",
     "response_uri",
-    "presentation_definition",
     "response_type",
     "response_mode",
     "nonce",
@@ -224,11 +231,10 @@ let authRequestWithRedirectUriWithPresentationDefinitionUri : [String] = [
     "client_metadata"
 ]
 
-let authRequestWithPreRegisteredByValueDraft23 : [String] = [
+let authRequestWithPreRegisteredByValue : [String] = [
     "client_id",
     "response_mode",
     "response_uri",
-    "presentation_definition",
     "response_type",
     "nonce",
     "state",
@@ -251,7 +257,6 @@ let authRequestWithDidByValue : [String] = [
     "client_id",
     "response_mode",
     "response_uri",
-    "presentation_definition",
     "response_type",
     "nonce",
     "state",
@@ -260,7 +265,7 @@ let authRequestWithDidByValue : [String] = [
 
 
 let authRequestClientIdSchemeMap : [ClientIdPrefix: [String]] = [
-    .preRegistered : authRequestWithPreRegisteredByValueDraft23,
+    .preRegistered : authRequestWithPreRegisteredByValue,
     .redirectUri : authRequestWithRedirectUriByValue,
     .decentralizedIdentifier : authRequestWithDidByValue
 ]
@@ -298,11 +303,10 @@ let vpFormatsMap: [String: VPFormatSupported] = [
     "ldp_vc": LdpVcFormatSupported(proofTypeValues: [ .ed25519Signature2020])
 ]
 
-let clientMetadata: [String: Any] = [
+let clientMetadataSpecVersionDraft23: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
     "authorization_encrypted_response_alg": "ECDH-ES",
-    "authorization_encrypted_response_enc": "A256GCM",
     "jwks": [
         "keys": [
             [
@@ -332,11 +336,10 @@ let clientMetadata: [String: Any] = [
     ]
 ]
 
-let clientMetadataV2: [String: Any] = [
+let clientMetadataSpecVersion1: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
-    "authorization_encrypted_response_alg": "ECDH-ES",
-    "authorization_encrypted_response_enc_values_supported": ["A256GCM"],
+    "encrypted_response_enc_values_supported": ["A256GCM"],
     "jwks": [
         "keys": [
             [
@@ -392,9 +395,141 @@ let clientMetadataWithWrongKey: [String: Any] = [
     ]
 ]
 
-let mockClientMetadataObject = createInstance(clientMetadata, as: ClientMetadataSpecVersionDraft23.self)
+let mockClientMetadataSpecVersionDraft23 : [ResponseMode: ClientMetadataSpecVersionDraft23] = [
+    .directPost: createInstance([
+        "client_name": "Requester name",
+        "logo_uri": "https://mock-verifier.com/logo",
+        "authorization_encrypted_response_alg": "ECDH-ES",
+        "jwks": [
+            "keys": [
+                [
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-ES",
+                    "kid": "ed-key1"
+                ],
+                [
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "use": "sig",
+                    "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                    "alg": "EdDSA",
+                    "kid": "ed-key2"
+                ]]
+        ],
+        "vp_formats": [
+            "ldp_vp": [
+                "proof_type": [
+                    "Ed25519Signature2018",
+                    "Ed25519Signature2020"
+                ]
+            ]
+        ]
+    ], as: ClientMetadataSpecVersionDraft23.self),
+    .directPostJwt: createInstance([
+        "client_name": "Requester name",
+        "logo_uri": "https://mock-verifier.com/logo",
+        "authorization_encrypted_response_alg": "ECDH-ES",
+        "authorization_encrypted_response_enc": "A256GCM",
+        "jwks": [
+            "keys": [
+                [
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-ES",
+                    "kid": "ed-key1"
+                ],
+                [
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "use": "sig",
+                    "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                    "alg": "EdDSA",
+                    "kid": "ed-key2"
+                ]]
+        ],
+        "vp_formats": [
+            "ldp_vp": [
+                "proof_type": [
+                    "Ed25519Signature2018",
+                    "Ed25519Signature2020"
+                ]
+            ]
+        ]
+    ], as: ClientMetadataSpecVersionDraft23.self)
+]
 
-let mockClientMetadataObjectV2 = createInstance(clientMetadataV2, as: ClientMetadataSpecVersion1.self)
+let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadataSpecVersion1] = [
+    .directPost: createInstance([
+        "client_name": "Requester name",
+        "logo_uri": "https://mock-verifier.com/logo",
+        "authorization_encrypted_response_alg": "ECDH-ES",
+        "jwks": [
+            "keys": [
+                [
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-ES",
+                    "kid": "ed-key1"
+                ],
+                [
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "use": "sig",
+                    "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                    "alg": "EdDSA",
+                    "kid": "ed-key2"
+                ]]
+        ],
+        "vp_formats_supported": [
+            "ldp_vp": [
+                "proof_type_values": [
+                    "Ed25519Signature2018",
+                    "Ed25519Signature2020"
+                ]
+            ]
+        ]
+    ], as: ClientMetadataSpecVersion1.self),
+    .directPostJwt: createInstance([
+        "client_name": "Requester name",
+        "logo_uri": "https://mock-verifier.com/logo",
+        "authorization_encrypted_response_alg": "ECDH-ES",
+        "encrypted_response_enc_values_supported": ["A256GCM"],
+        "jwks": [
+            "keys": [
+                [
+                    "kty": "OKP",
+                    "crv": "X25519",
+                    "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-ES",
+                    "kid": "ed-key1"
+                ],
+                [
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "use": "sig",
+                    "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                    "alg": "EdDSA",
+                    "kid": "ed-key2"
+                ]]
+        ],
+        "vp_formats_supported": [
+            "ldp_vp": [
+                "proof_type_values": [
+                    "Ed25519Signature2018",
+                    "Ed25519Signature2020"
+                ]
+            ]
+        ]
+    ], as: ClientMetadataSpecVersion1.self)
+]
 
 let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
     jws: "validJWS", proofValue: "hdjbhdsjdshjv",
@@ -414,37 +549,42 @@ let authorizationRequestParamsWithRedirectUri: [String: Any] = [
     "response_mode": "direct_post",
     "nonce":"VbRRB/LTxLiXmVNZuyMO8A==",
     "state":"+mRQe1d6pBoJqF6Ab28klg==",
-    "client_metadata": clientMetadata
+    "client_metadata": clientMetadataSpecVersionDraft23
 ]
 
 let urlEncodedAuthRequestWithPresentationDefinitionUri = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23),
+    requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters),
     clientIdScheme: .preRegistered,
-    applicableFields: authRequestWithPreRegisteredByValueDraft23.map {
+    applicableFields: authRequestWithPreRegisteredByValue.map {
         $0 == AuthorizationRequestFieldConstants.presentationDefinition.rawValue ? AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue : $0
     }
 )
 
 // client_id_scheme = redirect_uri
 let testValidUrlEncodedVPRequestWithRedirectUri = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23),
+    requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
     clientIdScheme: .redirectUri,
     applicableFields: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 }
 )
 
 //  client_id_scheme = redirect_uri, with response uri and response mode
-let testVPRequestWithRedirectUriAndResponseUriResponseMode = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps( redirectUriSchemeClientIdDraft23,  authorizationRequestParamsWithValue), clientIdScheme: .redirectUri, applicableFields: authRequestClientIdSchemeMap[.redirectUri]! + ["response_uri","response_mode"])
+let testVPRequestWithRedirectUriAndResponseUriResponseMode = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps( redirectUriSchemeClientIdParameter,  authorizationRequestParamsWithValue), clientIdScheme: .redirectUri, applicableFields: authRequestClientIdSchemeMap[.redirectUri]! + ["response_uri","response_mode"])
 
 //  client_id_scheme = redirect_uri, and not equal to client id
 let testVPRequestWithRedirectUriAndClientIdNotEqual = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "redirect_uri:https://mock-verifier-party.com", "redirect_uri": "https://mock-verifier.com", "response_mode": "fragment"]), clientIdScheme: .redirectUri)
 
 //client_id_scheme = pre-registered
-let testValidUrlEncodedVPRequestWithResponseUri = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23), clientIdScheme: .preRegistered)
+let testValidUrlEncodedVPRequestWithResponseUri = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters), clientIdScheme: .preRegistered,specVersion: .draft23 , addEncryptionClientMetadataParams: false)
 
 let testUrlEncodedAuthRequestOfUntrustedVerifier = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted_client"]), verifierSentAuthRequestByReference: true, clientIdScheme: .preRegistered)
 
 // client_id_scheme = pre-registered draft 21
-let testValidUrlEncodedVPRequestWithResponseUriDraft21 = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21), clientIdScheme: .preRegistered, draftVersion: 21)
+let testValidUrlEncodedVPRequestWithResponseUriDraft21 = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft21), clientIdScheme: .preRegistered, applicableFields: [
+    "client_id",
+    "client_id_scheme",
+    "request_uri",
+    "request_uri_method"
+], specVersion: .draft23)
 
 // jwt -> client_id_scheme = did
 let testValidSignedVPRequestWithDid = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23), verifierSentAuthRequestByReference : true, clientIdScheme: .decentralizedIdentifier)
@@ -454,9 +594,9 @@ let testInValidSignedVPRequestWithDidAndClientIdDifferent = createUrlEncodedAuth
 ]), verifierSentAuthRequestByReference : true, clientIdScheme: .decentralizedIdentifier)
 
 
-let testInvalidPresentationDefinitionVPRequest = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23, ["presentation_definition": convertToJsonString(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
+let testInvalidPresentationDefinitionVPRequest = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters, ["presentation_definition": convertToJsonString(["input_descriptor":[]])]), clientIdScheme: .preRegistered)
 
-let urlEncodedAuthorizationRequestWithInvalidClientMetadata = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "mock-client-2"], ["client_metadata": "{}"]),clientIdScheme: .preRegistered, applicableFields: authRequestWithPreRegisteredByValueDraft23 + ["client_metadata"])
+let urlEncodedAuthorizationRequestWithInvalidClientMetadata = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "mock-client-2"], ["client_metadata": "{}"]),clientIdScheme: .preRegistered, applicableFields: authRequestWithPreRegisteredByValue + ["client_metadata"])
 
 let validJwtResponse = createAuthorizationRequestObject(clientIdScheme: .decentralizedIdentifier, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft23))
 
@@ -467,10 +607,10 @@ let invalidJwtResponseWithoutKid = createAuthorizationRequestObject(clientIdSche
     "alg": "EdDSA"
 ])
 
-let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
+let resquestUriResponseData: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
 
 let mockUrlEncodedVPRequestWithDirectPostJwt = createUrlEncodedAuthorizationRequest(
-    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientIdDraft23),clientIdScheme: .preRegistered
+    requestParams: mergeMaps(authorizationRequestParamsWithValue.merging(["response_mode": "direct_post.jwt"]) { _, new in new },preRegisteredSchemeClientIdParameters),clientIdScheme: .preRegistered
 )
 
 let mockAuthorizationRequestObjectWithDirectPostResponseMode = getMockAuthorizationRequest()

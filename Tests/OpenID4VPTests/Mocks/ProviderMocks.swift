@@ -39,7 +39,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     
     func sendAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponseV2,
+        authorizationResponse: AuthorizationResponse,
         url: String,
         networkManager: any NetworkManaging,
         producerInfo: String,
@@ -52,7 +52,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponseV2,
+        authorizationResponse: AuthorizationResponse,
         walletNonce: String
     ) throws -> [String: String] {
         return expectedSuccessResponse

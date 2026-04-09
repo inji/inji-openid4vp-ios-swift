@@ -34,25 +34,29 @@ public struct ClientMetadataSpecVersion1: Codable {
     }
 
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.clientName = try container.decodeIfPresent(String.self, forKey: .clientName)
-        self.logoUri = try container.decodeIfPresent(String.self, forKey: .logoUri)
-        self.authorizationEncryptedResponseEncValuesSupported = try container.decodeIfPresent([String].self, forKey: .authorizationEncryptedResponseEncValues)
-        self.jwks = try container.decodeIfPresent(JWKSet.self, forKey: .jwks)
+        do {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.clientName = try container.decodeIfPresent(String.self, forKey: .clientName)
+            self.logoUri = try container.decodeIfPresent(String.self, forKey: .logoUri)
+            self.authorizationEncryptedResponseEncValuesSupported = try container.decodeIfPresent([String].self, forKey: .authorizationEncryptedResponseEncValues)
+            self.jwks = try container.decodeIfPresent(JWKSet.self, forKey: .jwks)
 
-        let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
-        var decodedFormats: [String: VPFormatSupported] = [:]
-        for key in vpFormatsContainer.allKeys {
-            switch key {
-            case .ldp_vc, .ldp_vp:
-                decodedFormats[key.rawValue] = try vpFormatsContainer.decode(LdpVcFormatSupported.self, forKey: key)
-            case .mso_mdoc:
-                decodedFormats[key.rawValue] = try vpFormatsContainer.decode(MsoMdocVcFormatSupported.self, forKey: key)
-            case .dc_sd_jwt, .vc_sd_jwt:
-                decodedFormats[key.rawValue] = try vpFormatsContainer.decode(SdJwtVcFormatSupported.self, forKey: key)
+            let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
+            var decodedFormats: [String: VPFormatSupported] = [:]
+            for key in vpFormatsContainer.allKeys {
+                switch key {
+                case .ldp_vc, .ldp_vp:
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(LdpVcFormatSupported.self, forKey: key)
+                case .mso_mdoc:
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(MsoMdocVcFormatSupported.self, forKey: key)
+                case .dc_sd_jwt, .vc_sd_jwt:
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(SdJwtVcFormatSupported.self, forKey: key)
+                }
             }
+            self.vpFormatsSupported = decodedFormats
+        } catch {
+            throw wrapError(error, customError: { message in InvalidData(message: "Error during client metadata decoding - \(message)", className: ClientMetadataSpecVersion1.className) })
         }
-        self.vpFormatsSupported = decodedFormats
     }
 
     public func encode(to encoder: Encoder) throws {

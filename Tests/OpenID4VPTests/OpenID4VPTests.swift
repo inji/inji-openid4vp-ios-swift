@@ -99,7 +99,7 @@ class OpenID4VPTests: XCTestCase {
 //
 //    // client_id_scheme = pre-registered
 //    func testReturnDataForValidRequestWithResponseUri() async {
-//        let requestUriResponse = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23), applicableFields: authRequestWithPreRegisteredByValueDraft23)
+//        let requestUriResponse = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdDraft23), applicableFields: authRequestWithPreRegisteredByValue)
 //        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (requestUriResponse, httpUrlResponseForJWS))
 //
 //        await XCTAssertNoThrowAndVerifyAsync(

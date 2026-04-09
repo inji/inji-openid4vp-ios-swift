@@ -25,45 +25,6 @@ final class WalletMetadataUtilsTests: XCTestCase {
         }
     }
 
-    // MARK: - parseVPFormatsSupported (VPFormatSupportedV2)
-
-    func testParseVPFormatsSupportedV2ParsesValidFormats() throws {
-        let formats: [String: VPFormatSupported] = [
-            "ldp_vc": LdpVcFormatSupported(),
-            "mso_mdoc": MsoMdocVcFormatSupported()
-        ]
-        let result = try parseVPFormatsSupported(formats)
-        XCTAssertEqual(result.count, 2)
-        XCTAssertNotNil(result[.ldp_vc])
-        XCTAssertNotNil(result[.mso_mdoc])
-    }
-
-    func testParseVPFormatsSupportedV2ThrowsForUnsupportedFormatKey() {
-        let formats: [String: VPFormatSupported] = [
-            "unsupported_format": LdpVcFormatSupported()
-        ]
-        XCTAssertThrowsError(try parseVPFormatsSupported(formats)) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Invalid VPFormatType value: unsupported_format. Its is not supported by the library.",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-
-    func testParseVPFormatsSupportedV2ThrowsForEmptyKey() {
-        let formats: [String: VPFormatSupported] = [
-            "  ": LdpVcFormatSupported()
-        ]
-        XCTAssertThrowsError(try parseVPFormatsSupported(formats)) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "vp_formats_supported cannot have empty keys.",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-
     // MARK: - parseRequestObjectSigningAlgValuesSupported
 
     func testParseRequestObjectSigningAlgValuesSupportedReturnsNilWhenNil() throws {
@@ -130,9 +91,9 @@ final class WalletMetadataUtilsTests: XCTestCase {
         }
     }
 
-    // MARK: - validateVPFormatsSupported (VPFormatSupportedV2)
+    // MARK: - validateVPFormatsSupported (VPFormatSupported)
 
-    func testValidateVPFormatsSupportedV2ThrowsWhenEmpty() {
+    func testValidateVPFormatsSupportedThrowsWhenEmpty() {
         let emptyFormats: [VPFormatType: VPFormatSupported] = [:]
         XCTAssertThrowsError(try validateVPFormatsSupported(emptyFormats)) { error in
             assertOpenID4VPException(
@@ -143,28 +104,10 @@ final class WalletMetadataUtilsTests: XCTestCase {
         }
     }
 
-    func testValidateVPFormatsSupportedV2DoesNotThrowWhenNonEmpty() {
+    func testValidateVPFormatsSupportedDoesNotThrowWhenNonEmpty() {
         let formats: [VPFormatType: VPFormatSupported] = [.ldp_vc: LdpVcFormatSupported()]
         XCTAssertNoThrow(try validateVPFormatsSupported(formats))
     }
-
-    // MARK: - validateVPFormatsSupported (VPFormatSupported)
-
-//    func testValidateVPFormatsSupportedThrowsWhenEmpty() {
-//        let emptyFormats: [VPFormatType: VPFormatSupported] = [:]
-//        XCTAssertThrowsError(try validateVPFormatsSupported(emptyFormats)) { error in
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "vp_formats_supported should at least have one supported vp_format",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
-//
-//    func testValidateVPFormatsSupportedDoesNotThrowWhenNonEmpty() {
-//        let formats: [VPFormatType: VPFormatSupported] = [.ldp_vc: VPFormatSupported(algValuesSupported: ["EdDSA"])]
-//        XCTAssertNoThrow(try validateVPFormatsSupported(formats))
-//    }
 
     // MARK: - parseClientIdSchemesSupported
 
@@ -188,50 +131,10 @@ final class WalletMetadataUtilsTests: XCTestCase {
         }
     }
 
-    // MARK: - parseVPFormatsSupported (VPFormatSupported)
-//
-//    func testParseVPFormatsSupportedParsesValidFormats() throws {
-//        let formats: [String: VPFormatSupported] = [
-//            "ldp_vc": VPFormatSupported(algValuesSupported: ["EdDSA"]),
-//            "mso_mdoc": VPFormatSupported(algValuesSupported: ["ES256"])
-//        ]
-//        let result = try parseVPFormatsSupported(formats)
-//        XCTAssertEqual(result.count, 2)
-//        XCTAssertNotNil(result[.ldp_vc])
-//        XCTAssertNotNil(result[.mso_mdoc])
-//    }
-//
-//    func testParseVPFormatsSupportedThrowsForUnsupportedFormatKey() {
-//        let formats: [String: VPFormatSupported] = [
-//            "sd-jwt": VPFormatSupported(algValuesSupported: ["EdDSA"])
-//        ]
-//        XCTAssertThrowsError(try parseVPFormatsSupported(formats)) { error in
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "Invalid VPFormatType value: sd-jwt. Its is not supported by the library.",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
-//
-//    func testParseVPFormatsSupportedThrowsForEmptyKey() {
-//        let formats: [String: VPFormatSupported] = [
-//            "": VPFormatSupported(algValuesSupported: ["EdDSA"])
-//        ]
-//        XCTAssertThrowsError(try parseVPFormatsSupported(formats)) { error in
-//            assertOpenID4VPException(
-//                error,
-//                expectedMessage: "vp_formats_supported cannot have empty keys.",
-//                expectedCode: OpenID4VPErrorCodes.invalidRequest
-//            )
-//        }
-//    }
-
     // MARK: - WalletMetadataDefaults
 
     func testWalletMetadataDefaultsValues() {
         XCTAssertTrue(WalletMetadataDefaults.presentationDefinitionURISupported)
-//        XCTAssertFalse(WalletMetadataDefaults.vpFormatsSupportedSpecVersionDraft23.isEmpty)
         XCTAssertFalse(WalletMetadataDefaults.vpFormatsSupported.isEmpty)
         XCTAssertEqual(WalletMetadataDefaults.clientIdPrefixesSupported, [.preRegistered, .redirectUri, .decentralizedIdentifier])
         XCTAssertEqual(WalletMetadataDefaults.requestObjectSigningAlgValuesSupported, [.edDsa])

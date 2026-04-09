@@ -548,6 +548,10 @@ func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: S
         return SdJwtVpTokenSigningResult(uuidToKbJWTSignature: map)
     }
 
+//TODO: This should not force unwrap
 func getEncryptionKey(_ jwks: JWKSet, _ alg: String) throws -> JWK {
-    return jwks.keys.first(where: { $0.algorithm == alg && $0.publicKeyUse == .encryption})!
+    if let encryptionKey =  jwks.keys.first(where: { $0.algorithm == alg && $0.publicKeyUse == .encryption}) {
+        return encryptionKey
+    }
+    throw InvalidData(message: "No encryption key with alg \(alg) found in JWK Set", className: "OpenID4VPUtils")
 }

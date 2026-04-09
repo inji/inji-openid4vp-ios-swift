@@ -3,6 +3,8 @@ import XCTest
 
 final class AuthorizationResponseTests: XCTestCase {
 
+    // MARK: - DIF Presentation Exchange Tests
+    
     let mdocVPToken = MdocVPToken(base64EncodedDeviceResponse: "mdoc")
 
     let ldpVPToken = LdpVPToken(
@@ -46,7 +48,7 @@ final class AuthorizationResponseTests: XCTestCase {
             "definition_id": "client-identifier"
         ]
 
-        let authorizationResponse = AuthorizationResponse(
+        let authorizationResponse = AuthorizationResponse.dif(
             vpToken: .vpTokenElement(mdocVPToken),
             presentationSubmission: presentationSubmissionWithMdoc,
             state: "test-state"
@@ -87,7 +89,7 @@ final class AuthorizationResponseTests: XCTestCase {
             ]
         ]
 
-        let authorizationResponse = AuthorizationResponse(
+        let authorizationResponse = AuthorizationResponse.dif(
             vpToken: .vpTokenArray([mdocVPToken, ldpVPToken]),
             presentationSubmission: presentationSubmissionWithLdpVPAndMdoc,
             state: "test-state"
@@ -131,7 +133,7 @@ final class AuthorizationResponseTests: XCTestCase {
             "definition_id": "client-identifier"
         ]
 
-        let authorizationResponse = AuthorizationResponse(
+        let authorizationResponse = AuthorizationResponse.dif(
             vpToken: .vpTokenElement(mdocVPToken),
             presentationSubmission: presentationSubmissionWithMdoc,
             state: nil
@@ -231,5 +233,53 @@ final class AuthorizationResponseTests: XCTestCase {
                 XCTFail("Unexpected extra key: \(key)")
             }
         }
+    }
+    
+    // MARK: - DCQL Presentation Exchange Tests
+
+    func testDcqlToJsonEncodedMapWithState() throws {
+        let vpToken: [String: Any] = [
+            "input_1": "eyJhbGciOiJFZERTQSJ9.payload.signature"
+        ]
+
+        let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: "test-state")
+        let result = try authorizationResponse.toJsonEncodedMap()
+
+        XCTAssertEqual(result["state"], "test-state")
+        XCTAssertNil(result["presentation_submission"])
+
+        let decodedVPToken = decodeJsonDict(result["vp_token"])
+        XCTAssertEqual(decodedVPToken["input_1"] as? String, "eyJhbGciOiJFZERTQSJ9.payload.signature")
+    }
+
+    func testDcqlToJsonEncodedMapWithoutState() throws {
+        let vpToken: [String: Any] = [
+            "input_1": "eyJhbGciOiJFZERTQSJ9.payload.signature"
+        ]
+
+        let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: nil)
+        let result = try authorizationResponse.toJsonEncodedMap()
+
+        XCTAssertNil(result["state"])
+        XCTAssertNil(result["presentation_submission"])
+
+        let decodedVPToken = decodeJsonDict(result["vp_token"])
+        XCTAssertEqual(decodedVPToken["input_1"] as? String, "eyJhbGciOiJFZERTQSJ9.payload.signature")
+    }
+
+    func testDcqlToJsonEncodedMapWithMultipleCredentials() throws {
+        let vpToken: [String: Any] = [
+            "input_1": "credential-one",
+            "input_2": "credential-two"
+        ]
+
+        let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: "multi-state")
+        let result = try authorizationResponse.toJsonEncodedMap()
+
+        XCTAssertEqual(result["state"], "multi-state")
+
+        let decodedVPToken = decodeJsonDict(result["vp_token"])
+        XCTAssertEqual(decodedVPToken["input_1"] as? String, "credential-one")
+        XCTAssertEqual(decodedVPToken["input_2"] as? String, "credential-two")
     }
 }
