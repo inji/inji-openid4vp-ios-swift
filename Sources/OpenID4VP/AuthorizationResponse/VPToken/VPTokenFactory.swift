@@ -3,16 +3,16 @@ import Foundation
 class VPTokenFactory {
     static let className = String(describing: VPTokenFactory.self)
     
-    static func getVPTokenBuilder(credentialFormat: FormatType, specVersion: SpecVersion) throws -> VPTokenBuilder {
+    static func getVPTokenBuilder(credentialFormat: FormatType) throws -> VPTokenBuilder {
         switch credentialFormat {
         case .ldp_vc:
-            return LdpVPTokenBuilder(specVersion: specVersion)
+            return LdpVPTokenBuilder()
 
         case .mso_mdoc:
-            return MdocVPTokenBuilder(specVersion: specVersion)
+            return MdocVPTokenBuilder()
 
         case .dc_sd_jwt, .vc_sd_jwt:
-            return SdJwtVPTokenBuilder(specVersion: specVersion)
+            return SdJwtVPTokenBuilder()
         }
     }
 }

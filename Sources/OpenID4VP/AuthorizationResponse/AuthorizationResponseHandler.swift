@@ -185,24 +185,6 @@ public class AuthorizationResponseHandler {
         return toVerifierResponse(response)
     }
     
-//    func constructVPResponseV2(
-//        signingResults: [VPTokenSigningResultV2],
-//        authorizationRequest: AuthorizationRequestV2
-//    ) throws -> [String: String] {
-//
-//        let reconstructed = try constructSigningResults(
-//            unsignedVPTokenResults: unsignedVPTokenResults,
-//            formatMappings: formatToCredentialInputDescriptorMapping,
-//            signingResults: signingResults,
-//            signatureSuite: self.signatureSuite
-//        )
-//
-//        return try constructAuthorizationResponse(
-//            authorizationRequest: authorizationRequest,
-//            vpTokenSigningResults: reconstructed
-//        )
-//    }
-    
     func constructAndSendAuthorizationResponseToVerifier(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [VPTokenSigningResultV2],
@@ -227,24 +209,6 @@ public class AuthorizationResponseHandler {
         )
         return toVerifierResponse(response)
     }
-
-//    func constructAuthorizationResponse(
-//        authorizationRequest: AuthorizationRequestV2,
-//        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
-//    ) throws -> [String: String] {
-//        let authorizationResponse = try createAuthorizationResponse(
-//            authorizationRequest: authorizationRequest,
-//            vpTokenSigningResults: vpTokenSigningResults
-//        )
-//
-//        return try ResponseModeBasedHandlerFactory
-//            .get(responseMode: authorizationRequest.responseMode)
-//            .getAuthorizationResponse(
-//                authorizationRequest: authorizationRequest,
-//                authorizationResponse: authorizationResponse,
-//                walletNonce: walletNonce
-//            )
-//    }
     
     func constructAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
@@ -352,7 +316,7 @@ public class AuthorizationResponseHandler {
                 )
             }
 
-            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: credentialFormat, specVersion: specVersion)
+            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: credentialFormat)
 
             let (vpTokens, descriptorMaps, nextRootIndex) = try vpTokenBuilder.build(
                 credentialInputDescriptorMappings: credentialInputDescriptorMappings,

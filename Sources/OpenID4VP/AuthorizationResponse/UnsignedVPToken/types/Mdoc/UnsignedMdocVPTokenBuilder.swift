@@ -107,7 +107,8 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                return CBOR.array([clientIdHash, responseUriHash, .utf8String(authorizationRequest.nonce)])
             case .specV1:
                 let clientMetadata = (authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata
-                let verifierPublicKey: JWK = try getEncryptionKey((clientMetadata?.jwks!)!, (clientMetadata?.authorizationEncryptedResponseAlg!)!)
+                //TODO: Get the encryption algorithm as per wallet supported info
+                let verifierPublicKey: JWK = try getEncryptionKey((clientMetadata?.jwks!)!, "")
                 let jwkThumbprintBase64url = try verifierPublicKey.thumbprint(with: SHA256())
                 guard let jwkThumbprintData = Data(base64Encoded: jwkThumbprintBase64url.base64URLToBase64()) else {
                     throw InvalidData(message: "Failed to decode JWK thumbprint bytes", className: UnsignedMdocVPTokenBuilder.className)

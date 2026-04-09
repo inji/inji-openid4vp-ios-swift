@@ -5,7 +5,6 @@ public struct ClientMetadataSpecVersion1: Codable {
     let clientName: String?
     let logoUri: String?
     let vpFormatsSupported: [String: VPFormatSupported]
-    let authorizationEncryptedResponseAlg: String?
     let authorizationEncryptedResponseEncValuesSupported: [String]?
     let jwks: JWKSet?
 
@@ -15,7 +14,6 @@ public struct ClientMetadataSpecVersion1: Codable {
         case clientName = "client_name"
         case logoUri = "logo_uri"
         case vpFormatsSupported = "vp_formats_supported"
-        case authorizationEncryptedResponseAlg = "authorization_encrypted_response_alg"
         case authorizationEncryptedResponseEncValues = "encrypted_response_enc_values_supported"
         case jwks
     }
@@ -31,7 +29,6 @@ public struct ClientMetadataSpecVersion1: Codable {
         self.clientName = clientName
         self.logoUri = logoUri
         self.vpFormatsSupported = vpFormatsSupported
-        self.authorizationEncryptedResponseAlg = authorizationEncryptedResponseAlg
         self.authorizationEncryptedResponseEncValuesSupported = authorizationEncryptedResponseEncValuesSupported
         self.jwks = jwks
     }
@@ -40,7 +37,6 @@ public struct ClientMetadataSpecVersion1: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.clientName = try container.decodeIfPresent(String.self, forKey: .clientName)
         self.logoUri = try container.decodeIfPresent(String.self, forKey: .logoUri)
-        self.authorizationEncryptedResponseAlg = try container.decodeIfPresent(String.self, forKey: .authorizationEncryptedResponseAlg)
         self.authorizationEncryptedResponseEncValuesSupported = try container.decodeIfPresent([String].self, forKey: .authorizationEncryptedResponseEncValues)
         self.jwks = try container.decodeIfPresent(JWKSet.self, forKey: .jwks)
 
@@ -63,8 +59,6 @@ public struct ClientMetadataSpecVersion1: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(clientName, forKey: .clientName)
         try container.encodeIfPresent(logoUri, forKey: .logoUri)
-        try container.encodeIfPresent(authorizationEncryptedResponseAlg, forKey: .authorizationEncryptedResponseAlg)
-        try container.encodeIfPresent(authorizationEncryptedResponseEncValuesSupported, forKey: .authorizationEncryptedResponseEncValues)
         try container.encodeIfPresent(jwks, forKey: .jwks)
 
         var vpFormatsContainer = container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)

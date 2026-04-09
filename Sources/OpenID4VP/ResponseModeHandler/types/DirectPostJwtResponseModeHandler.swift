@@ -16,7 +16,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
               )
         }
 
-        guard let alg = clientMetadata?.authorizationEncryptedResponseAlg else {
+        guard let encryptedResponseAlgorithm = clientMetadata?.authorizationEncryptedResponseAlg else {
             throw MissingInput(fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
                                message: "",
                                className: className)
@@ -32,7 +32,14 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                  className: className)
         }
 
-        try validateEncryption(alg: alg, enc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
+        try validateEncryption(alg: [encryptedResponseAlgorithm], enc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
+        
+        if !jwks.keys.contains(where: { $0.algorithm == encryptedResponseAlgorithm && $0.publicKeyUse == .encryption}) {
+            throw InvalidData(
+                message: "No jwk matching the specified algorithm found for encryption",
+                className: className
+            )
+        }
     }
     
     func validate(clientMetadata: ClientMetadataSpecVersion1?,
@@ -45,11 +52,6 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
               )
         }
 
-        guard let alg = clientMetadata?.authorizationEncryptedResponseAlg else {
-            throw MissingInput(fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
-                               message: "",
-                               className: className)
-        }
         guard let enc = clientMetadata?.authorizationEncryptedResponseEncValuesSupported else {
             throw MissingInput(fieldPath: ["client_metadata", "encrypted_response_enc_values_supported"],
                                            message: "",
@@ -64,20 +66,14 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                  message: "",
                                  className: className)
         }
-
-        try validateEncryption(alg: alg, enc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
+        
+        let verifierEncrptionAlgorithms: [String] = jwks.keys.filter { $0.publicKeyUse == .encryption }.compactMap { $0.algorithm }
+        try validateEncryption(alg: verifierEncrptionAlgorithms, enc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
     }
     
-    private func validateEncryption(alg: String, enc: Any, jwks: JWKSet, walletMetadata: WalletMetadata?, shouldValidate: Bool) throws {
+    private func validateEncryption(alg: [String], enc: Any, jwks: JWKSet, walletMetadata: WalletMetadata?, shouldValidate: Bool) throws {
         if shouldValidate {
             try validateWithWalletMetadata(clientAlg: alg, clientEnc: enc, walletMetadata: walletMetadata)
-        }
-
-        if !jwks.keys.contains(where: { $0.algorithm == alg && $0.publicKeyUse == .encryption}) {
-            throw InvalidData(
-                message: "No jwk matching the specified algorithm found for encryption",
-                className: className
-            )
         }
     }
     
@@ -113,7 +109,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         return ["response": encryptedBody]
     }
 
-    private func validateWithWalletMetadata(clientAlg: String,
+    private func validateWithWalletMetadata(clientAlg: [String],
                                             clientEnc: Any,
                                             walletMetadata: WalletMetadata?) throws {
         guard let walletMetadata = walletMetadata else {
@@ -124,8 +120,8 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             throw InvalidData(message: "authorization_encryption_alg_values_supported must be present in wallet_metadata", className: className)
         }
 
-        guard supportedEncryptionAlgorithms.contains(clientAlg) else {
-            throw InvalidData(message: "authorization_encrypted_response_alg is not supported", className: className)
+        guard clientAlg.contains(where: { supportedEncryptionAlgorithms.contains($0) }) else {
+            throw InvalidData(message: "Authorization response encryption algorithm is not supported", className: className)
         }
 
         guard let supportedEncryptions = walletMetadata.authorizationEncryptionEncValuesSupported?.compactMap({$0.rawValue}) else {
@@ -170,8 +166,10 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                 let authorizationEncryptedResponseEnc = clientMetadata.authorizationEncryptedResponseEncValuesSupported?.contains("A256GCM") == true ? "A256GCM" : try {
                     throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
                 }()
-                let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, clientMetadata.authorizationEncryptedResponseAlg!)
-                return JWEHandler(contentEncryptionAlgorithm: authorizationEncryptedResponseEnc, keyEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseAlg!, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
+                //TODO: Pass the wallet's supported encryption algorithms instead of ""
+                let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, "")
+                // TODO: get key encryption alg as per what wallet supports and its preferences
+                return JWEHandler(contentEncryptionAlgorithm: authorizationEncryptedResponseEnc, keyEncryptionAlgorithm: "", publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             }
         }
     }

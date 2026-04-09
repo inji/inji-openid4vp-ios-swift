@@ -1,7 +1,6 @@
 import Foundation
 
 protocol VPTokenBuilder {
-    var specVersion: SpecVersion { get }
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
         unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken),
