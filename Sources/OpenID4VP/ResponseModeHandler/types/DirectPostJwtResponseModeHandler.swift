@@ -103,7 +103,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     func getAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
         authorizationResponse: AuthorizationErrorResponse,
-        walletNonce: String,
+        walletNonce: String
     ) throws -> [String: String] {
         return authorizationResponse.toJsonEncodedMap()
     }
