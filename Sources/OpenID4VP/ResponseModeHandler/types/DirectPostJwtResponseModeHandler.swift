@@ -80,20 +80,30 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
-        walletNonce: String
+        walletNonce: String,
+        walletMetadata: WalletMetadata?
     ) throws -> [String: String] {
         let responseParams = try authorizationResponse.toJsonEncodedMap()
         return try encryptResponse(
             authorizationRequest: authorizationRequest,
             responseParams: responseParams,
-            walletNonce: walletNonce
+            walletNonce: walletNonce,
+            walletMetadata: walletMetadata
         )
+    }
+    
+    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging, producerInfo: String,
+                                   recipientInfo: String, walletMetadata: WalletMetadata?) async throws -> NetworkResponse {
+        let requestBody = try getAuthorizationResponse(authorizationRequest: authorizationRequest, authorizationResponse: authorizationResponse, walletNonce: producerInfo, walletMetadata: walletMetadata)
+        let response = try await networkManager.sendHTTPRequest(url: url, method: .post, bodyParams: requestBody, headers: [Header.contentType.rawValue : ContentTypes.applicationFormUrlEncoded.rawValue])
+
+        return response
     }
     
     func getAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
         authorizationResponse: AuthorizationErrorResponse,
-        walletNonce: String
+        walletNonce: String,
     ) throws -> [String: String] {
         return authorizationResponse.toJsonEncodedMap()
     }
@@ -101,10 +111,11 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     private func encryptResponse(
         authorizationRequest: AuthorizationRequest,
         responseParams: [String: String],
-        walletNonce: String
+        walletNonce: String,
+        walletMetadata: WalletMetadata?
     ) throws -> [String: String] {
         let versionLogic = VersionLogic.from(authorizationRequest)
-        let jweHandler = try versionLogic.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, className: className)
+        let jweHandler = try versionLogic.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, walletMetadata: walletMetadata, className: className)
         let encryptedBody = try jweHandler.generateEncryptedResponse(payload: responseParams)
         return ["response": encryptedBody]
     }
@@ -134,19 +145,6 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
     }
     
-    func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest, authorizationResponse: AuthorizationResponse, url: String, networkManager: any NetworkManaging, producerInfo: String,
-                                   recipientInfo: String) async throws -> NetworkResponse {
-        let bodyParams = try authorizationResponse.toJsonEncodedMap()
-        let versionLogic = VersionLogic.from(authorizationRequest)
-        
-        let encryptedBody = try versionLogic.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: producerInfo, className: className).generateEncryptedResponse(payload: bodyParams)
-        
-        let requestBody = ["response": encryptedBody]
-        let response = try await networkManager.sendHTTPRequest(url: url, method: .post, bodyParams: requestBody, headers: [Header.contentType.rawValue : ContentTypes.applicationFormUrlEncoded.rawValue])
-
-        return response
-    }
-    
     private enum VersionLogic {
         case v1
         case draft23
@@ -155,23 +153,21 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             return authorizationRequest is AuthorizationRequestSpecVersionDraft23 ? .draft23 : .v1
         }
         
-        func getJWEHandler(authorizationRequest: AuthorizationRequest, walletNonce: String, className: String) throws -> JWEHandler {
+        func getJWEHandler(authorizationRequest: AuthorizationRequest, walletNonce: String, walletMetadata: WalletMetadata?, className: String) throws -> JWEHandler {
             switch self {
             case .draft23:
                 let clientMetadata = ((authorizationRequest as? AuthorizationRequestSpecVersionDraft23)?.clientMetadata)!
-                let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, clientMetadata.authorizationEncryptedResponseAlg!)
+                let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, [clientMetadata.authorizationEncryptedResponseAlg!])
                 return JWEHandler(contentEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseEnc!, keyEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseAlg!, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             case .v1:
                 let clientMetadata = ((authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata)!
-                let authorizationEncryptedResponseEnc = clientMetadata.authorizationEncryptedResponseEncValuesSupported?.contains("A256GCM") == true ? "A256GCM" : try {
+                let authorizationEncryptedResponseEnc = clientMetadata.authorizationEncryptedResponseEncValuesSupported?.contains(ContentEncryptionAlgorithm.A256GCM.rawValue) == true ? ContentEncryptionAlgorithm.A256GCM.rawValue : try {
                     throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
                 }()
-                //TODO: Pass the wallet's supported encryption algorithms instead of ""
-                let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, "")
-                // TODO: get key encryption alg as per what wallet supports and its preferences
+                
+                let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, walletMetadata?.authorizationEncryptionAlgValuesSupported?.compactMap({$0.rawValue}) ?? [KeyManagementAlgorithm.ecdhEs.rawValue])
                 return JWEHandler(contentEncryptionAlgorithm: authorizationEncryptedResponseEnc, keyEncryptionAlgorithm: "", publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             }
         }
     }
 }
-

@@ -14,7 +14,8 @@ protocol ResponseModeBasedHandler {
                                    url: String,
                                    networkManager: NetworkManaging,
                                    producerInfo: String,
-                                   recipientInfo: String
+                                   recipientInfo: String,
+                                   walletMetadata: WalletMetadata?
     ) async throws -> NetworkResponse
     
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
@@ -22,7 +23,8 @@ protocol ResponseModeBasedHandler {
     func getAuthorizationResponse(
             authorizationRequest: AuthorizationRequest,
             authorizationResponse: AuthorizationResponse,
-            walletNonce: String
+            walletNonce: String,
+            walletMetadata: WalletMetadata?
         ) throws -> [String: String]
 
         func getAuthorizationErrorResponse(

@@ -8,6 +8,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let holderId = "wallet-holder-id"
     let walletNonce = "mock-nonce"
     let signatureSuite = SignatureAlgorithm.ed25519Signature2020.rawValue
+    let walletMetadata = WalletMetadata()
     
     // MARK: - OVP Spec Version Draft 23
     // MARK: Credential format = ldp_vc
@@ -18,7 +19,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         for holderId in invalidHolderIdTestCases {
             await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
@@ -44,7 +45,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         for invalidSignatureSuite in invalidsignatureSuiteTestCases {
             await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
@@ -69,7 +70,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.ldp_vc: [AnyCodable(ldpVC())]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         
         _ = try await handler.constructUnsignedVPToken(
@@ -108,7 +109,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let mockAuthorizationRequest = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
         
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
@@ -140,7 +141,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testConstructAndSendAuthorizationResponseToVerifierThrowErrorWhenResponseTypeIsNotSupportedByLibrary() async {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment")
         
         do {
@@ -213,7 +214,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
         """
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         
         _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -281,7 +282,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest()
         
         await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
@@ -304,7 +305,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let unsignedVpTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -336,7 +337,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         
         await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
@@ -364,7 +365,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let unsignedVPTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -408,7 +409,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let unsignedVPTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -446,7 +447,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testConstructAuthorizationErrorResponseMapsErrorCorrectly() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let error = InvalidData(message: "Invalid input data", className: "Test")
         
@@ -468,7 +469,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
         ]
         
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseMode: .directPost, specVersion: .draft23)
         
         _ = try await handler.constructUnsignedVPToken(
@@ -499,7 +500,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testConstructAuthorizationResponseThrowsErrorForUnsupportedResponseType() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .draft23)
         
         XCTAssertThrowsError(
@@ -517,7 +518,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testConstructAuthorizationErrorResponseWithOpenIDException() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         
         let error = InvalidData(
@@ -537,7 +538,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testConstructAuthorizationErrorResponseWithGenericError() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         
         let error = NSError(domain: "test", code: 500)
@@ -554,7 +555,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
     
     func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructionOfErrorFails() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment", )
         
         let error = NSError(domain: "test", code: 500)
@@ -579,7 +580,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
         for holderId in invalidHolderIdTestCases {
             await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
@@ -604,7 +605,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
         for invalidSignatureSuite in invalidSignatureSuites {
             await XCTAssertAsyncThrowsError(try await handler.constructUnsignedVPToken(
@@ -628,7 +629,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.ldp_vc: [AnyCodable(ldpVC())]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
 
         _ = try await handler.constructUnsignedVPToken(
@@ -660,7 +661,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
 
     func testV1ConstructAndSendAuthorizationResponseThrowsForUnsupportedResponseType() async {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         // spec version v1, unsupported response type
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .v1)
 
@@ -682,7 +683,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
 
         await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
@@ -705,7 +706,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor2": [.vc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
         let unsignedVpTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -740,7 +741,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
 
         await XCTAssertNoThrowAndVerifyAsync(try await handler.constructUnsignedVPToken(
@@ -768,7 +769,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor3": [.dc_sd_jwt: [AnyCodable(sampeVcSdJwtWithHolderBinding)]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
         let unsignedVPTokens = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
@@ -806,7 +807,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
         ]
 
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseMode: .directPost, specVersion: .v1)
 
         _ = try await handler.constructUnsignedVPToken(
@@ -832,7 +833,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
 
     func testV1ConstructAuthorizationResponseThrowsForUnsupportedResponseType() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .v1)
 
         XCTAssertThrowsError(try handler.constructAuthorizationResponse(
@@ -848,7 +849,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     // MARK: - Spec Version 1 - constructAuthorizationErrorResponse
 
     func testV1ConstructAuthorizationErrorResponseMapsErrorCorrectly() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
         let error = InvalidData(message: "Invalid input data", className: "Test")
 
@@ -864,7 +865,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     }
 
     func testV1ConstructAuthorizationErrorResponseWithGenericError() {
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager)
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
         let error = NSError(domain: "test", code: 500)
 

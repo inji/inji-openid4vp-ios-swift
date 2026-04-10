@@ -30,7 +30,8 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         do {
             let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager,
                                                                                                         producerInfo: "mock-nonce",
-                                                                                                        recipientInfo: "verifier-nonce")
+                                                                                                        recipientInfo: "verifier-nonce",
+                                                                                                        walletMetadata: nil)
 
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
             XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)
@@ -102,7 +103,8 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         let result = try handler.getAuthorizationResponse(
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
             authorizationResponse: authorizationResponse,
-            walletNonce: "mock-nonce"
+            walletNonce: "mock-nonce",
+            walletMetadata: nil
         )
 
         XCTAssertEqual(result["state"], "sample-state")

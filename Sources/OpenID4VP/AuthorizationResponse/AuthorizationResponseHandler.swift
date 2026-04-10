@@ -8,11 +8,13 @@ public class AuthorizationResponseHandler {
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
     private var unsignedVPTokenResults: [FormatType: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken)] = [:]
     private var specVersion: SpecVersion = .v1
+    private let walletMetadata: WalletMetadata?
 
     public static let className = String(describing: AuthorizationResponseHandler.self)
 
-    public init(networkManager: NetworkManaging) {
+    public init(networkManager: NetworkManaging, walletMetadata: WalletMetadata? = nil) {
         self.networkManager = networkManager
+        self.walletMetadata = walletMetadata
     }
     
     func constructUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
@@ -224,7 +226,8 @@ public class AuthorizationResponseHandler {
             .getAuthorizationResponse(
                 authorizationRequest: authorizationRequest,
                 authorizationResponse: authorizationResponse,
-                walletNonce: walletNonce
+                walletNonce: walletNonce,
+                walletMetadata: walletMetadata
             )
     }
 
@@ -373,7 +376,8 @@ public class AuthorizationResponseHandler {
                 url: responseUri,
                 networkManager: networkManager,
                 producerInfo: walletNonce,
-                recipientInfo: authorizationRequest.nonce
+                recipientInfo: authorizationRequest.nonce,
+                walletMetadata: walletMetadata
             )
     }
 

@@ -15,7 +15,7 @@ public class OpenID4VP {
     public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
         self.traceabilityId = traceabilityId
         networkManager = NetworkManager.shared
-        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
+        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletMetadata: walletMetadata)
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
         nonceProvider = NonceProvider()
@@ -27,7 +27,7 @@ public class OpenID4VP {
         self.nonceProvider = nonceProvider
 
         self.traceabilityId = traceabilityId
-        self.authorizationResponseHandler = authorizationResponseHandler ?? AuthorizationResponseHandler(networkManager: networkManager ?? NetworkManager.shared)
+        self.authorizationResponseHandler = authorizationResponseHandler ?? AuthorizationResponseHandler(networkManager: networkManager ?? NetworkManager.shared, walletMetadata: walletMetadata)
         self.walletMetadata = walletMetadata
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
@@ -45,7 +45,7 @@ public class OpenID4VP {
         walletNonce = nonceProvider.generateNonce()
         authorizationRequest = nil
         responseUri = nil
-        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
+        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletMetadata: walletMetadata)
 
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
@@ -74,7 +74,7 @@ public class OpenID4VP {
             walletNonce = nonceProvider.generateNonce()
             self.authorizationRequest = nil
             responseUri = nil
-            authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager)
+            authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletMetadata: walletMetadata)
 
             let validatedAuthorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authorizationRequest,

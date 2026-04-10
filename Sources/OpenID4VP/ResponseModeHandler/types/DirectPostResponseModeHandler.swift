@@ -22,7 +22,8 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
-        walletNonce: String
+        walletNonce: String,
+        walletMetadata: WalletMetadata?
     ) throws -> [String: String] {
         return try authorizationResponse.toJsonEncodedMap()
     }
@@ -41,7 +42,8 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         url: String,
         networkManager: any NetworkManaging,
         producerInfo: String,
-        recipientInfo: String
+        recipientInfo: String,
+        walletMetadata: WalletMetadata?
     ) async throws -> NetworkResponse {
         let requestBody: [String: String] = try authorizationResponse.toJsonEncodedMap()
 

@@ -10,6 +10,8 @@ final class MockNonceProvider: NonceProvider {
 final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
+    var expectedUnsignedVPTokensV2: [UnsignedVPTokenV2] = []
+    var expectedVPResponseV2: [String: Any] = [:]
 
     override func constructAuthorizationResponse(authorizationRequest authRequest: AuthorizationRequest,
                                                  vpTokenSigningResults signingResult: [FormatType: VPTokenSigningResult]) -> [String: String] {
@@ -22,6 +24,24 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
         walletNonce: String
     ) -> [String: Any] {
         return expectedErrorResponse
+    }
+
+    override func constructUnsignedVPTokenV2(
+        credentialsMap: [String: [FormatType: [AnyCodable]]],
+        authorizationRequest: AuthorizationRequest,
+        responseUri: String,
+        holderId: String?,
+        signatureSuite: String?,
+        walletNonce: String
+    ) async throws -> [UnsignedVPTokenV2] {
+        return expectedUnsignedVPTokensV2
+    }
+
+    override func constructVPResponseV2(
+        signingResults: [VPTokenSigningResultV2],
+        authorizationRequest: AuthorizationRequest
+    ) throws -> [String: String] {
+        return expectedVPResponseV2 as! [String: String]
     }
 }
 
@@ -43,7 +63,8 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         url: String,
         networkManager: any NetworkManaging,
         producerInfo: String,
-        recipientInfo: String
+        recipientInfo: String,
+        walletMetadata: WalletMetadata?
     ) async throws -> NetworkResponse {
         fatalError("Not needed for unit testing constructAuthorizationResponse")
     }
@@ -53,7 +74,8 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
-        walletNonce: String
+        walletNonce: String,
+        walletMetadata: WalletMetadata?
     ) throws -> [String: String] {
         return expectedSuccessResponse
     }
