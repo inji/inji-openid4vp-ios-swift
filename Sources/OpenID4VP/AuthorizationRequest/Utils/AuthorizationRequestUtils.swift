@@ -28,13 +28,6 @@ func validateAuthorizationRequestObjectAndParameters(params: [String: Any], requ
     guard params[AuthorizationRequestFieldConstants.clientId.rawValue] as? String == requestObject[AuthorizationRequestFieldConstants.clientId.rawValue] as? String else {
         throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }
-    
-    // If client_id_scheme is present in the authorization request, it should be present in the request_uri response as well and should be same we are assuming it follows Draft 21 specification
-    if params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] != nil {
-        guard params[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String == requestObject[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String else {
-            throw MismatchingClientIdSchemeInRequest(className: AuthorizationRequest.className)
-        }
-    }
 }
 
 extension Dictionary where Key == String, Value == String {
@@ -165,12 +158,7 @@ func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) t
     }
 }
 
-func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> String {
-    if let scheme = authorizationRequestParams[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] as? String {
-        try validateField(scheme, [AuthorizationRequestFieldConstants.clientIdScheme.rawValue], AuthorizationRequest.className)
-        return scheme
-    }
-      
+func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> String {      
     try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParams)
     let clientId = authorizationRequestParams[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
     
@@ -179,7 +167,7 @@ func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> S
     if components.count > 1 {
          return String(components[0])
     } else {
-        // Fallback client_id_scheme pre-registered; pre-registered clients MUST NOT contain a : character in their Client Identifier
+        // Fallback client_id_prefix pre-registered; pre-registered clients MUST NOT contain a : character in their Client Identifier
         return ClientIdScheme.preRegistered.rawValue
     }
 }
@@ -188,13 +176,13 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdPrefixAttached: String
     let components = clientIdWithClientIdPrefixAttached.split(separator: ":", maxSplits: 1)
     if components.count > 1 {
         let clientIdPrefix = String(components[0])
-        // DID client ID scheme will have the client id itself with did prefix, example - did:example:123#1. So there will not be additional prefix stating client_id_scheme
+        // DID client_id_prefix will have the client id itself with did prefix, example - did:example:123#1. So there will not be additional prefix stating client_id_prefix for Spec version Draft 23
         if(clientIdPrefix == ClientIdScheme.did.rawValue){
             return clientIdWithClientIdPrefixAttached
         }
         return String(components[1])
     } else {
-        // client_id_scheme is optional (Fallback client_id_scheme - pre-registered) i.e., a : character is not present in the Client Identifier
+        // client_id_prefix is optional (Fallback client_id_prefix - pre-registered) i.e., a : character is not present in the Client Identifier
         return clientIdWithClientIdPrefixAttached
     }
 }

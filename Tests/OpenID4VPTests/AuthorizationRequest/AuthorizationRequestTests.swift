@@ -357,7 +357,7 @@ final class AuthorizationRequestTests: XCTestCase {
         }
     }
 
-    // MARK: - Unsupported client_id_scheme
+    // MARK: - Unsupported client_id_prefix
 
     func testUrlEncodedPathThrowsForUnsupportedClientIdPrefix() async {
         // default branch: client_id with an unrecognised prefix throws

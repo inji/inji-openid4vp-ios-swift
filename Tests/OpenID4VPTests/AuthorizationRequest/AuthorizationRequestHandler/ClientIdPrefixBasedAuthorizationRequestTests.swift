@@ -59,7 +59,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "unsigned request is not supported for given client_id_scheme - pre-registered",
+                                     expectedMessage: "unsigned request is not supported for given client_id_prefix - pre-registered",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -153,7 +153,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Signed request (via request) is not supported for given client_id_scheme - decentralized_identifier",
+                                     expectedMessage: "Signed request (via request) is not supported for given client_id_prefix - decentralized_identifier",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -201,7 +201,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Signed request (via request_uri) is not supported for given client_id_scheme - redirect_uri",
+                                     expectedMessage: "Signed request (via request_uri) is not supported for given client_id_prefix - redirect_uri",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -817,7 +817,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await mockSchemeAuthRequestHandler.fetchAuthorizationRequest()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "client_id_scheme is not supported by wallet",
+                                     expectedMessage: "client_id_prefix is not supported by wallet",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -1208,37 +1208,6 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 error,
                 expectedMessage: "Invalid Request: transaction_data is not supported in the authorization request",
                 expectedCode: OpenID4VPErrorCodes.invalidTransactionData
-            )
-        }
-    }
-    
-    
-//     draft 21 specific
-    
-    func testThrowExceptionWhenRequestUriResponseHasDifferentValueThanAuthorizationRequestParametersForClientIdScheme() async throws {
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReferenceDraft21 , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft21), specVersion: .v1) as [String : Any]
-        
-        let authorizationRequestObject = createAuthorizationRequestObject(clientIdPrefix: .decentralizedIdentifier, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdDraft21, ["client_id_scheme": "pre-registered"]))
-        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (authorizationRequestObject, httpUrlResponseForJWS))
-        mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
-        
-        let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
-            authorizationRequestParameters: authorizationRequestParametersByReference,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager,
-            clientId: "mock-client-id",
-            specVersion: .v1,
-            walletMetadata: walletMetadata,
-            isSignedRequestSupported: true,
-            isUnsignedRequestSupported: true
-        )
-        
-        
-        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()){ error in
-            assertOpenID4VPException(error,
-                                     expectedMessage: "Client Id Scheme mismatch in Authorization Request parameter and the Request Object",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
     }

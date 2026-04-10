@@ -116,7 +116,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try validate(request, fieldPath: AuthorizationRequestFieldConstants.request.rawValue, className: className)
         guard (delegate.isSignedRequestSupported()) else {
             throw InvalidData(
-                message: "Signed request (via request) is not supported for given client_id_scheme - \(delegate.clientIdPrefix())",
+                message: "Signed request (via request) is not supported for given client_id_prefix - \(delegate.clientIdPrefix())",
                 className: className
             )
         }
@@ -132,7 +132,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     private func handleRequestObjectByReference(_ requestUri: String) async throws {
         guard (delegate.isSignedRequestSupported()) else {
             throw InvalidData(
-                message: "Signed request (via request_uri) is not supported for given client_id_scheme - \(delegate.clientIdPrefix())",
+                message: "Signed request (via request_uri) is not supported for given client_id_prefix - \(delegate.clientIdPrefix())",
                 className: className
             )
         }
@@ -187,7 +187,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     private func handleUrlEncodedRequest() throws {
         guard (try delegate.isUnsignedRequestSupported()) else {
             throw InvalidData(
-                message: "unsigned request is not supported for given client_id_scheme - \(delegate.clientIdPrefix())",
+                message: "unsigned request is not supported for given client_id_prefix - \(delegate.clientIdPrefix())",
                 className: className
             )
         }
@@ -286,7 +286,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
         if !walletSupportedClientIdPrefixes.contains(clientIdPrefix) {
             throw InvalidData(
-                message: "client_id_scheme is not supported by wallet",
+                message: "client_id_prefix is not supported by wallet",
                 className: className
             )
         }

@@ -22,14 +22,14 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandlerTests : XCTestCase
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
         let handler = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertTrue(handler.isSignedRequestSupported(), "did client_id_scheme should support request by reference")
+        XCTAssertTrue(handler.isSignedRequestSupported(), "did client_id_prefix should support request by reference")
     }
     
     func testReturnFalseForAuthorizationRequestByValueSupport() {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
         let handler = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertFalse(handler.isUnsignedRequestSupported(), "did client_id_scheme should not support request by value")
+        XCTAssertFalse(handler.isUnsignedRequestSupported(), "did client_id_prefix should not support request by value")
     }
     
     func testExtractionOfPublicKeyFromDidClientIdSuccess() async {

@@ -27,14 +27,14 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest( paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertFalse(handler.isSignedRequestSupported(), "redirect_uri client_id_scheme should not support request by reference")
+        XCTAssertFalse(handler.isSignedRequestSupported(), "redirect_uri client_id_prefix should not support request by reference")
     }
     
     func testReturnTrueForAuthorizationRequestByValueSupport() {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertTrue(handler.isUnsignedRequestSupported(), "redirect_uri client_id_scheme should support request by value")
+        XCTAssertTrue(handler.isUnsignedRequestSupported(), "redirect_uri client_id_prefix should support request by value")
     }
     
     /// validate and parse request fields
@@ -52,7 +52,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "response_uri should be equal to client_id for given client_id_scheme",
+                                     expectedMessage: "response_uri should be equal to client_id for given client_id_prefix",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -95,7 +95,6 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                 redirectUriSchemeClientIdParameter,
                 [
                     "client_id": mockClientId,
-                    "client_id_scheme": "redirect_uri",
                     "response_mode": "direct_post",
                     "response_uri": invalidResponseUri,
                     "scope": "openid",
@@ -119,7 +118,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         ) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "response_uri should be equal to client_id for given client_id_scheme",
+                expectedMessage: "response_uri should be equal to client_id for given client_id_prefix",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -131,7 +130,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await handler.extractPublicKey(keyId: nil, algorithm: "edDsa")) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Public key extraction is not supported for redirect_uri client_id_scheme",
+                                     expectedMessage: "Public key extraction is not supported for redirect_uri client_id_prefix",
                                      expectedCode: "unsupported_operation"
             )
         }
