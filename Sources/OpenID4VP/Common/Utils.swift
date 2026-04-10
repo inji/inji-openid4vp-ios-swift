@@ -554,8 +554,6 @@ func getEncryptionKey(_ jwks: JWKSet, _ supportedEncryptionAlgorithms: [String])
             return key
         }
     }
-    if let key = jwks.keys.first(where: { $0.publicKeyUse == .encryption }) {
-        return key
-    }
+    
     throw InvalidData(message: "No encryption key with alg \(supportedEncryptionAlgorithms) found in JWK Set", className: "OpenID4VPUtils")
 }
