@@ -39,7 +39,7 @@ internal func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VP
 internal func parseEnum<E: RawRepresentable>(valueName: String, _ value: E.RawValue, as type: E.Type) throws -> E {
     guard let enumCase = E(rawValue: value) else {
         throw InvalidData(
-            message: "Invalid \(valueName) value: \(value). Its is not supported by the library.",
+            message: "Invalid \(valueName) value: \(value). It is not supported by the library.",
             className: WalletMetadata.className
         )
     }

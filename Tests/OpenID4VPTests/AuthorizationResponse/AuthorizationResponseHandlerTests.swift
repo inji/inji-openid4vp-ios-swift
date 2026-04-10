@@ -556,7 +556,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     
     func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructionOfErrorFails() {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
-        let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment", )
+        let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment" )
         
         let error = NSError(domain: "test", code: 500)
         

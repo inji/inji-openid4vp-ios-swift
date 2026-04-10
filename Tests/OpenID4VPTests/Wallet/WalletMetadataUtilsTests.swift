@@ -19,7 +19,7 @@ final class WalletMetadataUtilsTests: XCTestCase {
         XCTAssertThrowsError(try parseClientIdPrefixesSupported(["unknown-scheme"])) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Invalid ClientIdPrefix value: unknown-scheme. Its is not supported by the library.",
+                expectedMessage: "Invalid ClientIdPrefix value: unknown-scheme. It is not supported by the library.",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -41,7 +41,7 @@ final class WalletMetadataUtilsTests: XCTestCase {
         XCTAssertThrowsError(try parseRequestObjectSigningAlgValuesSupported(["RS256"])) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Invalid RequestSigningAlgorithm value: RS256. Its is not supported by the library.",
+                expectedMessage: "Invalid RequestSigningAlgorithm value: RS256. It is not supported by the library.",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -63,7 +63,7 @@ final class WalletMetadataUtilsTests: XCTestCase {
         XCTAssertThrowsError(try parseAuthorizationEncryptionAlgValuesSupported(["RSA-OAEP"])) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Invalid KeyManagementAlgorithm value: RSA-OAEP. Its is not supported by the library.",
+                expectedMessage: "Invalid KeyManagementAlgorithm value: RSA-OAEP. It is not supported by the library.",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -85,7 +85,7 @@ final class WalletMetadataUtilsTests: XCTestCase {
         XCTAssertThrowsError(try parseAuthorizationEncryptionEncValuesSupported(["A128CBC-HS256"])) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Invalid ContentEncryptionAlgorithm value: A128CBC-HS256. Its is not supported by the library.",
+                expectedMessage: "Invalid ContentEncryptionAlgorithm value: A128CBC-HS256. It is not supported by the library.",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
