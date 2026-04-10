@@ -3,7 +3,7 @@ import CryptoKit
 import XCTest
 @testable import OpenID4VP
 
-class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequestHandler {
+class MockClientIdPrefixAuthRequestHandler: ClientIdPrefixBasedAuthorizationRequestHandler {
     private let isSignedRequestSupportedFlag: Bool
     private let isUnsignedRequestSupportedFlag: Bool
     private let clientIdPrefixValue: String

@@ -177,7 +177,7 @@ final class AuthorizationRequestTests: XCTestCase {
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: v1Params,
-            clientIdScheme: .preRegistered,
+            clientIdPrefix: .preRegistered,
             applicableFields: ["client_id", "response_uri", "response_type", "response_mode", "nonce", "state", "client_metadata", "dcql_query"],
             addEncryptionClientMetadataParams: false
         )
@@ -207,7 +207,7 @@ final class AuthorizationRequestTests: XCTestCase {
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: v1Params,
-            clientIdScheme: .preRegistered,
+            clientIdPrefix: .preRegistered,
             applicableFields: ["client_id", "response_uri", "response_type", "response_mode", "nonce", "state", "client_metadata", "dcql_query"],
             addEncryptionClientMetadataParams: false
         )
@@ -359,7 +359,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
     // MARK: - Unsupported client_id_scheme
 
-    func testUrlEncodedPathThrowsForUnsupportedClientIdScheme() async {
+    func testUrlEncodedPathThrowsForUnsupportedClientIdPrefix() async {
         // default branch: client_id with an unrecognised prefix throws
         let unsupportedSchemeParams = mergeMaps(
             authorizationRequestParamsWithValue,
@@ -367,7 +367,7 @@ final class AuthorizationRequestTests: XCTestCase {
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: unsupportedSchemeParams,
-            clientIdScheme: .preRegistered,
+            clientIdPrefix: .preRegistered,
             applicableFields: authRequestWithPreRegisteredByValue
         )
 
@@ -384,7 +384,7 @@ final class AuthorizationRequestTests: XCTestCase {
         ) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Given client_id_scheme is not supported",
+                expectedMessage: "Given client_id_prefix is not supported",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -413,7 +413,7 @@ final class AuthorizationRequestTests: XCTestCase {
         ) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Given client_id_scheme is not supported",
+                expectedMessage: "Given client_id_prefix is not supported",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

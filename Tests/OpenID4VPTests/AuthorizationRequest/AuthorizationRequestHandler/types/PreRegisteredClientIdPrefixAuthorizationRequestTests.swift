@@ -3,14 +3,14 @@ import XCTest
 import JSONWebKey
 @testable import OpenID4VP
 
-class PreRegisteredClientIdSchemeTests : XCTestCase {
+class PreRegisteredClientIdPrefixTests : XCTestCase {
     let mockNetworkManager: MockNetworkManager! = MockNetworkManager()
     let mockNetworkManagerReal: NetworkManager! = NetworkManager()
     let clientId: String = "mock-client"
     let mockSetResponseUri: (String) -> Void = { value in
     }
     
-    let requestUriResponse: String = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,[
+    let requestUriResponse: String = createAuthorizationRequestObject(clientIdPrefix: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,[
         AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
     ]), applicableFields: authRequestWithPreRegisteredByValue)
     let requestUri: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
@@ -200,11 +200,11 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
         }
     }
     
-    func testClientIdSchemeShouldReturnPreRegistered(){
+    func testClientIdPrefixShouldReturnPreRegistered(){
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, trustedVerifiers: preRegisteredVerifiers, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertEqual(preRegistered.clientIdPrefix(), ClientIdScheme.preRegistered.rawValue, "clientIdScheme should return pre-registered")
+        XCTAssertEqual(preRegistered.clientIdPrefix(), ClientIdPrefix.preRegistered.rawValue, "clientIdPrefix should return pre-registered")
     }
     
     

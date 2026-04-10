@@ -1,5 +1,5 @@
 import Foundation
-class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
+class DecentralizedIdentifierPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthorizationRequestHandler {
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
@@ -15,7 +15,7 @@ class DidSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationReq
                    walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
-        super.className = String(describing: DidSchemeAuthorizationRequestHandler.self)
+        super.className = String(describing: DecentralizedIdentifierPrefixAuthorizationRequestHandler.self)
     }
 
     func clientIdPrefix() -> String {

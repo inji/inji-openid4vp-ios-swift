@@ -1,7 +1,7 @@
 import Foundation
 
 
-protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
+protocol AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
     func isSignedRequestSupported() -> Bool
     func isUnsignedRequestSupported() throws -> Bool
@@ -9,8 +9,8 @@ protocol AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler {
     func clientIdPrefix() -> String
 }
 
-class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
-    var delegate: AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler!
+class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
+    var delegate: AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler!
     let clientId: String
     var authorizationRequestParameters: [String: Any]
     let walletMetadata: WalletMetadata?
@@ -20,7 +20,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     private var versionLogic: VersionLogic = .specV1
     var specVersion: SpecVersion = .draft23
     var shouldValidateWithWalletMetadata: Bool = false
-    var className = String(describing: ClientIdSchemeBasedAuthorizationRequestHandler.self)
+    var className = String(describing: ClientIdPrefixBasedAuthorizationRequestHandler.self)
     
     let errorMessageForMismatchedAcceptableType: String = "does not match any acceptable types"
     
@@ -282,7 +282,7 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
         let clientIdPrefix = delegate.clientIdPrefix()
         var walletSupportedClientIdPrefixes = walletMetadata.clientIdPrefixesSupported.compactMap { $0.rawValue }
         if walletSupportedClientIdPrefixes.contains(ClientIdPrefix.decentralizedIdentifier.rawValue) {
-            walletSupportedClientIdPrefixes.append(ClientIdScheme.did.rawValue)
+            walletSupportedClientIdPrefixes.append(ClientIdPrefix.toClientIdScheme(.decentralizedIdentifier))
         }
         if !walletSupportedClientIdPrefixes.contains(clientIdPrefix) {
             throw InvalidData(
@@ -377,4 +377,4 @@ class ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass  {
     }
 }
 
-typealias ClientIdSchemeBasedAuthorizationRequestHandler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass & AbstractMethodsForClientIdSchemeBasedAuthorizationRequestHandler
+typealias ClientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass & AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler

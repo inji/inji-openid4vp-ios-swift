@@ -1,7 +1,7 @@
 import Foundation
 import JSONWebKey
 
-class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
+class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthorizationRequestHandler {
     let trustedVerifiers: [Verifier]
     let shouldValidateClient: Bool
     

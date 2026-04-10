@@ -109,28 +109,6 @@ final class WalletMetadataUtilsTests: XCTestCase {
         XCTAssertNoThrow(try validateVPFormatsSupported(formats))
     }
 
-    // MARK: - parseClientIdSchemesSupported
-
-    func testParseClientIdSchemesSupportedReturnsDefaultWhenNil() throws {
-        let result = try parseClientIdSchemesSupported(nil)
-        XCTAssertEqual(result, [.preRegistered])
-    }
-
-    func testParseClientIdSchemesSupportedParsesValidValues() throws {
-        let result = try parseClientIdSchemesSupported(["pre-registered", "redirect_uri", "did"])
-        XCTAssertEqual(result, [.preRegistered, .redirectUri, .did])
-    }
-
-    func testParseClientIdSchemesSupportedThrowsForUnsupportedValue() {
-        XCTAssertThrowsError(try parseClientIdSchemesSupported(["https"])) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Invalid ClientIdScheme value: https. Its is not supported by the library.",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-
     // MARK: - WalletMetadataDefaults
 
     func testWalletMetadataDefaultsValues() {

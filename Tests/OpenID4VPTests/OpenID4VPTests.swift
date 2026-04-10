@@ -100,7 +100,7 @@ class OpenID4VPTests: XCTestCase {
 
     // client_id_scheme = pre-registered
     func testReturnDataForValidRequestWithResponseUri() async {
-        let requestUriResponse = createAuthorizationRequestObject(clientIdScheme: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters), applicableFields: authRequestWithPreRegisteredByValue)
+        let requestUriResponse = createAuthorizationRequestObject(clientIdPrefix: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters), applicableFields: authRequestWithPreRegisteredByValue)
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (requestUriResponse, httpUrlResponseForJWS))
 
         await XCTAssertNoThrowAndVerifyAsync(
@@ -419,7 +419,7 @@ class OpenID4VPTests: XCTestCase {
         }
     }
 
-    func testAuthenticateVerifierSuccess_WithRedirectUriClientIdScheme() async {
+    func testAuthenticateVerifierSuccess_WithRedirectUriClientIdPrefix() async {
         let authorizationRequest = baseAuthRequest(
             clientId: "redirect_uri:https://example.com/iar/callback",
             responseUri: "https://example.com/iar/callback"

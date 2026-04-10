@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import OpenID4VP
 
-class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
+class DecentralizedIdentifierPrefixAuthorizationRequestHandlerTests : XCTestCase {
     let mockNetworkManager: MockNetworkManager! = MockNetworkManager()
     let decentralizedIdentifierClientId: String = ClientIdPrefix.decentralizedIdentifier.rawValue + ":"+didUrl
     let mockSetResponseUri: (String) -> Void = { value in
@@ -20,14 +20,14 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
     
     func testReturnFalseForAuthorizationRequestByReferenceSupport() {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
-        let handler = DidSchemeAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let handler = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertTrue(handler.isSignedRequestSupported(), "did client_id_scheme should support request by reference")
     }
     
     func testReturnFalseForAuthorizationRequestByValueSupport() {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
-        let handler = DidSchemeAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let handler = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertFalse(handler.isUnsignedRequestSupported(), "did client_id_scheme should not support request by value")
     }
@@ -36,7 +36,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         // Spec Version 1.0
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!)) as [String : Any]
-        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let didSchemeAuthRequestHandler = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 
         await XCTAssertNoThrowAndVerifyAsync(try await didSchemeAuthRequestHandler.extractPublicKey(keyId: JWSUtil.publicKeyId, algorithm: "EdDSA")){ publicKey in
             assertPublicKey(expectedBase64Encoded: "+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", actualKey: publicKey)
@@ -45,7 +45,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         // Spec Version Draft 23
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
         let authorizationRequestParametersByReference2: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.draft23]!)) as [String : Any]
-        let didSchemeAuthRequestHandler2 = DidSchemeAuthorizationRequestHandler(clientId: didUrl, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let didSchemeAuthRequestHandler2 = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: didUrl, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
 
         await XCTAssertNoThrowAndVerifyAsync(try await didSchemeAuthRequestHandler2.extractPublicKey(keyId: JWSUtil.publicKeyId, algorithm: "EdDSA")){ publicKey in
             assertPublicKey(expectedBase64Encoded: "+Fy3lMapzR3wpaYNCFq29GDEn/NoR3pBsc511q1Cxqw=", actualKey: publicKey)
@@ -54,7 +54,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
     func testShouldThrowErrorWhenAuthRequestObtainedByReferenceDoesNotContainJWTContentTypeInHeader() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!)) as [String : Any]
-        let didSchemeAuthRequestHandler = DidSchemeAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let didSchemeAuthRequestHandler = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString, error: NetworkRequestException.networkRequestFailed(message: "Response does not match any acceptable types"))
 
         await XCTAssertAsyncThrowsError(try await didSchemeAuthRequestHandler.fetchAuthorizationRequest()) { error in
@@ -69,7 +69,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
         ])) as [String : Any]
-        let didScheme = DidSchemeAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
+        let didScheme = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
 
         let processedMetadata = try didScheme.process(walletMetadata: walletMetadata)
 
@@ -83,7 +83,7 @@ class DidClientIdSchemeAuthorizationRequestTests : XCTestCase {
 
         let walletMetadata = try createWalletMetadata(requestObjectSigningAlgValuesSupported: nil)
 
-        let didScheme = DidSchemeAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
+        let didScheme = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
 
         await XCTAssertAsyncThrowsError(try didScheme.process(walletMetadata: walletMetadata)) { error in
             assertOpenID4VPException(error,

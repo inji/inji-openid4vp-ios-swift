@@ -27,21 +27,16 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
 func createUrlEncodedAuthorizationRequest(
     requestParams: [String: Any?],
     verifierSentAuthRequestByReference: Bool? = false,
-    clientIdScheme: ClientIdPrefix,
+    clientIdPrefix: ClientIdPrefix,
     applicableFields: [String]? = nil,
     specVersion: SpecVersion = .v1,
     addEncryptionClientMetadataParams: Bool = true
 ) -> String {
     let paramList: [String]
     if verifierSentAuthRequestByReference == true {
-//        if specVersion == .draft23 || specVersion == .v1 {
-//            paramList = authRequestParamsByReference
-//        } else {
-//            paramList = authRequestParamsByReferenceDraft21
-//        }
         paramList = applicableFields ?? authRequestParamsByReference
     } else {
-        paramList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+        paramList = applicableFields ?? authRequestClientIdPrefixMap[clientIdPrefix]!
     }
     
     let authorizationRequestParam = createAuthorizationRequest(paramList: paramList, requestParams: requestParams, specVersion: specVersion, addEncryptionClientMetadataParams: addEncryptionClientMetadataParams)
@@ -129,7 +124,7 @@ func createAuthorizationRequest(
 }
 
 func createAuthorizationRequestObject(
-    clientIdScheme: ClientIdPrefix,
+    clientIdPrefix: ClientIdPrefix,
     authorizationRequestParams: [String: Any],
     jwsHeaderData: [String: Any]? = nil,
     applicableFields: [String]? = nil,
@@ -138,7 +133,7 @@ func createAuthorizationRequestObject(
     specVersion: SpecVersion = .v1,
     addEncryptionClientMetadataParams: Bool = true
 ) -> String {
-    var parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
+    var parametersList = applicableFields ?? authRequestClientIdPrefixMap[clientIdPrefix]!
     if(specVersion == .v1) {
         parametersList += ["dcql_query"]
     } else {

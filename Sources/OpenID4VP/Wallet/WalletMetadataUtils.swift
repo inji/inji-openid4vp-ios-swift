@@ -36,13 +36,6 @@ internal func validateVPFormatsSupported(_ vpFormatsSupported: [VPFormatType: VP
     }
 }
 
-internal func parseClientIdSchemesSupported(_ clientIdSchemesSupported: [String]?) throws -> [ClientIdScheme] {
-    guard let schemes = clientIdSchemesSupported else {
-        return [.preRegistered]
-    }
-    return try schemes.compactMap { try parseEnum(valueName: "ClientIdScheme", $0, as: ClientIdScheme.self) }
-}
-
 internal func parseEnum<E: RawRepresentable>(valueName: String, _ value: E.RawValue, as type: E.Type) throws -> E {
     guard let enumCase = E(rawValue: value) else {
         throw InvalidData(

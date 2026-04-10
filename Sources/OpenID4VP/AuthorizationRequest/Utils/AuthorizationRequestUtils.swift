@@ -81,7 +81,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                     setResponseUri: @escaping (String) -> Void,
                                     walletNonce: String,
                                     networkManager: NetworkManaging
-) throws -> ClientIdSchemeBasedAuthorizationRequestHandler {
+) throws -> ClientIdPrefixBasedAuthorizationRequestHandler {
     try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
     let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
     
@@ -100,7 +100,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               walletNonce: walletNonce,
                                                               networkManager: networkManager)
     case ClientIdScheme.did.rawValue, ClientIdPrefix.decentralizedIdentifier.rawValue:
-        return DidSchemeAuthorizationRequestHandler(clientId: clientId,
+        return DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: clientId,
                                                     specVersion: specVersion,
                                                     authorizationRequestParameters: authorizationRequestParameters,
                                                     walletMetadata: walletMetadata,
@@ -108,7 +108,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                     walletNonce: walletNonce,
                                                     networkManager: networkManager)
     case ClientIdPrefix.redirectUri.rawValue:
-        return RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,
+        return RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,
                                                             specVersion: specVersion,
                                                             authorizationRequestParameters: authorizationRequestParameters,
                                                             walletMetadata: walletMetadata,
@@ -116,7 +116,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                             walletNonce: walletNonce,
                                                             networkManager: networkManager)
     default:
-        throw InvalidData(message: "Given client_id_scheme is not supported" ,className: AuthorizationRequest.className)
+        throw InvalidData(message: "Given client_id_prefix is not supported" ,className: AuthorizationRequest.className)
     }
 }
 
@@ -184,18 +184,18 @@ func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> S
     }
 }
 
-public func extractClientIdPartOnly(_ clientIdWithClientIdSchemeAttached: String) -> String {
-    let components = clientIdWithClientIdSchemeAttached.split(separator: ":", maxSplits: 1)
+public func extractClientIdPartOnly(_ clientIdWithClientIdPrefixAttached: String) -> String {
+    let components = clientIdWithClientIdPrefixAttached.split(separator: ":", maxSplits: 1)
     if components.count > 1 {
-        let clientIdScheme = String(components[0])
+        let clientIdPrefix = String(components[0])
         // DID client ID scheme will have the client id itself with did prefix, example - did:example:123#1. So there will not be additional prefix stating client_id_scheme
-        if(clientIdScheme == ClientIdScheme.did.rawValue){
-            return clientIdWithClientIdSchemeAttached
+        if(clientIdPrefix == ClientIdScheme.did.rawValue){
+            return clientIdWithClientIdPrefixAttached
         }
         return String(components[1])
     } else {
         // client_id_scheme is optional (Fallback client_id_scheme - pre-registered) i.e., a : character is not present in the Client Identifier
-        return clientIdWithClientIdSchemeAttached
+        return clientIdWithClientIdPrefixAttached
     }
 }
 

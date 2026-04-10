@@ -1,5 +1,5 @@
 import Foundation
-class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
+class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthorizationRequestHandler {
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
@@ -15,7 +15,7 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
                    walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
-        super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
+        super.className = String(describing: RedirectUriPrefixAuthorizationRequestHandler.self)
     }
     
     func clientIdPrefix() -> String {
