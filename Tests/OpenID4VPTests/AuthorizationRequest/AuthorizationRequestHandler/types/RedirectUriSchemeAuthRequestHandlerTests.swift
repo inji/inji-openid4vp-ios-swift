@@ -40,14 +40,14 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     /// validate and parse request fields
     
     func testThrowNoErrorForValidAuthorizationRequestWhileValidateAndParseRequestFields() async {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter), addEncryptionClientMetadataParams: false) as [String : Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields())
     }
     
     func testThrowErrorWhenClientIdIsNotEqualToResponseUriWithDirectPostResponseMode() async{
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, ["response_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, ["response_uri": "http://invalid-mock-verifier.com"]), addEncryptionClientMetadataParams: false) as [String : Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         
         await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()) { error in
@@ -102,7 +102,8 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                     "response_type": "vp_token",
                     "nonce": "123456"
                 ]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
         
         let redirectUriSchemeHandler = RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
@@ -147,7 +148,8 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                     "response_mode": "iar-post",
                     "response_uri": "https://mock-verifier.com/redirect"
                 ]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
 
         let handler = RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
@@ -192,7 +194,8 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                 authorizationRequestParamsWithValue,
                 redirectUriSchemeClientIdParameter,
                 ["response_mode": "iar-post"]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
 
         let handler = RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
@@ -237,7 +240,8 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                     "response_mode": "iar-post",
                     "response_uri": "https://different.com/response"
                 ]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
 
         let handler = RedirectUriSchemeAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 

@@ -5,7 +5,7 @@ public struct ClientMetadataSpecVersion1: Codable {
     let clientName: String?
     let logoUri: String?
     let vpFormatsSupported: [String: VPFormatSupported]
-    let authorizationEncryptedResponseEncValuesSupported: [String]?
+    let encryptedResponseEncValuesSupported: [String]?
     let jwks: JWKSet?
 
     static let className = String(describing: ClientMetadataSpecVersion1.self)
@@ -14,7 +14,7 @@ public struct ClientMetadataSpecVersion1: Codable {
         case clientName = "client_name"
         case logoUri = "logo_uri"
         case vpFormatsSupported = "vp_formats_supported"
-        case authorizationEncryptedResponseEncValues = "encrypted_response_enc_values_supported"
+        case encryptedResponseEncValuesSupported = "encrypted_response_enc_values_supported"
         case jwks
     }
 
@@ -23,13 +23,13 @@ public struct ClientMetadataSpecVersion1: Codable {
         logoUri: String? = nil,
         vpFormatsSupported: [String: VPFormatSupported],
         authorizationEncryptedResponseAlg: String? = nil,
-        authorizationEncryptedResponseEncValuesSupported: [String]? = nil,
+        encryptedResponseEncValuesSupported: [String]? = nil,
         jwks: JWKSet? = nil
     ) {
         self.clientName = clientName
         self.logoUri = logoUri
         self.vpFormatsSupported = vpFormatsSupported
-        self.authorizationEncryptedResponseEncValuesSupported = authorizationEncryptedResponseEncValuesSupported
+        self.encryptedResponseEncValuesSupported = encryptedResponseEncValuesSupported
         self.jwks = jwks
     }
 
@@ -38,7 +38,7 @@ public struct ClientMetadataSpecVersion1: Codable {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.clientName = try container.decodeIfPresent(String.self, forKey: .clientName)
             self.logoUri = try container.decodeIfPresent(String.self, forKey: .logoUri)
-            self.authorizationEncryptedResponseEncValuesSupported = try container.decodeIfPresent([String].self, forKey: .authorizationEncryptedResponseEncValues)
+            self.encryptedResponseEncValuesSupported = try container.decodeIfPresent([String].self, forKey: .encryptedResponseEncValuesSupported)
             self.jwks = try container.decodeIfPresent(JWKSet.self, forKey: .jwks)
 
             let vpFormatsContainer = try container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
@@ -64,6 +64,7 @@ public struct ClientMetadataSpecVersion1: Codable {
         try container.encodeIfPresent(clientName, forKey: .clientName)
         try container.encodeIfPresent(logoUri, forKey: .logoUri)
         try container.encodeIfPresent(jwks, forKey: .jwks)
+        try container.encodeIfPresent(encryptedResponseEncValuesSupported, forKey: .encryptedResponseEncValuesSupported)
 
         var vpFormatsContainer = container.nestedContainer(keyedBy: VPFormatType.self, forKey: .vpFormatsSupported)
         for (key, value) in vpFormatsSupported {

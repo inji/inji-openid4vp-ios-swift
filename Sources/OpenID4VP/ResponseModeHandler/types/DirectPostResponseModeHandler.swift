@@ -14,7 +14,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     func validate(clientMetadata: ClientMetadataSpecVersion1?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
-        if clientMetadata?.authorizationEncryptedResponseEncValuesSupported != nil {
+        if clientMetadata?.encryptedResponseEncValuesSupported != nil {
             throw InvalidData(message: "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'", className: Self.className)
         }
     }

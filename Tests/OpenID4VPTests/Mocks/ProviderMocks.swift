@@ -41,6 +41,9 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
         signingResults: [VPTokenSigningResultV2],
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
+        if(!expectedErrorResponse.isEmpty) {
+            return expectedErrorResponse
+        }
         return expectedVPResponseV2 as! [String: String]
     }
 }

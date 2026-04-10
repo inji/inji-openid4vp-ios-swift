@@ -67,7 +67,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         ]
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("Missing Input: client_metadata->authorization_encrypted_response_alg param is required", error.localizedDescription)
+            XCTAssertEqual("Missing Input: client_metadata->encrypted_response_enc_values_supported param is required", error.localizedDescription)
         }
     }
     
@@ -186,11 +186,10 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         ]
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("No jwk matching the specified algorithm found for encryption", error.localizedDescription)
+            XCTAssertEqual("Authorization response encryption algorithm is not supported", error.localizedDescription)
         }
     }
     
-    //TODO: fix me :)
     func ThrowErrorWhenClientMetadataResponseEncDoesNotMatchWithWalletMetadataResponseEnc() throws {
         let invalidClientMetadataForDirectPostJwt: [String: Any] = [
             "client_name": "Requester name",
@@ -263,7 +262,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         let mismatchingWalletMetadata = try createWalletMetadata()
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadataSpecVersionDraft23.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("authorization_encrypted_response_alg is not supported", error.localizedDescription)
+            XCTAssertEqual("Authorization response encryption algorithm is not supported", error.localizedDescription)
         }
 
         let invalidClientMetadataV1: [String: Any] = [
@@ -283,7 +282,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         ]
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
-            XCTAssertEqual("authorization_encrypted_response_alg is not supported", error.localizedDescription)
+            XCTAssertEqual("Authorization response encryption algorithm is not supported", error.localizedDescription)
         }
     }
     
@@ -419,7 +418,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         let draft23RecordedRequest = mockNetworkManager.recordedRequests[responseUri]
         XCTAssertEqual(HttpMethod.post, draft23RecordedRequest?.requestMethod)
         XCTAssertEqual(1, draft23RecordedRequest?.requestBody?.keys.count)
-        XCTAssertTrue(draft23RecordedRequest?.requestBody?.keys.allSatisfy(["request"].contains(_:)) == true)
+        XCTAssertTrue(draft23RecordedRequest?.requestBody?.keys.allSatisfy(["response"].contains(_:)) == true)
         assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: draft23RecordedRequest?.requestHeaders)
         XCTAssertEqual("Response has been shared successfully here.", draft23Result.body)
 
@@ -431,7 +430,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         let v1RecordedRequest = mockNetworkManager.recordedRequests[responseUri]
         XCTAssertEqual(HttpMethod.post, v1RecordedRequest?.requestMethod)
         XCTAssertEqual(1, v1RecordedRequest?.requestBody?.keys.count)
-        XCTAssertTrue(v1RecordedRequest?.requestBody?.keys.allSatisfy(["request"].contains(_:)) == true)
+        XCTAssertTrue(v1RecordedRequest?.requestBody?.keys.allSatisfy(["response"].contains(_:)) == true)
         assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: v1RecordedRequest?.requestHeaders)
         XCTAssertEqual("Response has been shared successfully here.", v1Result.body)
     }

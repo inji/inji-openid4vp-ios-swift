@@ -52,7 +52,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
               )
         }
 
-        guard let enc = clientMetadata?.authorizationEncryptedResponseEncValuesSupported else {
+        guard let enc = clientMetadata?.encryptedResponseEncValuesSupported else {
             throw MissingInput(fieldPath: ["client_metadata", "encrypted_response_enc_values_supported"],
                                            message: "",
                                            className: className)
@@ -161,7 +161,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                 return JWEHandler(contentEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseEnc!, keyEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseAlg!, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             case .v1:
                 let clientMetadata = ((authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata)!
-                let authorizationEncryptedResponseEnc = clientMetadata.authorizationEncryptedResponseEncValuesSupported?.contains(ContentEncryptionAlgorithm.A256GCM.rawValue) == true ? ContentEncryptionAlgorithm.A256GCM.rawValue : try {
+                let authorizationEncryptedResponseEnc = clientMetadata.encryptedResponseEncValuesSupported?.contains(ContentEncryptionAlgorithm.A256GCM.rawValue) == true ? ContentEncryptionAlgorithm.A256GCM.rawValue : try {
                     throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
                 }()
                 

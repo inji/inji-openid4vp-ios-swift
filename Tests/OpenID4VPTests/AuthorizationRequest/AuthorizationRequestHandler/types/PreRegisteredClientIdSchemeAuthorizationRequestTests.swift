@@ -96,7 +96,7 @@ class PreRegisteredClientIdSchemeTests : XCTestCase {
     // Validate and parse authorization request - check if verifier is trusted
     
     func testDoesNotThrowExceptionWhenTrustedVerifierDoesNotHaveClientMetadataAndAuthorizationRequestContainsClientMetadata() async throws {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdParameters)) as [String : Any]
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue,preRegisteredSchemeClientIdParameters), addEncryptionClientMetadataParams: false) as [String : Any]
         let trustedVerifiersWithoutClientMetadata = [
             Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"])
         ]

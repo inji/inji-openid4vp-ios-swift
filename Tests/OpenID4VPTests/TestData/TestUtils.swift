@@ -29,7 +29,7 @@ func createUrlEncodedAuthorizationRequest(
     verifierSentAuthRequestByReference: Bool? = false,
     clientIdScheme: ClientIdPrefix,
     applicableFields: [String]? = nil,
-    specVersion: SpecVersion = .draft23,
+    specVersion: SpecVersion = .v1,
     addEncryptionClientMetadataParams: Bool = true
 ) -> String {
     let paramList: [String]
@@ -134,16 +134,22 @@ func createAuthorizationRequestObject(
     jwsHeaderData: [String: Any]? = nil,
     applicableFields: [String]? = nil,
     addValidSignature: Bool = true,
-    specVersion: SpecVersion = .v1
+    isPresentationExchangeByReference: Bool = false,
+    specVersion: SpecVersion = .v1,
+    addEncryptionClientMetadataParams: Bool = true
 ) -> String {
     var parametersList = applicableFields ?? authRequestClientIdSchemeMap[clientIdScheme]!
     if(specVersion == .v1) {
         parametersList += ["dcql_query"]
     } else {
-        parametersList += ["presentation_definition"]
+        if(isPresentationExchangeByReference) {
+            parametersList += ["presentation_definition_uri"]
+        } else {
+            parametersList += ["presentation_definition"]
+        }
     }
-    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams)
-    //    authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
+    let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams, specVersion: specVersion, isPresentationExchangeByReference: isPresentationExchangeByReference, addEncryptionClientMetadataParams: addEncryptionClientMetadataParams)
+//        authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
     
     return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
 }

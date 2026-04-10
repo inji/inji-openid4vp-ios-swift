@@ -733,7 +733,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
                 "response_mode": "direct_post",
                 "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
                 "client_id": "redirect_uri:https://mock-verifier.com",
-                "dcql_query": nil,
+                "dcql_query": ["credentials":"test-dummy"],
                 "client_metadata": [
                     "client_name": "Requester name",
                     "encrypted_response_enc_values_supported": ["A256GCM"],
@@ -1248,14 +1248,14 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     func testCreateAuthorizationRequestForSpecVersionDraft23() async {
         let presentationDefinitionJson = convertToJsonString(presentationDefinition)
         let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
+            clientIdScheme: .decentralizedIdentifier,
+            authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.draft23]!),
             applicableFields: authRequestWithRedirectUriByValue,
             specVersion: .draft23
         )
         let authorizationRequestParameters = createAuthorizationRequest(
             paramList: authRequestParamsByReference,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.draft23]!),
             specVersion: .draft23
         ) as [String: Any]
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (authorizationRequestObject, httpUrlResponseForJWS))
@@ -1266,7 +1266,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager,
-            clientId: "mock-client-id",
+            clientId: didUrl,
             specVersion: .draft23,
             walletMetadata: nil,
             isSignedRequestSupported: true,
@@ -1290,7 +1290,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
             clientIdScheme: .decentralizedIdentifier,
             authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!),
             applicableFields: authRequestWithDidByValue,
-            specVersion: .v1
+            specVersion: .v1,
+            addEncryptionClientMetadataParams: false
         )
         let authorizationRequestParameters = createAuthorizationRequest(
             paramList: authRequestParamsByReference,
@@ -1326,38 +1327,29 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
     // MARK: - Version specific logic tests
 
     func testDraft23ThrowsErrorForInvalidPresentationDefinitionInRequestObject() async {
-        let authorizationRequestObject = createAuthorizationRequestObject(
-            clientIdScheme: .redirectUri,
-            authorizationRequestParams: mergeMaps(
-                authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdParameter,
-                ["presentation_definition": ["input_descriptor": []]]
-            ),
-            applicableFields: authRequestWithRedirectUriByValue,
-            specVersion: .draft23
-        )
         let authorizationRequestParameters = createAuthorizationRequest(
-            paramList: authRequestParamsByReference,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
-            specVersion: .draft23
+            paramList: authRequestWithRedirectUriByValue,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, ["id": "vp_presentation_definition"]),
+            specVersion: .draft23,
+            addEncryptionClientMetadataParams: false
         ) as [String: Any]
-        mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (authorizationRequestObject, httpUrlResponseForJWS))
 
         let mockAuthHandler = MockClientIdSchemeAuthRequestHandler(
             authorizationRequestParameters: authorizationRequestParameters,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager,
-            clientId: "mock-client-id",
+            clientId: "redirect_uri:https://mock-verifier.com",
             specVersion: .draft23,
             walletMetadata: nil,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
+        mockAuthHandler.setErrorToBeThrown(error: InvalidData(message: "Error during presentation definition decoding - The data couldn’t be read because it is missing.", className: "Test", code: OpenID4VPErrorCodes.invalidRequest))
 
         await XCTAssertAsyncThrowsError(try await mockAuthHandler.handle()) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "Missing Input: input_descriptors param is required",
+                expectedMessage: "Error during presentation definition decoding - The data couldn’t be read because it is missing.",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -1367,7 +1359,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
             paramList: authRequestWithPreRegisteredByValue,
             requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters, ["state": nil]),
-            specVersion: .v1
+            specVersion: .v1,
+            addEncryptionClientMetadataParams: false
         ) as [String: Any]
 
         let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
@@ -1393,7 +1386,8 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
             paramList: authRequestWithPreRegisteredByValue,
             requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters),
-            specVersion: .v1
+            specVersion: .v1,
+            addEncryptionClientMetadataParams: false
         ) as [String: Any]
 
         let handler = ClientIdSchemeBasedAuthorizationRequestHandlerBaseClass(
@@ -1426,7 +1420,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
 
         await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "Error during client metadata decoding - The data couldn't be read because it is missing.",
+                expectedMessage: "Error during client metadata decoding - Missing Input: client_metadata->vp_formats param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -1448,7 +1442,7 @@ class ClientIdSchemeBasedAuthorizationRequestTests : XCTestCase {
 
         await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "Error during client metadata decoding - The data couldn't be read because it is missing.",
+                expectedMessage: "Error during client metadata decoding - The data couldn’t be read because it is missing.",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

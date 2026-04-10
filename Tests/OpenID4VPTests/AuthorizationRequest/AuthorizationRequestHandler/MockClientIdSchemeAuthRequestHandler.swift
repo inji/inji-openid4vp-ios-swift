@@ -8,6 +8,7 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     private let isUnsignedRequestSupportedFlag: Bool
     private let clientIdPrefixValue: String
     private var extractPublicKeyError: OpenID4VPException?
+    private var errorToBeThrown: OpenID4VPException?
     
     init(authorizationRequestParameters: [String: Any],
          setResponseUri: @escaping (String) -> Void,
@@ -46,6 +47,9 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
+        if(errorToBeThrown != nil) {
+            throw errorToBeThrown!
+        }
         if(extractPublicKeyError != nil){
             throw extractPublicKeyError!
         }
@@ -54,6 +58,13 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
             return try PublicKeyType.ed25519(Curve25519.Signing.PublicKey(rawRepresentation: [248, 92, 183, 148, 198, 169, 205, 29, 240, 165, 166, 13, 8, 90, 182, 244, 96, 196, 159, 243, 104, 71, 122, 65, 177, 206, 117, 214, 173, 66, 198, 172]))
         }
         return PublicKeyType.ed25519(publicKey)
+    }
+    
+    override func validateAndParseRequestFields() async throws {
+        if(errorToBeThrown != nil) {
+            throw errorToBeThrown!
+        }
+        try await super.validateAndParseRequestFields()
     }
     
     func isUnsignedRequestSupported() -> Bool {
@@ -65,8 +76,15 @@ class MockClientIdSchemeAuthRequestHandler: ClientIdSchemeBasedAuthorizationRequ
     }
     
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
+        if(errorToBeThrown != nil) {
+            throw errorToBeThrown!
+        }
         return WalletMetadata()
     }
     
     var capturedRequestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?
+    
+    func setErrorToBeThrown(error: OpenID4VPException){
+        self.errorToBeThrown = error
+    }
 }
