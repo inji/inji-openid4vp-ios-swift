@@ -272,7 +272,6 @@ let vpFormatsMap: [String: VPFormatSupported] = [
 let clientMetadataSpecVersionDraft23: [String: Any] = [
     "client_name": "Requester name",
     "logo_uri": "https://mock-verifier.com/logo",
-    "authorization_encrypted_response_alg": "ECDH-ES",
     "jwks": [
         "keys": [
             [
