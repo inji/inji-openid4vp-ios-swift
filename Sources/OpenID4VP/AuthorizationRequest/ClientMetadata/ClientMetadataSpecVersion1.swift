@@ -54,6 +54,12 @@ public struct ClientMetadataSpecVersion1: Codable {
                 }
             }
             self.vpFormatsSupported = decodedFormats
+            guard !self.vpFormatsSupported.isEmpty else {
+                throw InvalidData(
+                    message: "vp_formats_supported cannot be empty in client metadata",
+                    className: ClientMetadataSpecVersion1.className
+                )
+            }
         } catch {
             throw wrapError(error, customError: { message in InvalidData(message: "Error during client metadata decoding - \(message)", className: ClientMetadataSpecVersion1.className) })
         }

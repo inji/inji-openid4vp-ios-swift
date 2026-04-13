@@ -197,6 +197,41 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
     }
     
     
+    // MARK: - vp_formats_supported empty validation
+
+    func testDecodeThrowsWhenVpFormatsSupportedIsEmpty() {
+        let data = json(vpFormatsSupported: "{}")
+        XCTAssertThrowsError(try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Error during client metadata decoding - vp_formats_supported cannot be empty in client metadata",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDeserializeAndValidateWithDataThrowsWhenVpFormatsSupportedIsEmpty() {
+        let data = json(vpFormatsSupported: "{}")
+        XCTAssertThrowsError(try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: data)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Error during client metadata decoding - vp_formats_supported cannot be empty in client metadata",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDeserializeAndValidateWithStringThrowsWhenVpFormatsSupportedIsEmpty() {
+        let jsonString = String(data: json(vpFormatsSupported: "{}"), encoding: .utf8)!
+        XCTAssertThrowsError(try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: jsonString)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Error during client metadata decoding - vp_formats_supported cannot be empty in client metadata",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     // MARK: - Helper methods
     
     private func json(
