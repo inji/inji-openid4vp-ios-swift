@@ -365,7 +365,6 @@ let mockClientMetadataSpecVersionDraft23 : [ResponseMode: ClientMetadataSpecVers
     .directPost: createInstance([
         "client_name": "Requester name",
         "logo_uri": "https://mock-verifier.com/logo",
-        "authorization_encrypted_response_alg": "ECDH-ES",
         "jwks": [
             "keys": [
                 [

@@ -134,23 +134,28 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
 
     func testThrowErrorWhenEncryptionRelatedPropertiesAvailableInVerifierMetadata() throws {
         let handler = DirectPostResponseModeHandler()
-        let expectedMessage = "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'"
 
-        let draft23ClientMetadataStr = """
-        {
+        let baseFields = """
             "client_name": "Test",
             "logo_uri": "https://example.com/logo.png",
-            "authorization_encrypted_response_alg": "ECDH-ES",
-            "authorization_encrypted_response_enc": "A256GCM",
             "jwks": { "keys": [{ "kty": "OKP", "crv": "Ed25519", "use": "sig", "alg": "ECDH-ES", "kid": "key1", "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc" }] },
             "vp_formats": { "ldp_vc": { "proof_type": ["Ed25519Signature2020"] } }
-        }
         """
-        let draft23ClientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersionDraft23.self, from: Data(draft23ClientMetadataStr.utf8))
-        XCTAssertThrowsError(
-            try handler.validate(clientMetadata: draft23ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
-        ) { error in
-            assertOpenID4VPException(error, expectedMessage: expectedMessage, expectedCode: OpenID4VPErrorCodes.invalidRequest)
+
+        let draft23EncryptionFields: [String] = [
+            "\"authorization_encrypted_response_alg\": \"ECDH-ES\"",
+            "\"authorization_encrypted_response_enc\": \"A256GCM\"",
+            "\"authorization_encrypted_response_alg\": \"ECDH-ES\", \"authorization_encrypted_response_enc\": \"A256GCM\""
+        ]
+
+        for encryptionField in draft23EncryptionFields {
+            let json = "{ \(baseFields), \(encryptionField) }"
+            let draft23ClientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersionDraft23.self, from: Data(json.utf8))
+            XCTAssertThrowsError(
+                try handler.validate(clientMetadata: draft23ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
+            ) { error in
+                assertOpenID4VPException(error, expectedMessage: "encrypted_response_enc_values_supported or authorization_encrypted_response_alg SHOULD not be present for response mode 'direct_post'", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            }
         }
 
         let v1ClientMetadataStr = """
@@ -165,7 +170,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         XCTAssertThrowsError(
             try handler.validate(clientMetadata: v1ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
         ) { error in
-            assertOpenID4VPException(error, expectedMessage: expectedMessage, expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            assertOpenID4VPException(error, expectedMessage: "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
     

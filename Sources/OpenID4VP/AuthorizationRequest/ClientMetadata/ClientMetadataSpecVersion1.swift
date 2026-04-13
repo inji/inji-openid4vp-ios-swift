@@ -97,11 +97,11 @@ public struct ClientMetadataSpecVersion1: Codable {
             return try toClientMetadata(encodedData)
         } else if let data = clientMetadata as? String {
             guard let encodedData = data.data(using: .utf8) else {
-                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadataSpecVersionDraft23.className)
+                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadataSpecVersion1.className)
             }
             return try toClientMetadata(encodedData)
         } else {
-            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadataSpecVersionDraft23.className)
+            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadataSpecVersion1.className)
         }
     }
     

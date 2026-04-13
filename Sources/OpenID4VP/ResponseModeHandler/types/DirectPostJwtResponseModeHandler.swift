@@ -213,14 +213,18 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                 guard clientMetadata.jwks != nil else {
                     throw MissingInput(fieldPath: ["client_metadata", "jwks"], message: "", className: className)
                 }
-                let authorizationEncryptedResponseEnc = clientMetadata.encryptedResponseEncValuesSupported?.contains(ContentEncryptionAlgorithm.A256GCM.rawValue) == true ? ContentEncryptionAlgorithm.A256GCM.rawValue : try {
+                guard let clientEncValues = clientMetadata.encryptedResponseEncValuesSupported, !clientEncValues.isEmpty else {
                     throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
-                }()
+                }
+                let walletEncValues = walletMetadata?.authorizationEncryptionEncValuesSupported?.compactMap { $0.rawValue } ?? [ContentEncryptionAlgorithm.A256GCM.rawValue]
+                guard let contentEncryptionAlgorithm = walletEncValues.first(where: { clientEncValues.contains($0) }) else {
+                    throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
+                }
                 let verifierPublicKey = try getVerifierPublicKey(authorizationRequest: authorizationRequest, walletMetadata: walletMetadata, className: className)
                 guard let verifierPublicKeyAlgorithm = verifierPublicKey.algorithm else {
                     throw InvalidData(message: "Algorithm must be specified for the encryption key in jwks", className: className)
                 }
-                return JWEHandler(contentEncryptionAlgorithm: authorizationEncryptedResponseEnc, keyEncryptionAlgorithm: verifierPublicKeyAlgorithm, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
+                return JWEHandler(contentEncryptionAlgorithm: contentEncryptionAlgorithm, keyEncryptionAlgorithm: verifierPublicKeyAlgorithm, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             }
         }
     }
