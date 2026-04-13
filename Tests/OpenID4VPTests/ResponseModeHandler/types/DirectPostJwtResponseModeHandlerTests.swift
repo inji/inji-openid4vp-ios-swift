@@ -190,12 +190,12 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
     }
     
-    func ThrowErrorWhenClientMetadataResponseEncDoesNotMatchWithWalletMetadataResponseEnc() throws {
+    func testThrowErrorWhenClientMetadataResponseEncDoesNotMatchWithWalletMetadataResponseEnc() throws {
         let invalidClientMetadataForDirectPostJwt: [String: Any] = [
             "client_name": "Requester name",
             "logo_uri": "https://mock-verifier.com/logo",
-            "authorization_encrypted_response_alg": ["ECDH-ES"],
-            "authorization_encrypted_response_enc": "GCM",
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "authorization_encrypted_response_enc": "A128GCM",
             "jwks": [
                 "keys": [[
                     "kty": "OKP",
@@ -211,15 +211,12 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        let mismatchingWalletMetadata = try createWalletMetadata()
-
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadataSpecVersionDraft23.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadataSpecVersionDraft23.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("authorization_encrypted_response_enc is not supported", error.localizedDescription)
         }
 
         let invalidClientMetadataV1: [String: Any] = [
-            "authorization_encrypted_response_alg": "ECDH-ES",
-            "encrypted_response_enc_values_supported": ["GCM"],
+            "encrypted_response_enc_values_supported": ["A128GCM"],
             "jwks": [
                 "keys": [[
                     "kty": "OKP",
@@ -233,7 +230,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("authorization_encrypted_response_enc is not supported", error.localizedDescription)
         }
     }

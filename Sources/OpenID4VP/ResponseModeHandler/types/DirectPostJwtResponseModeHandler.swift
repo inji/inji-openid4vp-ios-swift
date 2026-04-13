@@ -73,7 +73,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     
     private func validateEncryption(alg: [String], enc: Any, jwks: JWKSet, walletMetadata: WalletMetadata?, shouldValidate: Bool) throws {
         if shouldValidate {
-            try validateWithWalletMetadata(clientAlg: alg, clientEnc: enc, walletMetadata: walletMetadata)
+            try validateWithWalletMetadata(verifierEncryptionAlg: alg, verifierEnc: enc, walletMetadata: walletMetadata)
         }
     }
     
@@ -128,8 +128,8 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         return ["response": encryptedBody]
     }
 
-    private func validateWithWalletMetadata(clientAlg: [String],
-                                            clientEnc: Any,
+    private func validateWithWalletMetadata(verifierEncryptionAlg: [String],
+                                            verifierEnc: Any,
                                             walletMetadata: WalletMetadata?) throws {
         guard let walletMetadata = walletMetadata else {
             throw InvalidData(message: "wallet_metadata must be present", className: className)
@@ -139,7 +139,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             throw InvalidData(message: "authorization_encryption_alg_values_supported must be present in wallet_metadata", className: className)
         }
 
-        guard clientAlg.contains(where: { supportedEncryptionAlgorithms.contains($0) }) else {
+        guard verifierEncryptionAlg.contains(where: { supportedEncryptionAlgorithms.contains($0) }) else {
             throw InvalidData(message: "Authorization response encryption algorithm is not supported", className: className)
         }
 
@@ -147,8 +147,8 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             throw InvalidData(message: "authorization_encryption_enc_values_supported must be present in wallet_metadata", className: className)
         }
 
-        let clientEncArray = (clientEnc as? String).map { [$0] } ?? (clientEnc as? [String]) ?? []
-        guard clientEncArray.contains(where: { encValue in supportedEncryptions.contains(encValue) }) else {
+        let verifierEncArray = (verifierEnc as? String).map { [$0] } ?? (verifierEnc as? [String]) ?? []
+        guard verifierEncArray.contains(where: { encValue in supportedEncryptions.contains(encValue) }) else {
             throw InvalidData(message: "authorization_encrypted_response_enc is not supported", className: className)
         }
     }

@@ -140,6 +140,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertNotNil(recordedRequest.requestBody?["response"])
     }
     
+    // Common: spec version agnostic
     func testConstructAndSendAuthorizationResponseToVerifierThrowErrorWhenResponseTypeIsNotSupportedByLibrary() async {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment")
@@ -275,7 +276,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
     }
     
-    // MARK: Credential format = SD-JWT
+    // MARK: Credential format = SD-JWT, common spec version agnostic tests
     
     func testCreationOfUnsignedVPTokenWithSdJwtFormatSuccess() async throws {
         let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
@@ -554,6 +555,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertEqual(response["state"] as? String, state)
     }
     
+    // common spec version agnostic tests
     func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructionOfErrorFails() {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment" )
