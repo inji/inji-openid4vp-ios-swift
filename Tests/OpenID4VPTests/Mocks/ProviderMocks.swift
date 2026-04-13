@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 @testable import OpenID4VP
 
 final class MockNonceProvider: NonceProvider {
@@ -81,6 +82,13 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         walletMetadata: WalletMetadata?
     ) throws -> [String: String] {
         return expectedSuccessResponse
+    }
+
+    func getVerifierPublicKeyForEncryption(
+        authorizationRequest: AuthorizationRequest,
+        walletMetadata: WalletMetadata?
+    ) throws -> JWK? {
+        return nil
     }
 
     func getAuthorizationErrorResponse(

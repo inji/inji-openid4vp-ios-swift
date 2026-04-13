@@ -5,14 +5,16 @@ private let keyBindingJWT = "kb+jwt"
 struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
     let authorizationRequest: AuthorizationRequest
     let specVersion: SpecVersion
+    let walletMetadata: WalletMetadata?
     private let networkManager: any NetworkManaging
 
     private static let className = "UnsignedSdJwTVPTokenBuilder"
 
-    init(authorizationRequest: AuthorizationRequest, specVersion: SpecVersion, networkManager: any NetworkManaging = NetworkManager()) {
+    init(authorizationRequest: AuthorizationRequest, specVersion: SpecVersion, networkManager: any NetworkManaging = NetworkManager(), walletMetadata: WalletMetadata? = nil) {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.networkManager = networkManager
+        self.walletMetadata = walletMetadata
     }
 
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken : UnsignedVPToken) {

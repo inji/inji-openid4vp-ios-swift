@@ -484,6 +484,96 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
     }
 
+    // MARK: - getVerifierPublicKeyForEncryption tests
+
+    func testGetVerifierPublicKeyForEncryptionReturnsDraft23EncKey() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let key = try handler.getVerifierPublicKeyForEncryption(
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23),
+            walletMetadata: walletMetadata
+        )
+        XCTAssertNotNil(key)
+        XCTAssertEqual(key?.algorithm, "ECDH-ES")
+        XCTAssertEqual(key?.publicKeyUse, .encryption)
+    }
+
+    func testGetVerifierPublicKeyForEncryptionReturnsV1EncKey() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let key = try handler.getVerifierPublicKeyForEncryption(
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1),
+            walletMetadata: walletMetadata
+        )
+        XCTAssertNotNil(key)
+        XCTAssertEqual(key?.publicKeyUse, .encryption)
+    }
+
+    func testGetVerifierPublicKeyForEncryptionThrowsWhenV1ClientMetadataIsNil() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
+        let requestWithNilMetadata = AuthorizationRequestSpecVersion1(
+            clientId: v1Request.clientId, responseType: v1Request.responseType,
+            responseMode: v1Request.responseMode, responseUri: v1Request.responseUri,
+            redirectUri: v1Request.redirectUri, nonce: v1Request.nonce,
+            walletNonce: v1Request.walletNonce, state: v1Request.state,
+            clientMetadata: nil
+        )
+        XCTAssertThrowsError(try handler.getVerifierPublicKeyForEncryption(
+            authorizationRequest: requestWithNilMetadata, walletMetadata: walletMetadata
+        )) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "client_metadata must be present for given response mode",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetVerifierPublicKeyForEncryptionThrowsWhenV1JwksIsNil() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
+        let requestWithNoJwks = AuthorizationRequestSpecVersion1(
+            clientId: v1Request.clientId, responseType: v1Request.responseType,
+            responseMode: v1Request.responseMode, responseUri: v1Request.responseUri,
+            redirectUri: v1Request.redirectUri, nonce: v1Request.nonce,
+            walletNonce: v1Request.walletNonce, state: v1Request.state,
+            clientMetadata: createInstance([
+                "encrypted_response_enc_values_supported": ["A256GCM"],
+                "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
+            ], as: ClientMetadataSpecVersion1.self)
+        )
+        XCTAssertThrowsError(try handler.getVerifierPublicKeyForEncryption(
+            authorizationRequest: requestWithNoJwks, walletMetadata: walletMetadata
+        )) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Missing Input: client_metadata->jwks param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetVerifierPublicKeyForEncryptionThrowsWhenNoEncKeyFoundInV1Jwks() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
+        let requestWithSigOnlyJwks = AuthorizationRequestSpecVersion1(
+            clientId: v1Request.clientId, responseType: v1Request.responseType,
+            responseMode: v1Request.responseMode, responseUri: v1Request.responseUri,
+            redirectUri: v1Request.redirectUri, nonce: v1Request.nonce,
+            walletNonce: v1Request.walletNonce, state: v1Request.state,
+            clientMetadata: createInstance([
+                "encrypted_response_enc_values_supported": ["A256GCM"],
+                "jwks": ["keys": [["kty": "OKP", "crv": "Ed25519", "use": "sig", "alg": "EdDSA", "kid": "sig-key", "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc"]]],
+                "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
+            ], as: ClientMetadataSpecVersion1.self)
+        )
+        XCTAssertThrowsError(try handler.getVerifierPublicKeyForEncryption(
+            authorizationRequest: requestWithSigOnlyJwks, walletMetadata: walletMetadata
+        )) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "No encryption key with alg [\"ECDH-ES\"] found in JWK Set",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     /// Send authorization response tests
 
     func testSendAuthorizationResponseForDirectPostJwtResponseMode() async throws {

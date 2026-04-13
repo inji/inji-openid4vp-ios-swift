@@ -404,7 +404,8 @@ public class AuthorizationResponseHandler {
                     specVersion: specVersion,
                     id: UUIDGenerator.generateUUID(),
                     holder: holderId ?? "",
-                    signatureSuite: signatureSuite ?? "Ed25519Signature2020"
+                    signatureSuite: signatureSuite ?? "Ed25519Signature2020",
+                    walletMetadata: walletMetadata
                 ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             case .mso_mdoc:
@@ -412,13 +413,15 @@ public class AuthorizationResponseHandler {
                     authorizationRequest: authorizationRequest,
                     specVersion: specVersion,
                     responseUri: responseUri,
-                    mdocGeneratedNonce: walletNonce
+                    mdocGeneratedNonce: walletNonce,
+                    walletMetadata: walletMetadata
                 ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             case .dc_sd_jwt, .vc_sd_jwt:
                 let token = try await UnsignedSdJwtVPTokenBuilder(
                     authorizationRequest: authorizationRequest,
-                    specVersion: specVersion
+                    specVersion: specVersion,
+                    walletMetadata: walletMetadata
                 ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             }

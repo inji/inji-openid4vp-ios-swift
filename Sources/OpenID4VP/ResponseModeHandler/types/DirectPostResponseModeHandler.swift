@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 
 struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     static let className = String(describing: DirectPostResponseModeHandler.self)
@@ -46,12 +47,18 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         walletMetadata: WalletMetadata?
     ) async throws -> NetworkResponse {
         let requestBody: [String: String] = try authorizationResponse.toJsonEncodedMap()
-
         return try await networkManager.sendHTTPRequest(
             url: url,
             method: .post,
             bodyParams: requestBody,
             headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
         )
+    }
+
+    func getVerifierPublicKeyForEncryption(
+        authorizationRequest: AuthorizationRequest,
+        walletMetadata: WalletMetadata?
+    ) throws -> JWK? {
+        return nil
     }
 }

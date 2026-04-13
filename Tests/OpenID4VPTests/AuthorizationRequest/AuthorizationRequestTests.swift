@@ -314,7 +314,7 @@ final class AuthorizationRequestTests: XCTestCase {
             paramList: ["client_id", "response_uri", "response_type", "response_mode", "nonce", "state", "client_metadata", "dcql_query"],
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                preRegisteredSchemeClientIdParameters,
+                preRegisteredSchemeClientIdParameters
             ),
             specVersion: .v1,
             addEncryptionClientMetadataParams: false

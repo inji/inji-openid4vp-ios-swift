@@ -168,4 +168,25 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             assertOpenID4VPException(error, expectedMessage: expectedMessage, expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
+    
+    func testGetVerifierPublicKeyForEncryptionReturnsNilForBothSpecVersions() throws {
+        let handler = DirectPostResponseModeHandler()
+
+        for specVersion: SpecVersion in [.draft23, .v1] {
+            let result = try handler.getVerifierPublicKeyForEncryption(
+                authorizationRequest: getMockAuthorizationRequest(responseMode: .directPost, specVersion: specVersion),
+                walletMetadata: walletMetadata
+            )
+            XCTAssertNil(result)
+        }
+    }
+
+    func testGetVerifierPublicKeyForEncryptionReturnsNilWithNilWalletMetadata() throws {
+        let handler = DirectPostResponseModeHandler()
+        let result = try handler.getVerifierPublicKeyForEncryption(
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPost, specVersion: .v1),
+            walletMetadata: nil
+        )
+        XCTAssertNil(result)
+    }
 }

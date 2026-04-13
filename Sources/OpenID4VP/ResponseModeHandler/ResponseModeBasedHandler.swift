@@ -1,4 +1,5 @@
 import Foundation
+import JSONWebKey
 
 protocol ResponseModeBasedHandler {
     func validate(clientMetadata: ClientMetadataSpecVersion1?,
@@ -31,7 +32,12 @@ protocol ResponseModeBasedHandler {
             authorizationRequest: AuthorizationRequest?,
             authorizationResponse: AuthorizationErrorResponse,
             walletNonce: String
-        ) throws -> [String: String]
+        ) throws -> [String: String]
+
+    func getVerifierPublicKeyForEncryption(
+        authorizationRequest: AuthorizationRequest,
+        walletMetadata: WalletMetadata?
+    ) throws -> JWK?
 }
 
 extension ResponseModeBasedHandler {
