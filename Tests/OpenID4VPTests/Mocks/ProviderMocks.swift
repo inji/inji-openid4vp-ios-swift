@@ -12,7 +12,7 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
     var expectedUnsignedVPTokensV2: [UnsignedVPTokenV2] = []
-    var expectedVPResponseV2: [String: Any] = [:]
+    var expectedVPResponseV2: [String: String] = [:]
 
     override func constructAuthorizationResponse(authorizationRequest authRequest: AuthorizationRequest,
                                                  vpTokenSigningResults signingResult: [FormatType: VPTokenSigningResult]) -> [String: String] {
@@ -45,7 +45,7 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
         if(!expectedErrorResponse.isEmpty) {
             return expectedErrorResponse
         }
-        return expectedVPResponseV2 as! [String: String]
+        return expectedVPResponseV2
     }
 }
 

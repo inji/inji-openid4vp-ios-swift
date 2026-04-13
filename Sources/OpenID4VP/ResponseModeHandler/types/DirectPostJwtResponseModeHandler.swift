@@ -32,7 +32,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                  className: className)
         }
 
-        try validateEncryption(alg: [encryptedResponseAlgorithm], enc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
+        try validateEncryption(verifierEncryptionAlg: [encryptedResponseAlgorithm], verifierEnc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
         
         if !jwks.keys.contains(where: { $0.algorithm == encryptedResponseAlgorithm && $0.publicKeyUse == .encryption}) {
             throw InvalidData(
@@ -67,13 +67,36 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                  className: className)
         }
         
-        let verifierEncrptionAlgorithms: [String] = jwks.keys.filter { $0.publicKeyUse == .encryption }.compactMap { $0.algorithm }
-        try validateEncryption(alg: verifierEncrptionAlgorithms, enc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
+        let encryptionKeys = jwks.keys.filter { $0.publicKeyUse == .encryption }
+        guard !encryptionKeys.isEmpty else {
+            throw InvalidData(message: "No encryption jwk found in client_metadata.jwks", className: className)
+        }
+        let verifierEncrptionAlgorithms = encryptionKeys.compactMap { $0.algorithm }
+        try validateEncryption(verifierEncryptionAlg: verifierEncrptionAlgorithms, verifierEnc: enc, jwks: jwks, walletMetadata: walletMetadata, shouldValidate: shouldValidateWithWalletMetadata)
     }
     
-    private func validateEncryption(alg: [String], enc: Any, jwks: JWKSet, walletMetadata: WalletMetadata?, shouldValidate: Bool) throws {
+    private func validateEncryption(verifierEncryptionAlg: [String], verifierEnc: Any, jwks: JWKSet, walletMetadata: WalletMetadata?, shouldValidate: Bool) throws {
         if shouldValidate {
-            try validateWithWalletMetadata(verifierEncryptionAlg: alg, verifierEnc: enc, walletMetadata: walletMetadata)
+            guard let walletMetadata = walletMetadata else {
+                throw InvalidData(message: "wallet_metadata must be present", className: className)
+            }
+
+            guard let supportedEncryptionAlgorithms = walletMetadata.authorizationEncryptionAlgValuesSupported?.compactMap({$0.rawValue}) else {
+                throw InvalidData(message: "authorization_encryption_alg_values_supported must be present in wallet_metadata", className: className)
+            }
+
+            guard verifierEncryptionAlg.contains(where: { supportedEncryptionAlgorithms.contains($0) }) else {
+                throw InvalidData(message: "Authorization response encryption algorithm is not supported", className: className)
+            }
+
+            guard let supportedEncryptions = walletMetadata.authorizationEncryptionEncValuesSupported?.compactMap({$0.rawValue}) else {
+                throw InvalidData(message: "authorization_encryption_enc_values_supported must be present in wallet_metadata", className: className)
+            }
+
+            let verifierEncArray = (verifierEnc as? String).map { [$0] } ?? (verifierEnc as? [String]) ?? []
+            guard verifierEncArray.contains(where: { encValue in supportedEncryptions.contains(encValue) }) else {
+                throw InvalidData(message: "authorization_encrypted_response_enc is not supported", className: className)
+            }
         }
     }
     
