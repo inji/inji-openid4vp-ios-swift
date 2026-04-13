@@ -17,7 +17,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     let setResponseUri: (String) -> Void
     let walletNonce: String
     let networkManager: NetworkManaging
-    private var versionLogic: VersionLogic = .specV1
+    private var specVersionHandler: SpecVersionHandler = .specV1
     var specVersion: SpecVersion = .draft23
     var shouldValidateWithWalletMetadata: Bool = false
     var className = String(describing: ClientIdPrefixBasedAuthorizationRequestHandler.self)
@@ -40,17 +40,13 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         self.specVersion = specVersion
     }
     
-    internal func setVersionLogic(_ specVersion: SpecVersion) {
-        if specVersion == .draft23 {
-            self.versionLogic = .draft23
-        } else {
-            self.versionLogic = .specV1
-        }
+    internal func setSpecVersionHandler(_ specVersion: SpecVersion) {
+        self.specVersionHandler = SpecVersionHandler.from(specVersion)
     }
     
     func handle() async throws -> AuthorizationRequest {
         try self.validateClientId()
-        try await self.fetchAuthorizationRequestV2()
+        try await self.fetchAuthorizationRequest()
         try self.setResponseUrl()
         // TODO: Add validation for DCQL query in validateAndParseRequestFields
         try await self.validateAndParseRequestFields()
@@ -61,7 +57,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         return
     }
     
-    func fetchAuthorizationRequestV2() async throws{
+    func fetchAuthorizationRequest() async throws{
         let request = authorizationRequestParameters[AuthorizationRequestFieldConstants.request.rawValue] as? String
         let requestUri = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] as? String
         
@@ -84,34 +80,9 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
         
         // After fetching the VP request, populate version logic
-        if specVersion == .draft23 {
-            versionLogic = .draft23
-        } else {
-            versionLogic = .specV1
-        }
+        specVersionHandler = SpecVersionHandler.from(specVersion)
     }
-    
-    func fetchAuthorizationRequest() async throws{
-        let request = authorizationRequestParameters[AuthorizationRequestFieldConstants.request.rawValue] as? String
-        let requestUri = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] as? String
-        
-        if(request != nil && requestUri != nil){
-            throw InvalidData(
-                message: "Both 'request' and 'request_uri' cannot be present in same authorization request",
-                className: className
-            )
-        }
-        
-        if let request = request {
-            try await handleRequestObjectAsValue(request)
-        }
-        else if let requestUri = requestUri {
-            try await handleRequestObjectByReference(requestUri)
-        } else {
-            try handleUrlEncodedRequest()
-        }
-    }
-    
+
     private func handleRequestObjectAsValue(_ request: String) async throws {
         try validate(request, fieldPath: AuthorizationRequestFieldConstants.request.rawValue, className: className)
         guard (delegate.isSignedRequestSupported()) else {
@@ -265,11 +236,9 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
         
-        authorizationRequestParameters = try versionLogic.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
+        authorizationRequestParameters = try specVersionHandler.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
         
-        let presentationDefinitionUriSupported = true
-        
-        try await versionLogic.validatePresentationExchangeRequest(authorizationRequestParameters: &authorizationRequestParameters, presentationDefinitionUriSupported: presentationDefinitionUriSupported, networkManager: networkManager)
+        try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters, networkManager: networkManager)
     }
     
     final func setResponseUrl() throws {
@@ -318,18 +287,22 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     final func createAuthorizationRequest() -> AuthorizationRequest {
-        return versionLogic.getAuthorizationRequest(authorizationRequestParameters: authorizationRequestParameters)
+        return specVersionHandler.getAuthorizationRequest(authorizationRequestParameters: authorizationRequestParameters)
     }
     
-    private enum VersionLogic {
+    private enum SpecVersionHandler {
         case specV1, draft23
+        
+        static func from(_ specVersion: SpecVersion) -> SpecVersionHandler {
+            return specVersion == .v1 ? .specV1 : .draft23
+        }
 
         func parseAndValidateClientMetadata(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletMetadata: WalletMetadata?) throws -> [String: Any] {
-            let clientMetadataLogic: ClientMetadataVersionLogic = self == .draft23 ? .draft23 : .v1
+            let clientMetadataLogic: ClientMetadataSpecVersionHandler = self == .draft23 ? .draft23 : .v1
             return try clientMetadataLogic.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
         }
 
-        func validatePresentationExchangeRequest(authorizationRequestParameters: inout [String: Any], presentationDefinitionUriSupported: Bool, networkManager: NetworkManaging) async throws {
+        func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], networkManager: NetworkManaging) async throws {
             switch self {
             case .specV1:
                 //                TODO: Parse and validate DCQL query
@@ -341,7 +314,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                 }
                 return
             case .draft23:
-                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, presentationDefinitionUriSupported, networkManager)
+                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, true, networkManager)
             }
         }
         

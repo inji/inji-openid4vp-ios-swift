@@ -273,7 +273,7 @@ public class AuthorizationResponseHandler {
     ) throws -> AuthorizationResponse {
         switch authorizationRequest.responseType {
         case ResponseType.vp_token.rawValue:
-            return try VersionLogic.from(authorizationRequest).createVPTokenResponse(
+            return try SpecVersionHandler.from(authorizationRequest).createVPTokenResponse(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults,
                 unsignedVPTokenResults: unsignedVPTokenResults,
@@ -338,7 +338,7 @@ public class AuthorizationResponseHandler {
 
         sanitizeDescriptorMap(&finalDescriptorMappings, isSingleVPToken: finalVpTokens.count == 1)
         let presentationSubmission = PresentationSubmission(
-            definitionId: VersionLogic.from(authorizationRequest).getPresentationDefinitionId(authorizationRequest),
+            definitionId: SpecVersionHandler.from(authorizationRequest).getPresentationDefinitionId(authorizationRequest),
             descriptorMap: finalDescriptorMappings
         )
 
@@ -477,10 +477,10 @@ public class AuthorizationResponseHandler {
         )
     }
 
-    private enum VersionLogic {
+    private enum SpecVersionHandler {
         case draft23, specV1
 
-        static func from(_ authorizationRequest: AuthorizationRequest) -> VersionLogic {
+        static func from(_ authorizationRequest: AuthorizationRequest) -> SpecVersionHandler {
             return authorizationRequest is AuthorizationRequestSpecVersionDraft23 ? .draft23 : .specV1
         }
 

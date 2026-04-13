@@ -10,8 +10,6 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     private let responseUri: String
     private let mdocGeneratedNonce: String
     
-    private let versionLogic: VersionLogic
-    
     static let className = String(describing: UnsignedMdocVPTokenBuilder.self)
 
     init(
@@ -24,7 +22,6 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.walletMetadata = walletMetadata
-        self.versionLogic = specVersion == .v1 ? .specV1 : .draft23
         self.responseUri = responseUri
         self.mdocGeneratedNonce = mdocGeneratedNonce
     }
@@ -33,7 +30,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken) {
         var docTypeToDeviceAuthenticationBytes: [String: String] = [:]
 
-        let openID4VPHandover = try versionLogic.buildOpenID4VPHandover(
+        let openID4VPHandover = try SpecVersionHandler.from(specVersion).buildOpenID4VPHandover(
             authorizationRequest: authorizationRequest,
             mdocGeneratedNonce: mdocGeneratedNonce,
             responseUri: responseUri,
@@ -99,8 +96,12 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         )
     }
     
-    private enum VersionLogic {
+    private enum SpecVersionHandler {
         case specV1, draft23
+        
+        static func from(_ specVersion: SpecVersion) -> SpecVersionHandler {
+            return specVersion == .v1 ? .specV1 : .draft23
+        }
         
         func buildOpenID4VPHandover(authorizationRequest: AuthorizationRequest, mdocGeneratedNonce: String, responseUri: String, walletMetadata: WalletMetadata?) throws -> CBOR {
             switch self {

@@ -135,7 +135,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         authorizationRequest: AuthorizationRequest,
         walletMetadata: WalletMetadata?
     ) throws -> JWK? {
-        return try VersionLogic.from(authorizationRequest)
+        return try SpecVersionHandler.from(authorizationRequest)
             .getVerifierPublicKey(authorizationRequest: authorizationRequest, walletMetadata: walletMetadata, className: className)
     }
 
@@ -145,8 +145,8 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         walletNonce: String,
         walletMetadata: WalletMetadata?
     ) throws -> [String: String] {
-        let versionLogic = VersionLogic.from(authorizationRequest)
-        let jweHandler = try versionLogic.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, walletMetadata: walletMetadata, className: className)
+        let specVersionHandler = SpecVersionHandler.from(authorizationRequest)
+        let jweHandler = try specVersionHandler.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, walletMetadata: walletMetadata, className: className)
         let encryptedBody = try jweHandler.generateEncryptedResponse(payload: responseParams)
         return ["response": encryptedBody]
     }
@@ -176,11 +176,11 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
     }
     
-    private enum VersionLogic {
+    private enum SpecVersionHandler {
         case v1
         case draft23
         
-        static func from(_ authorizationRequest: AuthorizationRequest) -> VersionLogic {
+        static func from(_ authorizationRequest: AuthorizationRequest) -> SpecVersionHandler {
             return authorizationRequest is AuthorizationRequestSpecVersionDraft23 ? .draft23 : .v1
         }
         

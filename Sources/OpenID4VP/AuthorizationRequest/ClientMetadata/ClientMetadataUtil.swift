@@ -2,10 +2,10 @@ import Foundation
 
 fileprivate let className = String(describing: ClientMetadataSpecVersionDraft23.self)
 
-enum ClientMetadataVersionLogic {
+enum ClientMetadataSpecVersionHandler {
     case v1, draft23
     
-    static func of(_ specVersion: SpecVersion) -> ClientMetadataVersionLogic {
+    static func of(_ specVersion: SpecVersion) -> ClientMetadataSpecVersionHandler {
         return specVersion == .draft23 ? .draft23 : .v1
     }
     

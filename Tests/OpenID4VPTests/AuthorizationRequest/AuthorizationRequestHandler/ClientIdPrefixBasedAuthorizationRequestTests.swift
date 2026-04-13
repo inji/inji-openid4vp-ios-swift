@@ -940,7 +940,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
-        mockAuthHandler.setVersionLogic(.draft23)
+        mockAuthHandler.setSpecVersionHandler(.draft23)
         do{
             try await mockAuthHandler.validateAndParseRequestFields()
             
@@ -983,7 +983,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
-        mockAuthHandler.setVersionLogic(.draft23)
+        mockAuthHandler.setSpecVersionHandler(.draft23)
         do{
             try await mockAuthHandler.validateAndParseRequestFields()
             
@@ -1012,7 +1012,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                                                                                                      walletNonce: "mock-nonce",
                                                                                                      networkManager: mockNetworkManager
         )
-        clientIdPrefixBasedAuthorizationRequestHandler.setVersionLogic(.draft23)
+        clientIdPrefixBasedAuthorizationRequestHandler.setSpecVersionHandler(.draft23)
         await XCTAssertAsyncThrowsError(try await clientIdPrefixBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Either presentation_definition or presentation_definition_uri request param can be provided but not both",
@@ -1165,7 +1165,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client",
                                                                                                                      specVersion: .v1,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         
-        clientIdPrefixBasedAuthorizationRequestHandler.setVersionLogic(.v1)
+        clientIdPrefixBasedAuthorizationRequestHandler.setSpecVersionHandler(.v1)
         await XCTAssertAsyncThrowsError(try await clientIdPrefixBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Error during client metadata decoding - The data couldn’t be read because it is missing.",
@@ -1341,7 +1341,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
         )
-        handler.setVersionLogic(.v1)
+        handler.setSpecVersionHandler(.v1)
 
         await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
@@ -1368,7 +1368,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
         )
-        handler.setVersionLogic(.v1)
+        handler.setSpecVersionHandler(.v1)
 
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
@@ -1385,7 +1385,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
         )
-        handler.setVersionLogic(.draft23)
+        handler.setSpecVersionHandler(.draft23)
 
         await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
@@ -1407,7 +1407,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
         )
-        handler.setVersionLogic(.v1)
+        handler.setSpecVersionHandler(.v1)
 
         await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,

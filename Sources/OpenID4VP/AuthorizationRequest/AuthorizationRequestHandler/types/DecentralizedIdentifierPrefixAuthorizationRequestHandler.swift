@@ -40,7 +40,7 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandler:  ClientIdPrefixB
         
         let keyResolver: PublicKeyResolver = DidPublicKeyResolver(networkManager: networkManager)
         
-        return try await keyResolver.resolve(uri: VersionLogic.of(specVersion).didUrl(clientId: clientId), keyId: keyId)
+        return try await keyResolver.resolve(uri: SpecVersionHandler.of(specVersion).didUrl(clientId: clientId), keyId: keyId)
     }
     
     func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
@@ -48,10 +48,10 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandler:  ClientIdPrefixB
         return walletMetadata
     }
     
-    private enum VersionLogic {
+    private enum SpecVersionHandler {
         case draft23, specV1
 
-        static func of(_ specVersion: SpecVersion) -> VersionLogic {
+        static func of(_ specVersion: SpecVersion) -> SpecVersionHandler {
             return specVersion == .draft23 ? .draft23 : .specV1
         }
         
