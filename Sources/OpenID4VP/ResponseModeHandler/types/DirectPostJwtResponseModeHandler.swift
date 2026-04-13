@@ -160,13 +160,27 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                 let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, [clientMetadata.authorizationEncryptedResponseAlg!])
                 return JWEHandler(contentEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseEnc!, keyEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseAlg!, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             case .v1:
-                let clientMetadata = ((authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata)!
+                guard let clientMetadata = ((authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata) else {
+                    throw InvalidData(
+                          message: "client_metadata must be present for given response mode",
+                          className: className
+                      )
+                }
+                guard let verifierJwks = clientMetadata.jwks else {
+                    throw MissingInput(fieldPath: ["client_metadata", "jwks"],
+                                         message: "",
+                                         className: className)
+                }
+
                 let authorizationEncryptedResponseEnc = clientMetadata.encryptedResponseEncValuesSupported?.contains(ContentEncryptionAlgorithm.A256GCM.rawValue) == true ? ContentEncryptionAlgorithm.A256GCM.rawValue : try {
                     throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
                 }()
                 
-                let verifierPublicKey = try getEncryptionKey(clientMetadata.jwks!, walletMetadata?.authorizationEncryptionAlgValuesSupported?.compactMap({$0.rawValue}) ?? [KeyManagementAlgorithm.ecdhEs.rawValue])
-                return JWEHandler(contentEncryptionAlgorithm: authorizationEncryptedResponseEnc, keyEncryptionAlgorithm: "", publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
+                let verifierPublicKey = try getEncryptionKey(verifierJwks, walletMetadata?.authorizationEncryptionAlgValuesSupported?.compactMap({$0.rawValue}) ?? [KeyManagementAlgorithm.ecdhEs.rawValue])
+                guard let verifierPublicKeyAlgorithm = verifierPublicKey.algorithm else {
+                    throw InvalidData(message: "Algorithm must be specified for the encryption key in jwks", className: className)
+                }
+                return JWEHandler(contentEncryptionAlgorithm: authorizationEncryptedResponseEnc, keyEncryptionAlgorithm: verifierPublicKeyAlgorithm, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             }
         }
     }
