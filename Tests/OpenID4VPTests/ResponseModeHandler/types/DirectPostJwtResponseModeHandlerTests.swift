@@ -398,7 +398,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
         let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
-        let authorizationResponse = AuthorizationResponse.dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
+        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: AuthorizationRequestSpecVersion1(clientId: v1Request.clientId, responseType: v1Request.responseType, responseMode: v1Request.responseMode, responseUri: v1Request.responseUri, redirectUri: v1Request.redirectUri, nonce: v1Request.nonce, walletNonce: v1Request.walletNonce, state: v1Request.state, clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self)), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
             assertOpenID4VPException(error, expectedMessage: "Unsupported content encryption algorithm", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
@@ -417,7 +417,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             state: v1Request.state,
             clientMetadata: nil
         )
-        let authorizationResponse = AuthorizationResponse.dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
+        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: requestWithNilMetadata, authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
             assertOpenID4VPException(error, expectedMessage: "client_metadata must be present for given response mode", expectedCode: OpenID4VPErrorCodes.invalidRequest)
@@ -441,7 +441,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             state: v1Request.state,
             clientMetadata: createInstance(clientMetadataWithoutJwks, as: ClientMetadataSpecVersion1.self)
         )
-        let authorizationResponse = AuthorizationResponse.dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
+        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: requestWithNoJwks, authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
             assertOpenID4VPException(error, expectedMessage: "Missing Input: client_metadata->jwks param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
@@ -474,7 +474,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             state: v1Request.state,
             clientMetadata: createInstance(clientMetadataWithKeyWithoutAlg, as: ClientMetadataSpecVersion1.self)
         )
-        let authorizationResponse = AuthorizationResponse.dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
+        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: requestWithKeyWithoutAlg, authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
             assertOpenID4VPException(error, expectedMessage: "No encryption key with alg [\"ECDH-ES\"] found in JWK Set", expectedCode: OpenID4VPErrorCodes.invalidRequest)
@@ -575,7 +575,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
 
     func testSendAuthorizationResponseForDirectPostJwtResponseMode() async throws {
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
-        let authorizationResponse: AuthorizationResponse = AuthorizationResponse.dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
+        let authorizationResponse: AuthorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
 
         let draft23Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
         let draft23Result = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: draft23Request, authorizationResponse: authorizationResponse, url: draft23Request.responseUri!, networkManager: mockNetworkManager, producerInfo: "mock-nonce", recipientInfo: "verifier-nonce", walletMetadata: nil)
@@ -601,7 +601,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
 
     func testShouldReturnEncryptedResponseForSuccessAuthorizationResponse() throws {
         let handler = DirectPostJwtResponseModeHandler()
-        let authorizationResponse = AuthorizationResponse.dif(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "test-state")
+        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "test-state")
 
         let draft23Result = try handler.getAuthorizationResponse(authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)
         XCTAssertEqual(1, draft23Result.keys.count)

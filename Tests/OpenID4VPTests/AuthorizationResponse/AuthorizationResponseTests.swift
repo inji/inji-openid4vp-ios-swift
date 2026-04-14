@@ -48,7 +48,7 @@ final class AuthorizationResponseTests: XCTestCase {
             "definition_id": "client-identifier"
         ]
 
-        let authorizationResponse = AuthorizationResponse.dif(
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
             vpToken: .vpTokenElement(mdocVPToken),
             presentationSubmission: presentationSubmissionWithMdoc,
             state: "test-state"
@@ -89,7 +89,7 @@ final class AuthorizationResponseTests: XCTestCase {
             ]
         ]
 
-        let authorizationResponse = AuthorizationResponse.dif(
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
             vpToken: .vpTokenArray([mdocVPToken, ldpVPToken]),
             presentationSubmission: presentationSubmissionWithLdpVPAndMdoc,
             state: "test-state"
@@ -133,7 +133,7 @@ final class AuthorizationResponseTests: XCTestCase {
             "definition_id": "client-identifier"
         ]
 
-        let authorizationResponse = AuthorizationResponse.dif(
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
             vpToken: .vpTokenElement(mdocVPToken),
             presentationSubmission: presentationSubmissionWithMdoc,
             state: nil

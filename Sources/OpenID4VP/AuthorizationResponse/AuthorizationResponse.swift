@@ -7,7 +7,7 @@ enum AuthorizationResponse {
     case dcql(vpToken: [String: Any], state: String?)
     
     // Draft 23 compliant: DIF Presentation Exchange structure
-    case dif(vpToken: VPTokenType, presentationSubmission: PresentationSubmission, state: String?)
+    case presentationExchange(vpToken: VPTokenType, presentationSubmission: PresentationSubmission, state: String?)
     
     func toJsonEncodedMap() throws -> [String: String] {
         var jsonEncodedAuthorizationResponse: [String: String] = [:]
@@ -18,7 +18,7 @@ enum AuthorizationResponse {
             jsonEncodedAuthorizationResponse["vp_token"] = String(data: vpData, encoding: .utf8)
             if let state = state { jsonEncodedAuthorizationResponse["state"] = state }
             
-        case .dif(let vpToken, let presentationSubmission, let state):
+        case .presentationExchange(let vpToken, let presentationSubmission, let state):
             jsonEncodedAuthorizationResponse["vp_token"] = try vpToken.encodedString(fieldName: "vp_token", className: className)
             jsonEncodedAuthorizationResponse["presentation_submission"] = try encode(
                 presentationSubmission,

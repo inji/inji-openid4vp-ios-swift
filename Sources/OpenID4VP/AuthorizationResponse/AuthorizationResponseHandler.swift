@@ -499,7 +499,7 @@ public class AuthorizationResponseHandler {
                     unsignedVPTokenResults: unsignedVPTokenResults,
                     formatToCredentialInputDescriptorMapping: formatToCredentialInputDescriptorMapping
                 )
-                return .dif(
+                return .presentationExchange(
                     vpToken: vpToken,
                     presentationSubmission: presentationSubmission,
                     state: authorizationRequest.state

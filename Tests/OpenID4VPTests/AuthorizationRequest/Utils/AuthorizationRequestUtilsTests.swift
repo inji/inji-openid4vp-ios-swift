@@ -6,7 +6,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     private var walletMetadata: WalletMetadata!
     
     override func setUpWithError() throws {
-//        walletMetadata = try createWalletMetadataV2()
+        walletMetadata = try createWalletMetadata()
     }
     
     ///Test Decoding of url encoded paramters to Dictionary

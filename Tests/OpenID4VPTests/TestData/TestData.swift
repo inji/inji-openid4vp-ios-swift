@@ -123,7 +123,7 @@ let authorizationRequestParamsWithValue: [String: Any] = [
 func baseAuthRequest(clientId: String,
                              clientIdScheme: String? = nil,
                              responseUri: String) -> [String: Any] {
-    var request: [String: Any] = [
+    let request: [String: Any] = [
         "response_type": "vp_token",
         "response_mode": "iar-post",
         "presentation_definition": [
