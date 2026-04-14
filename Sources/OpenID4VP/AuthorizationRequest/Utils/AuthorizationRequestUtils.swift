@@ -215,6 +215,7 @@ internal func findSpecVersionUsingRequestParameters(_ authorizationRequestParame
 
 internal func findSpecVersion(clientId: String, clientIdPrefix: String, authorizationRequestParameters: [String: Any], trustedVerifiers: [Verifier]) -> SpecVersion {
     // In case of By reference mode of Request - get the client ID and understand the spec version
+    // Client ID Prefix - redirect_uri is not supported for by reference request, since signed requests are supported by that client ID prefix.
     if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] != nil) {
         if clientIdPrefix == ClientIdScheme.did.rawValue {
             return .draft23
