@@ -1,14 +1,14 @@
 import Foundation
 import JSONWebKey
 
-public struct ClientMetadataSpecVersion1: Codable {
+public struct ClientMetadata: Codable {
     let clientName: String?
     let logoUri: String?
     let vpFormatsSupported: [String: VPFormatSupported]
     let encryptedResponseEncValuesSupported: [String]?
     let jwks: JWKSet?
 
-    static let className = String(describing: ClientMetadataSpecVersion1.self)
+    static let className = String(describing: ClientMetadata.self)
 
     enum CodingKeys: String, CodingKey {
         case clientName = "client_name"
@@ -57,11 +57,11 @@ public struct ClientMetadataSpecVersion1: Codable {
             guard !self.vpFormatsSupported.isEmpty else {
                 throw InvalidData(
                     message: "vp_formats_supported cannot be empty in client metadata",
-                    className: ClientMetadataSpecVersion1.className
+                    className: ClientMetadata.className
                 )
             }
         } catch {
-            throw wrapError(error, customError: { message in InvalidData(message: "Error during client metadata decoding - \(message)", className: ClientMetadataSpecVersion1.className) })
+            throw wrapError(error, customError: { message in InvalidData(message: "Error during client metadata decoding - \(message)", className: ClientMetadata.className) })
         }
     }
 
@@ -92,20 +92,20 @@ public struct ClientMetadataSpecVersion1: Codable {
         }
     }
     
-    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadataSpecVersion1 {
+    public static func deserializeAndValidate(clientMetadata: Any) throws -> ClientMetadata {
         if let encodedData = clientMetadata as? Data {
             return try toClientMetadata(encodedData)
         } else if let data = clientMetadata as? String {
             guard let encodedData = data.data(using: .utf8) else {
-                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadataSpecVersion1.className)
+                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadata.className)
             }
             return try toClientMetadata(encodedData)
         } else {
-            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadataSpecVersion1.className)
+            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadata.className)
         }
     }
     
-    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadataSpecVersion1 {
-        return try encodedData.toInstance(as: ClientMetadataSpecVersion1.self)
+    fileprivate static func toClientMetadata(_ encodedData: Data)throws -> ClientMetadata {
+        return try encodedData.toInstance(as: ClientMetadata.self)
     }
 }

@@ -88,7 +88,7 @@ final class ClientMetadataUtilTests: XCTestCase {
         let updatedAuthorizationRequest = try ClientMetadataSpecVersionHandler.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)
 
         XCTAssertNotNil(updatedAuthorizationRequest[clientMetadataKey])
-        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadataSpecVersion1)
+        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadata)
     }
 
     func testV1ParsingOfClientMetadataAvailableAsDictionary() throws {
@@ -103,18 +103,18 @@ final class ClientMetadataUtilTests: XCTestCase {
         let updatedAuthorizationRequest = try ClientMetadataSpecVersionHandler.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)
 
         XCTAssertNotNil(updatedAuthorizationRequest[clientMetadataKey])
-        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadataSpecVersion1)
+        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadata)
     }
 
     func testV1ParsingOfClientMetadataWhenAlreadyClientMetadataSpecVersion1Instance() throws {
-        let clientMetadataInstance = ClientMetadataSpecVersion1(
+        let clientMetadataInstance = ClientMetadata(
             vpFormatsSupported: ["ldp_vc": LdpVcFormatSupported()]
         )
         let authorizationRequest = createAuthorizationRequest(clientMetadata: clientMetadataInstance)
 
         let updatedAuthorizationRequest = try ClientMetadataSpecVersionHandler.of(.v1).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil as WalletMetadata?)
 
-        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadataSpecVersion1)
+        XCTAssertTrue(updatedAuthorizationRequest[clientMetadataKey] is ClientMetadata)
     }
 
     func testV1ParsingOfClientMetadataWhenClientMetadataAvailableButNotOfExpectedType() throws {

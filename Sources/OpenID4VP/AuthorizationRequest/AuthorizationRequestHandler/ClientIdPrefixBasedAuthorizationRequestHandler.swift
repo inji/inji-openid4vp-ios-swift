@@ -298,8 +298,8 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
 
         func parseAndValidateClientMetadata(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletMetadata: WalletMetadata?) throws -> [String: Any] {
-            let clientMetadataLogic: ClientMetadataSpecVersionHandler = self == .draft23 ? .draft23 : .v1
-            return try clientMetadataLogic.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
+            let clientMetadataHandler: ClientMetadataSpecVersionHandler = self == .draft23 ? .draft23 : .v1
+            return try clientMetadataHandler.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
         }
 
         func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], networkManager: NetworkManaging) async throws {
@@ -321,7 +321,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         func getAuthorizationRequest(authorizationRequestParameters: [String: Any]) -> AuthorizationRequest {
             switch self {
             case .draft23:
-                return AuthorizationRequestSpecVersionDraft23(
+                return AuthorizationRequestDraft23(
                     clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,
                     responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue])!,
                     responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue]),
@@ -343,7 +343,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                     nonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce.rawValue])!,
                     walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue]),
                     state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]),
-                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadataSpecVersion1
+                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadata
                 )
             }
         }

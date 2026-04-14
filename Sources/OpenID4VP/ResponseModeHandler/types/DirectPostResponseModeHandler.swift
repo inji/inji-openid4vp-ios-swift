@@ -12,7 +12,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         }
     }
     
-    func validate(clientMetadata: ClientMetadataSpecVersion1?,
+    func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
         if clientMetadata?.encryptedResponseEncValuesSupported != nil {

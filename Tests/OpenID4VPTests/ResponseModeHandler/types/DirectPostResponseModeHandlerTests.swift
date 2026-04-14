@@ -166,7 +166,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": { "ldp_vc": { "proof_type_values": ["Ed25519Signature2020"] } }
         }
         """
-        let v1ClientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: Data(v1ClientMetadataStr.utf8))
+        let v1ClientMetadata = try JSONDecoder().decode(ClientMetadata.self, from: Data(v1ClientMetadataStr.utf8))
         XCTAssertThrowsError(
             try handler.validate(clientMetadata: v1ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
         ) { error in

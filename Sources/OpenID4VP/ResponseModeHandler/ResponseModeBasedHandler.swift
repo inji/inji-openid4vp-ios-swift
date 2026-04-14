@@ -2,7 +2,7 @@ import Foundation
 import JSONWebKey
 
 protocol ResponseModeBasedHandler {
-    func validate(clientMetadata: ClientMetadataSpecVersion1?,
+    func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws
     

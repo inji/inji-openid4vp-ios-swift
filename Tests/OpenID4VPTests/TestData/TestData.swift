@@ -427,7 +427,7 @@ let mockClientMetadataSpecVersionDraft23 : [ResponseMode: ClientMetadataSpecVers
     ], as: ClientMetadataSpecVersionDraft23.self)
 ]
 
-let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadataSpecVersion1] = [
+let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadata] = [
     .directPost: createInstance([
         "client_name": "Requester name",
         "logo_uri": "https://mock-verifier.com/logo",
@@ -459,7 +459,7 @@ let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadataSpecVersion1] 
                 ]
             ]
         ]
-    ], as: ClientMetadataSpecVersion1.self),
+    ], as: ClientMetadata.self),
     .directPostJwt: createInstance([
         "client_name": "Requester name",
         "logo_uri": "https://mock-verifier.com/logo",
@@ -492,7 +492,7 @@ let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadataSpecVersion1] 
                 ]
             ]
         ]
-    ], as: ClientMetadataSpecVersion1.self)
+    ], as: ClientMetadata.self)
 ]
 
 let ldpVPTokenSigningResult = LdpVPTokenSigningResult(

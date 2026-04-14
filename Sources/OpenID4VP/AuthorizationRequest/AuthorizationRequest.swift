@@ -116,7 +116,7 @@ public class AuthorizationRequest: Encodable {
     }
 }
 
-public final class AuthorizationRequestSpecVersionDraft23: AuthorizationRequest {
+public final class AuthorizationRequestDraft23: AuthorizationRequest {
     var presentationDefinition: PresentationDefinition
     var clientMetadata: ClientMetadataSpecVersionDraft23?
     
@@ -162,7 +162,7 @@ public final class AuthorizationRequestSpecVersionDraft23: AuthorizationRequest 
 //TODO: Enable DCQL query when DCQL is supported
 public final class AuthorizationRequestSpecVersion1: AuthorizationRequest {
     //    var dcqlQuery: DCQLQuery
-    var clientMetadata: ClientMetadataSpecVersion1?
+    var clientMetadata: ClientMetadata?
     
     private enum SubCodingKeys: String, CodingKey {
         case dcqlQuery = "dcql_query"
@@ -179,7 +179,7 @@ public final class AuthorizationRequestSpecVersion1: AuthorizationRequest {
         walletNonce: String?,
         state: String?,
         //        dcqlQuery: DCQLQuery,
-        clientMetadata: ClientMetadataSpecVersion1?
+        clientMetadata: ClientMetadata?
     ) {
         //        self.dcqlQuery = dcqlQuery
         self.clientMetadata = clientMetadata

@@ -18,7 +18,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     /// client metadata validation tests
     
     func testThrowErrorWhenClientMetadataIsNil() throws {
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: nil as ClientMetadataSpecVersion1?, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: nil as ClientMetadata?, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("client_metadata must be present for given response mode", error.localizedDescription)
         }
         
@@ -66,7 +66,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->encrypted_response_enc_values_supported param is required", error.localizedDescription)
         }
     }
@@ -111,7 +111,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->encrypted_response_enc_values_supported param is required", error.localizedDescription)
         }
     }
@@ -138,7 +138,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Missing Input: client_metadata->jwks param is required", error.localizedDescription)
         }
     }
@@ -185,7 +185,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Authorization response encryption algorithm is not supported", error.localizedDescription)
         }
     }
@@ -230,7 +230,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("authorization_encrypted_response_enc is not supported", error.localizedDescription)
         }
     }
@@ -278,7 +278,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self), walletMetadata: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Authorization response encryption algorithm is not supported", error.localizedDescription)
         }
     }
@@ -329,7 +329,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadataSpecVersionDraft23.self), walletMetadata: nil, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "wallet_metadata must be present", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: nil, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataV1, as: ClientMetadata.self), walletMetadata: nil, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "wallet_metadata must be present", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
 
@@ -337,7 +337,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadataSpecVersionDraft23.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "authorization_encryption_alg_values_supported must be present in wallet_metadata", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataV1, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "authorization_encryption_alg_values_supported must be present in wallet_metadata", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
 
@@ -345,7 +345,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadataSpecVersionDraft23.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "authorization_encryption_enc_values_supported must be present in wallet_metadata", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataV1, as: ClientMetadata.self), walletMetadata: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "authorization_encryption_enc_values_supported must be present in wallet_metadata", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -376,7 +376,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ],
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self), walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)) { error in
             assertOpenID4VPException(error, expectedMessage: "encrypted_response_enc_values_supported must be a non-empty array", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -399,7 +399,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         ]
         let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: AuthorizationRequestSpecVersion1(clientId: v1Request.clientId, responseType: v1Request.responseType, responseMode: v1Request.responseMode, responseUri: v1Request.responseUri, redirectUri: v1Request.redirectUri, nonce: v1Request.nonce, walletNonce: v1Request.walletNonce, state: v1Request.state, clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadataSpecVersion1.self)), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: AuthorizationRequestSpecVersion1(clientId: v1Request.clientId, responseType: v1Request.responseType, responseMode: v1Request.responseMode, responseUri: v1Request.responseUri, redirectUri: v1Request.redirectUri, nonce: v1Request.nonce, walletNonce: v1Request.walletNonce, state: v1Request.state, clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self)), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
             assertOpenID4VPException(error, expectedMessage: "Unsupported content encryption algorithm", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -439,7 +439,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce,
             state: v1Request.state,
-            clientMetadata: createInstance(clientMetadataWithoutJwks, as: ClientMetadataSpecVersion1.self)
+            clientMetadata: createInstance(clientMetadataWithoutJwks, as: ClientMetadata.self)
         )
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
 
@@ -472,7 +472,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce,
             state: v1Request.state,
-            clientMetadata: createInstance(clientMetadataWithKeyWithoutAlg, as: ClientMetadataSpecVersion1.self)
+            clientMetadata: createInstance(clientMetadataWithKeyWithoutAlg, as: ClientMetadata.self)
         )
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
 
@@ -535,7 +535,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             clientMetadata: createInstance([
                 "encrypted_response_enc_values_supported": ["A256GCM"],
                 "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
-            ], as: ClientMetadataSpecVersion1.self)
+            ], as: ClientMetadata.self)
         )
         XCTAssertThrowsError(try handler.getVerifierPublicKeyForEncryption(
             authorizationRequest: requestWithNoJwks, walletMetadata: walletMetadata
@@ -559,7 +559,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                 "encrypted_response_enc_values_supported": ["A256GCM"],
                 "jwks": ["keys": [["kty": "OKP", "crv": "Ed25519", "use": "sig", "alg": "EdDSA", "kid": "sig-key", "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc"]]],
                 "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
-            ], as: ClientMetadataSpecVersion1.self)
+            ], as: ClientMetadata.self)
         )
         XCTAssertThrowsError(try handler.getVerifierPublicKeyForEncryption(
             authorizationRequest: requestWithSigOnlyJwks, walletMetadata: walletMetadata
@@ -659,7 +659,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
            ]
 
            XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(
-               clientMetadata: createInstance(clientMetadataWithSigOnlyJwks, as: ClientMetadataSpecVersion1.self),
+               clientMetadata: createInstance(clientMetadataWithSigOnlyJwks, as: ClientMetadata.self),
                walletMetadata: walletMetadata,
                shouldValidateWithWalletMetadata: false
            )) { error in

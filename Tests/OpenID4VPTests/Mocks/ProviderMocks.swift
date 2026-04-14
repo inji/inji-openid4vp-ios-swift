@@ -57,7 +57,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     
-    func validate(clientMetadata: ClientMetadataSpecVersion1?,
+    func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     

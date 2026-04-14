@@ -1,7 +1,7 @@
 import XCTest
 @testable import OpenID4VP
 
-final class ClientMetadataSpecVersion1Tests: XCTestCase {
+final class ClientMetadataTests: XCTestCase {
 
     private let validJwks = """
     {"keys": [{"kty": "EC", "use": "enc", "alg": "ECDH-ES", "kid": "1", "crv": "P-256", "x": "ur76rg", "y": "ur76rg"}]}
@@ -11,7 +11,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testInitStoresAllFields() {
         let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020])
-        let metadata = ClientMetadataSpecVersion1(
+        let metadata = ClientMetadata(
             clientName: "Client",
             logoUri: "https://example.com/logo.png",
             vpFormatsSupported: ["ldp_vc": ldp],
@@ -27,7 +27,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
     }
 
     func testInitAllOptionalFieldsNil() {
-        let metadata = ClientMetadataSpecVersion1(
+        let metadata = ClientMetadata(
             vpFormatsSupported: [:]
         )
         XCTAssertNil(metadata.clientName)
@@ -40,7 +40,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDecodeAllFields() throws {
         let data = json(jwks: validJwks)
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         XCTAssertEqual(decoded.clientName, "Test Client")
         XCTAssertEqual(decoded.logoUri, "https://example.com/logo.png")
         XCTAssertEqual(decoded.encryptedResponseEncValuesSupported, ["A256GCM"])
@@ -51,7 +51,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDecodeOptionalFieldsAbsent() throws {
         let data = "{ \"vp_formats_supported\": {\"ldp_vc\": {}} }".data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         XCTAssertNil(decoded.clientName)
         XCTAssertNil(decoded.logoUri)
         XCTAssertNil(decoded.encryptedResponseEncValuesSupported)
@@ -60,7 +60,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDecodeVpFormatsSupportedLdpVc() throws {
         let data = json()
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         let ldp = decoded.vpFormatsSupported["ldp_vc"] as? LdpVcFormatSupported
         XCTAssertNotNil(ldp)
         XCTAssertEqual(ldp?.proofTypeValues, [.ed25519Signature2020])
@@ -70,7 +70,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         let data = json(vpFormatsSupported: """
         {"ldp_vp": {"proof_type_values": ["JsonWebSignature2020"]}}
         """)
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         XCTAssertNotNil(decoded.vpFormatsSupported["ldp_vp"] as? LdpVcFormatSupported)
     }
 
@@ -78,7 +78,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         let data = json(vpFormatsSupported: """
         {"mso_mdoc": {"issuerauth_alg_values": [-7], "deviceauth_alg_values": [-9]}}
         """)
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         let mdoc = decoded.vpFormatsSupported["mso_mdoc"] as? MsoMdocVcFormatSupported
         XCTAssertNotNil(mdoc)
         XCTAssertEqual(mdoc?.issuerAuthAlgValues, [-7])
@@ -89,7 +89,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         let data = json(vpFormatsSupported: """
         {"dc+sd-jwt": {"sd-jwt_alg_values": ["ES256"], "kb-jwt_alg_values": ["EdDSA"]}}
         """)
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         let sdJwt = decoded.vpFormatsSupported["dc+sd-jwt"] as? SdJwtVcFormatSupported
         XCTAssertNotNil(sdJwt)
         XCTAssertEqual(sdJwt?.sdJwtAlgValues, ["ES256"])
@@ -100,7 +100,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
         let data = json(vpFormatsSupported: """
         {"vc+sd-jwt": {"sd-jwt_alg_values": ["ES256"]}}
         """)
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         XCTAssertNotNil(decoded.vpFormatsSupported["vc+sd-jwt"] as? SdJwtVcFormatSupported)
     }
 
@@ -108,7 +108,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testEncodeAndDecode() throws {
         let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020])
-        let original = ClientMetadataSpecVersion1(
+        let original = ClientMetadata(
             clientName: "Client",
             logoUri: "https://example.com/logo.png",
             vpFormatsSupported: ["ldp_vc": ldp],
@@ -116,7 +116,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
             jwks: nil
         )
         let data = try JSONEncoder().encode(original)
-        let decoded = try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)
+        let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
         XCTAssertEqual(decoded.clientName, original.clientName)
         XCTAssertEqual(decoded.logoUri, original.logoUri)
         XCTAssertEqual(decoded.encryptedResponseEncValuesSupported, original.encryptedResponseEncValuesSupported)
@@ -124,7 +124,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
     }
 
     func testEncodeOmitsNilOptionalFields() throws {
-        let metadata = ClientMetadataSpecVersion1(
+        let metadata = ClientMetadata(
             vpFormatsSupported: ["ldp_vc": LdpVcFormatSupported()]
         )
         let data = try JSONEncoder().encode(metadata)
@@ -137,7 +137,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
     }
 
     func testEncodeVpFormatsSupportedSkipsUnknownFormatType() throws {
-        let metadata = ClientMetadataSpecVersion1(
+        let metadata = ClientMetadata(
             vpFormatsSupported: ["unknown_format": LdpVcFormatSupported()]
         )
         let data = try JSONEncoder().encode(metadata)
@@ -148,7 +148,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testEncodeVpFormatsSupportedMsoMdoc() throws {
         let mdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
-        let metadata = ClientMetadataSpecVersion1(
+        let metadata = ClientMetadata(
             vpFormatsSupported: ["mso_mdoc": mdoc]
         )
         let data = try JSONEncoder().encode(metadata)
@@ -159,7 +159,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testEncodeVpFormatsSupportedSdJwt() throws {
         let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
-        let metadata = ClientMetadataSpecVersion1(
+        let metadata = ClientMetadata(
             vpFormatsSupported: ["dc+sd-jwt": sdJwt]
         )
         let data = try JSONEncoder().encode(metadata)
@@ -172,7 +172,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDeserializeAndValidateWithData() throws {
         let data = json()
-        let result = try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: data)
+        let result = try ClientMetadata.deserializeAndValidate(clientMetadata: data)
         XCTAssertEqual(result.clientName, "Test Client")
     }
 
@@ -180,19 +180,19 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDeserializeAndValidateWithString() throws {
         let jsonString = String(data: json(), encoding: .utf8)!
-        let result = try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: jsonString)
+        let result = try ClientMetadata.deserializeAndValidate(clientMetadata: jsonString)
         XCTAssertEqual(result.clientName, "Test Client")
     }
 
     func testDeserializeAndValidateWithStringThrowsOnInvalidUTF8() {
         XCTAssertThrowsError(
-            try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: 12345)
+            try ClientMetadata.deserializeAndValidate(clientMetadata: 12345)
         )
     }
 
     func testDeserializeAndValidateThrowsForInvalidType() {
         XCTAssertThrowsError(
-            try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: 12345)
+            try ClientMetadata.deserializeAndValidate(clientMetadata: 12345)
         )
     }
     
@@ -201,7 +201,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDecodeThrowsWhenVpFormatsSupportedIsEmpty() {
         let data = json(vpFormatsSupported: "{}")
-        XCTAssertThrowsError(try JSONDecoder().decode(ClientMetadataSpecVersion1.self, from: data)) { error in
+        XCTAssertThrowsError(try JSONDecoder().decode(ClientMetadata.self, from: data)) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "Error during client metadata decoding - vp_formats_supported cannot be empty in client metadata",
@@ -212,7 +212,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDeserializeAndValidateWithDataThrowsWhenVpFormatsSupportedIsEmpty() {
         let data = json(vpFormatsSupported: "{}")
-        XCTAssertThrowsError(try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: data)) { error in
+        XCTAssertThrowsError(try ClientMetadata.deserializeAndValidate(clientMetadata: data)) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "Error during client metadata decoding - vp_formats_supported cannot be empty in client metadata",
@@ -223,7 +223,7 @@ final class ClientMetadataSpecVersion1Tests: XCTestCase {
 
     func testDeserializeAndValidateWithStringThrowsWhenVpFormatsSupportedIsEmpty() {
         let jsonString = String(data: json(vpFormatsSupported: "{}"), encoding: .utf8)!
-        XCTAssertThrowsError(try ClientMetadataSpecVersion1.deserializeAndValidate(clientMetadata: jsonString)) { error in
+        XCTAssertThrowsError(try ClientMetadata.deserializeAndValidate(clientMetadata: jsonString)) { error in
             assertOpenID4VPException(
                 error,
                 expectedMessage: "Error during client metadata decoding - vp_formats_supported cannot be empty in client metadata",

@@ -42,7 +42,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
     }
     
-    func validate(clientMetadata: ClientMetadataSpecVersion1?,
+    func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
         guard clientMetadata != nil else {
@@ -181,13 +181,13 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         case draft23
         
         static func from(_ authorizationRequest: AuthorizationRequest) -> SpecVersionHandler {
-            return authorizationRequest is AuthorizationRequestSpecVersionDraft23 ? .draft23 : .v1
+            return authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .v1
         }
         
         func getVerifierPublicKey(authorizationRequest: AuthorizationRequest, walletMetadata: WalletMetadata?, className: String) throws -> JWK {
             switch self {
             case .draft23:
-                let clientMetadata = ((authorizationRequest as? AuthorizationRequestSpecVersionDraft23)?.clientMetadata)!
+                let clientMetadata = ((authorizationRequest as? AuthorizationRequestDraft23)?.clientMetadata)!
                 return try getEncryptionKey(clientMetadata.jwks!, [clientMetadata.authorizationEncryptedResponseAlg!])
             case .v1:
                 guard let clientMetadata = (authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata else {
@@ -203,7 +203,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         func getJWEHandler(authorizationRequest: AuthorizationRequest, walletNonce: String, walletMetadata: WalletMetadata?, className: String) throws -> JWEHandler {
             switch self {
             case .draft23:
-                let clientMetadata = ((authorizationRequest as? AuthorizationRequestSpecVersionDraft23)?.clientMetadata)!
+                let clientMetadata = ((authorizationRequest as? AuthorizationRequestDraft23)?.clientMetadata)!
                 let verifierPublicKey = try getVerifierPublicKey(authorizationRequest: authorizationRequest, walletMetadata: walletMetadata, className: className)
                 return JWEHandler(contentEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseEnc!, keyEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseAlg!, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             case .v1:

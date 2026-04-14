@@ -92,8 +92,31 @@ public class AuthorizationResponseHandler {
         walletNonce: String
     ) async throws -> [UnsignedVPTokenV2] {
 
-        _ = try await constructUnsignedVPToken(
-            credentialsMap: credentialsMap,
+        if authorizationRequest as? AuthorizationRequestDraft23 != nil {
+            self.specVersion = .draft23
+        }
+        
+        let hasLdpVc = credentialsMap.values.contains { formatMap in
+            formatMap.keys.contains(.ldp_vc)
+        }
+        if hasLdpVc {
+            // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
+            if isNullOrEmpty(holderId) {
+                throw InvalidData(
+                    message: "Holder ID cannot be null or empty for LDP VC format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+            if isNullOrEmpty(signatureSuite) {
+                throw InvalidData(
+                    message: "Signature Suite cannot be null or empty for LDP VC format",
+                    className: AuthorizationResponseHandler.className
+                )
+            }
+        }
+        self.signatureSuite = signatureSuite ?? self.signatureSuite
+
+        try await createUnsignedVPToken(            credentialsMap: credentialsMap,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
             holderId: holderId,
@@ -391,7 +414,7 @@ public class AuthorizationResponseHandler {
         createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
 
         var unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)] = [:]
-        let specVersion: SpecVersion = authorizationRequest is AuthorizationRequestSpecVersionDraft23 ? .draft23 : .v1
+        let specVersion: SpecVersion = authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .v1
 
         for format in formatToCredentialInputDescriptorMapping.keys {
             guard var credentialsArray = formatToCredentialInputDescriptorMapping[format] else {
@@ -481,7 +504,7 @@ public class AuthorizationResponseHandler {
         case draft23, specV1
 
         static func from(_ authorizationRequest: AuthorizationRequest) -> SpecVersionHandler {
-            return authorizationRequest is AuthorizationRequestSpecVersionDraft23 ? .draft23 : .specV1
+            return authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .specV1
         }
 
         func createVPTokenResponse(
@@ -512,7 +535,7 @@ public class AuthorizationResponseHandler {
         func getPresentationDefinitionId(_ authorizationRequest: AuthorizationRequest) -> String {
             switch self {
             case .draft23:
-                return (authorizationRequest as? AuthorizationRequestSpecVersionDraft23)?.presentationDefinition.id ?? ""
+                return (authorizationRequest as? AuthorizationRequestDraft23)?.presentationDefinition.id ?? ""
             case .specV1:
                 return ""
             }

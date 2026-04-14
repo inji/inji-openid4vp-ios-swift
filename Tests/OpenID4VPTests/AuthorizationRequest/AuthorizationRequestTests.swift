@@ -33,7 +33,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)
-        XCTAssertNotNil((request as? AuthorizationRequestSpecVersionDraft23)?.presentationDefinition)
+        XCTAssertNotNil((request as? AuthorizationRequestDraft23)?.presentationDefinition)
     }
 
     func testUrlEncodedPathThrowsOnMissingClientId() async {
@@ -80,7 +80,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)
-        XCTAssertNotNil((request as? AuthorizationRequestSpecVersionDraft23)?.presentationDefinition)
+        XCTAssertNotNil((request as? AuthorizationRequestDraft23)?.presentationDefinition)
     }
 
     func testDictionaryPathPopulatesClientId() async throws {
@@ -144,8 +144,8 @@ final class AuthorizationRequestTests: XCTestCase {
         )
         
         print("Request: \(request)")
-        XCTAssertTrue(request is AuthorizationRequestSpecVersionDraft23)
-        XCTAssertNotNil((request as? AuthorizationRequestSpecVersionDraft23)?.presentationDefinition)
+        XCTAssertTrue(request is AuthorizationRequestDraft23)
+        XCTAssertNotNil((request as? AuthorizationRequestDraft23)?.presentationDefinition)
     }
 
     func testUrlEncodedPathDraft23RequestHasExpectedFields() async throws {
@@ -248,8 +248,8 @@ final class AuthorizationRequestTests: XCTestCase {
             networkManager: mockNetworkManager
         )
 
-        XCTAssertTrue(request is AuthorizationRequestSpecVersionDraft23)
-        let draft23Request = request as? AuthorizationRequestSpecVersionDraft23
+        XCTAssertTrue(request is AuthorizationRequestDraft23)
+        let draft23Request = request as? AuthorizationRequestDraft23
         XCTAssertNotNil(draft23Request?.presentationDefinition)
         XCTAssertEqual(draft23Request?.presentationDefinition.id, "vp_presentation_definition")
     }
@@ -330,7 +330,7 @@ final class AuthorizationRequestTests: XCTestCase {
             networkManager: mockNetworkManager
         )
 
-        XCTAssertNil(request as? AuthorizationRequestSpecVersionDraft23)
+        XCTAssertNil(request as? AuthorizationRequestDraft23)
     }
 
     // MARK: - extractQueryParameters edge cases
