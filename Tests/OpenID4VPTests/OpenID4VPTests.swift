@@ -165,7 +165,7 @@ class OpenID4VPTests: XCTestCase {
                 "jwks": { "keys": [{ "kty": "RSA", "crv": "P-256", "use": "sig", "alg": "RS256", "kid": "1", "x": "ur76ru" }] }
             }
         """.data(using: .utf8)!
-        let clientMetadata = try ClientMetadataSpecVersionDraft23.deserializeAndValidate(clientMetadata: clientMetadataString)
+        let clientMetadata = try ClientMetadataDraft23.deserializeAndValidate(clientMetadata: clientMetadataString)
 
         let trustedVerifiers = [Verifier(clientId: "mock-client-id", responseUris: ["https://example.com/callback"], jwksUri: "https://mock-verifier.com/.well-known/jwks.json")]
         await XCTAssertAsyncThrowsError(try await openID4VP.authenticateVerifier(

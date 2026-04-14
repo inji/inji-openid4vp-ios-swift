@@ -6,7 +6,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     let mockNetworkManager: MockNetworkManager! = MockNetworkManager()
     let mockSetResponseUri: (String) -> Void = { value in
     }
-    var decodedClientMetadata: ClientMetadataSpecVersionDraft23?
+    var decodedClientMetadata: ClientMetadataDraft23?
     var decodedPresentationDefinition: PresentationDefinition?
     
     private var walletMetadata: WalletMetadata!
@@ -923,7 +923,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     // Spec version Draft 23 (presentation echange request is in form of DIF Presentation exchange via property - 'presentation_definition' or 'presentation_definition_uri'
     
     func testParseAndValidateAuthorizationRequestWithPresentationDefinitionByReferenceSupport() async{
-        decodedClientMetadata = createInstance(clientMetadataSpecVersionDraft23, as: ClientMetadataSpecVersionDraft23.self)
+        decodedClientMetadata = createInstance(clientMetadataSpecVersionDraft23, as: ClientMetadataDraft23.self)
         decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
         let presentationDefinition = convertToJsonString(presentationDefinition)
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter), specVersion: .draft23, isPresentationExchangeByReference: true) as [String : Any]
@@ -961,7 +961,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testParseAndValidateAuthorizationRequestWithPresentationDefinitionByValueSupport() async{
-        decodedClientMetadata = createInstance(clientMetadataSpecVersionDraft23, as: ClientMetadataSpecVersionDraft23.self)
+        decodedClientMetadata = createInstance(clientMetadataSpecVersionDraft23, as: ClientMetadataDraft23.self)
         decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdPrefix: .redirectUri,
@@ -1144,7 +1144,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowInvalidDataErrorWhenResponseTypeInAuthorizationRequestIsNotSupported() async {
-        decodedClientMetadata = createInstance(clientMetadataSpecVersionDraft23, as: ClientMetadataSpecVersionDraft23.self)
+        decodedClientMetadata = createInstance(clientMetadataSpecVersionDraft23, as: ClientMetadataDraft23.self)
         decodedPresentationDefinition = createInstance(presentationDefinition, as: PresentationDefinition.self)
         let presentationDefinition = convertToJsonString(presentationDefinition)
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue.map { $0 == "presentation_definition" ? "presentation_definition_uri" : $0 } , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, ["response_type": "vp_token id_token"]), specVersion: .v1) as [String : Any]

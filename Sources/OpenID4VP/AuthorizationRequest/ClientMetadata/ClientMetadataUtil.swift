@@ -1,6 +1,6 @@
 import Foundation
 
-fileprivate let className = String(describing: ClientMetadataSpecVersionDraft23.self)
+fileprivate let className = String(describing: ClientMetadataDraft23.self)
 
 enum ClientMetadataSpecVersionHandler {
     case v1, draft23
@@ -15,15 +15,15 @@ enum ClientMetadataSpecVersionHandler {
         if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata.rawValue] {
             switch self {
             case .draft23:
-                if let clientMetadataInstance = clientMetadata as? ClientMetadataSpecVersionDraft23 {
+                if let clientMetadataInstance = clientMetadata as? ClientMetadataDraft23 {
                     mutableParams[clientMetadataKey] = clientMetadataInstance
                 }
                 else if let clientMetadataObject = clientMetadata as? NSDictionary{
                     let data = try JSONSerialization.data(withJSONObject: clientMetadataObject, options: [])
-                    let clientMetadata = try ClientMetadataSpecVersionDraft23.deserializeAndValidate(clientMetadata: data)
+                    let clientMetadata = try ClientMetadataDraft23.deserializeAndValidate(clientMetadata: data)
                     mutableParams[clientMetadataKey] = clientMetadata
                 } else if let clientMetaString = clientMetadata as? String {
-                    let clientMetadata = try ClientMetadataSpecVersionDraft23.deserializeAndValidate(clientMetadata: clientMetaString)
+                    let clientMetadata = try ClientMetadataDraft23.deserializeAndValidate(clientMetadata: clientMetaString)
                     mutableParams[clientMetadataKey] = clientMetadata
                 } else {
                     throw InvalidData(message: "client_metadata must be of type String or Map", className: className)
@@ -56,7 +56,7 @@ enum ClientMetadataSpecVersionHandler {
             )
         case .draft23:
             try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).validate(
-                clientMetadata: (parsedClientMetadata as? ClientMetadataSpecVersionDraft23),
+                clientMetadata: (parsedClientMetadata as? ClientMetadataDraft23),
                 walletMetadata: walletMetadata,
                 shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata
             )

@@ -21,7 +21,7 @@ final class ClientMetadataUtilTests: XCTestCase {
         let updatedAuthorizationRequest = try ClientMetadataSpecVersionHandler.of(.draft23).parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: false, walletMetadata: nil)
         
         XCTAssertNotNil(updatedAuthorizationRequest[clientMetadataKey])
-        assertJsonString(expected: clientMetadataString, actual: convertToJsonString(updatedAuthorizationRequest[clientMetadataKey] as! ClientMetadataSpecVersionDraft23))
+        assertJsonString(expected: clientMetadataString, actual: convertToJsonString(updatedAuthorizationRequest[clientMetadataKey] as! ClientMetadataDraft23))
     }
     
     func testParsingOfClientMetadataAvailableAsDictionary() throws {
@@ -37,7 +37,7 @@ final class ClientMetadataUtilTests: XCTestCase {
         
         XCTAssertNotNil(updatedAuthorizationRequest[clientMetadataKey])
         // performing force unwrap here as we know the type is ClientMetadata for sure
-        assertDictionariesEqual(expected: clientMetadataDict, actual: convertToDictionary(object: updatedAuthorizationRequest[clientMetadataKey] as! ClientMetadataSpecVersionDraft23))
+        assertDictionariesEqual(expected: clientMetadataDict, actual: convertToDictionary(object: updatedAuthorizationRequest[clientMetadataKey] as! ClientMetadataDraft23))
     }
     
     func testParsingOfClientMetadataWhenClientMetadataAvailableButNotOfExpectedType() throws {

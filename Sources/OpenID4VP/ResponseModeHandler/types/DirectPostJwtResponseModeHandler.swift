@@ -6,7 +6,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
 
     let className = String(describing: DirectPostJwtResponseModeHandler.self)
     
-    func validate(clientMetadata: ClientMetadataSpecVersionDraft23?,
+    func validate(clientMetadata: ClientMetadataDraft23?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
         guard clientMetadata != nil else {

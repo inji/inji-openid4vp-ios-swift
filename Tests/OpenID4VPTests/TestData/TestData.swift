@@ -360,7 +360,7 @@ let clientMetadataWithWrongKey: [String: Any] = [
     ]
 ]
 
-let mockClientMetadataSpecVersionDraft23 : [ResponseMode: ClientMetadataSpecVersionDraft23] = [
+let mockClientMetadataSpecVersionDraft23 : [ResponseMode: ClientMetadataDraft23] = [
     .directPost: createInstance([
         "client_name": "Requester name",
         "logo_uri": "https://mock-verifier.com/logo",
@@ -391,7 +391,7 @@ let mockClientMetadataSpecVersionDraft23 : [ResponseMode: ClientMetadataSpecVers
                 ]
             ]
         ]
-    ], as: ClientMetadataSpecVersionDraft23.self),
+    ], as: ClientMetadataDraft23.self),
     .directPostJwt: createInstance([
         "client_name": "Requester name",
         "logo_uri": "https://mock-verifier.com/logo",
@@ -424,7 +424,7 @@ let mockClientMetadataSpecVersionDraft23 : [ResponseMode: ClientMetadataSpecVers
                 ]
             ]
         ]
-    ], as: ClientMetadataSpecVersionDraft23.self)
+    ], as: ClientMetadataDraft23.self)
 ]
 
 let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadata] = [

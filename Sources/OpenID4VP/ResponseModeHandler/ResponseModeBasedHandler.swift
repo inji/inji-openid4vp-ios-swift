@@ -6,7 +6,7 @@ protocol ResponseModeBasedHandler {
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws
     
-    func validate(clientMetadata: ClientMetadataSpecVersionDraft23?,
+    func validate(clientMetadata: ClientMetadataDraft23?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws
     

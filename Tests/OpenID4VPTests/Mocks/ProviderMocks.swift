@@ -53,7 +53,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     var expectedSuccessResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
 
-    func validate(clientMetadata: ClientMetadataSpecVersionDraft23?,
+    func validate(clientMetadata: ClientMetadataDraft23?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     

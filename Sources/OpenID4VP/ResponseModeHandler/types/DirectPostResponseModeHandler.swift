@@ -4,7 +4,7 @@ import JSONWebKey
 struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     static let className = String(describing: DirectPostResponseModeHandler.self)
     
-    func validate(clientMetadata: ClientMetadataSpecVersionDraft23?,
+    func validate(clientMetadata: ClientMetadataDraft23?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
         if (clientMetadata?.authorizationEncryptedResponseEnc != nil || clientMetadata?.authorizationEncryptedResponseAlg != nil) {

@@ -102,7 +102,7 @@ final class ClientMetadataSpecVersionDraft23Tests: XCTestCase {
             ]
         
             for testCase in testCases {
-                XCTAssertThrowsError(try ClientMetadataSpecVersionDraft23.deserializeAndValidate(clientMetadata: testCase.input)) { error in
+                XCTAssertThrowsError(try ClientMetadataDraft23.deserializeAndValidate(clientMetadata: testCase.input)) { error in
                     assertOpenID4VPException(
                         error,
                         expectedMessage: testCase.expectedError ?? "Missing expected error",
@@ -137,7 +137,7 @@ final class ClientMetadataSpecVersionDraft23Tests: XCTestCase {
         ]
 
         for testCase in testCases {
-            XCTAssertNoThrow(try ClientMetadataSpecVersionDraft23.deserializeAndValidate(clientMetadata: testCase.input))
+            XCTAssertNoThrow(try ClientMetadataDraft23.deserializeAndValidate(clientMetadata: testCase.input))
         }
     }
 }

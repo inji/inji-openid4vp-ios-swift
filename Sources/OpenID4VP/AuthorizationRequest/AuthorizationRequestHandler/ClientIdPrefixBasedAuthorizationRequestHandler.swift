@@ -331,7 +331,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                     walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue]),
                     state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]),
                     presentationDefinition: authorizationRequestParameters[AuthorizationRequestFieldConstants.presentationDefinition.rawValue]! as! PresentationDefinition,
-                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadataSpecVersionDraft23
+                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadataDraft23
                 )
             case .specV1:
                 return AuthorizationRequestSpecVersion1(

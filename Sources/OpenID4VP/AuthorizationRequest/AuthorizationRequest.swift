@@ -118,7 +118,7 @@ public class AuthorizationRequest: Encodable {
 
 public final class AuthorizationRequestDraft23: AuthorizationRequest {
     var presentationDefinition: PresentationDefinition
-    var clientMetadata: ClientMetadataSpecVersionDraft23?
+    var clientMetadata: ClientMetadataDraft23?
     
     private enum SubCodingKeys: String, CodingKey {
         case presentationDefinition = "presentation_definition"
@@ -135,7 +135,7 @@ public final class AuthorizationRequestDraft23: AuthorizationRequest {
         walletNonce: String?,
         state: String?,
         presentationDefinition: PresentationDefinition,
-        clientMetadata: ClientMetadataSpecVersionDraft23?
+        clientMetadata: ClientMetadataDraft23?
     ) {
         self.presentationDefinition = presentationDefinition
         self.clientMetadata = clientMetadata

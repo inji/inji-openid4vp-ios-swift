@@ -70,7 +70,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             }
             """
 
-            let clientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersionDraft23.self, from: Data(clientMetadataStr.utf8))
+            let clientMetadata = try JSONDecoder().decode(ClientMetadataDraft23.self, from: Data(clientMetadataStr.utf8))
             let handler = DirectPostJwtResponseModeHandler()
 
             
@@ -150,7 +150,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
 
         for encryptionField in draft23EncryptionFields {
             let json = "{ \(baseFields), \(encryptionField) }"
-            let draft23ClientMetadata = try JSONDecoder().decode(ClientMetadataSpecVersionDraft23.self, from: Data(json.utf8))
+            let draft23ClientMetadata = try JSONDecoder().decode(ClientMetadataDraft23.self, from: Data(json.utf8))
             XCTAssertThrowsError(
                 try handler.validate(clientMetadata: draft23ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
             ) { error in
