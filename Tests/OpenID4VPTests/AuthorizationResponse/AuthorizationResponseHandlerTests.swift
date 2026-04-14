@@ -82,11 +82,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
         
-        let vpTokenSigningResults = [FormatType.ldp_vc: LdpVPTokenSigningResult(
-            jws: "testJWS",
-            proofValue: "",
-            signatureAlgorithm: "JsonWebSignature2020"
-        )]
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "testJWS"),
+        ]
         
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         
@@ -114,9 +112,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         
-        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-            .ldp_vc: LdpVPTokenSigningResult(jws: "testJWS", proofValue: "", signatureAlgorithm: "JsonWebSignature2020"),
-            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "testJWS"),
+            VPTokenSigningResultV2(signedData: "aGVsbG8="),
         ]
         
         _ = try await handler.constructUnsignedVPToken(
@@ -148,7 +146,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         do {
             _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
-                vpTokenSigningResults: [:],
+                vpTokenSigningResults: [],
                 responseUri: "https://client.example.org/cb"
             )
             XCTFail("Expected error not thrown")
@@ -231,13 +229,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             responseBody: "sending is success in AuthorizationResponseTests"
         )
         
-        let mockVPTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-            .ldp_vc: LdpVPTokenSigningResult(
-                jws: "testJWS",
-                proofValue: "test",
-                signatureAlgorithm: "JsonWebSignature2020"
-            ),
-            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "sign", algorithm: "ES256")]),
+        let mockVPTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "testJWS"),
+            VPTokenSigningResultV2(signedData: "sign"),
         ]
         
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
@@ -294,9 +288,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )) { result in
-            XCTAssertTrue(result.keys.count == 1)
-            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
-            XCTAssertTrue((result.values.first as? UnsignedSdJwtVPToken)?.uuidToUnsignedKBT.count == 1)
+            XCTAssertTrue(result.count == 1)
         }
     }
     
@@ -308,7 +300,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
-        let unsignedVpTokens = try await handler.constructUnsignedVPToken(
+        _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -317,8 +309,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
         
-        let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys.first!
-        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(authorizationRequest: authorizationRequest, vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])], responseUri: responseUri)
+        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(authorizationRequest: authorizationRequest, vpTokenSigningResults: [VPTokenSigningResultV2(signedData: "ayuht")], responseUri: responseUri)
         
         XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
@@ -349,10 +340,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )) { result in
-            XCTAssertTrue(result.keys.contains(.ldp_vc))
-            XCTAssertTrue(result.keys.contains(.mso_mdoc))
-            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
-            XCTAssertTrue(result.keys.contains(.dc_sd_jwt))
+            XCTAssertTrue(result.count == 4)
         }
     }
     
@@ -376,17 +364,13 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )
-        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
-        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
+        print("unsignedVPTokens: \(unsignedVPTokens)")
         
-        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-            FormatType.ldp_vc: LdpVPTokenSigningResult(
-                jws: "testJWS",
-                proofValue: "",
-                signatureAlgorithm: "JsonWebSignature2020"),
-            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
-            .vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [vcSdJwtUuids[0]: "ayuht"]),
-            .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"]),
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "ayuht"),
+            VPTokenSigningResultV2(signedData: "testJWS"),
+            VPTokenSigningResultV2(signedData: "aGVsbG8="),
+            VPTokenSigningResultV2(signedData: "ayuht"),
         ]
         
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
@@ -412,7 +396,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
-        let unsignedVPTokens = try await handler.constructUnsignedVPToken(
+        _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -420,16 +404,11 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )
-        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
-        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
-        
-        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [ // simulate missing credential format
-            FormatType.ldp_vc: LdpVPTokenSigningResult(
-                jws: "testJWS",
-                proofValue: "",
-                signatureAlgorithm: "JsonWebSignature2020"),
-            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
-            .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"]),
+
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [ // simulate missing signed data
+            VPTokenSigningResultV2(signedData: "testJWS"),
+            VPTokenSigningResultV2(signedData: "aGVsbG8="),
+            VPTokenSigningResultV2(signedData: "ayuht"),
         ]
         
         do {
@@ -440,10 +419,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             )
             XCTFail("Expected error not thrown")
         } catch {
-            assertOpenID4VPException(error,
-                                     expectedMessage: "VPTokenSigningResult not provided for the required formats",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
+            XCTAssertTrue(error.localizedDescription.contains("Missing SD-JWT signature for"))
+            XCTAssertEqual(OpenID4VPErrorCodes.invalidRequest, (error as? OpenID4VPException)?.errorCode)
         }
     }
     
@@ -482,17 +459,12 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
         
-        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-            .ldp_vc: LdpVPTokenSigningResult(
-                jws: "testJWS",
-                proofValue: "",
-                signatureAlgorithm: "JsonWebSignature2020"
-            )
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "testJWS"),
         ]
         
-        let authorizationResponse = try handler.constructAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: vpTokenSigningResults
+        let authorizationResponse = try handler.constructVPResponse(
+            signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
         )
         
         XCTAssertNotNil(authorizationResponse["vp_token"])
@@ -505,9 +477,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .draft23)
         
         XCTAssertThrowsError(
-            try handler.constructAuthorizationResponse(
-                authorizationRequest: authorizationRequest,
-                vpTokenSigningResults: [:]
+            try handler.constructVPResponse(
+                signingResults: [], authorizationRequest: authorizationRequest
             )
         ) { error in
             assertOpenID4VPException(
@@ -643,8 +614,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
 
-        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-            .ldp_vc: LdpVPTokenSigningResult(jws: "testJWS", proofValue: "", signatureAlgorithm: "JsonWebSignature2020")
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "testJWS"),
         ]
 
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
@@ -669,7 +640,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         await XCTAssertAsyncThrowsError(try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: [:],
+            vpTokenSigningResults: [],
             responseUri: "https://client.example.org/cb"
         )) { error in
             assertOpenID4VPException(error,
@@ -696,9 +667,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )) { result in
-            XCTAssertEqual(result.keys.count, 1)
-            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
-            XCTAssertEqual((result.values.first as? UnsignedSdJwtVPToken)?.uuidToUnsignedKBT.count, 1)
+            XCTAssertEqual(result.count, 1)
+            print("Constructed data: \(result)")
         }
     }
 
@@ -710,7 +680,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
-        let unsignedVpTokens = try await handler.constructUnsignedVPToken(
+        _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -719,10 +689,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
 
-        let sdJwtUUID = (unsignedVpTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys.first!
         let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: [.vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [sdJwtUUID: "ayuht"])],
+            vpTokenSigningResults: [VPTokenSigningResultV2(signedData: "ayuht")],
             responseUri: responseUri
         )
 
@@ -754,10 +723,11 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )) { result in
-            XCTAssertTrue(result.keys.contains(.ldp_vc))
-            XCTAssertTrue(result.keys.contains(.mso_mdoc))
-            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
-            XCTAssertTrue(result.keys.contains(.dc_sd_jwt))
+            XCTAssertEqual(result.count, 4)
+//            XCTAssertTrue(result.keys.contains(.ldp_vc))
+//            XCTAssertTrue(result.keys.contains(.mso_mdoc))
+//            XCTAssertTrue(result.keys.contains(.vc_sd_jwt))
+//            XCTAssertTrue(result.keys.contains(.dc_sd_jwt))
         }
     }
 
@@ -773,7 +743,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .v1)
-        let unsignedVPTokens = try await handler.constructUnsignedVPToken(
+        _ = try await handler.constructUnsignedVPToken(
             credentialsMap: verifiableCredentials,
             authorizationRequest: authorizationRequest,
             responseUri: responseUri,
@@ -781,14 +751,12 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             signatureSuite: signatureSuite,
             walletNonce: walletNonce
         )
-        let vcSdJwtUuids = Array((unsignedVPTokens[.vc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
-        let dcSdJwtUuids = Array((unsignedVPTokens[.dc_sd_jwt] as! UnsignedSdJwtVPToken).uuidToUnsignedKBT.keys)
 
-        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-            .ldp_vc: LdpVPTokenSigningResult(jws: "testJWS", proofValue: "", signatureAlgorithm: "JsonWebSignature2020"),
-            .mso_mdoc: MdocVPTokenSigningResult(docTypeToDeviceAuthentication: ["org.iso.18013.5.1.mDL": DeviceAuthentication(signature: "aGVsbG8=", algorithm: "ES256")]),
-            .vc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [vcSdJwtUuids[0]: "ayuht"]),
-            .dc_sd_jwt: SdJwtVpTokenSigningResult(uuidToKbJWTSignature: [dcSdJwtUuids[0]: "ayuht"]),
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "testJWS"),
+            VPTokenSigningResultV2(signedData: "aGVsbG8="),
+            VPTokenSigningResultV2(signedData: "ayuht"),
+            VPTokenSigningResultV2(signedData: "ayuht"),
         ]
 
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
@@ -821,13 +789,12 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
 
-        let vpTokenSigningResults: [FormatType: VPTokenSigningResult] = [
-            .ldp_vc: LdpVPTokenSigningResult(jws: "testJWS", proofValue: "", signatureAlgorithm: "JsonWebSignature2020")
+        let vpTokenSigningResults: [VPTokenSigningResultV2] = [
+            VPTokenSigningResultV2(signedData: "testJWS"),
         ]
 
-        let authorizationResponse = try handler.constructAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: vpTokenSigningResults
+        let authorizationResponse = try handler.constructVPResponse(
+            signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
         )
 
         XCTAssertNotNil(authorizationResponse["vp_token"])
@@ -838,9 +805,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .v1)
 
-        XCTAssertThrowsError(try handler.constructAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: [:]
+        XCTAssertThrowsError(try handler.constructVPResponse(
+            signingResults: [], authorizationRequest: authorizationRequest
         )) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Provided response_type - fragment is not supported",

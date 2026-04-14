@@ -17,40 +17,6 @@ public class AuthorizationResponseHandler {
         self.walletMetadata = walletMetadata
     }
     
-    func constructUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
-                                  authorizationRequest: AuthorizationRequest,
-                                  responseUri: String,
-                                  holderId: String?,
-                                  signatureSuite: String?,
-                                  walletNonce: String
-    ) async throws -> [FormatType: UnsignedVPToken] {
-        if authorizationRequest as? AuthorizationRequestSpecVersionDraft23 != nil {
-            self.specVersion = .draft23
-        }
-        
-        let hasLdpVc = credentialsMap.values.contains { formatMap in
-            formatMap.keys.contains(.ldp_vc)
-        }
-        if hasLdpVc {
-            // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
-            if isNullOrEmpty(holderId) {
-                throw InvalidData(
-                    message: "Holder ID cannot be null or empty for LDP VC format",
-                    className: AuthorizationResponseHandler.className
-                )
-            }
-            if isNullOrEmpty(signatureSuite) {
-                throw InvalidData(
-                    message: "Signature Suite cannot be null or empty for LDP VC format",
-                    className: AuthorizationResponseHandler.className
-                )
-            }
-        }
-        self.signatureSuite = signatureSuite ?? self.signatureSuite
-
-        return try await createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
-    }
-    
     private func createUnsignedVPToken(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
@@ -83,7 +49,7 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
-    func constructUnsignedVPTokenV2(
+    func constructUnsignedVPToken(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
@@ -116,13 +82,7 @@ public class AuthorizationResponseHandler {
         }
         self.signatureSuite = signatureSuite ?? self.signatureSuite
 
-        try await createUnsignedVPToken(            credentialsMap: credentialsMap,
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri,
-            holderId: holderId,
-            signatureSuite: signatureSuite,
-            walletNonce: walletNonce
-        )
+        try await createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, responseUri: responseUri, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
 
         return try await flattenUnsignedVPTokens(
             unsignedVPTokenResults: unsignedVPTokenResults,
@@ -132,7 +92,7 @@ public class AuthorizationResponseHandler {
         )
     }
 
-    func constructVPResponseV2(
+    func constructVPResponse(
         signingResults: [VPTokenSigningResultV2],
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
@@ -194,24 +154,6 @@ public class AuthorizationResponseHandler {
     
     func constructAndSendAuthorizationResponseToVerifier(
         authorizationRequest: AuthorizationRequest,
-        vpTokenSigningResults: [FormatType: VPTokenSigningResult],
-        responseUri: String
-    ) async throws -> VerifierResponse {
-        let authorizationResponse = try createAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: vpTokenSigningResults
-        )
-
-        let response: NetworkResponse = try await sendAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            authorizationResponse: authorizationResponse,
-            responseUri: responseUri
-        )
-        return toVerifierResponse(response)
-    }
-    
-    func constructAndSendAuthorizationResponseToVerifier(
-        authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [VPTokenSigningResultV2],
         responseUri: String
     ) async throws -> VerifierResponse {
@@ -235,7 +177,7 @@ public class AuthorizationResponseHandler {
         return toVerifierResponse(response)
     }
     
-    func constructAuthorizationResponse(
+    private func constructAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [FormatType: VPTokenSigningResult]
     ) throws -> [String: String] {

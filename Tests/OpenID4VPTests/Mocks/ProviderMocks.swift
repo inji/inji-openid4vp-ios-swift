@@ -14,11 +14,6 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedUnsignedVPTokensV2: [UnsignedVPTokenV2] = []
     var expectedVPResponseV2: [String: String] = [:]
 
-    override func constructAuthorizationResponse(authorizationRequest authRequest: AuthorizationRequest,
-                                                 vpTokenSigningResults signingResult: [FormatType: VPTokenSigningResult]) -> [String: String] {
-        return expectedResponse
-    }
-
     override func constructAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
         exception: Error,
@@ -27,7 +22,7 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
         return expectedErrorResponse
     }
 
-    override func constructUnsignedVPTokenV2(
+    override func constructUnsignedVPToken(
         credentialsMap: [String: [FormatType: [AnyCodable]]],
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
@@ -38,7 +33,7 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
         return expectedUnsignedVPTokensV2
     }
 
-    override func constructVPResponseV2(
+    override func constructVPResponse(
         signingResults: [VPTokenSigningResultV2],
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {

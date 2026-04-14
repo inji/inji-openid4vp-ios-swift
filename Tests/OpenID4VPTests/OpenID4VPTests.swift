@@ -312,7 +312,7 @@ class OpenID4VPTests: XCTestCase {
 
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async {
-        var received: [FormatType: UnsignedVPToken]?
+        var received: [UnsignedVPTokenV2]?
 
         do {
             _ = try await openID4VP.authenticateVerifier(
@@ -442,13 +442,12 @@ class OpenID4VPTests: XCTestCase {
     }
 
     func testConstructVPResponse_Success() {
-        let signingResult: [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc: LdpVPTokenSigningResult(jws: jws, proofValue: "test", signatureAlgorithm: signatureAlgoType)]
         let handler = MockAuthorizationResponseHandler(networkManager: MockNetworkManager(), walletMetadata: WalletMetadata())
-        handler.expectedResponse = ["vp_token": "jwt-token"]
-        
-        let openIdVP  = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
+        handler.expectedVPResponseV2 = ["vp_token": "jwt-token"]
+
+        let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
-        let result = openIdVP.constructVPResponse(vpTokenSigningResults: signingResult)
+        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResultV2(signedData: "signed-data")])
 
         XCTAssertEqual(result["vp_token"] as! String, "jwt-token")
     }
@@ -463,7 +462,7 @@ class OpenID4VPTests: XCTestCase {
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
 
         let signingResults = [VPTokenSigningResultV2(signedData: "signed-data")]
-        let result = openIdVP.constructVPResponseV2(vpTokenSigningResults: signingResults)
+        let result = openIdVP.constructVPResponse(vpTokenSigningResults: signingResults)
 
         XCTAssertEqual(result["vp_token"] as? String, "signed-token-v2")
         XCTAssertEqual(result["presentation_submission"] as? String, "submission")
@@ -476,7 +475,7 @@ class OpenID4VPTests: XCTestCase {
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
 
-        let result = openIdVP.constructVPResponseV2(vpTokenSigningResults: [])
+        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [])
 
         XCTAssertEqual(result["error"] as? String, "invalid_request")
     }
@@ -494,7 +493,7 @@ class OpenID4VPTests: XCTestCase {
         openIdVP.setResponseUri(responseUri)
 
         do {
-            let result = try await openIdVP.constructUnsignedVPTokenV2(
+            let result = try await openIdVP.constructUnsignedVPToken(
                 verifiableCredentials: ["input_1": [.ldp_vc: [AnyCodable(ldpVC())]]],
                 holderId: "did:example:123",
                 signatureSuite: "JsonWebSignature2020"
@@ -517,7 +516,7 @@ class OpenID4VPTests: XCTestCase {
         openIdVP.setResponseUri(responseUri)
 
         await XCTAssertAsyncThrowsError(
-            try await openIdVP.constructUnsignedVPTokenV2(
+            try await openIdVP.constructUnsignedVPToken(
                 verifiableCredentials: ["input_1": [.ldp_vc: [AnyCodable(ldpVC())]]],
                 holderId: nil,
                 signatureSuite: nil
@@ -526,29 +525,6 @@ class OpenID4VPTests: XCTestCase {
             XCTAssertNotNil(error)
         }
     }
-
-//    func testConstructUnsignedVPTokenV2WithLdpVcSuccess() async {
-//        _ = try! await openID4VP.authenticateVerifier(
-//            urlEncodedAuthorizationRequest: mockUrlEncodedVPRequestWithDirectPostJwt,
-//            trustedVerifiers: preRegisteredVerifiers,
-//            shouldValidateClient: true
-//        )
-//
-//        do {
-//            let result = try await openID4VP.constructUnsignedVPTokenV2(
-//                verifiableCredentials: ["input_1": [.ldp_vc: [AnyCodable(ldpVC())]]],
-//                holderId: "did:example:123",
-//                signatureSuite: "JsonWebSignature2020"
-//            )
-//            XCTAssertFalse(result.isEmpty)
-//            XCTAssertEqual(result[0].format, .ldp_vc)
-//            XCTAssertEqual(result[0].holderKeyReference, "did:example:123")
-//            XCTAssertEqual(result[0].signatureAlgorithm, "JsonWebSignature2020")
-//            XCTAssertFalse(result[0].dataToSign.isEmpty)
-//        } catch {
-//            XCTFail("Should not throw but got: \(error)")
-//        }
-//    }
 }
 
 

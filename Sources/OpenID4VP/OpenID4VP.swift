@@ -94,12 +94,11 @@ public class OpenID4VP {
         }
     }
 
-    @available(*, deprecated, message: "This method is deprecated and will be removed in future versions. Please use constructUnsignedVPTokenV2 instead.")
     public func constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [AnyCodable]]],
         holderId: String? = nil,
         signatureSuite: String? = nil
-    ) async throws -> [FormatType: UnsignedVPToken] {
+    ) async throws -> [UnsignedVPTokenV2] {
         do {
             return try await authorizationResponseHandler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
@@ -115,41 +114,9 @@ public class OpenID4VP {
         }
     }
 
-    public func constructUnsignedVPTokenV2(
-        verifiableCredentials: [String: [FormatType: [AnyCodable]]],
-        holderId: String? = nil,
-        signatureSuite: String? = nil
-    ) async throws -> [UnsignedVPTokenV2] {
+    public func constructVPResponse(vpTokenSigningResults: [VPTokenSigningResultV2]) -> [String: Any] {
         do {
-            return try await authorizationResponseHandler.constructUnsignedVPTokenV2(
-                credentialsMap: verifiableCredentials,
-                authorizationRequest: authorizationRequest,
-                responseUri: responseUri!,
-                holderId: holderId,
-                signatureSuite: signatureSuite,
-                walletNonce: walletNonce
-            )
-        } catch {
-            await safeSendError(error: error)
-            throw error
-        }
-    }
-
-    @available(*, deprecated, message: "This method is deprecated and will be removed in future versions. Please use constructVPResponseV2 instead.")
-    public func constructVPResponse(vpTokenSigningResults: [FormatType: VPTokenSigningResult]) -> [String: Any] {
-        do {
-            return try authorizationResponseHandler.constructAuthorizationResponse(
-                authorizationRequest: authorizationRequest,
-                vpTokenSigningResults: vpTokenSigningResults
-            )
-        } catch let exception {
-            return constructErrorInfo(exception: exception)
-        }
-    }
-
-    public func constructVPResponseV2(vpTokenSigningResults: [VPTokenSigningResultV2]) -> [String: Any] {
-        do {
-            return try authorizationResponseHandler.constructVPResponseV2(
+            return try authorizationResponseHandler.constructVPResponse(
                 signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
             )
         } catch let exception {
@@ -165,22 +132,6 @@ public class OpenID4VP {
         )
     }
 
-    @available(*, deprecated, message: "This method is deprecated and will be removed in future versions. Please use sendVPResponseToVerifier(vpTokenSigningResults: [VPTokenSigningResultV2]) instead.")
-    public func sendVPResponseToVerifier(
-        vpTokenSigningResults: [FormatType: VPTokenSigningResult]
-    ) async throws -> VerifierResponse {
-        do {
-            return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
-                authorizationRequest: authorizationRequest,
-                vpTokenSigningResults: vpTokenSigningResults,
-                responseUri: responseUri!
-            )
-        } catch {
-            await safeSendError(error: error)
-            throw error
-        }
-    }
-    
     public func sendVPResponseToVerifier(
         vpTokenSigningResults: [VPTokenSigningResultV2]
     ) async throws -> VerifierResponse {
@@ -209,3 +160,5 @@ public class OpenID4VP {
         }
     }
 }
+ 
+ 

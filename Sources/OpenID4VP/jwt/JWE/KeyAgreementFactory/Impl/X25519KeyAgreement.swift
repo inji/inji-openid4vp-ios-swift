@@ -77,8 +77,6 @@ class X25519KeyAgreement: JWEKeyAgreement {
         suppPubInfo: Data,
         suppPrivInfo: Data = Data()
     ) -> SymmetricKey {
-        
-        let hashLength = 32 // SHA256 output size in bytes
         var derivedKey = Data()
         var counter: UInt32 = 1
         
