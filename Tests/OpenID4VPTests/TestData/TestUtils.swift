@@ -247,7 +247,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
     let responseType = responseType ?? ResponseType.vp_token.rawValue
     
     if(specVersion == .draft23) {
-        return AuthorizationRequestDraft23(
+        return AuthorizationPresentationExchangeRequest(
             clientId: "client_id",
             responseType: responseType,
             responseMode: responseModeValue ?? responseMode.rawValue,
@@ -261,7 +261,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
         )
     }
 
-    return AuthorizationRequestSpecVersion1(
+    return AuthorizationDcqlRequest(
         clientId: "client_id",
         responseType: responseType,
         responseMode: responseModeValue ?? responseMode.rawValue,

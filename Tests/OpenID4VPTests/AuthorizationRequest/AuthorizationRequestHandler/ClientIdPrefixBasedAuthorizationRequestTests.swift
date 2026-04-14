@@ -1244,7 +1244,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
 
         do {
             let authorizationRequest = try await mockAuthHandler.handle()
-            let draft23Request = authorizationRequest as? AuthorizationRequestDraft23
+            let draft23Request = authorizationRequest as? AuthorizationPresentationExchangeRequest
             XCTAssertNotNil(draft23Request)
             XCTAssertEqual(draft23Request?.nonce, "VbRRB/LTxLiXmVNZuyMO8A==")
             XCTAssertEqual(draft23Request?.responseType, "vp_token")
@@ -1284,7 +1284,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
 
         do {
             let authorizationRequest = try await mockAuthHandler.handle()
-            let v1Request = authorizationRequest as? AuthorizationRequestSpecVersion1
+            let v1Request = authorizationRequest as? AuthorizationDcqlRequest
             XCTAssertNotNil(v1Request)
             XCTAssertEqual(v1Request?.nonce, "VbRRB/LTxLiXmVNZuyMO8A==")
             XCTAssertEqual(v1Request?.responseType, "vp_token")

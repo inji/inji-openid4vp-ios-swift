@@ -116,7 +116,7 @@ public class AuthorizationRequest: Encodable {
     }
 }
 
-public final class AuthorizationRequestDraft23: AuthorizationRequest {
+public final class AuthorizationPresentationExchangeRequest: AuthorizationRequest {
     var presentationDefinition: PresentationDefinition
     var clientMetadata: ClientMetadataDraft23?
     
@@ -160,7 +160,7 @@ public final class AuthorizationRequestDraft23: AuthorizationRequest {
 }
 
 //TODO: Enable DCQL query when DCQL is supported
-public final class AuthorizationRequestSpecVersion1: AuthorizationRequest {
+public final class AuthorizationDcqlRequest: AuthorizationRequest {
     //    var dcqlQuery: DCQLQuery
     var clientMetadata: ClientMetadata?
     

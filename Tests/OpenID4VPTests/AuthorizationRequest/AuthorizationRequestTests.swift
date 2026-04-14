@@ -33,7 +33,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)
-        XCTAssertNotNil((request as? AuthorizationRequestDraft23)?.presentationDefinition)
+        XCTAssertNotNil((request as? AuthorizationPresentationExchangeRequest)?.presentationDefinition)
     }
 
     func testUrlEncodedPathThrowsOnMissingClientId() async {
@@ -80,7 +80,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)
-        XCTAssertNotNil((request as? AuthorizationRequestDraft23)?.presentationDefinition)
+        XCTAssertNotNil((request as? AuthorizationPresentationExchangeRequest)?.presentationDefinition)
     }
 
     func testDictionaryPathPopulatesClientId() async throws {
@@ -131,8 +131,8 @@ final class AuthorizationRequestTests: XCTestCase {
     
     // MARK: - Spec Version Draft 23 - URL encoded path
 
-    func testUrlEncodedPathReturnsDraft23RequestWithPresentationDefinition() async throws {
-        // draft23: presentation_definition present → AuthorizationRequestSpecVersionDraft23
+    func testUrlEncodedPathReturnsRequestWithPresentationDefinition() async throws {
+        // draft23: presentation_definition present → AuthorizationPresentationExchangeRequest
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
             trustedVerifier: trustedVerifiers,
@@ -144,11 +144,11 @@ final class AuthorizationRequestTests: XCTestCase {
         )
         
         print("Request: \(request)")
-        XCTAssertTrue(request is AuthorizationRequestDraft23)
-        XCTAssertNotNil((request as? AuthorizationRequestDraft23)?.presentationDefinition)
+        XCTAssertTrue(request is AuthorizationPresentationExchangeRequest)
+        XCTAssertNotNil((request as? AuthorizationPresentationExchangeRequest)?.presentationDefinition)
     }
 
-    func testUrlEncodedPathDraft23RequestHasExpectedFields() async throws {
+    func testUrlEncodedPathPresentationExchangeRequestHasExpectedFields() async throws {
         // draft23: verify all base fields are populated correctly
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
@@ -169,7 +169,7 @@ final class AuthorizationRequestTests: XCTestCase {
     // MARK: - Spec Version 1 - URL encoded path
 
     func testUrlEncodedPathReturnsSpecVersion1RequestWithDcqlQuery() async throws {
-        // spec v1: dcql_query present → AuthorizationRequestSpecVersion1
+        // spec v1: dcql_query present → AuthorizationDcqlRequest
         let v1Params = mergeMaps(
             authorizationRequestParamsWithValue,
             preRegisteredSchemeClientIdParameters,
@@ -193,7 +193,7 @@ final class AuthorizationRequestTests: XCTestCase {
         )
 
         //TODO: Add validation on DCQL here
-        XCTAssertTrue(request is AuthorizationRequestSpecVersion1)
+        XCTAssertTrue(request is AuthorizationDcqlRequest)
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)
     }
@@ -229,8 +229,8 @@ final class AuthorizationRequestTests: XCTestCase {
 
     // MARK: - Spec Version Draft 23 - Dictionary path
 
-    func testDictionaryPathReturnsDraft23RequestWithPresentationDefinition() async throws {
-        // draft23: presentation_definition present → AuthorizationRequestSpecVersionDraft23
+    func testDictionaryPathReturnsPresentationExchangeRequestWithPresentationDefinition() async throws {
+        // draft23: presentation_definition present → AuthorizationPresentationExchangeRequest
         let authRequest = createAuthorizationRequest(
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
@@ -248,16 +248,16 @@ final class AuthorizationRequestTests: XCTestCase {
             networkManager: mockNetworkManager
         )
 
-        XCTAssertTrue(request is AuthorizationRequestDraft23)
-        let draft23Request = request as? AuthorizationRequestDraft23
-        XCTAssertNotNil(draft23Request?.presentationDefinition)
-        XCTAssertEqual(draft23Request?.presentationDefinition.id, "vp_presentation_definition")
+        XCTAssertTrue(request is AuthorizationPresentationExchangeRequest)
+        let presentationExchangeRequest = request as? AuthorizationPresentationExchangeRequest
+        XCTAssertNotNil(presentationExchangeRequest?.presentationDefinition)
+        XCTAssertEqual(presentationExchangeRequest?.presentationDefinition.id, "vp_presentation_definition")
     }
 
     // MARK: - Spec Version 1 - Dictionary path
 
-    func testDictionaryPathReturnsSpecVersion1RequestWithDcqlQuery() async throws {
-        // spec v1: dcql_query present → AuthorizationRequestSpecVersion1
+    func testDictionaryPathReturnRequestWithDcqlQuery() async throws {
+        // spec v1: dcql_query present → AuthorizationDcqlRequest
         let authRequest = createAuthorizationRequest(
             paramList: ["client_id", "response_uri", "response_type", "response_mode", "nonce", "state", "client_metadata", "dcql_query"],
             requestParams: mergeMaps(
@@ -278,7 +278,7 @@ final class AuthorizationRequestTests: XCTestCase {
             networkManager: mockNetworkManager
         )
 
-        XCTAssertTrue(request is AuthorizationRequestSpecVersion1)
+        XCTAssertTrue(request is AuthorizationDcqlRequest)
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)
     }
@@ -309,7 +309,7 @@ final class AuthorizationRequestTests: XCTestCase {
     }
 
     func testDictionaryPathSpecVersion1NotContainsPresentationDefinition() async throws {
-        // spec v1: must not be cast to draft23 — no presentationDefinition
+        // spec v1 (DcqlRequest): must not be cast to draft23 (PresentationExchange) — no presentationDefinition
         let authRequest = createAuthorizationRequest(
             paramList: ["client_id", "response_uri", "response_type", "response_mode", "nonce", "state", "client_metadata", "dcql_query"],
             requestParams: mergeMaps(
@@ -330,7 +330,7 @@ final class AuthorizationRequestTests: XCTestCase {
             networkManager: mockNetworkManager
         )
 
-        XCTAssertNil(request as? AuthorizationRequestDraft23)
+        XCTAssertNil(request as? AuthorizationPresentationExchangeRequest)
     }
 
     // MARK: - extractQueryParameters edge cases

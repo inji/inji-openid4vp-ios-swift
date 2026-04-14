@@ -58,7 +58,7 @@ public class AuthorizationResponseHandler {
         walletNonce: String
     ) async throws -> [UnsignedVPTokenV2] {
 
-        if authorizationRequest as? AuthorizationRequestDraft23 != nil {
+        if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
             self.specVersion = .draft23
         }
         
@@ -356,7 +356,7 @@ public class AuthorizationResponseHandler {
         createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
 
         var unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload?, UnsignedVPToken)] = [:]
-        let specVersion: SpecVersion = authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .v1
+        let specVersion: SpecVersion = authorizationRequest is AuthorizationPresentationExchangeRequest ? .draft23 : .v1
 
         for format in formatToCredentialInputDescriptorMapping.keys {
             guard var credentialsArray = formatToCredentialInputDescriptorMapping[format] else {
@@ -446,7 +446,7 @@ public class AuthorizationResponseHandler {
         case draft23, specV1
 
         static func from(_ authorizationRequest: AuthorizationRequest) -> SpecVersionHandler {
-            return authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .specV1
+            return authorizationRequest is AuthorizationPresentationExchangeRequest ? .draft23 : .specV1
         }
 
         func createVPTokenResponse(
@@ -477,7 +477,7 @@ public class AuthorizationResponseHandler {
         func getPresentationDefinitionId(_ authorizationRequest: AuthorizationRequest) -> String {
             switch self {
             case .draft23:
-                return (authorizationRequest as? AuthorizationRequestDraft23)?.presentationDefinition.id ?? ""
+                return (authorizationRequest as? AuthorizationPresentationExchangeRequest)?.presentationDefinition.id ?? ""
             case .specV1:
                 return ""
             }

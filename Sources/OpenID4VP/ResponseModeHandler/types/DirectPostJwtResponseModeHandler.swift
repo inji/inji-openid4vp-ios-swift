@@ -181,16 +181,16 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         case draft23
         
         static func from(_ authorizationRequest: AuthorizationRequest) -> SpecVersionHandler {
-            return authorizationRequest is AuthorizationRequestDraft23 ? .draft23 : .v1
+            return authorizationRequest is AuthorizationPresentationExchangeRequest ? .draft23 : .v1
         }
         
         func getVerifierPublicKey(authorizationRequest: AuthorizationRequest, walletMetadata: WalletMetadata?, className: String) throws -> JWK {
             switch self {
             case .draft23:
-                let clientMetadata = ((authorizationRequest as? AuthorizationRequestDraft23)?.clientMetadata)!
+                let clientMetadata = ((authorizationRequest as? AuthorizationPresentationExchangeRequest)?.clientMetadata)!
                 return try getEncryptionKey(clientMetadata.jwks!, [clientMetadata.authorizationEncryptedResponseAlg!])
             case .v1:
-                guard let clientMetadata = (authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata else {
+                guard let clientMetadata = (authorizationRequest as? AuthorizationDcqlRequest)?.clientMetadata else {
                     throw InvalidData(message: "client_metadata must be present for given response mode", className: className)
                 }
                 guard let verifierJwks = clientMetadata.jwks else {
@@ -203,11 +203,11 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         func getJWEHandler(authorizationRequest: AuthorizationRequest, walletNonce: String, walletMetadata: WalletMetadata?, className: String) throws -> JWEHandler {
             switch self {
             case .draft23:
-                let clientMetadata = ((authorizationRequest as? AuthorizationRequestDraft23)?.clientMetadata)!
+                let clientMetadata = ((authorizationRequest as? AuthorizationPresentationExchangeRequest)?.clientMetadata)!
                 let verifierPublicKey = try getVerifierPublicKey(authorizationRequest: authorizationRequest, walletMetadata: walletMetadata, className: className)
                 return JWEHandler(contentEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseEnc!, keyEncryptionAlgorithm: clientMetadata.authorizationEncryptedResponseAlg!, publicKey: verifierPublicKey, producerInfo: walletNonce, recipientInfo: authorizationRequest.nonce)
             case .v1:
-                guard let clientMetadata = (authorizationRequest as? AuthorizationRequestSpecVersion1)?.clientMetadata else {
+                guard let clientMetadata = (authorizationRequest as? AuthorizationDcqlRequest)?.clientMetadata else {
                     throw InvalidData(message: "client_metadata must be present for given response mode", className: className)
                 }
                 guard clientMetadata.jwks != nil else {

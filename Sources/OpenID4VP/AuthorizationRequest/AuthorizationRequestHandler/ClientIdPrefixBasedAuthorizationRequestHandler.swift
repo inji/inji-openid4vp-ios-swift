@@ -321,7 +321,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         func getAuthorizationRequest(authorizationRequestParameters: [String: Any]) -> AuthorizationRequest {
             switch self {
             case .draft23:
-                return AuthorizationRequestDraft23(
+                return AuthorizationPresentationExchangeRequest(
                     clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,
                     responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue])!,
                     responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue]),
@@ -334,7 +334,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                     clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadataDraft23
                 )
             case .specV1:
-                return AuthorizationRequestSpecVersion1(
+                return AuthorizationDcqlRequest(
                     clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,
                     responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue])!,
                     responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue]),
