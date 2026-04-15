@@ -117,7 +117,7 @@ let authorizationRequestParamsWithValue: [String: Any] = [
         SpecVersion.draft23: clientMetadataSpecVersionDraft23
     ],
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
-    "dcql_query": ["credentials": "test-dummy"]
+    "dcql_query": dcqlQuery,
 ]
 
 func baseAuthRequest(clientId: String,
@@ -264,6 +264,15 @@ let presentationDefinition: [String: Any] = [
 ]
 
 let mockPresentationDefinitionObject = createInstance(presentationDefinition, as: PresentationDefinition.self)
+
+let dcqlQuery = [
+    "credentials": [
+        [ "id": "cred1", "format": "dc+sd-jwt", "meta": [:]],
+        [ "id": "cred2", "format": "mso_mdoc", "meta": [:]]
+    ]
+]
+
+let validDcqlQuery = createInstance(dcqlQuery, as: DCQLQuery.self)
 
 let vpFormatsMap: [String: VPFormatSupported] = [
     "ldp_vc": LdpVcFormatSupported(proofTypeValues: [ .ed25519Signature2020])

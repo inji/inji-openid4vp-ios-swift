@@ -7,6 +7,7 @@ public enum AuthorizationRequestFieldConstants: String {
     case presentationDefinition = "presentation_definition"
     case presentationDefinitionUri = "presentation_definition_uri"
     case dcqlQuery = "dcql_query"
+    case scope = "scope"
     
     case responseUri = "response_uri"
     case redirectUri = "redirect_uri"

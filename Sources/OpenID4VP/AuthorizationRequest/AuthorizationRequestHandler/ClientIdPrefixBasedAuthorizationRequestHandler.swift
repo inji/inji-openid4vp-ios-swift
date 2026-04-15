@@ -305,15 +305,16 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], networkManager: NetworkManaging) async throws {
             switch self {
             case .specV1:
-                //                TODO: Parse and validate DCQL query
-                // require_cryptographic_holder_binding - is false in all credential queries and not direct post then, state can be optional else required
-                // TODO: add check for state parameter based on presence of require_cryptographic_holder_binding
+                authorizationRequestParameters = try parseAndValidateDcqlQuery(authorizationRequestParameters)
+                
                 let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
                 if responseMode == ResponseMode.directPost.rawValue {
-                    try validateAttribute(AuthorizationRequestFieldConstants.state.rawValue, values: authorizationRequestParameters)
+                    guard let state = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]), isNeitherNullNorEmpty(field: state) else {
+                        throw InvalidData(message: "state parameter must be available for direct_post", className: "SpecVersionHandlerV1")
+                    }
                 }
                 return
-            case .draft23:
+           case .draft23:
                 authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, true, networkManager)
             }
         }
@@ -343,6 +344,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                     nonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce.rawValue])!,
                     walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue]),
                     state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]),
+                    dcqlQuery: authorizationRequestParameters[AuthorizationRequestFieldConstants.dcqlQuery.rawValue] as! DCQLQuery,
                     clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadata
                 )
             }

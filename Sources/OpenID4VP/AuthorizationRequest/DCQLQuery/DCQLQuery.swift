@@ -1,8 +1,8 @@
 import Foundation
 
-struct DCQLQuery: Codable {
-    let credentials: [CredentialQuery]
-    let credentialSets: [CredentialSetQuery]?
+public struct DCQLQuery: Codable {
+    public let credentials: [CredentialQuery]
+    public let credentialSets: [CredentialSetQuery]?
     private let className = String(describing: DCQLQuery.self)
 
     enum CodingKeys: String, CodingKey {
@@ -10,7 +10,7 @@ struct DCQLQuery: Codable {
         case credentialSets = "credential_sets"
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         self.credentials = try container.decodeRequired(
@@ -61,14 +61,14 @@ struct DCQLQuery: Codable {
     }
 }
 
-struct CredentialQuery: Codable {
-    let id: String
-    let format: String
-    let multiple: Bool
-    let meta: [String: AnyCodable]?
-    let requireCryptographicHolderBinding: Bool
-    let claims: [ClaimsQuery]?
-    let claimSets: [[String]]?
+public struct CredentialQuery: Codable {
+    public let id: String
+    public let format: String
+    public let multiple: Bool
+    public let meta: [String: AnyCodable]?
+    public let requireCryptographicHolderBinding: Bool
+    public let claims: [ClaimsQuery]?
+    public let claimSets: [[String]]?
     private let className = String(describing: CredentialQuery.self)
 
     private static let validIdPattern = #"^[a-zA-Z0-9_-]+$"#
@@ -83,7 +83,7 @@ struct CredentialQuery: Codable {
         case claimSets = "claim_sets"
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         self.id = try container.decodeRequired(
@@ -190,9 +190,9 @@ struct CredentialQuery: Codable {
     }
 }
 
-struct CredentialSetQuery: Codable {
-    let options: [[String]]
-    let required: Bool
+public struct CredentialSetQuery: Codable {
+    public let options: [[String]]
+    public let required: Bool
     private let className = String(describing: CredentialSetQuery.self)
 
     enum CodingKeys: String, CodingKey {
@@ -200,7 +200,7 @@ struct CredentialSetQuery: Codable {
         case required
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         self.options = try container.decodeRequired(
@@ -242,12 +242,12 @@ struct CredentialSetQuery: Codable {
     }
 }
 
-enum ClaimValue: Codable, Equatable {
+public enum ClaimValue: Codable, Equatable {
     case string(String)
     case int(Int)
     case bool(Bool)
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let boolValue = try? container.decode(Bool.self) {
             self = .bool(boolValue)
@@ -263,7 +263,7 @@ enum ClaimValue: Codable, Equatable {
         }
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
         case .string(let v): try container.encode(v)
@@ -273,10 +273,10 @@ enum ClaimValue: Codable, Equatable {
     }
 }
 
-struct ClaimsQuery: Codable {
-    let id: String?
-    let path: [AnyCodable]
-    let values: [ClaimValue]?
+public struct ClaimsQuery: Codable {
+    public let id: String?
+    public let path: [AnyCodable]
+    public let values: [ClaimValue]?
     private let className = String(describing: ClaimsQuery.self)
 
     private static let validIdPattern = #"^[a-zA-Z0-9_-]+$"#
@@ -287,7 +287,7 @@ struct ClaimsQuery: Codable {
         case values
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         self.id = try container.decodeRequired(

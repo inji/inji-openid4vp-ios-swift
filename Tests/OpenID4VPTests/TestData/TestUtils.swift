@@ -233,7 +233,12 @@ func jsonString(_ any: Any, prettyPrinted: Bool = false) -> String? {
 func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
     let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
     let decoder = JSONDecoder()
-    return (try? decoder.decode(T.self, from: jsonData!))!
+    do {
+        return try decoder.decode(T.self, from: jsonData!)
+    } catch {
+        print("Error decoding JSON: \(error)")
+        return (try? decoder.decode(T.self, from: jsonData!))!
+    }
 }
 
 func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil, specVersion: SpecVersion = .v1) -> (body: String, httpUrlResponse: HTTPURLResponse) {
@@ -270,6 +275,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
         nonce: "nonce",
         walletNonce: nil,
         state: "state",
+        dcqlQuery: validDcqlQuery,
         clientMetadata: mockClientMetadataSpecVersion1[responseMode]
     )
 }

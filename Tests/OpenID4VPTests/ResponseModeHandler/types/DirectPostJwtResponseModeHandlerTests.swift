@@ -399,7 +399,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         ]
         let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: AuthorizationDcqlRequest(clientId: v1Request.clientId, responseType: v1Request.responseType, responseMode: v1Request.responseMode, responseUri: v1Request.responseUri, redirectUri: v1Request.redirectUri, nonce: v1Request.nonce, walletNonce: v1Request.walletNonce, state: v1Request.state, clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self)), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: AuthorizationDcqlRequest(clientId: v1Request.clientId, responseType: v1Request.responseType, responseMode: v1Request.responseMode, responseUri: v1Request.responseUri, redirectUri: v1Request.redirectUri, nonce: v1Request.nonce, walletNonce: v1Request.walletNonce, state: v1Request.state, dcqlQuery: validDcqlQuery, clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self)), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletMetadata: nil)) { error in
             assertOpenID4VPException(error, expectedMessage: "Unsupported content encryption algorithm", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -415,6 +415,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce,
             state: v1Request.state,
+            dcqlQuery: validDcqlQuery,
             clientMetadata: nil
         )
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
@@ -439,6 +440,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce,
             state: v1Request.state,
+            dcqlQuery: validDcqlQuery,
             clientMetadata: createInstance(clientMetadataWithoutJwks, as: ClientMetadata.self)
         )
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
@@ -472,6 +474,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce,
             state: v1Request.state,
+            dcqlQuery: validDcqlQuery,
             clientMetadata: createInstance(clientMetadataWithKeyWithoutAlg, as: ClientMetadata.self)
         )
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
@@ -512,6 +515,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             responseMode: v1Request.responseMode, responseUri: v1Request.responseUri,
             redirectUri: v1Request.redirectUri, nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce, state: v1Request.state,
+            dcqlQuery: validDcqlQuery,
             clientMetadata: nil
         )
         XCTAssertThrowsError(try handler.getVerifierPublicKeyForEncryption(
@@ -532,6 +536,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             responseMode: v1Request.responseMode, responseUri: v1Request.responseUri,
             redirectUri: v1Request.redirectUri, nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce, state: v1Request.state,
+            dcqlQuery: validDcqlQuery,
             clientMetadata: createInstance([
                 "encrypted_response_enc_values_supported": ["A256GCM"],
                 "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
@@ -555,6 +560,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             responseMode: v1Request.responseMode, responseUri: v1Request.responseUri,
             redirectUri: v1Request.redirectUri, nonce: v1Request.nonce,
             walletNonce: v1Request.walletNonce, state: v1Request.state,
+            dcqlQuery: validDcqlQuery,
             clientMetadata: createInstance([
                 "encrypted_response_enc_values_supported": ["A256GCM"],
                 "jwks": ["keys": [["kty": "OKP", "crv": "Ed25519", "use": "sig", "alg": "EdDSA", "kid": "sig-key", "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc"]]],

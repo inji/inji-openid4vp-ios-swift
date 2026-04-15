@@ -117,8 +117,8 @@ public class AuthorizationRequest: Encodable {
 }
 
 public final class AuthorizationPresentationExchangeRequest: AuthorizationRequest {
-    var presentationDefinition: PresentationDefinition
-    var clientMetadata: ClientMetadataDraft23?
+    let presentationDefinition: PresentationDefinition
+    let clientMetadata: ClientMetadataDraft23?
     
     private enum SubCodingKeys: String, CodingKey {
         case presentationDefinition = "presentation_definition"
@@ -159,10 +159,9 @@ public final class AuthorizationPresentationExchangeRequest: AuthorizationReques
     }
 }
 
-//TODO: Enable DCQL query when DCQL is supported
 public final class AuthorizationDcqlRequest: AuthorizationRequest {
-    //    var dcqlQuery: DCQLQuery
-    var clientMetadata: ClientMetadata?
+    let dcqlQuery: DCQLQuery
+    let clientMetadata: ClientMetadata?
     
     private enum SubCodingKeys: String, CodingKey {
         case dcqlQuery = "dcql_query"
@@ -178,10 +177,10 @@ public final class AuthorizationDcqlRequest: AuthorizationRequest {
         nonce: String,
         walletNonce: String?,
         state: String?,
-        //        dcqlQuery: DCQLQuery,
+        dcqlQuery: DCQLQuery,
         clientMetadata: ClientMetadata?
     ) {
-        //        self.dcqlQuery = dcqlQuery
+        self.dcqlQuery = dcqlQuery
         self.clientMetadata = clientMetadata
         super.init(
             clientId: clientId,
