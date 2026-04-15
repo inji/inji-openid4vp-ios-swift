@@ -197,16 +197,36 @@ final class DCQLQueryTests: XCTestCase {
 
     // MARK: - CredentialQuery: validation of id
 
-    func testThrowErrorWhenCredentialQueryIdIsMissing() {
-        let json = """
-        { "format": "dc+sd-jwt", "meta": {} }
-        """
-        XCTAssertThrowsError(try decode(CredentialQuery.self, from: json)) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Missing Input: credential_query->id param is required",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
+    func testThrowErrorWhenRequiredCredentialQueryPropertyIsMissing() {
+        let testCases: [(input: String, expectedMessage: String)] = [
+            (
+                input: """
+                { "format": "dc+sd-jwt", "meta": {} }
+                """,
+                expectedMessage: "Missing Input: credential_query->id param is required"
+            ),
+            (
+                input: """
+                { "id": "cred1", "meta": {} }
+                """,
+                expectedMessage: "Missing Input: credential_query->format param is required"
+            ),
+            (
+                input: """
+                { "id": "cred1", "format": "dc+sd-jwt" }
+                """,
+                expectedMessage: "Missing Input: credential_query->meta param is required"
+            ),
+        ]
+
+        for testCase in testCases {
+            XCTAssertThrowsError(try decode(CredentialQuery.self, from: testCase.input), testCase.expectedMessage) { error in
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: testCase.expectedMessage,
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
+            }
         }
     }
 

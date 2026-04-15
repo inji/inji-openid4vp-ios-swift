@@ -71,7 +71,7 @@ public struct CredentialQuery: Codable {
     public let id: String
     public let format: String
     public let multiple: Bool
-    public let meta: [String: AnyCodable]?
+    public let meta: [String: AnyCodable]
     public let requireCryptographicHolderBinding: Bool
     public let claims: [ClaimsQuery]?
     public let claimSets: [[String]]?
@@ -115,8 +115,8 @@ public struct CredentialQuery: Codable {
             forKey: .meta,
             fieldPath: ["credential_query", "meta"],
             className: className,
-            isMandatory: false
-        )
+            isMandatory: true
+        )!
 
         self.requireCryptographicHolderBinding = (try container.decodeIfPresent(Bool.self, forKey: .requireCryptographicHolderBinding)) ?? true
 
@@ -142,7 +142,7 @@ public struct CredentialQuery: Codable {
         try container.encode(id, forKey: .id)
         try container.encode(format, forKey: .format)
         try container.encode(multiple, forKey: .multiple)
-        try container.encodeIfPresent(meta, forKey: .meta)
+        try container.encode(meta, forKey: .meta)
         try container.encode(requireCryptographicHolderBinding, forKey: .requireCryptographicHolderBinding)
         try container.encodeIfPresent(claims, forKey: .claims)
         try container.encodeIfPresent(claimSets, forKey: .claimSets)

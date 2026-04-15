@@ -173,7 +173,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let v1Params = mergeMaps(
             authorizationRequestParamsWithValue,
             preRegisteredSchemeClientIdParameters,
-            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt", "meta": [:]]]]]
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: v1Params,
@@ -203,7 +203,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let v1Params = mergeMaps(
             authorizationRequestParamsWithValue,
             preRegisteredSchemeClientIdParameters,
-            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt", "meta": [:]]]]]
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: v1Params,
@@ -263,7 +263,7 @@ final class AuthorizationRequestTests: XCTestCase {
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
                 preRegisteredSchemeClientIdParameters,
-                ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+                ["dcql_query":  dcqlQuery]
             ),
             addEncryptionClientMetadataParams: false
         ) as [String: Any]
@@ -290,7 +290,7 @@ final class AuthorizationRequestTests: XCTestCase {
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
                 preRegisteredSchemeClientIdParameters,
-                ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+                ["dcql_query": dcqlQuery]
             ),
             addEncryptionClientMetadataParams: false
         ) as [String: Any]
