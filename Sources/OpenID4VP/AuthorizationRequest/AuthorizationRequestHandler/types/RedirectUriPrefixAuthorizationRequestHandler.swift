@@ -1,21 +1,25 @@
 import Foundation
-class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
-    override init(authorizationRequestParameters: [String: Any],
+class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthorizationRequestHandler {
+    override init(clientId: String,
+                  specVersion: SpecVersion,
+                  authorizationRequestParameters: [String: Any],
                   walletMetadata: WalletMetadata?,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
-        super.init(authorizationRequestParameters: authorizationRequestParameters,
+        super.init(clientId: clientId,
+                   specVersion: specVersion,
+                   authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self
-        super.className = String(describing: RedirectUriSchemeAuthorizationRequestHandler.self)
+        super.className = String(describing: RedirectUriPrefixAuthorizationRequestHandler.self)
     }
-
-    func clientIdScheme() -> String {
-        return ClientIdScheme.redirectUri.rawValue
+    
+    func clientIdPrefix() -> String {
+        return ClientIdPrefix.redirectUri.rawValue
     }
     
     func isSignedRequestSupported() -> Bool {
@@ -27,10 +31,10 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
-        throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_scheme", className: className)
+        throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_prefix", className: className)
     }
     
-    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
+    func process(walletMetadata: WalletMetadata)  throws -> WalletMetadata {
         var updatedWalletMetadata = walletMetadata
         updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
         return updatedWalletMetadata
@@ -62,14 +66,11 @@ class RedirectUriSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthoriz
         }
         
         let validValue = authorizationRequestParameters[validAttribute]
-        // Extract client_id if client_id_scheme is also part of client_id in the authorizationRequestParameters otherwise use the client_id directly.
-        let clientIdValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientIdScheme.rawValue] == nil
-        ? extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "") :
-        authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
+        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "")
         
         if validValue as? String != clientIdValue {
             throw InvalidData(
-                message: "\(validAttribute) should be equal to client_id for given client_id_scheme",
+                message: "\(validAttribute) should be equal to client_id for given client_id_prefix",
                 className: className
             )
         }

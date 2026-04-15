@@ -1,38 +1,48 @@
 import Foundation
 
-struct AuthorizationResponse {
-    let vpToken: VPTokenType
-    let presentationSubmission: PresentationSubmission
-    let state: String?
+fileprivate let className = String(describing: AuthorizationResponse.self)
 
-    static let className = String(describing: AuthorizationResponse.self)
-
+enum AuthorizationResponse {
+    // Spec v1.0 compliant : DCQL structure
+    case dcql(vpToken: [String: Any], state: String?)
+    
+    // Draft 23 compliant: DIF Presentation Exchange structure
+    case presentationExchange(vpToken: VPTokenType, presentationSubmission: PresentationSubmission, state: String?)
+    
     func toJsonEncodedMap() throws -> [String: String] {
-        var bodyParams: [String: String] = [:]
-
-        bodyParams["vp_token"] = try vpToken.encodedString(fieldName: "vp_token", className: Self.className)
-        bodyParams["presentation_submission"] = try encode(
-            presentationSubmission,
-            fieldName: "presentation_submission",
-            className: Self.className
-        )
-
-        if let state = state {
-            bodyParams["state"] = state
+        var jsonEncodedAuthorizationResponse: [String: String] = [:]
+        
+        switch self {
+        case .dcql(let vpToken, let state):
+            let vpData = try JSONSerialization.data(withJSONObject: vpToken)
+            jsonEncodedAuthorizationResponse["vp_token"] = String(data: vpData, encoding: .utf8)
+            if let state = state { jsonEncodedAuthorizationResponse["state"] = state }
+            
+        case .presentationExchange(let vpToken, let presentationSubmission, let state):
+            jsonEncodedAuthorizationResponse["vp_token"] = try vpToken.encodedString(fieldName: "vp_token", className: className)
+            jsonEncodedAuthorizationResponse["presentation_submission"] = try encode(
+                presentationSubmission,
+                fieldName: "presentation_submission",
+                className: className
+            )
+            
+            if let state = state {
+                jsonEncodedAuthorizationResponse["state"] = state
+            }
         }
-
-        return bodyParams
+        
+        return jsonEncodedAuthorizationResponse
     }
 }
 
 
 public struct AnyEncodable: Encodable {
     private let _encode: (Encoder) throws -> Void
-
+    
     public init<T: Encodable>(_ value: T) {
         self._encode = value.encode
     }
-
+    
     public func encode(to encoder: Encoder) throws {
         try _encode(encoder)
     }
@@ -43,7 +53,7 @@ public struct AnyEncodable: Encodable {
 public enum VPTokenType {
     case vpTokenArray([VPToken])
     case vpTokenElement(VPToken)
-
+    
     func encodedString(fieldName: String, className: String) throws -> String {
         switch self {
         case .vpTokenArray(let tokens):

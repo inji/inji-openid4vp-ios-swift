@@ -1,11 +1,13 @@
 import Foundation
 import JSONWebKey
 
-class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthorizationRequestHandler {
+class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthorizationRequestHandler {
     let trustedVerifiers: [Verifier]
     let shouldValidateClient: Bool
     
-    init(trustedVerifiers: [Verifier],
+    init(clientId: String,
+         specVersion: SpecVersion,
+         trustedVerifiers: [Verifier],
          authorizationRequestParameters: [String: Any],
          walletMetadata: WalletMetadata?,
          shouldValidateClient: Bool,
@@ -14,7 +16,9 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
          networkManager: NetworkManaging) {
         self.trustedVerifiers = trustedVerifiers
         self.shouldValidateClient = shouldValidateClient
-        super.init(authorizationRequestParameters: authorizationRequestParameters,
+        super.init(clientId: clientId,
+                   specVersion: specVersion,
+                   authorizationRequestParameters: authorizationRequestParameters,
                    walletMetadata: walletMetadata,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
@@ -22,23 +26,22 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
         delegate = self
         super.className = String(describing: PreRegisteredSchemeAuthorizationRequestHandler.self)
     }
-    
-    func clientIdScheme() -> String {
-        return ClientIdScheme.preRegistered.rawValue
+
+    func clientIdPrefix() -> String {
+        return ClientIdPrefix.preRegistered.rawValue
     }
     
     override func validateClientId() throws {
         if shouldValidateClient {
             guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String }) else {
-                throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: AuthorizationRequest.className)
+                throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
             }
         }
     }
     
-    func process(walletMetadata: WalletMetadata) -> WalletMetadata {
-        var updatedWalletMetadata = walletMetadata
-        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
-        return updatedWalletMetadata
+    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
+        try validateRequestObjectSigningAlgSupported(walletMetadata, className: className)
+        return walletMetadata
     }
     
     func isSignedRequestSupported() -> Bool {
@@ -82,7 +85,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdSchemeBasedAuthor
             guard preRegisteredClient.responseUris.contains(responseUri) else {
                 throw InvalidVerifier(
                     message: "response_uri trust cannot be established",
-                    className: AuthorizationRequest.className
+                    className: className
                 )
             }
             

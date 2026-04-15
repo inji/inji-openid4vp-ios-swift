@@ -3,5 +3,8 @@ import Foundation
 typealias VPTokenSigningPayload = LdpVPToken
 
 protocol UnsignedVPTokenBuilder {
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken : UnsignedVPToken)
+    var specVersion: SpecVersion { get }
+    var authorizationRequest: AuthorizationRequest { get }
+    var walletMetadata: WalletMetadata? { get }
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken)
 }

@@ -8,11 +8,12 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     let mockSetResponseUri: (String) -> Void = { value in
     }
     let requestUri: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
+    let clientId: String = "redirect_uri:https://mock-verifier.com"
     
     private var walletMetadata: WalletMetadata!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadataV2()
+        walletMetadata = try createWalletMetadata()
     }
     
     func setup(){
@@ -23,43 +24,43 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     // Support for Authorization request by reference or by value
     
     func testReturnFalseForAuthorizationRequestByReferenceSupport() {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest( paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertFalse(handler.isSignedRequestSupported(), "redirect_uri client_id_scheme should not support request by reference")
+        XCTAssertFalse(handler.isSignedRequestSupported(), "redirect_uri client_id_prefix should not support request by reference")
     }
     
     func testReturnTrueForAuthorizationRequestByValueSupport() {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
-        XCTAssertTrue(handler.isUnsignedRequestSupported(), "redirect_uri client_id_scheme should support request by value")
+        XCTAssertTrue(handler.isUnsignedRequestSupported(), "redirect_uri client_id_prefix should support request by value")
     }
     
     /// validate and parse request fields
     
     func testThrowNoErrorForValidAuthorizationRequestWhileValidateAndParseRequestFields() async {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter), addEncryptionClientMetadataParams: false) as [String : Any]
+        let redirectUriSchemeAuthRequestHandler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields())
     }
     
     func testThrowErrorWhenClientIdIsNotEqualToResponseUriWithDirectPostResponseMode() async{
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, ["response_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
-        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, ["response_uri": "http://invalid-mock-verifier.com"]), addEncryptionClientMetadataParams: false) as [String : Any]
+        let redirectUriSchemeAuthRequestHandler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         
         await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "response_uri should be equal to client_id for given client_id_scheme",
+                                     expectedMessage: "response_uri should be equal to client_id for given client_id_prefix",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
     }
     
     func testThrowErrorWhenAuthorizationRequestObjectClientIdIsNotMatchingWithRequestParameterClientIdInDirectPostResponseMode() async {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23, [AuthorizationRequestFieldConstants.responseMode.rawValue: "fragment","redirect_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
-        let redirectUriSchemeAuthRequestHandler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, [AuthorizationRequestFieldConstants.responseMode.rawValue: "fragment","redirect_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
+        let redirectUriSchemeAuthRequestHandler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
@@ -69,16 +70,16 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         }
     }
     
-    func testProcessingWalletMetadataSuccessfully() async{
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+    func testProcessingWalletMetadataSuccessfully() async throws {
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
         ])) as [String : Any]
-        let redirectScheme = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
+        let redirectScheme = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
         var expectedWalletMetadata: WalletMetadata = walletMetadata
         expectedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
         
-        let processedMetadata = redirectScheme.process(walletMetadata: walletMetadata)
+        let processedMetadata = try redirectScheme.process(walletMetadata: walletMetadata)
         
         assertDictionariesEqual(expected: convertToDictionary(object: expectedWalletMetadata)!, actual: convertToDictionary(object: processedMetadata))
     }
@@ -91,20 +92,20 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdDraft23,
+                redirectUriSchemeClientIdParameter,
                 [
                     "client_id": mockClientId,
-                    "client_id_scheme": "redirect_uri",
                     "response_mode": "direct_post",
                     "response_uri": invalidResponseUri,
                     "scope": "openid",
                     "response_type": "vp_token",
                     "nonce": "123456"
                 ]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
         
-        let redirectUriSchemeHandler = RedirectUriSchemeAuthorizationRequestHandler(
+        let redirectUriSchemeHandler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
             authorizationRequestParameters: authParams,
             walletMetadata: walletMetadata,
             setResponseUri: mockSetResponseUri,
@@ -117,19 +118,19 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         ) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "response_uri should be equal to client_id for given client_id_scheme",
+                expectedMessage: "response_uri should be equal to client_id for given client_id_prefix",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
     }
     
     func testThrowErrorWhenExtractPublicKeyIsInvoked() async {
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValueDraft23 , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdDraft23)) as [String : Any]
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter)) as [String : Any]
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncThrowsError(try await handler.extractPublicKey(keyId: nil, algorithm: "edDsa")) { error in
             assertOpenID4VPException(error,
-                                     expectedMessage: "Public key extraction is not supported for redirect_uri client_id_scheme",
+                                     expectedMessage: "Public key extraction is not supported for redirect_uri client_id_prefix",
                                      expectedCode: "unsupported_operation"
             )
         }
@@ -141,15 +142,16 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdDraft23,
+                redirectUriSchemeClientIdParameter,
                 [
                     "response_mode": "iar-post",
                     "response_uri": "https://mock-verifier.com/redirect"
                 ]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
 
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
             authorizationRequestParameters: params,
             walletMetadata: walletMetadata,
             setResponseUri: mockSetResponseUri,
@@ -165,7 +167,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdDraft23,
+                redirectUriSchemeClientIdParameter,
                 [
                     "response_mode": "iar-post.jwt",
                     "response_uri": "https://mock-verifier.com/redirect"
@@ -173,7 +175,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             )
         ) as [String : Any]
 
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
             authorizationRequestParameters: params,
             walletMetadata: walletMetadata,
             setResponseUri: mockSetResponseUri,
@@ -189,12 +191,13 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdDraft23,
+                redirectUriSchemeClientIdParameter,
                 ["response_mode": "iar-post"]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
 
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
             authorizationRequestParameters: params,
             walletMetadata: walletMetadata,
             setResponseUri: mockSetResponseUri,
@@ -210,12 +213,12 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdDraft23,
+                redirectUriSchemeClientIdParameter,
                 ["response_mode": "iar-post.jwt"]
             )
         ) as [String : Any]
 
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
             authorizationRequestParameters: params,
             walletMetadata: walletMetadata,
             setResponseUri: mockSetResponseUri,
@@ -231,15 +234,16 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdDraft23,
+                redirectUriSchemeClientIdParameter,
                 [
                     "response_mode": "iar-post",
                     "response_uri": "https://different.com/response"
                 ]
-            )
+            ),
+            addEncryptionClientMetadataParams: false
         ) as [String : Any]
 
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
             authorizationRequestParameters: params,
             walletMetadata: walletMetadata,
             setResponseUri: mockSetResponseUri,
@@ -255,7 +259,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             paramList: authRequestWithRedirectUriByValue,
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdDraft23,
+                redirectUriSchemeClientIdParameter,
                 [
                     "response_mode": "iar-post.jwt",
                     "response_uri": "https://different.com/response"
@@ -263,7 +267,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
             )
         ) as [String : Any]
 
-        let handler = RedirectUriSchemeAuthorizationRequestHandler(
+        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, 
             authorizationRequestParameters: params,
             walletMetadata: walletMetadata,
             setResponseUri: mockSetResponseUri,

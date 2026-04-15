@@ -1,15 +1,22 @@
 import Foundation
+import JSONWebKey
 
 protocol ResponseModeBasedHandler {
     func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws
+    
+    func validate(clientMetadata: ClientMetadataDraft23?,
+                  walletMetadata: WalletMetadata?,
+                  shouldValidateWithWalletMetadata: Bool) throws
+    
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest,
                                    authorizationResponse: AuthorizationResponse,
                                    url: String,
                                    networkManager: NetworkManaging,
                                    producerInfo: String,
-                                   recipientInfo: String
+                                   recipientInfo: String,
+                                   walletMetadata: WalletMetadata?
     ) async throws -> NetworkResponse
     
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
@@ -17,14 +24,20 @@ protocol ResponseModeBasedHandler {
     func getAuthorizationResponse(
             authorizationRequest: AuthorizationRequest,
             authorizationResponse: AuthorizationResponse,
-            walletNonce: String
+            walletNonce: String,
+            walletMetadata: WalletMetadata?
         ) throws -> [String: String]
 
         func getAuthorizationErrorResponse(
             authorizationRequest: AuthorizationRequest?,
             authorizationResponse: AuthorizationErrorResponse,
             walletNonce: String
-        ) throws -> [String: String]
+        ) throws -> [String: String]
+
+    func getVerifierPublicKeyForEncryption(
+        authorizationRequest: AuthorizationRequest,
+        walletMetadata: WalletMetadata?
+    ) throws -> JWK?
 }
 
 extension ResponseModeBasedHandler {

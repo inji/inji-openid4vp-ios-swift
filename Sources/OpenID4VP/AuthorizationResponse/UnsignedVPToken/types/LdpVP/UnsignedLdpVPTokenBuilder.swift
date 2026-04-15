@@ -5,24 +5,27 @@ private let className = "UnsignedLdpVPTokenBuilder"
 public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     private let id: String
     private let holder: String
-    private let challenge: String
-    private let domain: String
     private let signatureSuite: String
-    
+    public let specVersion: SpecVersion
+    public let authorizationRequest: AuthorizationRequest
+    public let walletMetadata: WalletMetadata?
+
     static let internalPath: String = "verifiableCredential"
-    
+
     public init(
+        authorizationRequest: AuthorizationRequest,
+        specVersion: SpecVersion,
         id: String,
         holder: String,
-        challenge: String,
-        domain: String,
-        signatureSuite: String
+        signatureSuite: String,
+        walletMetadata: WalletMetadata? = nil
     ) {
+        self.authorizationRequest = authorizationRequest
+        self.specVersion = specVersion
         self.id = id
         self.holder = holder
-        self.challenge = challenge
-        self.domain = domain
         self.signatureSuite = signatureSuite
+        self.walletMetadata = walletMetadata
     }
     
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: any UnsignedVPToken) {
@@ -47,8 +50,8 @@ public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         let proof = Proof(
             type: signatureSuite,
             created: nil,
-            challenge: challenge,
-            domain: holder,
+            challenge: authorizationRequest.nonce,
+            domain: authorizationRequest.clientId,
             verificationMethod: holder, proofValue: nil
         )
         

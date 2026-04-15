@@ -3,21 +3,23 @@ import Foundation
 private let keyBindingJWT = "kb+jwt"
 
 struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
-    private let clientId: String
-    private let nonce: String
+    let authorizationRequest: AuthorizationRequest
+    let specVersion: SpecVersion
+    let walletMetadata: WalletMetadata?
     private let networkManager: any NetworkManaging
-    
+
     private static let className = "UnsignedSdJwTVPTokenBuilder"
-    
-    init(clientId: String, authorizationRequestNonce: String, networkManager: any NetworkManaging = NetworkManager()) {
-        self.clientId = clientId
-        self.nonce = authorizationRequestNonce
+
+    init(authorizationRequest: AuthorizationRequest, specVersion: SpecVersion, networkManager: any NetworkManaging = NetworkManager(), walletMetadata: WalletMetadata? = nil) {
+        self.authorizationRequest = authorizationRequest
+        self.specVersion = specVersion
         self.networkManager = networkManager
+        self.walletMetadata = walletMetadata
     }
-    
+
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken : UnsignedVPToken) {
         var uuidToUnsignedKBJWT = [String: String]()
-        
+
         for index in 0..<credentialInputDescriptorMappings.count {
             let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
             let uuid = UUIDGenerator.generateUUID()
@@ -60,8 +62,8 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             
             let jwtPayload : [String: Any] = [
                 "iat": Int(Date().timeIntervalSince1970),
-                "aud": clientId,
-                "nonce": nonce,
+                "aud": authorizationRequest.clientId,
+                "nonce": authorizationRequest.nonce,
                 "sd_hash": sdHash
             ]
             

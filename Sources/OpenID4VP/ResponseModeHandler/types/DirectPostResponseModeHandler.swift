@@ -1,16 +1,30 @@
 import Foundation
+import JSONWebKey
 
 struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
+    static let className = String(describing: DirectPostResponseModeHandler.self)
+    
+    func validate(clientMetadata: ClientMetadataDraft23?,
+                  walletMetadata: WalletMetadata?,
+                  shouldValidateWithWalletMetadata: Bool) throws {
+        if (clientMetadata?.authorizationEncryptedResponseEnc != nil || clientMetadata?.authorizationEncryptedResponseAlg != nil) {
+            throw InvalidData(message: "encrypted_response_enc_values_supported or authorization_encrypted_response_alg SHOULD not be present for response mode 'direct_post'", className: Self.className)
+        }
+    }
+    
     func validate(clientMetadata: ClientMetadata?,
                   walletMetadata: WalletMetadata?,
                   shouldValidateWithWalletMetadata: Bool) throws {
-        return
+        if clientMetadata?.encryptedResponseEncValuesSupported != nil {
+            throw InvalidData(message: "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'", className: Self.className)
+        }
     }
     
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
-        walletNonce: String
+        walletNonce: String,
+        walletMetadata: WalletMetadata?
     ) throws -> [String: String] {
         return try authorizationResponse.toJsonEncodedMap()
     }
@@ -22,7 +36,6 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     ) -> [String: String] {
         return authorizationResponse.toJsonEncodedMap()
     }
-
     
     func sendAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
@@ -30,10 +43,10 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         url: String,
         networkManager: any NetworkManaging,
         producerInfo: String,
-        recipientInfo: String
+        recipientInfo: String,
+        walletMetadata: WalletMetadata?
     ) async throws -> NetworkResponse {
         let requestBody: [String: String] = try authorizationResponse.toJsonEncodedMap()
-
         return try await networkManager.sendHTTPRequest(
             url: url,
             method: .post,
@@ -42,4 +55,10 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
         )
     }
 
+    func getVerifierPublicKeyForEncryption(
+        authorizationRequest: AuthorizationRequest,
+        walletMetadata: WalletMetadata?
+    ) throws -> JWK? {
+        return nil
+    }
 }
