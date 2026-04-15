@@ -32,6 +32,12 @@ public struct DCQLQuery: Codable {
         try validate()
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(credentials, forKey: .credentials)
+        try container.encodeIfPresent(credentialSets, forKey: .credentialSets)
+    }
+
     func validate() throws {
         if credentials.isEmpty {
             throw InvalidInput(fieldPath: ["dcql_query", "credentials"], className: className)
@@ -131,6 +137,17 @@ public struct CredentialQuery: Codable {
         )
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(format, forKey: .format)
+        try container.encode(multiple, forKey: .multiple)
+        try container.encodeIfPresent(meta, forKey: .meta)
+        try container.encode(requireCryptographicHolderBinding, forKey: .requireCryptographicHolderBinding)
+        try container.encodeIfPresent(claims, forKey: .claims)
+        try container.encodeIfPresent(claimSets, forKey: .claimSets)
+    }
+
     func validate() throws {
         guard id.range(of: CredentialQuery.validIdPattern, options: .regularExpression) != nil else {
             throw InvalidData(
@@ -214,6 +231,12 @@ public struct CredentialSetQuery: Codable {
         self.required = (try container.decodeIfPresent(Bool.self, forKey: .required)) ?? true
 
         try validate()
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(options, forKey: .options)
+        try container.encode(required, forKey: .required)
     }
 
     func validate() throws {
@@ -313,6 +336,13 @@ public struct ClaimsQuery: Codable {
             className: className,
             isMandatory: false
         )
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encode(path, forKey: .path)
+        try container.encodeIfPresent(values, forKey: .values)
     }
 
     func validate(isCredentialSetsAvailable: Bool) throws {

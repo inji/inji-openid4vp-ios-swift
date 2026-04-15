@@ -574,6 +574,138 @@ final class DCQLQueryTests: XCTestCase {
         }
     }
 
+    // MARK: - Encoding round-trips
+
+    func testDCQLQueryEncodesCredentialsKey() throws {
+        let json = """
+        {
+            "credentials": [
+                { "id": "cred1", "format": "dc+sd-jwt", "meta": {} },
+                { "id": "cred2", "format": "mso_mdoc", "meta": {} }
+            ]
+        }
+        """
+        let dcqlQuery = try decode(DCQLQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(dcqlQuery)
+        let decoded = try decode(DCQLQuery.self, from: String(data: encoded, encoding: .utf8)!)
+
+        XCTAssertEqual(decoded.credentials.count, 2)
+        XCTAssertEqual(decoded.credentials[0].id, "cred1")
+        XCTAssertEqual(decoded.credentials[1].id, "cred2")
+        XCTAssertNil(decoded.credentialSets)
+    }
+
+    func testDCQLQueryEncodesCredentialSetsKey() throws {
+        let json = """
+        {
+            "credentials": [
+                { "id": "cred1", "format": "dc+sd-jwt", "meta": {} }
+            ],
+            "credential_sets": [
+                { "options": [["cred1"]], "required": false }
+            ]
+        }
+        """
+        let dcqlQuery = try decode(DCQLQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(dcqlQuery)
+        let decoded = try decode(DCQLQuery.self, from: String(data: encoded, encoding: .utf8)!)
+
+        XCTAssertEqual(decoded.credentialSets?.count, 1)
+        XCTAssertEqual(decoded.credentialSets?.first?.required, false)
+    }
+
+    func testCredentialQueryEncodesAllFields() throws {
+        let json = """
+        {
+            "id": "cred1",
+            "format": "dc+sd-jwt",
+            "multiple": true,
+            "meta": { "vct_values": ["https://example.com"] },
+            "require_cryptographic_holder_binding": false,
+            "claims": [{ "id": "given_name", "path": ["given_name"] }],
+            "claim_sets": [["given_name"]]
+        }
+        """
+        let credentialQuery = try decode(CredentialQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(credentialQuery)
+        let decoded = try decode(CredentialQuery.self, from: String(data: encoded, encoding: .utf8)!)
+
+        XCTAssertEqual(decoded.id, "cred1")
+        XCTAssertEqual(decoded.format, "dc+sd-jwt")
+        XCTAssertTrue(decoded.multiple)
+        XCTAssertFalse(decoded.requireCryptographicHolderBinding)
+        XCTAssertEqual(decoded.claims?.count, 1)
+        XCTAssertEqual(decoded.claimSets?.count, 1)
+    }
+
+    func testCredentialQueryEncodesDefaultValues() throws {
+        let json = """
+        { "id": "cred1", "format": "mso_mdoc", "meta": {} }
+        """
+        let credentialQuery = try decode(CredentialQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(credentialQuery)
+        let encodedJson = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+
+        XCTAssertEqual(encodedJson["multiple"] as? Bool, false)
+        XCTAssertEqual(encodedJson["require_cryptographic_holder_binding"] as? Bool, true)
+        XCTAssertNil(encodedJson["claims"])
+        XCTAssertNil(encodedJson["claim_sets"])
+    }
+
+    func testCredentialSetQueryEncodesAllFields() throws {
+        let json = """
+        { "options": [["cred1", "cred2"], ["cred3"]], "required": false }
+        """
+        let credentialSetQuery = try decode(CredentialSetQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(credentialSetQuery)
+        let decoded = try decode(CredentialSetQuery.self, from: String(data: encoded, encoding: .utf8)!)
+
+        XCTAssertEqual(decoded.options.count, 2)
+        XCTAssertEqual(decoded.options[0], ["cred1", "cred2"])
+        XCTAssertEqual(decoded.options[1], ["cred3"])
+        XCTAssertFalse(decoded.required)
+    }
+
+    func testCredentialSetQueryEncodesDefaultRequired() throws {
+        let json = """
+        { "options": [["cred1"]] }
+        """
+        let credentialSetQuery = try decode(CredentialSetQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(credentialSetQuery)
+        let encodedJson = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+
+        XCTAssertEqual(encodedJson["required"] as? Bool, true)
+    }
+
+    func testClaimsQueryEncodesAllFields() throws {
+        let json = """
+        { "id": "given_name", "path": ["given_name"], "values": ["John", 42, true] }
+        """
+        let claimsQuery = try decode(ClaimsQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(claimsQuery)
+        let decoded = try decode(ClaimsQuery.self, from: String(data: encoded, encoding: .utf8)!)
+
+        XCTAssertEqual(decoded.id, "given_name")
+        XCTAssertEqual(decoded.path.count, 1)
+        XCTAssertEqual(decoded.values?.count, 3)
+        XCTAssertEqual(decoded.values?[0], .string("John"))
+        XCTAssertEqual(decoded.values?[1], .int(42))
+        XCTAssertEqual(decoded.values?[2], .bool(true))
+    }
+
+    func testClaimsQueryOmitsNilFieldsWhenEncoded() throws {
+        let json = """
+        { "path": ["family_name"] }
+        """
+        let claimsQuery = try decode(ClaimsQuery.self, from: json)
+        let encoded = try JSONEncoder().encode(claimsQuery)
+        let encodedJson = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+
+        XCTAssertNil(encodedJson["id"])
+        XCTAssertNil(encodedJson["values"])
+        XCTAssertNotNil(encodedJson["path"])
+    }
+
     // MARK: - ClaimValue: encoding
 
     func testClaimValueEncodesString() throws {
