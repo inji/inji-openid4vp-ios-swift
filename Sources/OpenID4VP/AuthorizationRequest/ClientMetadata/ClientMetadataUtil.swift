@@ -1,6 +1,6 @@
 import Foundation
 
-fileprivate let className = String(describing: ClientMetadataDraft23.self)
+fileprivate let className = "ClientMetadataUtil"
 
 enum ClientMetadataSpecVersionHandler {
     case v1, draft23

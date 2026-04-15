@@ -642,5 +642,32 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
     }
 
+    func testThrowErrorWhenJwksContainsNoEncryptionKey() throws {
+           let clientMetadataWithSigOnlyJwks: [String: Any] = [
+               "encrypted_response_enc_values_supported": ["A256GCM"],
+               "jwks": [
+                   "keys": [[
+                       "kty": "OKP",
+                       "crv": "Ed25519",
+                       "use": "sig",
+                       "x": "5tvU4k_TGAfDAru3LfS53qbfHzghjc0kvPGAb2VUwWc",
+                       "alg": "EdDSA",
+                       "kid": "sig-key1"
+                   ]]
+               ],
+               "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
+           ]
+
+           XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(
+               clientMetadata: createInstance(clientMetadataWithSigOnlyJwks, as: ClientMetadata.self),
+               walletMetadata: walletMetadata,
+               shouldValidateWithWalletMetadata: false
+           )) { error in
+               assertOpenID4VPException(
+                   error,
+                   expectedMessage: "No encryption jwk found in client_metadata.jwks",
+                   expectedCode: OpenID4VPErrorCodes.invalidRequest
+               )
+           }
+       }
 }
-    
