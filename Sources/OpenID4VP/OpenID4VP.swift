@@ -113,6 +113,22 @@ public class OpenID4VP {
             throw error
         }
     }
+    
+    public func constructUnsignedVPToken(
+        selectedCredentials: [String: [SelectedCredential]],
+    ) async throws -> [UnsignedVPTokenV2] {
+        do {
+            return try await authorizationResponseHandler.constructUnsignedVPToken(
+                credentialsMap: selectedCredentials,
+                authorizationRequest: authorizationRequest,
+                responseUri: responseUri!,
+                walletNonce: walletNonce
+            )
+        } catch {
+            await safeSendError(error: error)
+            throw error
+        }
+    }
 
     public func constructVPResponse(vpTokenSigningResults: [VPTokenSigningResultV2]) -> [String: Any] {
         do {

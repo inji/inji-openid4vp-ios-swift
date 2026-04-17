@@ -50,7 +50,23 @@ public class AuthorizationResponseHandler {
         }
         self.signatureSuite = signatureSuite ?? self.signatureSuite
         
-        return try await SpecVersionHandler.from(authorizationRequest).createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
+        return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
+    }
+    
+    func constructUnsignedVPToken(
+        credentialsMap: [String: [SelectedCredential]],
+        authorizationRequest: AuthorizationRequest,
+        responseUri: String,
+        holderId: String = "",
+        signatureSuite: String = "Ed25519Signature2020",
+        walletNonce: String
+    ) async throws -> [UnsignedVPTokenV2] {
+
+        if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
+            self.specVersion = .draft23
+        }
+        
+        return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
     }
     
     func constructUnsignedVPToken(
@@ -451,7 +467,7 @@ public class AuthorizationResponseHandler {
             return authorizationRequest is AuthorizationPresentationExchangeRequest ? .draft23 : .specV1
         }
         
-        func createUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
+        static func createUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
                                    authorizationRequest: AuthorizationRequest,
                                    holderId: String?,
                                    signatureSuite: String?,
@@ -465,6 +481,15 @@ public class AuthorizationResponseHandler {
                 holderId: holderId,
                 signatureSuite: signatureSuite
             )
+        }
+        
+        static func createUnsignedVPToken(credentialsMap: [String: [SelectedCredential]],
+                                   authorizationRequest: AuthorizationRequest,
+                                   holderId: String?,
+                                   signatureSuite: String?,
+                                   walletNonce: String,
+                                   handler: AuthorizationResponseHandler) async throws -> [UnsignedVPTokenV2] {
+            return []
         }
 
         func createVPTokenResponse(
