@@ -11,18 +11,17 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     private let mdocGeneratedNonce: String
     
     static let className = String(describing: UnsignedMdocVPTokenBuilder.self)
-
+    
     init(
         authorizationRequest: AuthorizationRequest,
         specVersion: SpecVersion,
-        responseUri: String,
         mdocGeneratedNonce: String,
         walletMetadata: WalletMetadata? = nil
-    ) {
+    ) throws {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.walletMetadata = walletMetadata
-        self.responseUri = responseUri
+        self.responseUri = try ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode).getResponseEndpoint(authorizationRequest: authorizationRequest)
         self.mdocGeneratedNonce = mdocGeneratedNonce
     }
     

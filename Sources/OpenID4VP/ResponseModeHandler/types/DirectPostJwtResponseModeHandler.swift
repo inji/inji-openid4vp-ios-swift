@@ -138,6 +138,12 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         return try SpecVersionHandler.from(authorizationRequest)
             .getVerifierPublicKey(authorizationRequest: authorizationRequest, walletMetadata: walletMetadata, className: className)
     }
+    
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String {
+        return try authorizationRequest.responseUri ?? {
+            throw InvalidData(message: "response_uri is required in authorization request for response mode 'direct_post'", className: className)
+        }()
+    }
 
     private func encryptResponse(
         authorizationRequest: AuthorizationRequest,

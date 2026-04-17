@@ -21,6 +21,8 @@ protocol ResponseModeBasedHandler {
     
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
     
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String
+    
     func getAuthorizationResponse(
             authorizationRequest: AuthorizationRequest,
             authorizationResponse: AuthorizationResponse,

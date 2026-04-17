@@ -85,6 +85,10 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     ) throws -> JWK? {
         return nil
     }
+    
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String {
+        return authorizationRequest.responseUri ?? "https://example.com/callback"
+    }
 
     func getAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,

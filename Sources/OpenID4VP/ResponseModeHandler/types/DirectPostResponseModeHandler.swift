@@ -61,4 +61,10 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     ) throws -> JWK? {
         return nil
     }
+    
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String {
+        return try authorizationRequest.responseUri ?? {
+            throw InvalidData(message: "response_uri is required in authorization request for response mode 'direct_post'", className: Self.className)
+        }()
+    }
 }
