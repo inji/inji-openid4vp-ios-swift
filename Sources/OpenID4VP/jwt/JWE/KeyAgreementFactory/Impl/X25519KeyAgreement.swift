@@ -7,29 +7,6 @@ class X25519KeyAgreement: JWEKeyAgreement {
     private var ephemeralKeyPair: (privateKey: Curve25519.KeyAgreement.PrivateKey,
                                    publicKey: Curve25519.KeyAgreement.PublicKey)?
     
-    func deriveKey(publicKey: Data) throws -> SymmetricKey {
-        do {
-            let privateKey = Curve25519.KeyAgreement.PrivateKey()
-            let publicKey = try Curve25519.KeyAgreement.PublicKey(rawRepresentation: publicKey)
-            
-            ephemeralKeyPair = (privateKey, privateKey.publicKey)
-            
-            let sharedSecret = try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
-            
-            return sharedSecret.hkdfDerivedSymmetricKey(
-                using: SHA256.self,
-                salt: "ECDH-ES+A256GCM".data(using: .utf8)!,
-                sharedInfo: Data(),
-                outputByteCount: 32
-            )
-        } catch {
-            throw wrapError(
-                error,
-                customError: { msg in KeyAgreementFailed(message: msg, className: X25519KeyAgreement.className) }
-            )
-        }
-    }
-    
     func deriveKey(publicKey: Data,
                    algorithm: String = "A256GCM",
                    apu: String,
@@ -43,9 +20,15 @@ class X25519KeyAgreement: JWEKeyAgreement {
             let sharedSecret = try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
             
             let algorithmID = Data(algorithm.utf8)
-            let partyUInfo = Data(apu.utf8)
-            let partyVInfo = Data(apv.utf8)
-            let keyLength = 32 // 256-bit AES key
+            
+            guard let partyUInfo = Data(base64UrlEncoded: apu) else {
+                throw Base64DecodingFailed(message: "Failed to decode producer info (apu)", className: X25519KeyAgreement.className)
+            }
+            guard let partyVInfo = Data(base64UrlEncoded: apv) else {
+                throw Base64DecodingFailed(message: "Failed to decode recipient info (apv)", className: X25519KeyAgreement.className)
+            }
+            
+            let keyLength = try getKeyLength(algorithm: algorithm)
             
             // Convert key length (in bits) to big-endian bytes
             var bitsBE = UInt32(keyLength * 8).bigEndian
@@ -77,6 +60,15 @@ class X25519KeyAgreement: JWEKeyAgreement {
         suppPubInfo: Data,
         suppPrivInfo: Data = Data()
     ) -> SymmetricKey {
+        var otherInfo = Data()
+        
+        appendLengthPrefixed(algorithmID, to: &otherInfo)
+        appendLengthPrefixed(partyUInfo, to: &otherInfo)
+        appendLengthPrefixed(partyVInfo, to: &otherInfo)
+        
+        otherInfo.append(suppPubInfo)
+        otherInfo.append(suppPrivInfo)
+        
         var derivedKey = Data()
         var counter: UInt32 = 1
         
@@ -91,11 +83,7 @@ class X25519KeyAgreement: JWEKeyAgreement {
             
             // Append Z and OtherInfo
             data.append(zData)
-            data.append(algorithmID)
-            data.append(partyUInfo)
-            data.append(partyVInfo)
-            data.append(suppPubInfo)
-            data.append(suppPrivInfo)
+            data.append(otherInfo)
             
             // Hash
             let hash = SHA256.hash(data: data)
@@ -127,5 +115,21 @@ class X25519KeyAgreement: JWEKeyAgreement {
     
     func getEncyptionKey() -> String {
         return ""
+    }
+    
+    private func appendLengthPrefixed(_ value: Data, to buffer: inout Data) {
+        var valueLength = UInt32(value.count).bigEndian
+        buffer.append(Data(bytes: &valueLength, count: 4))
+        buffer.append(value)
+    }
+    
+    private func getKeyLength(algorithm: String) throws -> Int {
+        let algorithmValue = ContentEncryptionAlgorithm.fromValue(algorithm)
+        switch algorithmValue {
+        case .A256GCM:
+            return 32 // 256-bit AES key
+        default:
+            throw UnsupportedOperationException(message: "Unsupported content encryption algorithm: \(algorithm)", className: X25519KeyAgreement.className)
+        }
     }
 }
