@@ -17,8 +17,9 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         self.walletMetadata = walletMetadata
     }
 
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken : UnsignedVPToken) {
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
         var uuidToUnsignedKBJWT = [String: String]()
+        var unsignedVPTokens: [UnsignedVPToken] = []
 
         for index in 0..<credentialInputDescriptorMappings.count {
             let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
@@ -72,9 +73,23 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             uuidToUnsignedKBJWT[uuid] = unsignedJWT
         }
         
+        // Ensure deterministic order by sorting by UUID
+        for uuid in uuidToUnsignedKBJWT.keys.sorted() {
+             let mapping = credentialInputDescriptorMappings.first(where: { $0.identifier == uuid })!
+             let credential = mapping.credential.value as! String
+             let (kid, alg) = try await resolveSdJwtKeyAndAlg(credential)
+             
+             unsignedVPTokens.append(UnsignedVPToken(
+                format: mapping.format,
+                holderKeyReference: kid,
+                signatureAlgorithm: alg,
+                dataToSign: uuidToUnsignedKBJWT[uuid]!
+             ))
+        }
+
         return (
-            vpTokenSigningPayload: nil,
-            unsignedVPToken: UnsignedSdJwtVPToken(uuidToUnsignedKBT: uuidToUnsignedKBJWT)
+            vpTokenSigningPayload: uuidToUnsignedKBJWT,
+            unsignedVPTokens: unsignedVPTokens
         )
     }
 }

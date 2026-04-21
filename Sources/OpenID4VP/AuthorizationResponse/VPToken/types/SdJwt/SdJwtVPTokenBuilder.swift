@@ -5,38 +5,43 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
     
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken),
-        vpTokenSigningResult: VPTokenSigningResult,
+        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
         var vpIndex = rootIndex
-        guard let sdJwtVPTokenSigningResult = vpTokenSigningResult as? SdJwtVpTokenSigningResult else {
-            throw InvalidData(message: "vpTokenSigningResult is not SdJwtVpTokenSigningResult", className: className)
+        guard let uuidToUnsignedKBT = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
+             throw InvalidData(message: "Missing uuidToUnsignedKBT in payload", className: className)
         }
-        guard let unsignedSdJwtVPToken = unsignedVPTokenResult.unsignedVPToken as? UnsignedSdJwtVPToken else {
-            throw InvalidData(message: "unsignedVPTokenResult.unsignedVPToken is not UnsignedSdJwtVPToken", className: className)
-        }
+        
         var vpTokens: [VPToken] = []
         var descriptorMaps: [DescriptorMap] = []
+        var signingResultsIterator = vpTokenSigningResults.makeIterator()
+
         for mapping in credentialInputDescriptorMappings {
             guard let uuid = mapping.identifier else {
                 throw InvalidData(message: "identifier is null in CredentialInputDescriptorMapping for SD-JWT", className: className)
             }
+
             guard let sdJwtCredential = mapping.credential.value as? String else {
                 throw InvalidData(message: "SD-JWT credential is not a String", className: className)
             }
-            let unsignedKBJwt = unsignedSdJwtVPToken.uuidToUnsignedKBT[uuid]
-            let signature = sdJwtVPTokenSigningResult.uuidToKbJWTSignature[uuid]
+
+            let unsignedKBJwt = uuidToUnsignedKBT[uuid]
             let finalVPToken: String
             
-            if unsignedKBJwt == nil && signature == nil {
+            if unsignedKBJwt == nil {
                 finalVPToken = sdJwtCredential
-            } else if let unsignedKBJwt = unsignedKBJwt, let signature = signature {
-                finalVPToken = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
-            } else if unsignedKBJwt != nil, signature == nil {
-                throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
             } else {
-                throw InvalidData(message: "Signature present but unsigned KB-JWT missing for uuid: \(uuid)", className: className)
+                guard let vpTokenSigningResult = signingResultsIterator.next() else {
+                    throw InvalidData(message: "Missing signing result for \(uuid)", className: className)
+                }
+
+                let signature = vpTokenSigningResult.signedData
+                guard !signature.isEmpty, let unsignedKBJwt else {
+                    throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
+                }
+                finalVPToken = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
             }
             
             vpTokens.append(SdJwtVPToken(value: finalVPToken))
@@ -50,6 +55,11 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
             )
             vpIndex += 1
         }
+
+        if signingResultsIterator.next() != nil {
+            throw InvalidData(message: "Extra signing results provided for SD-JWT", className: className)
+        }
+
         return (vpTokens, descriptorMaps, vpIndex)
     }
     

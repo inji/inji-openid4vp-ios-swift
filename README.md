@@ -22,9 +22,9 @@ inji-openid4vp-ios-swift is an implementation of OpenID for Verifiable Presentat
 - [APIs](#apis)
   - [authenticateVerifier](#authenticateverifier)
   - [constructUnsignedVPToken](#constructUnsignedVPToken)
-  - [constructUnsignedVPTokenV2](#constructunsignedvptokenv2)
+  - [constructUnsignedVPToken](#constructunsignedvptoken)
   - [constructVPResponse](#constructvpresponse)
-  - [constructVPResponseV2](#constructvpresponsev2)
+  - [constructVPResponse](#constructvpresponse)
   - [sendVPResponseToVerifier](#sendvpresponsetoverifier)
   - [constructErrorInfo](#constructerrorinfo)
   - [sendErrorInfoToVerifier](#senderrorinfotoverifier)
@@ -501,9 +501,9 @@ let unsignedVPTokens: [FormatType: UnsignedVPToken] = try openID4VP.constructUns
 This method will also notify the Verifier about the error by sending it to the response_uri endpoint over http post request. If response_uri is invalid and validation failed then Verifier won't be able to know about it.
 
 
-### constructUnsignedVPTokenV2
+### constructUnsignedVPToken
 - This method creates a flattened list of unsigned VP tokens from a collection of Verifiable Credentials, where each token contains the holder's key reference and signature algorithm required for signing.
-- It takes credentials organized by input descriptor IDs and formats, processes them, and returns a list of `UnsignedVPTokenV2` objects, each containing:
+- It takes credentials organized by input descriptor IDs and formats, processes them, and returns a list of `UnsignedVPToken` objects, each containing:
     - The credential format type
     - Holder key reference
     - Signature algorithm to be used
@@ -511,7 +511,7 @@ This method will also notify the Verifier about the error by sending it to the r
 - This API simplifies the signing process by providing all necessary information upfront, allowing the wallet to sign each token independently without needing to understand format-specific details.
 
 ```swift
-    let unsignedVPTokens : [UnsignedVPTokenV2] = try openID4VP.constructUnsignedVPTokenV2(
+    let unsignedVPTokens : [UnsignedVPToken] = try openID4VP.constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [Any]]],
         holderId: String? = nil,
         signatureSuite: String? = nil
@@ -529,7 +529,7 @@ This method will also notify the Verifier about the error by sending it to the r
 
 #### Response Parameters
 
-The method returns a `[UnsignedVPTokenV2]` where each `UnsignedVPTokenV2` object contains:
+The method returns a `[UnsignedVPToken]` where each `UnsignedVPToken` object contains:
 
 | Property            | Type       | Description                                                                                                                                           |
 |---------------------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -542,7 +542,7 @@ The method returns a `[UnsignedVPTokenV2]` where each `UnsignedVPTokenV2` object
 #### Example usage
 
 ```swift
-let unsignedVPTokens : [UnsignedVPTokenV2] = try openID4VP.constructUnsignedVPTokenV2(
+let unsignedVPTokens : [UnsignedVPToken] = try openID4VP.constructUnsignedVPToken(
     verifiableCredentials: [
         "input_descriptor_id_1": [
             FormatType.ldp_vc: [
@@ -567,11 +567,11 @@ let unsignedVPTokens : [UnsignedVPTokenV2] = try openID4VP.constructUnsignedVPTo
 // The wallet can now iterate through unsignedVPTokens and sign each one
 let signingResults = unsignedVPTokens.map { unsignedVpToken in
     let signature = signData(unsignedVpToken.dataToSign, unsignedVpToken.holderKeyReference, unsignedVpToken.signatureAlgorithm)
-    return VPTokenSigningResultV2(signedData: signature)
+    return VPTokenSigningResult(signedData: signature)
 }
 
-// Use the signing results with constructVPResponseV2
-let response = try openID4VP.constructVPResponseV2(vpTokenSigningResults: signingResults)
+// Use the signing results with constructVPResponse
+let response = try openID4VP.constructVPResponse(vpTokenSigningResults: signingResults)
 ```
 
 #### Exceptions
@@ -598,9 +598,9 @@ This method will also notify the Verifier about the error by sending it to the r
 
 #### Parameters
 
-| Name                  | Type                               | Required | Default Value | Description                                                                                                                                                   |
-|-----------------------|------------------------------------|:---------|:--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | Yes      | N/A           | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
+| Name                  | Type                     | Required | Default Value | Description                                                                                              |
+|-----------------------|--------------------------|:---------|:--------------|----------------------------------------------------------------------------------------------------------|
+| vpTokenSigningResults | [VPTokenSigningResult]   | Yes      | N/A           | Ordered list of signed data values matching the order returned by `constructUnsignedVPToken`.            |
 
 #### Response Parameters
 
@@ -611,24 +611,31 @@ This method will also notify the Verifier about the error by sending it to the r
 #### Example usage
 
 ```swift
-let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws : createJWS(unsignedLdpVPToken), // If signature algorithm is , "JsonWebSignature2020" / "Ed25519Signature2018" / "RSASignature2018" then jws should be sent
-    proofValue : <proofValue>,  // If signature algorithm is "Ed25519Signature2020", then proofValue should be sent
-    signatureAlgorithm : "<signatureAlgorithm>",
+let unsignedVPTokens: [UnsignedVPToken] = try await openID4VP.constructUnsignedVPToken(
+    verifiableCredentials: [
+        "input_descriptor_id_1": [
+            FormatType.ldp_vc: ["<ldp-vc-json>"]
+        ],
+        "input_descriptor_id_2": [
+            FormatType.mso_mdoc: ["<mdoc-credential>"]
+        ]
+    ],
+    holderId: "did:example:holder123",
+    signatureSuite: "Ed25519Signature2020"
 )
 
-let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
-    docTypeToDeviceAuthentication: [
-        "<docType>": DeviceAuthentication(
-            signature: createSignature(unsignedMdocVPToken.docTypeToDeviceAuthenticationBytes("<docType>")), 
-            algorithm: "<mdocAuthenticationAlgorithm>",
-        )
-    ]
-  )
+let vpTokenSigningResults = unsignedVPTokens.map { token in
+    let signature = wallet.sign(
+        data: token.dataToSign,
+        keyReference: token.holderKeyReference,
+        algorithm: token.signatureAlgorithm
+    )
+    return VPTokenSigningResult(signedData: signature)
+}
 
-let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
-
-let vpResponse : [String:Any] = try openID4VP.constructVPResponse(vpTokenSigningResults : vpTokenSigningResults)
+let vpResponse: [String: Any] = try openID4VP.constructVPResponse(
+    vpTokenSigningResults: vpTokenSigningResults
+)
 ```
 
 #### Exceptions
@@ -640,22 +647,22 @@ This method will also notify the Verifier about the error by sending it to the r
 
 
 
-### constructVPResponseV2
-- Constructs a `vp_token` with proof using the provided list of `VPTokenSigningResultV2` (simplified signing results) and `presentation_submission` which can be sent to the Verifier (Verifying party).
-- This is the V2 API that works with the flattened list of signed data from `constructUnsignedVPTokenV2`, simplifying the signing workflow by accepting a simple list of signatures in the same order as the unsigned tokens.
+### constructVPResponse
+- Constructs a `vp_token` with proof using the provided list of `VPTokenSigningResult` (simplified signing results) and `presentation_submission` which can be sent to the Verifier (Verifying party).
+- This is the simplified API that works with the flattened list of signed data from `constructUnsignedVPToken`, simplifying the signing workflow by accepting a simple list of signatures in the same order as the unsigned tokens.
 - Returns back a map of VP response as per the response mode.
 
-**Note:** This method automatically reconstructs the format-specific signing results internally, so the wallet only needs to provide signatures in the same order as received from `constructUnsignedVPTokenV2`.
+**Note:** This method automatically reconstructs the format-specific signing results internally, so the wallet only needs to provide signatures in the same order as received from `constructUnsignedVPToken`.
 
 ```swift
-    let response : [String: Any] = try openID4VP.constructVPResponseV2(vpTokenSigningResults: [VPTokenSigningResultV2])
+    let response : [String: Any] = try openID4VP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult])
 ```
 
 #### Request Parameters
 
 | Name                   | Type                        | Description                                                                                                                               |
 |------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| vpTokenSigningResults  | [VPTokenSigningResultV2]    | A list of signing results in the same order as the unsigned tokens from `constructUnsignedVPTokenV2`. Each contains only the signed data. |
+| vpTokenSigningResults  | [VPTokenSigningResult]    | A list of signing results in the same order as the unsigned tokens from `constructUnsignedVPToken`. Each contains only the signed data. |
 
 
 #### Response Parameters
@@ -673,7 +680,7 @@ This method will also notify the Verifier about the error by sending it to the r
 
 ```swift
 // First, get unsigned tokens
-let unsignedVPTokens : [UnsignedVPTokenV2] = try openID4VP.constructUnsignedVPTokenV2(
+let unsignedVPTokens : [UnsignedVPToken] = try openID4VP.constructUnsignedVPToken(
     verifiableCredentials: [
         "input_descriptor_id_1": [
             FormatType.ldp_vc: ["<ldp-vc-json>"]
@@ -696,11 +703,11 @@ let signingResults = unsignedVPTokens.map { token in
         keyReference: token.holderKeyReference,
         algorithm: token.signatureAlgorithm
     )
-    return VPTokenSigningResultV2(signedData: signature)
+    return VPTokenSigningResult(signedData: signature)
 }
 
 // Construct the VP response
-let vpResponse : [String: Any] = try openID4VP.constructVPResponseV2(
+let vpResponse : [String: Any] = try openID4VP.constructVPResponse(
     vpTokenSigningResults: signingResults
 )
 ```
@@ -720,14 +727,14 @@ This method will also notify the Verifier about the error by sending it to the r
 - Returns back the response received from the Verifier. Refer here for the structure of VerifierResponse - [VerifierResponse structure](#verifierresponse-structure)
 
 ```swift
-    let response = try await openID4VP.sendVPResponseToVerifier(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
+    let response = try await openID4VP.sendVPResponseToVerifier(vpTokenSigningResults: [VPTokenSigningResult])
 ```
 
 ###### Parameters
 
-| Name                  | Type                               | Required | Default Value | Description                                                                                                                                                   |
-|-----------------------|------------------------------------|:---------|:--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | Yes      | N/A           | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
+| Name                  | Type                   | Required | Default Value | Description                                                                                   |
+|-----------------------|------------------------|:---------|:--------------|-----------------------------------------------------------------------------------------------|
+| vpTokenSigningResults | [VPTokenSigningResult] | Yes      | N/A           | Ordered list of signed data values matching the unsigned tokens returned earlier.             |
 
 ### Response Parameters
 
@@ -745,22 +752,32 @@ VerifierResponse contains the following properties:
 ###### Example usage
 
 ```swift
-let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws : createJWS(unsignedLdpVPToken), // If signature algorithm is , "JsonWebSignature2020" / "Ed25519Signature2018" / "RSASignature2018" then jws should be sent
-    proofValue : <proofValue>,  // If signature algorithm is "Ed25519Signature2020", then proofValue should be sent
-    signatureAlgorithm : "<signatureAlgorithm>",
+let unsignedVPTokens = try await openID4VP.constructUnsignedVPToken(
+    verifiableCredentials: [
+        "input_descriptor_id_1": [
+            FormatType.ldp_vc: ["<ldp-vc-json>"]
+        ],
+        "input_descriptor_id_2": [
+            FormatType.mso_mdoc: ["<mdoc-credential>"]
+        ]
+    ],
+    holderId: "did:example:holder123",
+    signatureSuite: "Ed25519Signature2020"
 )
 
-let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
-    docTypeToDeviceAuthentication: [
-        "<docType>": DeviceAuthentication(
-            signature: createSignature(unsignedMdocVPToken.docTypeToDeviceAuthenticationBytes("<docType>")), 
-            algorithm: "<mdocAuthenticationAlgorithm>",
+let vpTokenSigningResults = unsignedVPTokens.map { token in
+    VPTokenSigningResult(
+        signedData: wallet.sign(
+            data: token.dataToSign,
+            keyReference: token.holderKeyReference,
+            algorithm: token.signatureAlgorithm
         )
-    ]
-  )
-let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
-let response : VerifierResponse = try await openID4VP.sendVPResponseToVerifier(vpTokenSigningResults : vpTokenSigningResults)
+    )
+}
+
+let response: VerifierResponse = try await openID4VP.sendVPResponseToVerifier(
+    vpTokenSigningResults: vpTokenSigningResults
+)
 ```
 
 ###### Exceptions
@@ -779,35 +796,45 @@ This method will also notify the Verifier about the error by sending it to the r
 - Returns the response back to the consumer app(mobile app) saying whether it has received the shared Verifiable Credentials or not.
 
 ```swift
-    let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: [FormatType:VPTokenSigningResult])
+    let response = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults: [VPTokenSigningResult])
 ```
 
 ###### Parameters
 
-| Name                  | Type                               | Required | Default Value | Description                                                                                                                                                   |
-|-----------------------|------------------------------------|:---------|:--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| vpTokenSigningResults | [FormatType: VPTokenSigningResult] | Yes      | N/A           | This will be a map with key as credential format and value as VPTokenSigningResult (which is specific to respective credential format's required information) |
+| Name                  | Type                   | Required | Default Value | Description                                                                                   |
+|-----------------------|------------------------|:---------|:--------------|-----------------------------------------------------------------------------------------------|
+| vpTokenSigningResults | [VPTokenSigningResult] | Yes      | N/A           | Ordered list of signed data values matching the unsigned tokens returned earlier.             |
 
 
 ###### Example usage
 
 ```swift
-let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws : createJWS(unsignedLdpVPToken), // If signature algorithm is , "JsonWebSignature2020" / "Ed25519Signature2018" / "RSASignature2018" then jws should be sent
-    proofValue : <proofValue>,  // If signature algorithm is "Ed25519Signature2020", then proofValue should be sent
-    signatureAlgorithm : "<signatureAlgorithm>",
+let unsignedVPTokens = try await openID4VP.constructUnsignedVPToken(
+    verifiableCredentials: [
+        "input_descriptor_id_1": [
+            FormatType.ldp_vc: ["<ldp-vc-json>"]
+        ],
+        "input_descriptor_id_2": [
+            FormatType.mso_mdoc: ["<mdoc-credential>"]
+        ]
+    ],
+    holderId: "did:example:holder123",
+    signatureSuite: "Ed25519Signature2020"
 )
 
-let mdocVPTokenSigningResult = MdocVPTokenSigningResult(
-    docTypeToDeviceAuthentication: [
-        "<docType>": DeviceAuthentication(
-            signature: createSignature(unsignedMdocVPToken.docTypeToDeviceAuthenticationBytes("<docType>")), 
-            algorithm: "<mdocAuthenticationAlgorithm>",
+let vpTokenSigningResults = unsignedVPTokens.map { token in
+    VPTokenSigningResult(
+        signedData: wallet.sign(
+            data: token.dataToSign,
+            keyReference: token.holderKeyReference,
+            algorithm: token.signatureAlgorithm
         )
-    ]
-  )
-let vpTokenSigningResults : [FormatType: VPTokenSigningResult] = [FormatType.ldp_vc : ldpVPTokenSigningResult, FormatType.mso_mdoc: mdocVPTokenSigningResult]
-val response : String = try await openID4VP.shareVerifiablePresentation(vpTokenSigningResults : vpTokenSigningResults)
+    )
+}
+
+let response: String = try await openID4VP.shareVerifiablePresentation(
+    vpTokenSigningResults: vpTokenSigningResults
+)
 ```
 
 ###### Exceptions

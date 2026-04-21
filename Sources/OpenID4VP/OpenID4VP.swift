@@ -98,7 +98,7 @@ public class OpenID4VP {
         verifiableCredentials: [String: [FormatType: [AnyCodable]]],
         holderId: String? = nil,
         signatureSuite: String? = nil
-    ) async throws -> [UnsignedVPTokenV2] {
+    ) async throws -> [UnsignedVPToken] {
         do {
             return try await authorizationResponseHandler.constructUnsignedVPToken(
                 credentialsMap: verifiableCredentials,
@@ -116,7 +116,7 @@ public class OpenID4VP {
     
     public func constructUnsignedVPToken(
         selectedCredentials: [String: [SelectedCredential]],
-    ) async throws -> [UnsignedVPTokenV2] {
+    ) async throws -> [UnsignedVPToken] {
         do {
             return try await authorizationResponseHandler.constructUnsignedVPToken(
                 credentialsMap: selectedCredentials,
@@ -130,7 +130,7 @@ public class OpenID4VP {
         }
     }
 
-    public func constructVPResponse(vpTokenSigningResults: [VPTokenSigningResultV2]) -> [String: Any] {
+    public func constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult]) -> [String: Any] {
         do {
             return try authorizationResponseHandler.constructVPResponse(
                 signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
@@ -149,7 +149,7 @@ public class OpenID4VP {
     }
 
     public func sendVPResponseToVerifier(
-        vpTokenSigningResults: [VPTokenSigningResultV2]
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) async throws -> VerifierResponse {
         do {
             return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(

@@ -26,7 +26,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     }
     
     
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken) {
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
         var docTypeToDeviceAuthenticationBytes: [String: String] = [:]
 
         let openID4VPHandover = try SpecVersionHandler.from(specVersion).buildOpenID4VPHandover(
@@ -39,6 +39,8 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
 
         let deviceNamespaces = CBOR.map([:])
         let deviceNamespacesBytes = wrapCBORInputWithTag24(input: deviceNamespaces)!
+
+        var unsignedVPTokens: [UnsignedVPToken] = []
 
         for index in 0..<credentialInputDescriptorMappings.count {
             let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
@@ -78,20 +80,42 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             ])
 
             let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
-            docTypeToDeviceAuthenticationBytes[docTypeString] = cborToByteString(cbor: wrapped)
+            let dataToSign = cborToByteString(cbor: wrapped)
+            docTypeToDeviceAuthenticationBytes[docTypeString] = dataToSign
             credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
                 format: credentialInputDescriptorMapping.format,
                 credential: credentialInputDescriptorMapping.credential,
                 inputDescriptorId: credentialInputDescriptorMapping.inputDescriptorId,
                 identifier: docTypeString
                 )
+            
+            let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
+            
+            unsignedVPTokens.append(UnsignedVPToken(
+                format: .mso_mdoc,
+                holderKeyReference: keyRef,
+                signatureAlgorithm: alg,
+                dataToSign: dataToSign
+            ))
         }
 
-        let unsignedMdocVPToken = UnsignedMdocVPToken(docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes)
+
+        unsignedVPTokens = []
+        for docType in docTypeToDeviceAuthenticationBytes.keys.sorted() {
+             let mapping = credentialInputDescriptorMappings.first(where: { $0.identifier == docType })!
+             let mdocCredential = mapping.credential.value as! String
+             let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
+             unsignedVPTokens.append(UnsignedVPToken(
+                format: .mso_mdoc,
+                holderKeyReference: keyRef,
+                signatureAlgorithm: alg,
+                dataToSign: docTypeToDeviceAuthenticationBytes[docType]!
+             ))
+        }
 
         return (
-            vpTokenSigningPayload: nil,
-            unsignedVPToken: unsignedMdocVPToken
+            vpTokenSigningPayload: docTypeToDeviceAuthenticationBytes,
+            unsignedVPTokens: unsignedVPTokens
         )
     }
     

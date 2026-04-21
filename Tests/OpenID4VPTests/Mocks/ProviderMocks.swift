@@ -11,8 +11,8 @@ final class MockNonceProvider: NonceProvider {
 final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
-    var expectedUnsignedVPTokensV2: [UnsignedVPTokenV2] = []
-    var expectedVPResponseV2: [String: String] = [:]
+    var expectedUnsignedVPTokens: [UnsignedVPToken] = []
+    var expectedVPResponse: [String: String] = [:]
 
     override func constructAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
@@ -29,18 +29,18 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
         holderId: String?,
         signatureSuite: String?,
         walletNonce: String
-    ) async throws -> [UnsignedVPTokenV2] {
-        return expectedUnsignedVPTokensV2
+    ) async throws -> [UnsignedVPToken] {
+        return expectedUnsignedVPTokens
     }
 
     override func constructVPResponse(
-        signingResults: [VPTokenSigningResultV2],
+        signingResults: [VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
         if(!expectedErrorResponse.isEmpty) {
             return expectedErrorResponse
         }
-        return expectedVPResponseV2
+        return expectedVPResponse
     }
 }
 

@@ -312,7 +312,7 @@ class OpenID4VPTests: XCTestCase {
 
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async {
-        var received: [UnsignedVPTokenV2]?
+        var received: [UnsignedVPToken]?
 
         do {
             _ = try await openID4VP.authenticateVerifier(
@@ -443,32 +443,32 @@ class OpenID4VPTests: XCTestCase {
 
     func testConstructVPResponse_Success() {
         let handler = MockAuthorizationResponseHandler(networkManager: MockNetworkManager(), walletMetadata: WalletMetadata())
-        handler.expectedVPResponseV2 = ["vp_token": "jwt-token"]
+        handler.expectedVPResponse = ["vp_token": "jwt-token"]
 
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
-        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResultV2(signedData: "signed-data")])
+        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult(signedData: "signed-data")])
 
         XCTAssertEqual(result["vp_token"] as! String, "jwt-token")
     }
 
     
 
-    func testConstructVPResponseV2Success() {
+    func testConstructVPResponseSuccess() {
         let handler = MockAuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: WalletMetadata())
-        handler.expectedVPResponseV2 = ["vp_token": "signed-token-v2", "presentation_submission": "submission"]
+        handler.expectedVPResponse = ["vp_token": "signed-token", "presentation_submission": "submission"]
 
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
 
-        let signingResults = [VPTokenSigningResultV2(signedData: "signed-data")]
+        let signingResults = [VPTokenSigningResult(signedData: "signed-data")]
         let result = openIdVP.constructVPResponse(vpTokenSigningResults: signingResults)
 
-        XCTAssertEqual(result["vp_token"] as? String, "signed-token-v2")
+        XCTAssertEqual(result["vp_token"] as? String, "signed-token")
         XCTAssertEqual(result["presentation_submission"] as? String, "submission")
     }
 
-    func testConstructVPResponseV2ReturnsErrorInfoWhenHandlerThrows() {
+    func testConstructVPResponseReturnsErrorInfoWhenHandlerThrows() {
         let handler = MockAuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: WalletMetadata())
         handler.expectedErrorResponse = ["error": "invalid_request", "error_description": "signing failed"]
 
@@ -480,13 +480,13 @@ class OpenID4VPTests: XCTestCase {
         XCTAssertEqual(result["error"] as? String, "invalid_request")
     }
 
-    func testConstructUnsignedVPTokenV2ReturnsTokenList() async {
+    func testConstructUnsignedVPTokenReturnsTokenList() async {
         let expectedTokens = [
-            UnsignedVPTokenV2(format: .ldp_vc, holderKeyReference: "did:example:123", signatureAlgorithm: "JsonWebSignature2020", dataToSign: "data1"),
-            UnsignedVPTokenV2(format: .mso_mdoc, holderKeyReference: "key-ref", signatureAlgorithm: "ES256", dataToSign: "data2")
+            UnsignedVPToken(format: .ldp_vc, holderKeyReference: "did:example:123", signatureAlgorithm: "JsonWebSignature2020", dataToSign: "data1"),
+            UnsignedVPToken(format: .mso_mdoc, holderKeyReference: "key-ref", signatureAlgorithm: "ES256", dataToSign: "data2")
         ]
         let handler = MockAuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: WalletMetadata())
-        handler.expectedUnsignedVPTokensV2 = expectedTokens
+        handler.expectedUnsignedVPTokens = expectedTokens
 
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostJwtResponseMode
@@ -508,7 +508,7 @@ class OpenID4VPTests: XCTestCase {
         }
     }
 
-    func testConstructUnsignedVPTokenV2PropagatesAndSendsError() async {
+    func testConstructUnsignedVPTokenPropagatesAndSendsError() async {
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider())
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostJwtResponseMode
 

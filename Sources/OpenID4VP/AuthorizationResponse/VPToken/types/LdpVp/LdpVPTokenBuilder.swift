@@ -5,20 +5,46 @@ class LdpVPTokenBuilder: VPTokenBuilder {
 
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken),
-        vpTokenSigningResult: VPTokenSigningResult,
+        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
-        guard let ldpVPTokenSigningResult = vpTokenSigningResult as? LdpVPTokenSigningResult else {
-            throw InvalidData(message: "vpTokenSigningResult is not LdpVPTokenSigningResult", className: className)
+        guard let vpTokenSigningResult = vpTokenSigningResults.first else {
+            throw InvalidData(message: "vpTokenSigningResult is missing", className: className)
         }
-        try ldpVPTokenSigningResult.validate()
         guard let unsignedLdpVPToken = unsignedVPTokenResult.vpTokenSigningPayload as? LdpVPToken else {
             throw InvalidData(message: "payload is not LdpVPToken", className: className)
         }
+        
         var proof = unsignedLdpVPToken.proof
-        proof?.proofValue = ldpVPTokenSigningResult.proofValue
-        proof?.jws = ldpVPTokenSigningResult.jws
+        let signatureSuite = proof?.type ?? ""
+
+        switch signatureSuite {
+        case SignatureAlgorithm.jsonWebSignature2020.rawValue,
+            SignatureAlgorithm.rsaSignature2018.rawValue,
+            SignatureAlgorithm.ed25519Signature2018.rawValue:
+            try validateField(
+                field: vpTokenSigningResult.signedData,
+                fieldPath: ["VPTokenSigningResult", "signedData"],
+                className: className
+            )
+            proof?.jws = vpTokenSigningResult.signedData
+
+        case SignatureAlgorithm.ed25519Signature2020.rawValue:
+            try validateField(
+                field: vpTokenSigningResult.signedData,
+                fieldPath: ["VPTokenSigningResult", "signedData"],
+                className: className
+            )
+            proof?.proofValue = vpTokenSigningResult.signedData
+
+        default:
+            throw UnsupportedSignatureAlgorithm(
+                message: "Unsupported algorithm: \(signatureSuite)",
+                className: className
+            )
+        }
+
         let ldpVPToken = LdpVPToken(
             context: unsignedLdpVPToken.context,
             type: unsignedLdpVPToken.type,

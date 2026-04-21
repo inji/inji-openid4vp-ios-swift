@@ -28,7 +28,7 @@ public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         self.walletMetadata = walletMetadata
     }
     
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: any UnsignedVPToken) {
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
         var context: [String] = ["https://www.w3.org/2018/credentials/v1"]
         if signatureSuite == SignatureAlgorithm.ed25519Signature2020.rawValue {
             context.append("https://w3id.org/security/suites/ed25519-2020/v1")
@@ -69,6 +69,13 @@ public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             throw InvalidData(message: "Failed to encode LdpVPToken for signing.", className: className)
         }
         
-        return (vpTokenSigningPayload, UnsignedLdpVPToken(dataToSign:jsonString))
+        let unsignedVPToken = UnsignedVPToken(
+            format: .ldp_vc,
+            holderKeyReference: holder,
+            signatureAlgorithm: signatureSuite,
+            dataToSign: jsonString
+        )
+        
+        return (vpTokenSigningPayload, [unsignedVPToken])
     }
 }

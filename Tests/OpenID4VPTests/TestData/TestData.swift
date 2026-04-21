@@ -504,14 +504,9 @@ let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadata] = [
     ], as: ClientMetadata.self)
 ]
 
-let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws: "validJWS", proofValue: "hdjbhdsjdshjv",
-    signatureAlgorithm: "JsonWebSignature2020"
-)
+let ldpVPTokenSigningResult = VPTokenSigningResult(signedData: "validJWS")
 
-let mdocSigningResult = MdocVPTokenSigningResult(
-    docTypeToDeviceAuthentication: ["docType": DeviceAuthentication(signature: "signature", algorithm: "ES256")]
-)
+let mdocSigningResult = VPTokenSigningResult(signedData: "signature")
 
 //  client_id_prefix = redirect_uri
 let authorizationRequestParamsWithRedirectUri: [String: Any] = [

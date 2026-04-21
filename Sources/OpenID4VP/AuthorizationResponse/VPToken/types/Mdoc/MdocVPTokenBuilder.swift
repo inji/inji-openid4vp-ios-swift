@@ -6,42 +6,42 @@ class MdocVPTokenBuilder : VPTokenBuilder {
     
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload?, unsignedVPToken: UnsignedVPToken),
-        vpTokenSigningResult: VPTokenSigningResult,
+        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
         var documents : [CBOR] = []
-        guard let mdocVPTokenSigningResult = vpTokenSigningResult as? MdocVPTokenSigningResult else {
-            throw InvalidType(
-                message: "Invalid MSO-MDOC token or signing result type",
-                className: VPTokenFactory.className
-            )
+        guard let docTypeToDeviceAuthenticationBytes = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
+             throw InvalidData(message: "Missing docTypeToDeviceAuthenticationBytes in payload", className: className)
         }
         
-        try mdocVPTokenSigningResult.validate()
         var descriptorMaps : [DescriptorMap] = []
+        var signingResultsIterator = vpTokenSigningResults.makeIterator()
         
-        try credentialInputDescriptorMappings.forEach { credentialInputDescriptorMapping in
+        // Process docTypes in the same deterministic sorted order used when unsigned tokens are flattened.
+        for docTypeString in docTypeToDeviceAuthenticationBytes.keys.sorted() {
+            guard let vpTokenSigningResult = signingResultsIterator.next() else {
+                 throw InvalidData(message: "Missing signing result for \(docTypeString)", className: className)
+            }
+            
+            guard let credentialInputDescriptorMapping = credentialInputDescriptorMappings.first(where: { $0.identifier == docTypeString }) else {
+                 throw InvalidData(message: "Missing mapping for \(docTypeString)", className: className)
+            }
+
             guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
                 throw InvalidType(
-                    message: "Invalid MSO-MDOC token or signing result type",
-                    className: VPTokenFactory.className
+                    message: "Invalid MSO-MDOC token: expected String",
+                    className: className
                 )
             }
             guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
                 throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
             }
-            guard let docType = getValueFromCBORMap(cborMap: document, key: "docType") else {
-                throw InvalidData( message: "Invalid Verifiable Credential: docType not available in credential", className: className)
-            }
-            let docTypeString = extractStringFromCBOR(docType)!
             
-            guard let deviceAuthSignature: DeviceAuthentication = mdocVPTokenSigningResult.docTypeToDeviceAuthentication[docTypeString] else {
-                throw MissingInput (
-                    fieldPath: ["mdocVPTokenSigningResult","docTypeToDeviceAuthentication","DeviceAuthentication"],
-                    message: "Device authentication signature not found for mdoc credential docType \(docTypeString)",
-                                    className: className)
-            }
+            let (_, alg) = try resolveMdocKeyAndAlg(mdocCredential)
+            
+            let deviceAuthSignature = DeviceAuthentication(signature: vpTokenSigningResult.signedData, algorithm: alg)
+            try deviceAuthSignature.validate()
             
             let deviceSignature = try createDeviceSignature(deviceAuthSignature)
             
