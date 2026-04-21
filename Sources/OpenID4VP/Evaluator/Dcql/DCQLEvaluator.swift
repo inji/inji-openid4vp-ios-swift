@@ -1,10 +1,69 @@
-
 internal struct DcqlEvaluator {
-    internal func evaluate(_ dcqlQuery: DCQLQuery, inputCredentials: [any ProcessedCredential]) -> QueryEvaluationResult {
+    internal func evaluate(_ dcqlQuery: DCQLQuery, inputCredentials: [Credential]) throws -> QueryEvaluationResult {
+        var filteredWalletCredentials: [Credential] = []
+        var filteredWalletCredentialIds: [String] = []
         var queryMatches: [String: QueryMatchResult] = [:]
         
+        // 1. Find all macthing credentials as per format
+        let credentialFormatsInDCQLQuery = Set(dcqlQuery.credentials.map(\.format))
+        let filteredFormatMatchingWalletCredentials = inputCredentials.filter { credentialFormatsInDCQLQuery.contains($0.format.rawValue) }
+        
+        if filteredFormatMatchingWalletCredentials.isEmpty {
+            for credentialQuery in dcqlQuery.credentials {
+                queryMatches[credentialQuery.id] = QueryMatchResult(
+                    // TODO: Extract error code for this failure reason
+                    failureReason: "No credentials found matching format for format : '\(credentialQuery.format)'",
+                    allowMultipleCredentials: credentialQuery.multiple
+                )
+            }
+            
+            return QueryEvaluationResult(success: false, queryMatches: queryMatches, credentialSets: buildCredentialSetRequirements(dcqlQuery: dcqlQuery))
+        }
+        
+        filteredWalletCredentials = filteredFormatMatchingWalletCredentials
+        let credentialIdToCredential = Dictionary(uniqueKeysWithValues: filteredWalletCredentials.map { ($0.credentialId, $0) })
+        let credentialIdToTags: [String: TaggedCredential] = try expandCredentialTags(credentialIdToCredential)
+        
+        // 2. Ensure meta and holderbinding as per request exist for all filtered credentials, otherwise throw
+        
+        var filteredCredentialIdsForMetaAndHolderBinding: [String] = []
+        let dcqlCredentialQueriesByFormat = Dictionary(grouping: dcqlQuery.credentials, by: \.format)
+        for walletCredentialData in filteredWalletCredentials {
+            guard let walletCredential = credentialIdToTags[walletCredentialData.credentialId] else {
+                throw InvalidData(message: "Credential tags not found for credential id: \(walletCredentialData.credentialId)", className: "DcqlEvaluator")
+            }
+            
+            let dcqlQueriesAsPerFormat = dcqlCredentialQueriesByFormat[walletCredential.credentialFormat.rawValue] ?? []
+            
+            for credentialQuery in dcqlQueriesAsPerFormat {
+                if matchesCryptographicHolderBinding(dcqlQueryRequestsCryptograhicHolderBinding: credentialQuery.requireCryptographicHolderBinding, walletCredential: walletCredential) {
+                    // If at least one of the credential query matches add to the filtered list and move to next wallet credential, otherwise check for next query with same format
+                    filteredCredentialIdsForMetaAndHolderBinding.append(walletCredentialData.credentialId)
+                    break
+                }
+            }
+        }
+        
+        if(filteredCredentialIdsForMetaAndHolderBinding.isEmpty) {
+            for credentialQuery in dcqlQuery.credentials {
+                queryMatches[credentialQuery.id] = QueryMatchResult(
+                    // TODO: Extract error code for this failure reason
+                    failureReason: "No credentials with cryptographic holder binding and meta filtering found for format '\(credentialQuery.format)'",
+                    allowMultipleCredentials: credentialQuery.multiple
+                )
+            }
+            
+            return QueryEvaluationResult(success: false, queryMatches: queryMatches, credentialSets: buildCredentialSetRequirements(dcqlQuery: dcqlQuery))
+        }
+
+        
+        // Apply meta and holder binding filtering here as needed (placeholder keeps current behavior)
+        filteredWalletCredentialIds = filteredCredentialIdsForMetaAndHolderBinding
+        
+        let processedCredentials = try convertToProcessedCredentials(filteredWalletCredentialIds, credentialIdToCredential)
+        
         for credentialQuery in dcqlQuery.credentials {
-            queryMatches[credentialQuery.id] = evaluateCredentialQuery(credentialQuery, against: inputCredentials)
+            queryMatches[credentialQuery.id] = evaluateCredentialQuery(credentialQuery, against: processedCredentials)
         }
         
         let credentialSetRequirements = buildCredentialSetRequirements(dcqlQuery: dcqlQuery)
@@ -16,43 +75,7 @@ internal struct DcqlEvaluator {
     private func evaluateCredentialQuery(_ credentialQuery: CredentialQuery, against walletCredentials: [any ProcessedCredential]) -> QueryMatchResult {
         var filteredWalletCredentials: [any ProcessedCredential] = []
         
-        // 1. Find all macthing credentials as per format
-        let filteredFormatMatchingWalletCredentials = walletCredentials.filter { $0.credentialFormat == credentialQuery.format }
-        
-        if filteredFormatMatchingWalletCredentials.isEmpty {
-            return QueryMatchResult(
-                failedClaims: [ClaimFailure(claimIndex: -1, reason: "No credentials found matching format for format : '\(credentialQuery.format)'")],
-                allowMultipleCredentials: credentialQuery.multiple
-            )
-        }
-        
-        filteredWalletCredentials = filteredFormatMatchingWalletCredentials
-        
-        // 2. Filter the format level matching credentials based on cryptographic holder binding requirement
-        if credentialQuery.requireCryptographicHolderBinding {
-            let holderBindingCapableWalletCredentials = filteredFormatMatchingWalletCredentials.filter { $0.cryptographicHolderBinding }
-            if holderBindingCapableWalletCredentials.isEmpty {
-                return QueryMatchResult(
-                    failedClaims: [ClaimFailure(claimIndex: -1, reason: "No credential with cryptographic holder binding found for format '\(credentialQuery.format)'")],
-                    allowMultipleCredentials: credentialQuery.multiple
-                )
-            }
-            filteredWalletCredentials = holderBindingCapableWalletCredentials
-        }
-        
-        // 3.Apply the meta filtering on top of the format and cryptographic holder binding filtered credentials
-        if !credentialQuery.meta.isEmpty {
-            filteredWalletCredentials = filteredWalletCredentials.filter { matchesMeta(credentialQuery.meta, walletCredential: $0) }
-            if filteredWalletCredentials.isEmpty {
-                return QueryMatchResult(
-                    failedClaims: [ClaimFailure(claimIndex: -1, reason: "No credentials matched the meta constraints for format '\(credentialQuery.format)'")],
-                    allowMultipleCredentials: credentialQuery.multiple
-                )
-            }
-        }
-        
-        
-        // 4. Apply the claims level check
+        // 3. Apply the claims level check
         var candidateCredentials: [CandidateCredential] = []
         var failedClaims: [ClaimFailure] = []
         
@@ -172,24 +195,23 @@ internal struct DcqlEvaluator {
         return false
     }
     
-    // Checks meta constraints on format-specific meta keys
-    private func matchesMeta(_ meta: [String: AnyCodable], walletCredential: any ProcessedCredential) -> Bool {
+    private func matchesMeta(_ meta: [String: AnyCodable], walletCredential: any TaggedCredential) -> Bool {
         switch walletCredential {
-        case let sdJwt as SdJwtCredential:
+        case let sdJwt as SdJwtTaggedCredential:
             if let vctValues = meta["vct_values"]?.value as? [String] {
                 return vctValues.contains(sdJwt.vct)
             }
             return false
-        case let mdoc as MdocCredential:
+        case let mdoc as MdocTaggedCredential:
             if let doctypeValue = meta["doctype_value"]?.value as? String {
                 return mdoc.doctype == doctypeValue
             }
             return false
-        case let w3c as W3cCredential:
+        case let w3c as W3cTaggedCredential:
             //TODO: Check if Type values are checked after expansion
             if let typeValues = meta["type_values"]?.value as? [[String]] {
                 return typeValues.contains { requiredTypes in
-                    requiredTypes.allSatisfy { w3c.type.contains($0) }
+                    requiredTypes.allSatisfy { w3c.types.contains($0) }
                 }
             }
             return false
@@ -198,14 +220,29 @@ internal struct DcqlEvaluator {
         }
     }
     
+    private func matchesCryptographicHolderBinding(dcqlQueryRequestsCryptograhicHolderBinding: Bool, walletCredential: any TaggedCredential) -> Bool {
+        switch walletCredential {
+        case let sdJwt as SdJwtTaggedCredential:
+            // If dcqlQueryRequestsCryptograhicHolderBinding and credential has cryptographic holder binding, then it's a match.
+            // If dcqlQueryRequestsCryptograhicHolderBinding is false, then we don't need to check for cryptographic holder binding capability and it's a match regardless of credential's capability
+            return !dcqlQueryRequestsCryptograhicHolderBinding || sdJwt.hasCryptographicHolderBinding
+        case let mdoc as MdocTaggedCredential:
+           return dcqlQueryRequestsCryptograhicHolderBinding && mdoc.hasCryptographicHolderBinding
+        case let w3c as W3cTaggedCredential:
+            return dcqlQueryRequestsCryptograhicHolderBinding && w3c.hasCryptographicHolderBinding
+        default:
+            return false
+        }
+    }
+    
     // Builds CredentialSetRequirement array from dcqlQuery for the result
-    private func buildCredentialSetRequirements(dcqlQuery: DCQLQuery) -> [CredentialSetRequirement] {
+    private func buildCredentialSetRequirements(dcqlQuery: DCQLQuery) -> [CredentialSetQuery] {
         guard let credentialSets = dcqlQuery.credentialSets else { return [] }
-        return credentialSets.map { CredentialSetRequirement(options: $0.options, required: $0.required) }
+        return credentialSets.map { CredentialSetQuery(options: $0.options, required: $0.required) }
     }
     
     // Checks if the full DCQL query is satisfied per spec Section 6.4.2
-    private func isQuerySatisfied(queryMatches: [String: QueryMatchResult], credentialSets: [CredentialSetRequirement], dcqlQuery: DCQLQuery) -> Bool {
+    private func isQuerySatisfied(queryMatches: [String: QueryMatchResult], credentialSets: [CredentialSetQuery], dcqlQuery: DCQLQuery) -> Bool {
         if dcqlQuery.credentialSets == nil {
             // No credential_sets: all credential queries must be satisfied
             return queryMatches.values.allSatisfy { $0.candidateCredentials?.isEmpty == false }

@@ -238,6 +238,11 @@ public struct CredentialSetQuery: Codable {
         try container.encode(options, forKey: .options)
         try container.encode(required, forKey: .required)
     }
+    
+    internal init(options: [[String]], required: Bool) {
+        self.options = options
+        self.required = required
+    }
 
     func validate() throws {
         if options.isEmpty {
