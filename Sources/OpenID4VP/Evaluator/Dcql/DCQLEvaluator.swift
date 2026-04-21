@@ -1,164 +1,181 @@
 internal struct DcqlEvaluator {
-    internal func evaluate(_ dcqlQuery: DCQLQuery, inputCredentials: [Credential]) throws -> QueryEvaluationResult {
-        var filteredWalletCredentials: [Credential] = []
-        var filteredWalletCredentialIds: [String] = []
+    private let jsonLdExpander: JsonLdExpanding
+    
+    public init(jsonLdExpander: JsonLdExpanding) {
+        self.jsonLdExpander = jsonLdExpander
+    }
+    
+    internal func evaluate(_ dcqlQuery: DCQLQuery, inputCredentials: [Credential]) throws -> MatchingCredentialsResult {
         var queryMatches: [String: QueryMatchResult] = [:]
         
-        // 1. Find all macthing credentials as per format
-        let credentialFormatsInDCQLQuery = Set(dcqlQuery.credentials.map(\.format))
-        let filteredFormatMatchingWalletCredentials = inputCredentials.filter { credentialFormatsInDCQLQuery.contains($0.format.rawValue) }
         
-        if filteredFormatMatchingWalletCredentials.isEmpty {
-            for credentialQuery in dcqlQuery.credentials {
-                queryMatches[credentialQuery.id] = QueryMatchResult(
-                    // TODO: Extract error code for this failure reason
-                    failureReason: "No credentials found matching format for format : '\(credentialQuery.format)'",
-                    allowMultipleCredentials: credentialQuery.multiple
-                )
-            }
-            
-            return QueryEvaluationResult(success: false, queryMatches: queryMatches, credentialSets: buildCredentialSetRequirements(dcqlQuery: dcqlQuery))
-        }
+        let credentialsByFormat = Dictionary(grouping: inputCredentials, by: { $0.format.rawValue })
+        let credentialIdToCredential = Dictionary(uniqueKeysWithValues: inputCredentials.map { ($0.credentialId, $0) })
         
-        filteredWalletCredentials = filteredFormatMatchingWalletCredentials
-        let credentialIdToCredential = Dictionary(uniqueKeysWithValues: filteredWalletCredentials.map { ($0.credentialId, $0) })
-        let credentialIdToTags: [String: TaggedCredential] = try expandCredentialTags(credentialIdToCredential)
-        
-        // 2. Ensure meta and holderbinding as per request exist for all filtered credentials, otherwise throw
-        
-        var filteredCredentialIdsForMetaAndHolderBinding: [String] = []
-        let dcqlCredentialQueriesByFormat = Dictionary(grouping: dcqlQuery.credentials, by: \.format)
-        for walletCredentialData in filteredWalletCredentials {
-            guard let walletCredential = credentialIdToTags[walletCredentialData.credentialId] else {
-                throw InvalidData(message: "Credential tags not found for credential id: \(walletCredentialData.credentialId)", className: "DcqlEvaluator")
-            }
-            
-            let dcqlQueriesAsPerFormat = dcqlCredentialQueriesByFormat[walletCredential.credentialFormat.rawValue] ?? []
-            
-            for credentialQuery in dcqlQueriesAsPerFormat {
-                if matchesCryptographicHolderBinding(dcqlQueryRequestsCryptograhicHolderBinding: credentialQuery.requireCryptographicHolderBinding, walletCredential: walletCredential) {
-                    // If at least one of the credential query matches add to the filtered list and move to next wallet credential, otherwise check for next query with same format
-                    filteredCredentialIdsForMetaAndHolderBinding.append(walletCredentialData.credentialId)
-                    break
-                }
-            }
-        }
-        
-        if(filteredCredentialIdsForMetaAndHolderBinding.isEmpty) {
-            for credentialQuery in dcqlQuery.credentials {
-                queryMatches[credentialQuery.id] = QueryMatchResult(
-                    // TODO: Extract error code for this failure reason
-                    failureReason: "No credentials with cryptographic holder binding and meta filtering found for format '\(credentialQuery.format)'",
-                    allowMultipleCredentials: credentialQuery.multiple
-                )
-            }
-            
-            return QueryEvaluationResult(success: false, queryMatches: queryMatches, credentialSets: buildCredentialSetRequirements(dcqlQuery: dcqlQuery))
-        }
-
-        
-        // Apply meta and holder binding filtering here as needed (placeholder keeps current behavior)
-        filteredWalletCredentialIds = filteredCredentialIdsForMetaAndHolderBinding
-        
-        let processedCredentials = try convertToProcessedCredentials(filteredWalletCredentialIds, credentialIdToCredential)
+        // Local caches to ensure we only do work ONCE
+        var credentialsTagCache: [String: TaggedCredential] = [:]
+        var processedCredentialsCache: [String: any ProcessedCredential] = [:]
         
         for credentialQuery in dcqlQuery.credentials {
-            queryMatches[credentialQuery.id] = evaluateCredentialQuery(credentialQuery, against: processedCredentials)
+            // 1. Format check
+            guard let formatMatchingCredentials = credentialsByFormat[credentialQuery.format], !formatMatchingCredentials.isEmpty else {
+                queryMatches[credentialQuery.id] = QueryMatchResult(failureReason: .noMatchingFormatsFound, allowMultipleCredentials: credentialQuery.multiple)
+                continue
+            }
+            
+            // 2. Cryptographic Holder Binding and Meta check
+            let metaAndBindingMatchingIds: [String] = try formatMatchingCredentials.compactMap { credential in
+                let credentialId = credential.credentialId
+                
+                if credentialsTagCache[credentialId] == nil {
+                    credentialsTagCache[credentialId] = try expandCredentialTag(credential)
+                }
+                
+                guard let credentialTag = credentialsTagCache[credentialId] else { return nil }
+                
+                let holderBindingAndMetaMatchSuccess = matchesCryptographicHolderBinding(
+                    dcqlQueryRequestsCryptograhicHolderBinding: credentialQuery.requireCryptographicHolderBinding,
+                    walletCredential: credentialTag
+                ) && matchesMeta(credentialQuery.meta, walletCredential: credentialTag)
+                
+                return holderBindingAndMetaMatchSuccess ? credentialId : nil
+            }
+            
+            if metaAndBindingMatchingIds.isEmpty {
+                queryMatches[credentialQuery.id] = QueryMatchResult(failureReason: .cryptograhicHolderbindingOrMetaFilterMismatch, allowMultipleCredentials: credentialQuery.multiple)
+                continue
+            }
+            
+            // 3. Claims level check
+            let applicableInputCredentials = try getOrProcessApplicableCredentials(
+                matchingIds: metaAndBindingMatchingIds,
+                credentialIdToCredential: credentialIdToCredential,
+                processedCache: &processedCredentialsCache
+            )
+            
+            queryMatches[credentialQuery.id] = evaluateCredentialQueryClaims(credentialQuery, against: applicableInputCredentials)
         }
         
         let credentialSetRequirements = buildCredentialSetRequirements(dcqlQuery: dcqlQuery)
         let success = isQuerySatisfied(queryMatches: queryMatches, credentialSets: credentialSetRequirements, dcqlQuery: dcqlQuery)
         
-        return QueryEvaluationResult(success: success, queryMatches: queryMatches, credentialSets: credentialSetRequirements)
+        return MatchingCredentialsResult(success: success, queryMatches: queryMatches, credentialSets: credentialSetRequirements)
     }
     
-    private func evaluateCredentialQuery(_ credentialQuery: CredentialQuery, against walletCredentials: [any ProcessedCredential]) -> QueryMatchResult {
-        var filteredWalletCredentials: [any ProcessedCredential] = []
+    /**
+     * Processes missing credentials, caches them, and returns all credentials matching the provided IDs.
+     */
+    func getOrProcessApplicableCredentials(
+        matchingIds: [String],
+        credentialIdToCredential: [String: Credential],
+        processedCache: inout [String: any ProcessedCredential]
+    ) throws -> [any ProcessedCredential] {
+        let matchingIdsSet = Set(matchingIds)
+        let nonProcessedIds = matchingIdsSet.filter { processedCache[$0] == nil }.map { String($0) }
         
-        // 3. Apply the claims level check
-        var candidateCredentials: [CandidateCredential] = []
+        if !nonProcessedIds.isEmpty {
+            let newProcessed = try convertToProcessedCredentials(nonProcessedIds, credentialIdToCredential)
+            processedCache.merge(newProcessed) { (_, new) in new }
+        }
+        
+        return matchingIds.compactMap { processedCache[$0] }
+    }
+    
+    private func evaluateCredentialQueryClaims(_ credentialQuery: CredentialQuery, against walletCredentials: [any ProcessedCredential]) -> QueryMatchResult {
+        if(credentialQuery.claims == nil) {
+            // If no claims are requested, then all credentials that passed format, meta and holder binding checks are candidate credentials
+            let matchingCredentials = walletCredentials.map { MatchingCredential(credentialId: $0.credentialId, matchingClaims: []) }
+            return QueryMatchResult(matchingCredentials: matchingCredentials, allowMultipleCredentials: credentialQuery.multiple)
+        }
+        
+        var matchingCredentials: [MatchingCredential] = []
         var failedClaims: [ClaimFailure] = []
+        var claimsCheckFailureReason: DCQLEvalutationErrorCodes? = nil
         
-        for walletCredential in filteredWalletCredentials {
-            let (matchingClaimIndexes, claimFailures) = evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
+        for walletCredential in walletCredentials {
+            let (matchingClaims, claimFailures, failureReason) = evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
             
             if claimFailures.isEmpty {
-                candidateCredentials.append(CandidateCredential(credentialId: walletCredential.credentialId, matchingClaimIndexes: matchingClaimIndexes))
+                matchingCredentials.append(MatchingCredential(credentialId: walletCredential.credentialId, matchingClaims: matchingClaims))
             } else {
                 // Failed claims holds the reason for claims check failure which deos not include any details about credential
                 failedClaims.append(contentsOf: claimFailures)
+                claimsCheckFailureReason = failureReason
             }
         }
         
-        if candidateCredentials.isEmpty {
-            return QueryMatchResult(failedClaims: failedClaims.isEmpty ? nil : failedClaims, allowMultipleCredentials: credentialQuery.multiple)
+        if matchingCredentials.isEmpty {
+            return QueryMatchResult(failedClaims: failedClaims.isEmpty ? nil : failedClaims, failureReason: claimsCheckFailureReason, allowMultipleCredentials: credentialQuery.multiple)
         }
         
-        return QueryMatchResult(candidateCredentials: candidateCredentials, allowMultipleCredentials: credentialQuery.multiple)
+        return QueryMatchResult(matchingCredentials: matchingCredentials, allowMultipleCredentials: credentialQuery.multiple)
     }
     
     // Evaluates claims and claim_sets
-    private func evaluateClaims(credentialQuery: CredentialQuery, walletCredential: any ProcessedCredential) -> (matchingClaimIndexes: [Int], failedClaims: [ClaimFailure]) {
+    private func evaluateClaims(credentialQuery: CredentialQuery, walletCredential: any ProcessedCredential) -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure], failureReason: DCQLEvalutationErrorCodes?) {
         // If no claims is available in VP request, all mandatory claims of the credential needs to be shared to Verifier
         guard let claims = credentialQuery.claims else {
-            return ([], [])
+            return ([], [], nil)
         }
         
         // One of the options of the claim_sets needs to be satisfied if claim_sets is present in the VP request.
         
         if let claimSets = credentialQuery.claimSets {
             // claim_sets are ordered by preference, so we iterate through the options and return as soon as we find a satisfied option
+            var failedClaimSetQuery: [ClaimFailure] = []
             for claimSetOption in claimSets {
-                //TODO: If claim set is there claim id is mandatory add hat check instead of fallback to ""
-                let requestedClaims = claims.enumerated().filter { claimSetOption.contains($0.element.id ?? "") }
-                let (matchingClaimIndexes, failedClaims) = checkClaims(requestedClaims.map { ($0.offset, $0.element) }, walletCredential: walletCredential)
+                //TODO: If claim set is there claim id is mandatory add that check instead of fallback to ""
+                let requestedClaims = claims.filter { claimSetOption.contains($0.id ?? "") }
+                let (matchingClaims, failedClaims) = checkClaims(requestedClaims, walletCredential: walletCredential)
                 
                 // Once the claim_set option with all claims satisfied is found, return the result without evaluating further options as claim_sets are in order of preference
                 if failedClaims.isEmpty {
-                    return (matchingClaimIndexes, [])
+                    return (matchingClaims, [], nil)
                 }
+                failedClaimSetQuery.append(contentsOf: failedClaims)
             }
-            return ([], [ClaimFailure(claimIndex: -1, reason: "No claim_set option could be satisfied for query id: '\(credentialQuery.id)'")])
+            // Populate all claim failure reason
+            return ([], failedClaimSetQuery, .noClaimsSetOptionSatisfied)
         }
         
         // If claim_sets is not present, then all claims in the VP request need to be satisfied
-        let requestedClaims = claims.enumerated().map { ($0.offset, $0.element) }
-        return checkClaims(requestedClaims, walletCredential: walletCredential)
+        let (matchingClaims, failedClaims) = checkClaims(claims, walletCredential: walletCredential)
+        return (matchingClaims, failedClaims, nil)
     }
     
-    private func checkClaims(_ indexedClaims: [(Int, ClaimsQuery)], walletCredential: any ProcessedCredential) -> (matchingClaimIndexes: [Int], failedClaims: [ClaimFailure]) {
-        var matchingClaimIndexes: [Int] = []
+    private func checkClaims(_ claims: [ClaimsQuery], walletCredential: any ProcessedCredential) -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure]) {
+        var matchingClaims: [ClaimsQuery] = []
         var failedClaims: [ClaimFailure] = []
         
-        for (index, claimQuery) in indexedClaims {
+        for claimQuery in claims {
             let pathStrings = claimQuery.path.compactMap { $0.value as? String }
             
             guard let claimValue = resolveClaimValue(path: pathStrings, credential: walletCredential) else {
-                failedClaims.append(ClaimFailure(claimIndex: index, reason: "Claim at path \(pathStrings) not found"))
+                failedClaims.append(ClaimFailure(claim: claimQuery, reason: .claimUnavailable))
                 continue
             }
             
             if let expectedClaimValues = claimQuery.values {
                 if !matchesExpectedValues(claimValue, expectedValues: expectedClaimValues) {
-                    failedClaims.append(ClaimFailure(claimIndex: index, reason: "Claim value at path \(pathStrings) does not match expected values"))
+                    failedClaims.append(ClaimFailure(claim: claimQuery, reason: .claimValueMismatch))
                     continue
                 }
             }
             
-            matchingClaimIndexes.append(index)
+            matchingClaims.append(claimQuery)
         }
         
-        return (matchingClaimIndexes, failedClaims)
+        return (matchingClaims, failedClaims)
     }
     
     // Routes claim resolution based on credential type per spec Section 7
     private func resolveClaimValue(path: [String], credential: any ProcessedCredential) -> Any? {
         switch credential {
-        case let mdoc as MdocCredential:
+        case let mdoc as MdocProcessedCredential:
             return resolveMdocClaimPath(path, namespaces: mdoc.namespaces)
-        case let w3c as W3cCredential:
+        case let w3c as W3cProcessedCredential:
             return resolveClaimPath(path, in: w3c.claims)
-        case let sdJwt as SdJwtCredential:
+        case let sdJwt as SdJwtProcessedCredential:
             return resolveClaimPath(path, in: sdJwt.claims)
         default:
             return nil
@@ -196,6 +213,10 @@ internal struct DcqlEvaluator {
     }
     
     private func matchesMeta(_ meta: [String: AnyCodable], walletCredential: any TaggedCredential) -> Bool {
+        if(meta.isEmpty) {
+            return true
+        }
+        
         switch walletCredential {
         case let sdJwt as SdJwtTaggedCredential:
             if let vctValues = meta["vct_values"]?.value as? [String] {
@@ -227,7 +248,7 @@ internal struct DcqlEvaluator {
             // If dcqlQueryRequestsCryptograhicHolderBinding is false, then we don't need to check for cryptographic holder binding capability and it's a match regardless of credential's capability
             return !dcqlQueryRequestsCryptograhicHolderBinding || sdJwt.hasCryptographicHolderBinding
         case let mdoc as MdocTaggedCredential:
-           return dcqlQueryRequestsCryptograhicHolderBinding && mdoc.hasCryptographicHolderBinding
+            return dcqlQueryRequestsCryptograhicHolderBinding && mdoc.hasCryptographicHolderBinding
         case let w3c as W3cTaggedCredential:
             return dcqlQueryRequestsCryptograhicHolderBinding && w3c.hasCryptographicHolderBinding
         default:
@@ -245,7 +266,7 @@ internal struct DcqlEvaluator {
     private func isQuerySatisfied(queryMatches: [String: QueryMatchResult], credentialSets: [CredentialSetQuery], dcqlQuery: DCQLQuery) -> Bool {
         if dcqlQuery.credentialSets == nil {
             // No credential_sets: all credential queries must be satisfied
-            return queryMatches.values.allSatisfy { $0.candidateCredentials?.isEmpty == false }
+            return queryMatches.values.allSatisfy { $0.matchingCredentials?.isEmpty == false }
         }
         
         // With credential_sets: all required sets must be satisfied; optional ones are ignored for success
@@ -254,7 +275,7 @@ internal struct DcqlEvaluator {
             
             let setIsSatisfied = credentialSet.options.contains { option in
                 option.allSatisfy { credentialQueryId in
-                    queryMatches[credentialQueryId]?.candidateCredentials?.isEmpty == false
+                    queryMatches[credentialQueryId]?.matchingCredentials?.isEmpty == false
                 }
             }
             

@@ -3,7 +3,7 @@ protocol ProcessedCredential {
     var credentialFormat: FormatType { get }
 }
 
-struct W3cCredential: ProcessedCredential {
+struct W3cProcessedCredential: ProcessedCredential {
     let credentialId: String
     let credentialFormat: FormatType
     let claims: [String: Any]
@@ -15,19 +15,18 @@ struct W3cCredential: ProcessedCredential {
     }
 }
 
-struct MdocCredential: ProcessedCredential {
+struct MdocProcessedCredential: ProcessedCredential {
     let credentialId: String
-    let credentialFormat: FormatType
+    let credentialFormat: FormatType = .mso_mdoc
     let namespaces: [String: [String: Any]]
 
-    init(credentialId: String, credentialFormat: FormatType, namespaces: [String: [String: Any]]) {
+    init(credentialId: String, namespaces: [String: [String: Any]]) {
         self.credentialId = credentialId
-        self.credentialFormat = credentialFormat
         self.namespaces = namespaces
     }
 }
 
-struct SdJwtCredential: ProcessedCredential {
+struct SdJwtProcessedCredential: ProcessedCredential {
     let credentialId: String
     let credentialFormat: FormatType
     let claims: [String: Any]

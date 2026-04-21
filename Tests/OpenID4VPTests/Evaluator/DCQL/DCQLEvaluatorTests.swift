@@ -1,9 +1,16 @@
 import XCTest
 @testable import OpenID4VP
 
+class MockJsonLdExpander: JsonLdExpanding {
+    func expand(data: [String : Any]) throws -> [String : Any] {
+        // For testing purposes, we can return the input as-is or apply any necessary transformations
+        return data
+    }
+}
+
 final class DCQLEvaluatorTests: XCTestCase {
 
-    private let evaluator = DcqlEvaluator()
+    private let evaluator = DcqlEvaluator(jsonLdExpander: MockJsonLdExpander())
 
     private func dcqlQuery(_ json: String) throws -> DCQLQuery {
         try JSONDecoder().decode(DCQLQuery.self, from: Data(json.utf8))
