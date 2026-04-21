@@ -3,16 +3,6 @@ import SwiftCBOR
 
 private let className = "CredentialUtils"
 
-func expandCredentialTags(_ credentialIdToCredential: [String: Credential]) throws -> [String: TaggedCredential] {
-    var credentialIdToTags : [String: TaggedCredential] = [:]
-    
-    try credentialIdToCredential.values.forEach { credential in
-        credentialIdToTags[credential.credentialId] = try expandCredentialTag(credential)
-    }
-    
-    return credentialIdToTags
-}
-
 func expandCredentialTag(_ credential: Credential) throws -> TaggedCredential {
     switch credential.format {
     case .ldp_vc:
@@ -82,12 +72,11 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             guard let credentialData = credential.data.value as? [String:Any] else {
                 throw InvalidData(message: "Credential data is not in the expected format", className: className)
             }
-            let claims = credentialData["credentialSubject"] as? [String:Any] ?? [:]
             
             processedCredentials[credentialId] = (W3cProcessedCredential(
                 credentialId: credential.credentialId,
                 credentialFormat: credential.format,
-                claims: claims,
+                claims: credentialData,
             ))
             
         case .mso_mdoc:
@@ -150,28 +139,4 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
     }
     
     return processedCredentials
-}
-
-private func unwrapCbor(_ cbor: SwiftCBOR.CBOR) -> Any? {
-    switch cbor {
-    case let .utf8String(s): return s
-    case let .boolean(b): return b
-    case let .unsignedInt(u): return Int(u)
-    case let .negativeInt(n): return -Int(n) - 1
-    case let .double(d): return d
-    case let .float(f): return f
-    case let .half(h): return h
-    case let .map(m):
-        var dict: [String: Any] = [:]
-        for (k, v) in m {
-            if let strK = unwrapCbor(k) as? String {
-                dict[strK] = unwrapCbor(v)
-            }
-        }
-        return dict
-    case let .array(a):
-        return a.compactMap { unwrapCbor($0) }
-    default:
-        return nil
-    }
 }
