@@ -197,7 +197,7 @@ public final class AuthorizationDcqlRequest: AuthorizationRequest {
     public override func encode(to encoder: Encoder) throws {
         try super.encode(to: encoder)
         var container = encoder.container(keyedBy: SubCodingKeys.self)
-        //        try container.encode(dcqlQuery, forKey: .dcqlQuery)
+        try container.encode(dcqlQuery, forKey: .dcqlQuery)
         try container.encodeIfPresent(clientMetadata, forKey: .clientMetadata)
     }
 }
