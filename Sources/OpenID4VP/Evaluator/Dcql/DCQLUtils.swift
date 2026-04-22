@@ -43,15 +43,7 @@ func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpandi
             doctype: docTypeString
         )
     case .dc_sd_jwt, .vc_sd_jwt:
-        guard let sdJwtCredential = credential.data.value as? String else {
-            throw InvalidData(
-                message: "SD-JWT credential is not a String",
-                className: className
-            )
-        }
-        
-        let sdJWT = sdJwtCredential.split(separator: "~")[0]
-        let sdJWTPayload = try JWSHandler.extractDataJsonFromJws(jws: String(sdJWT), jwsPart: .payload)
+        let (_, sdJWTPayload) = try extractSdJwtPayload(credential.data, className: className)
         
         return SdJwtTaggedCredential(
             credentialFormat: credential.format,
@@ -122,12 +114,7 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             ))
             
         case .dc_sd_jwt, .vc_sd_jwt:
-            guard let sdJwtCredential = credential.data.value as? String else {
-                throw InvalidData(message: "SD-JWT credential is not a String", className: className)
-            }
-            
-            let sdJWT = sdJwtCredential.split(separator: "~")[0]
-            let sdJWTPayload = try JWSHandler.extractDataJsonFromJws(jws: String(sdJWT), jwsPart: .payload)
+            let (_, sdJWTPayload) = try extractSdJwtPayload(credential.data, className: className)
             
             let claims = sdJWTPayload["credentialSubject"] as? [String: Any] ?? sdJWTPayload
             

@@ -23,9 +23,7 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
                 throw InvalidData(message: "identifier is null in CredentialInputDescriptorMapping for SD-JWT", className: className)
             }
 
-            guard let sdJwtCredential = mapping.credential.value as? String else {
-                throw InvalidData(message: "SD-JWT credential is not a String", className: className)
-            }
+            let sdJwtCredential = try extractSDJwtString(from: mapping.credential, className: className)
 
             let unsignedKBJwt = uuidToUnsignedKBT[uuid]
             let finalVPToken: String

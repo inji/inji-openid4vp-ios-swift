@@ -24,14 +24,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         for index in 0..<credentialInputDescriptorMappings.count {
             let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
             let uuid = UUIDGenerator.generateUUID()
-            guard let credential = credentialInputDescriptorMapping.credential.value as? String else {
-                throw InvalidData(
-                    message: "SD-JWT credential is not a String",
-                    className: Self.className)
-            }
-            
-            let sdJWT = credential.split(separator: "~")[0]
-            let sdJWTPayload = try JWSHandler.extractDataJsonFromJws(jws: String(sdJWT), jwsPart: .payload)
+            let (credential, sdJWTPayload) = try extractSdJwtPayload(credentialInputDescriptorMapping.credential, className: Self.className)
             
             credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
                 format: credentialInputDescriptorMapping.format,
