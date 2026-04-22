@@ -52,7 +52,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.noMatchingFormatsFound.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noMatchingFormatsFound.rawValue)
     }
 
     func testEmptyWalletCredentials_ReturnsFailure() throws {
@@ -61,7 +61,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.noMatchingFormatsFound.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noMatchingFormatsFound.rawValue)
     }
 
     // MARK: - Cryptographic holder binding
@@ -87,7 +87,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [ldpVcWithoutBinding])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
     }
 
     func testReturnsSuccessWhenHolderBindingNotRequired_AndCredentialLacksIt() throws {
@@ -116,7 +116,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
     }
 
     func testMetaFiltering_EmptyMeta_PassesAllCredentials() throws {
@@ -145,7 +145,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
     }
 
     // MARK: - Meta filtering (ldp_vc — type_values)
@@ -165,7 +165,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
     }
 
     func testMetaFiltering_W3c_MatchesWhenAnyTypeValueOptionSatisfied() throws {
@@ -205,7 +205,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.failedClaims)
-        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvalutationErrorCodes.claimUnavailable.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
     func testClaimsMatching_NestedClaimPath() throws {
@@ -235,7 +235,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvalutationErrorCodes.claimUnavailable.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
     // MARK: - Claims matching (ldp_vc)
@@ -256,7 +256,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvalutationErrorCodes.claimUnavailable.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
     // MARK: - Value matching
@@ -294,7 +294,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvalutationErrorCodes.claimValueMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimValueMismatch.rawValue)
     }
 
     // MARK: - claim_sets
@@ -324,7 +324,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.noClaimsSetOptionSatisfied.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noClaimsSetOptionSatisfied.rawValue)
     }
 
     // MARK: - multiple credentials flag
@@ -371,7 +371,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvalutationErrorCodes.claimUnavailable.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
     // MARK: - credential_sets (spec §6.4.2)
@@ -485,7 +485,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvalutationErrorCodes.claimValueMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimValueMismatch.rawValue)
     }
 
     // Scenario 3: matchesExpectedValues - boolean (ldp_vc credentialSubject with a bool field)
@@ -518,7 +518,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [boolCredential])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvalutationErrorCodes.claimValueMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimValueMismatch.rawValue)
     }
 
     // Scenario 4: matchesMeta - doctype_value not matching (dedicated)
@@ -528,7 +528,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
@@ -539,7 +539,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
@@ -550,7 +550,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
@@ -561,7 +561,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvalutationErrorCodes.noClaimsSetOptionSatisfied.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noClaimsSetOptionSatisfied.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 }

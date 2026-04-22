@@ -93,7 +93,7 @@ internal struct DcqlEvaluator {
         
         var matchingCredentials: [MatchingCredential] = []
         var failedClaims: [ClaimFailure] = []
-        var claimsCheckFailureReason: DCQLEvalutationErrorCodes? = nil
+        var claimsCheckFailureReason: DCQLEvaluationErrorCodes? = nil
         
         for walletCredential in walletCredentials {
             let (matchingClaims, claimFailures, failureReason) = evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
@@ -115,7 +115,7 @@ internal struct DcqlEvaluator {
     }
     
     // Evaluates claims and claim_sets
-    private func evaluateClaims(credentialQuery: CredentialQuery, walletCredential: any ProcessedCredential) -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure], failureReason: DCQLEvalutationErrorCodes?) {
+    private func evaluateClaims(credentialQuery: CredentialQuery, walletCredential: any ProcessedCredential) -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure], failureReason: DCQLEvaluationErrorCodes?) {
         // If no claims is available in VP request, all mandatory claims of the credential needs to be shared to Verifier
         guard let claims = credentialQuery.claims else {
             return ([], [], nil)

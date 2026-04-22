@@ -23,7 +23,7 @@ public struct QueryMatchResult {
     /// `true` if the user can select more than one credential to satisfy this specific query.
     public let allowMultipleCredentials: Bool
     
-    public init(matchingCredentials: [MatchingCredential]? = nil, failedClaims: [ClaimFailure]? = nil,failureReason: DCQLEvalutationErrorCodes? = nil , allowMultipleCredentials: Bool = false) {
+    public init(matchingCredentials: [MatchingCredential]? = nil, failedClaims: [ClaimFailure]? = nil,failureReason: DCQLEvaluationErrorCodes? = nil , allowMultipleCredentials: Bool = false) {
         self.matchingCredentials = matchingCredentials
         self.failedClaims = failedClaims
         self.failureReason = failureReason?.rawValue
@@ -45,7 +45,7 @@ public struct ClaimFailure {
     public let claim: ClaimsQuery
     public let reason: String
     
-    public init(claim: ClaimsQuery, reason: DCQLEvalutationErrorCodes) {
+    public init(claim: ClaimsQuery, reason: DCQLEvaluationErrorCodes) {
         self.claim = claim
         self.reason = reason.rawValue
     }
