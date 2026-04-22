@@ -10,7 +10,10 @@ internal struct DcqlEvaluator {
         
         
         let credentialsByFormat = Dictionary(grouping: inputCredentials, by: { $0.format.rawValue })
-        let credentialIdToCredential = Dictionary(uniqueKeysWithValues: inputCredentials.map { ($0.credentialId, $0) })
+        let credentialIdToCredential = Dictionary(
+            inputCredentials.map { ($0.credentialId, $0) },
+            uniquingKeysWith: { _, last in last }
+        )
         
         // Local caches to ensure we only do work ONCE
         var credentialsTagCache: [String: TaggedCredential] = [:]
