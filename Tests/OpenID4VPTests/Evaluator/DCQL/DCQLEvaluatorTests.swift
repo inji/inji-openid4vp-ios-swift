@@ -101,6 +101,43 @@ final class DCQLEvaluatorTests: XCTestCase {
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
+    func testReturnsSuccessForMdocWhenHolderBindingNotRequired() async throws {
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{"doctype_value":"org.iso.18013.5.1.mDL"},"require_cryptographic_holder_binding":false}]}
+        """)
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        XCTAssertTrue(result.success)
+        XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
+    }
+
+    func testReturnsSuccessForMdocWhenHolderBindingRequired_AndCredentialSupportsIt() async throws {
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{"doctype_value":"org.iso.18013.5.1.mDL"},"require_cryptographic_holder_binding":true}]}
+        """)
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        XCTAssertTrue(result.success)
+        XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
+    }
+
+    func testReturnsSuccessForLdpVcWhenHolderBindingNotRequired() async throws {
+        let ldpVcWithoutBinding = Credential(format: .ldp_vc, data: AnyCodable(ldpVC()), credentialId: "no-binding")
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"require_cryptographic_holder_binding":false}]}
+        """)
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcWithoutBinding])
+        XCTAssertTrue(result.success)
+        XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
+    }
+
+    func testReturnsSuccessForLdpVcWhenHolderBindingRequired_AndCredentialSupportsIt() async throws {
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"require_cryptographic_holder_binding":true}]}
+        """)
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        XCTAssertTrue(result.success)
+        XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
+    }
+
     // MARK: - Meta filtering (dc+sd-jwt — vct_values)
 
     func testMetaFiltering_SdJwt_MatchingVct() async throws {

@@ -247,18 +247,12 @@ internal struct DcqlEvaluator {
     }
     
     private func matchesCryptographicHolderBinding(dcqlQueryRequestsCryptograhicHolderBinding: Bool, walletCredential: any TaggedCredential) -> Bool {
-        switch walletCredential {
-        case let sdJwt as SdJwtTaggedCredential:
-            // If dcqlQueryRequestsCryptograhicHolderBinding and credential has cryptographic holder binding, then it's a match.
-            // If dcqlQueryRequestsCryptograhicHolderBinding is false, then we don't need to check for cryptographic holder binding capability and it's a match regardless of credential's capability
-            return !dcqlQueryRequestsCryptograhicHolderBinding || sdJwt.hasCryptographicHolderBinding
-        case let mdoc as MdocTaggedCredential:
-            return dcqlQueryRequestsCryptograhicHolderBinding && mdoc.hasCryptographicHolderBinding
-        case let w3c as W3cTaggedCredential:
-            return dcqlQueryRequestsCryptograhicHolderBinding && w3c.hasCryptographicHolderBinding
-        default:
-            return false
-        }
+        // require_cryptographic_holder_binding = false means the verifier accepts a credential without a holder binding proof.
+        // require_cryptographic_holder_binding = true means the verifier accepts only credentials with a cryptographic holder binding proof.
+        
+        // A Verifiable Presentation with holder binding proof is possible only if credentials supports cryptographic holder binding and the wallet can produce the proof. Therefore, if require_cryptographic_holder_binding is true, we check if the credential supports holder binding and wallet can produce the proof; if false, we skip this check and consider the query satisfied even if the credential does not have a holder binding proof.
+        
+        return !dcqlQueryRequestsCryptograhicHolderBinding || walletCredential.hasCryptographicHolderBinding
     }
     
     // Builds CredentialSetRequirement array from dcqlQuery for the result
