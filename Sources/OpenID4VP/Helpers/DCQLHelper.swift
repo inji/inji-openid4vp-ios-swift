@@ -9,7 +9,7 @@ public final class DCQLHelper {
         self.jsonLdExpander = jsonLdExpander
     }
     
-    func getMatchingCredentials(inputCredentials: [Credential], dcqlQuery: DCQLQuery) throws -> MatchingCredentialsResult {
+    public func getMatchingCredentials(inputCredentials: [Credential], dcqlQuery: DCQLQuery) throws -> MatchingCredentialsResult {
         return try DcqlEvaluator(jsonLdExpander: jsonLdExpander).evaluate(dcqlQuery, inputCredentials: inputCredentials)
     }
 }
