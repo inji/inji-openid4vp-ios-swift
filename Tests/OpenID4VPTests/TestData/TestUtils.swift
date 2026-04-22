@@ -253,7 +253,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
             responseMode: responseModeValue ?? responseMode.rawValue,
             responseUri: "https://mock-verifier.com",
             redirectUri: "1234",
-            nonce: "nonce",
+            nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
             walletNonce: nil,
             state: "state",
             presentationDefinition: mockPresentationDefinitionObject,
@@ -267,7 +267,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
         responseMode: responseModeValue ?? responseMode.rawValue,
         responseUri: "https://mock-verifier.com",
         redirectUri: "1234",
-        nonce: "nonce",
+        nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
         walletNonce: nil,
         state: "state",
         clientMetadata: mockClientMetadataSpecVersion1[responseMode]

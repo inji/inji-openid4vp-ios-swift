@@ -6,7 +6,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let state = "state"
     let responseUri = "https://mock-verifier.com"
     let holderId = "wallet-holder-id"
-    let walletNonce = "mock-nonce"
+    let walletNonce = "_G6UkKgcsUPFlHAbzUMerA"
     let signatureSuite = SignatureAlgorithm.ed25519Signature2020.rawValue
     let walletMetadata = WalletMetadata()
     

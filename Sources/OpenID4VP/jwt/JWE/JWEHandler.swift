@@ -19,14 +19,21 @@ public struct JWEHandler {
             throw PayloadConversionFailed(className: JWEHandler.className)
         }
 
-        //TODO: Perform key agreement based on keyEncryptionAlgorithm
         let encrypter = try EncryptionProvider.getEncrypter(contentEncryptionAlgorithm)
         let keyAgreement = try KeyAgreementFactory.createKeyAgreement(for: publicKey)
+        
+        guard let publicKeyXCoordinate = publicKey.x else {
+            throw PublicKeyResolutionFailed(message: "Public key is missing 'x' coordinate", className: Self.className)
+        }
+        
+        guard let encryptionAlgorithm = publicKey.algorithm else {
+            throw PublicKeyResolutionFailed(message: "Public key is missing 'algorithm' property", className: Self.className)
+        }
 
         
-        let sharedKey = try keyAgreement.deriveKey(publicKey: publicKey.x ?? Data(), algorithm: contentEncryptionAlgorithm, apu: producerInfo, apv: recipientInfo)
+        let sharedKey = try keyAgreement.deriveKey(publicKey: publicKeyXCoordinate, algorithm: contentEncryptionAlgorithm, apu: producerInfo, apv: recipientInfo)
 
-        var header = keyAgreement.getJWEHeader(alg: publicKey.algorithm ?? "", enc: contentEncryptionAlgorithm, jwk: publicKey, producerInfo: producerInfo, recipientInfo: recipientInfo)
+        var header = keyAgreement.getJWEHeader(alg: encryptionAlgorithm, enc: contentEncryptionAlgorithm, jwk: publicKey, producerInfo: producerInfo, recipientInfo: recipientInfo)
         if let epk = keyAgreement.getEphemeralPublicKey() {
             header["epk"] = epk
         }

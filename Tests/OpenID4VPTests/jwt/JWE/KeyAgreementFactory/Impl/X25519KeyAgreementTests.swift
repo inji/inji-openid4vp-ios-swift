@@ -90,6 +90,38 @@ final class X25519KeyAgreementTests: XCTestCase {
         XCTAssertEqual(symmetricKey.bitCount, 256)
     }
 
+    func testDeriveKeyThrowsWhenApuInvalid() throws {
+        let keyAgreement = X25519KeyAgreement()
+        let privateKey = CryptoKit.Curve25519.KeyAgreement.PrivateKey()
+        let publicKeyRaw = privateKey.publicKey.rawRepresentation
+        
+        let apv = Data("mock-apv".utf8).toBase64UrlEncoded()
+        
+        XCTAssertThrowsError(try keyAgreement.deriveKey(publicKey: publicKeyRaw, algorithm: "A256GCM", apu: "invalid_base64_url!!", apv: apv)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Key agreement failed. - Failed to decode producer info (apu)",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDeriveKeyThrowsWhenApvInvalid() throws {
+        let keyAgreement = X25519KeyAgreement()
+        let privateKey = CryptoKit.Curve25519.KeyAgreement.PrivateKey()
+        let publicKeyRaw = privateKey.publicKey.rawRepresentation
+        
+        let apu = Data("mock-apu".utf8).toBase64UrlEncoded()
+        
+        XCTAssertThrowsError(try keyAgreement.deriveKey(publicKey: publicKeyRaw, algorithm: "A256GCM", apu: apu, apv: "invalid_base64_url!!")) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Key agreement failed. - Failed to decode recipient info (apv)",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     func testDeriveKeyThrowsWhenAlgorithmInvalid() throws {
         let keyAgreement = X25519KeyAgreement()
         let privateKey = CryptoKit.Curve25519.KeyAgreement.PrivateKey()
