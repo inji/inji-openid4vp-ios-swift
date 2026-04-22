@@ -490,6 +490,7 @@ public class AuthorizationResponseHandler {
                                    signatureSuite: String?,
                                    walletNonce: String,
                                    handler: AuthorizationResponseHandler) async throws -> [UnsignedVPToken] {
+            //TODO: Add logic for VP creation w.r.t to DCQL
             return []
         }
 

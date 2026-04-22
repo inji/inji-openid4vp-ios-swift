@@ -5,7 +5,7 @@ fileprivate let className = "DcqlQueryParser"
 fileprivate let dcqlQueryKey = AuthorizationRequestFieldConstants.dcqlQuery.rawValue
 
 func parseAndValidateDcqlQuery(
-    _ authorizationRequest: [String: Any],
+    _ authorizationRequest: [String: Any]
 ) throws -> [String: Any] {
     if let dcqlQuery = authorizationRequest[dcqlQueryKey] {
         if authorizationRequest[AuthorizationRequestFieldConstants.scope.rawValue] != nil {

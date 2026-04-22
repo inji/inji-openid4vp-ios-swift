@@ -76,7 +76,7 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             processedCredentials[credentialId] = (W3cProcessedCredential(
                 credentialId: credential.credentialId,
                 credentialFormat: credential.format,
-                claims: credentialData,
+                claims: credentialData
             ))
             
         case .mso_mdoc:
@@ -117,7 +117,7 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             
             processedCredentials[credentialId] = (MdocProcessedCredential(
                 credentialId: credential.credentialId,
-                namespaces: namespaces,
+                namespaces: namespaces
             ))
             
         case .dc_sd_jwt, .vc_sd_jwt:
@@ -133,7 +133,7 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             processedCredentials[credentialId] = (SdJwtProcessedCredential(
                 credentialId: credential.credentialId,
                 credentialFormat: credential.format,
-                claims: claims,
+                claims: claims
             ))
         }
     }

@@ -115,7 +115,7 @@ public class OpenID4VP {
     }
     
     public func constructUnsignedVPToken(
-        selectedCredentials: [String: [SelectedCredential]],
+        selectedCredentials: [String: [SelectedCredential]]
     ) async throws -> [UnsignedVPToken] {
         do {
             return try await authorizationResponseHandler.constructUnsignedVPToken(
