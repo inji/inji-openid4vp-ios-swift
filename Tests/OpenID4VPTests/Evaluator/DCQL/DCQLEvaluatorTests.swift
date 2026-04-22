@@ -87,7 +87,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [ldpVcWithoutBinding])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
     func testReturnsSuccessWhenHolderBindingNotRequired_AndCredentialLacksIt() throws {
@@ -116,7 +116,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
     func testMetaFiltering_EmptyMeta_PassesAllCredentials() throws {
@@ -145,7 +145,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
     // MARK: - Meta filtering (ldp_vc — type_values)
@@ -165,7 +165,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
     func testMetaFiltering_W3c_MatchesWhenAnyTypeValueOptionSatisfied() throws {
@@ -528,7 +528,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
@@ -539,7 +539,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
@@ -550,7 +550,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
-        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptograhicHolderbindingOrMetaFilterMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 

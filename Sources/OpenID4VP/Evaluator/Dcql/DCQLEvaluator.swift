@@ -5,7 +5,7 @@ internal struct DcqlEvaluator {
         self.jsonLdExpander = jsonLdExpander
     }
     
-    internal func evaluate(_ dcqlQuery: DCQLQuery, inputCredentials: [Credential]) throws -> MatchingCredentialsResult {
+    internal func evaluate(_ dcqlQuery: DCQLQuery, inputCredentials: [Credential]) async throws -> MatchingCredentialsResult {
         var queryMatches: [String: QueryMatchResult] = [:]
         
         
@@ -27,25 +27,28 @@ internal struct DcqlEvaluator {
             }
             
             // 2. Cryptographic Holder Binding and Meta check
-            let metaAndBindingMatchingIds: [String] = try formatMatchingCredentials.compactMap { credential in
+            var metaAndBindingMatchingIds: [String] = []
+            for credential in formatMatchingCredentials {
                 let credentialId = credential.credentialId
-                
+
                 if credentialsTagCache[credentialId] == nil {
-                    credentialsTagCache[credentialId] = try expandCredentialTag(credential)
+                    credentialsTagCache[credentialId] = try await expandCredentialTag(credential, jsonLdExpander: self.jsonLdExpander)
                 }
-                
-                guard let credentialTag = credentialsTagCache[credentialId] else { return nil }
-                
+
+                guard let credentialTag = credentialsTagCache[credentialId] else { continue }
+
                 let holderBindingAndMetaMatchSuccess = matchesCryptographicHolderBinding(
                     dcqlQueryRequestsCryptograhicHolderBinding: credentialQuery.requireCryptographicHolderBinding,
                     walletCredential: credentialTag
                 ) && matchesMeta(credentialQuery.meta, walletCredential: credentialTag)
-                
-                return holderBindingAndMetaMatchSuccess ? credentialId : nil
+
+                if holderBindingAndMetaMatchSuccess {
+                    metaAndBindingMatchingIds.append(credentialId)
+                }
             }
             
             if metaAndBindingMatchingIds.isEmpty {
-                queryMatches[credentialQuery.id] = QueryMatchResult(failureReason: .cryptograhicHolderbindingOrMetaFilterMismatch, allowMultipleCredentials: credentialQuery.multiple)
+                queryMatches[credentialQuery.id] = QueryMatchResult(failureReason: .cryptographicHolderBindingOrMetaFilterMismatch, allowMultipleCredentials: credentialQuery.multiple)
                 continue
             }
             
