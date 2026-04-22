@@ -3,17 +3,18 @@ import SwiftCBOR
 
 private let className = "CredentialUtils"
 
-func expandCredentialTag(_ credential: Credential) throws -> TaggedCredential {
+func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpanding) async throws -> TaggedCredential {
     switch credential.format {
     case .ldp_vc:
         guard let credentialData = credential.data.value as? [String:Any] else {
             throw InvalidData(message: "Credential data is not in the expected format", className: className)
         }
         let credentialSubjectId: String? = (credentialData["credentialSubject"] as? [String:Any] ?? [:])["id"] as? String
+        let expandedCredential = try await jsonLdExpander.expand(data: credentialData)
         return W3cTaggedCredential(
             credentialFormat: credential.format,
             hasCryptographicHolderBinding: credentialSubjectId != nil,
-            types: credentialData["type"] as? [String] ?? []
+            types: expandedCredential["@type"] as? [String] ?? []
         )
     case .mso_mdoc:
         guard let mdocCredential = credential.data.value as? String else {

@@ -232,7 +232,6 @@ internal struct DcqlEvaluator {
             }
             return false
         case let w3c as W3cTaggedCredential:
-            //TODO: Check if Type values are checked after expansion
             if let typeValues = meta["type_values"]?.value as? [[String]] {
                 return typeValues.contains { requiredTypes in
                     requiredTypes.allSatisfy { w3c.types.contains($0) }
