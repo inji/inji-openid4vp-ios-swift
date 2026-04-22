@@ -3,7 +3,9 @@ import XCTest
 
 class MockJsonLdExpander: JsonLdExpanding {
     func expand(data: [String : Any]) async throws -> [String : Any] {
-        return data
+        return [
+            "@type": data["type"] ?? []
+        ]
     }
 }
 
@@ -37,45 +39,45 @@ final class DCQLEvaluatorTests: XCTestCase {
 
     // MARK: - Format matching
 
-    func testReturnsSuccessWhenCredentialMatchesFormat() throws {
+    func testReturnsSuccessWhenCredentialMatchesFormat() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
-    func testReturnsFailureWhenNoCredentialMatchesFormat() throws {
+    func testReturnsFailureWhenNoCredentialMatchesFormat() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noMatchingFormatsFound.rawValue)
     }
 
-    func testEmptyWalletCredentials_ReturnsFailure() throws {
+    func testEmptyWalletCredentials_ReturnsFailure() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [])
+        let result = try await evaluator.evaluate(query, inputCredentials: [])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noMatchingFormatsFound.rawValue)
     }
 
     // MARK: - Cryptographic holder binding
 
-    func testReturnsSuccessWhenHolderBindingRequired_AndCredentialSupportsIt() throws {
+    func testReturnsSuccessWhenHolderBindingRequired_AndCredentialSupportsIt() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"require_cryptographic_holder_binding":true}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(holderBinding: true)])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(holderBinding: true)])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
-    func testReturnsFailureWhenHolderBindingRequired_ButNoCredentialSupportsIt() throws {
+    func testReturnsFailureWhenHolderBindingRequired_ButNoCredentialSupportsIt() async throws {
         // ldp_vc without credentialSubject.id gives hasCryptographicHolderBinding = false
         let ldpVcWithoutBinding = Credential(
             format: .ldp_vc,
@@ -85,270 +87,272 @@ final class DCQLEvaluatorTests: XCTestCase {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"require_cryptographic_holder_binding":true}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcWithoutBinding])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcWithoutBinding])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
-    func testReturnsSuccessWhenHolderBindingNotRequired_AndCredentialLacksIt() throws {
+    func testReturnsSuccessWhenHolderBindingNotRequired_AndCredentialLacksIt() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"require_cryptographic_holder_binding":false}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(holderBinding: false)])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(holderBinding: false)])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
     // MARK: - Meta filtering (dc+sd-jwt — vct_values)
 
-    func testMetaFiltering_SdJwt_MatchingVct() throws {
+    func testMetaFiltering_SdJwt_MatchingVct() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{"vct_values":["https://example.eudi.ec.europa.eu/cor/1"]}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
-    func testMetaFiltering_SdJwt_NonMatchingVct() throws {
+    func testMetaFiltering_SdJwt_NonMatchingVct() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{"vct_values":["https://example.com/other-vct"]}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
-    func testMetaFiltering_EmptyMeta_PassesAllCredentials() throws {
+    func testMetaFiltering_EmptyMeta_PassesAllCredentials() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
     // MARK: - Meta filtering (mso_mdoc — doctype_value)
 
-    func testMetaFiltering_Mdoc_MatchingDoctype() throws {
+    func testMetaFiltering_Mdoc_MatchingDoctype() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{"doctype_value":"org.iso.18013.5.1.mDL"}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
-    func testMetaFiltering_Mdoc_NonMatchingDoctype() throws {
+    func testMetaFiltering_Mdoc_NonMatchingDoctype() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{"doctype_value":"org.iso.23220.photoid.1"}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
     // MARK: - Meta filtering (ldp_vc — type_values)
 
-    func testMetaFiltering_W3c_MatchingTypeValues() throws {
+    func testMetaFiltering_W3c_MatchingTypeValues() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{"type_values":[["VerifiableCredential","IDCardCredential"]]}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
+        XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.count, 1)
+        XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.credentialId, "c1")
     }
 
-    func testMetaFiltering_W3c_NonMatchingTypeValues() throws {
+    func testMetaFiltering_W3c_NonMatchingTypeValues() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{"type_values":[["VerifiableCredential","UnknownCredential"]]}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
     }
 
-    func testMetaFiltering_W3c_MatchesWhenAnyTypeValueOptionSatisfied() throws {
+    func testMetaFiltering_W3c_MatchesWhenAnyTypeValueOptionSatisfied() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{"type_values":[["VerifiableCredential","UnknownCredential"],["VerifiableCredential","IDCardCredential"]]}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
     // MARK: - Claims matching (dc+sd-jwt)
 
-    func testClaimsMatching_NoClaims_AllMandatoryClaimsShared() throws {
+    func testClaimsMatching_NoClaims_AllMandatoryClaimsShared() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 0)
     }
 
-    func testClaimsMatching_AllClaimsPresent() throws {
+    func testClaimsMatching_AllClaimsPresent() async throws {
         // SD-JWT top-level payload claims (not selective disclosures)
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"ic","path":["issuing_country"]},{"id":"id","path":["issuance_date"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 2)
     }
 
-    func testClaimsMatching_MissingClaimFails() throws {
+    func testClaimsMatching_MissingClaimFails() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"nc","path":["nonexistent_claim"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.failedClaims)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
-    func testClaimsMatching_NestedClaimPath() throws {
+    func testClaimsMatching_NestedClaimPath() async throws {
         // ldp_vc claims are stored as the credentialSubject contents — path keys are direct field names
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"claims":[{"id":"gn","path":["credentialSubject","given_name"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 1)
     }
 
     // MARK: - Claims matching (mso_mdoc)
 
-    func testClaimsMatching_MdocAllClaimsPresent() throws {
+    func testClaimsMatching_MdocAllClaimsPresent() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{"doctype_value":"org.iso.18013.5.1.mDL"},"claims":[{"id":"gn","path":["org.iso.18013.5.1","given_name"]},{"id":"fn","path":["org.iso.18013.5.1","family_name"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 2)
     }
 
-    func testClaimsMatching_MdocMissingElementFails() throws {
+    func testClaimsMatching_MdocMissingElementFails() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{"doctype_value":"org.iso.18013.5.1.mDL"},"claims":[{"id":"nc","path":["org.iso.18013.5.1","nonexistent_element"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
     // MARK: - Claims matching (ldp_vc)
 
-    func testClaimsMatching_W3cAllClaimsPresent() throws {
+    func testClaimsMatching_W3cAllClaimsPresent() async throws {
         // ldp_vc claims are stored directly from credentialSubject — path is the field name
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"claims":[{"id":"gn","path":["credentialSubject","given_name"]},{"id":"fn","path":["credentialSubject","family_name"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 2)
     }
 
-    func testClaimsMatching_W3cMissingClaimFails() throws {
+    func testClaimsMatching_W3cMissingClaimFails() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"claims":[{"id":"nc","path":["nonexistent_field"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
     // MARK: - Value matching
 
-    func testValueMatching_StringMatch() throws {
+    func testValueMatching_StringMatch() async throws {
         // issuing_country is a top-level SD-JWT payload claim
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"ic","path":["issuing_country"],"values":["DE"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
     }
 
-    func testValueMatching_IntMatch() throws {
+    func testValueMatching_IntMatch() async throws {
         // ldp_vc credentialSubject field matching — path is the direct field name
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"claims":[{"id":"gn","path":["credentialSubject","given_name"],"values":["MockUser"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertTrue(result.success)
     }
 
-    func testValueMatching_BoolMatch() throws {
+    func testValueMatching_BoolMatch() async throws {
         // ldp_vc credentialSubject field matching — path is the direct field name
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"claims":[{"id":"fn","path":["credentialSubject","family_name"],"values":["Mockister"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertTrue(result.success)
     }
 
-    func testValueMatching_NoMatchFails() throws {
+    func testValueMatching_NoMatchFails() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"ic","path":["issuing_country"],"values":["US"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimValueMismatch.rawValue)
     }
 
     // MARK: - claim_sets
 
-    func testClaimSets_FirstOptionSatisfied() throws {
+    func testClaimSets_FirstOptionSatisfied() async throws {
         // SD-JWT top-level payload claims
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"ic","path":["issuing_country"]},{"id":"id","path":["issuance_date"]}],"claim_sets":[["ic","id"],["ic"]]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 2)
     }
 
-    func testClaimSets_FallsBackToSecondOptionIfFirstOptionNotSatisfiable() throws {
+    func testClaimSets_FallsBackToSecondOptionIfFirstOptionNotSatisfiable() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"ic","path":["issuing_country"]},{"id":"missing","path":["nonexistent"]}],"claim_sets":[["ic","missing"],["ic"]]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 1)
     }
 
-    func testClaimSets_NoOptionSatisfiedFails() throws {
+    func testClaimSets_NoOptionSatisfiedFails() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"m1","path":["nonexistent1"]},{"id":"m2","path":["nonexistent2"]}],"claim_sets":[["m1","m2"],["m1"]]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noClaimsSetOptionSatisfied.rawValue)
     }
 
     // MARK: - multiple credentials flag
 
-    func testMultipleFalse_ReturnsOnlyFirstMatchingCredential() throws {
+    func testMultipleFalse_ReturnsOnlyFirstMatchingCredential() async throws {
         // multiple: false is a selection hint to the wallet UI — the evaluator returns all candidates
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"multiple":false}]}
         """)
         let c1 = sdJwtCredential(id: "c1")
         let c2 = sdJwtCredential(id: "c2")
-        let result = try evaluator.evaluate(query, inputCredentials: [c1, c2])
+        let result = try await evaluator.evaluate(query, inputCredentials: [c1, c2])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.count, 2)
         XCTAssertFalse(result.queryMatches["q1"]?.allowMultipleCredentials ?? true)
     }
 
-    func testMultipleTrue_ReturnsAllMatchingCredentials() throws {
+    func testMultipleTrue_ReturnsAllMatchingCredentials() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"multiple":true}]}
         """)
         let c1 = sdJwtCredential(id: "c1")
         let c2 = sdJwtCredential(id: "c2")
-        let result = try evaluator.evaluate(query, inputCredentials: [c1, c2])
+        let result = try await evaluator.evaluate(query, inputCredentials: [c1, c2])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.count, 2)
         XCTAssertTrue(result.queryMatches["q1"]?.allowMultipleCredentials ?? false)
@@ -356,140 +360,140 @@ final class DCQLEvaluatorTests: XCTestCase {
 
     // MARK: - Mdoc claim resolution (namespace + element path)
 
-    func testMdocClaimResolution_MatchingNamespaceAndElement() throws {
+    func testMdocClaimResolution_MatchingNamespaceAndElement() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{},"claims":[{"id":"gn","path":["org.iso.18013.5.1","given_name"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 1)
     }
 
-    func testMdocClaimResolution_MissingNamespaceFails() throws {
+    func testMdocClaimResolution_MissingNamespaceFails() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{},"claims":[{"id":"nc","path":["wrong.namespace","given_name"]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
     // MARK: - credential_sets (spec §6.4.2)
 
-    func testCredentialSets_RequiredSetSatisfied() throws {
+    func testCredentialSets_RequiredSetSatisfied() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}],"credential_sets":[{"options":[["q1"]],"required":true}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1")])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1")])
         XCTAssertTrue(result.success)
     }
 
-    func testCredentialSets_RequiredSetNotSatisfiedFails() throws {
+    func testCredentialSets_RequiredSetNotSatisfiedFails() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}],"credential_sets":[{"options":[["q1","q2"]],"required":true}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
         XCTAssertFalse(result.success)
     }
 
-    func testCredentialSets_OptionalSetNotSatisfiedStillSucceeds() throws {
+    func testCredentialSets_OptionalSetNotSatisfiedStillSucceeds() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}],"credential_sets":[{"options":[["q1"]],"required":true},{"options":[["q2"]],"required":false}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
         XCTAssertTrue(result.success)
     }
 
-    func testCredentialSets_NoCredentialSets_AllQueriesMustBePresent() throws {
+    func testCredentialSets_NoCredentialSets_AllQueriesMustBePresent() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
         XCTAssertFalse(result.success)
     }
 
-    func testCredentialSets_NoCredentialSets_AllQueriesSatisfiedSucceeds() throws {
+    func testCredentialSets_NoCredentialSets_AllQueriesSatisfiedSucceeds() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1")])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1")])
         XCTAssertTrue(result.success)
     }
 
     // MARK: - Multi-format / multi-query scenarios
 
-    func testMultipleQueriesDifferentFormats_BothSatisfied() throws {
+    func testMultipleQueriesDifferentFormats_BothSatisfied() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}},{"id":"q3","format":"ldp_vc","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1"), ldpVcCredential(id: "ldp1")])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1"), ldpVcCredential(id: "ldp1")])
         XCTAssertTrue(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.matchingCredentials)
         XCTAssertNotNil(result.queryMatches["q2"]?.matchingCredentials)
         XCTAssertNotNil(result.queryMatches["q3"]?.matchingCredentials)
     }
 
-    func testCredentialSetsFallbackOption_FirstOptionFailsSecondSucceeds() throws {
+    func testCredentialSetsFallbackOption_FirstOptionFailsSecondSucceeds() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}],"credential_sets":[{"options":[["q1","q2"],["q1"]],"required":true}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
         XCTAssertTrue(result.success)
     }
 
     // MARK: - QueryEvaluationResult structure
 
-    func testResultContainsCredentialSetRequirements() throws {
+    func testResultContainsCredentialSetRequirements() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}}],"credential_sets":[{"options":[["q1"]],"required":true}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertEqual(result.credentialSets.count, 1)
         XCTAssertEqual(result.credentialSets.first?.options, [["q1"]])
         XCTAssertTrue(result.credentialSets.first?.required ?? false)
     }
 
-    func testResultAllowMultipleCredentialsReflectsQueryFlag() throws {
+    func testResultAllowMultipleCredentialsReflectsQueryFlag() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"multiple":true}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.queryMatches["q1"]?.allowMultipleCredentials ?? false)
     }
 
     // MARK: - Additional scenario coverage
 
     // Scenario 1: No claims in VP request — all mandatory credential claims are shared to verifier
-    func testNoClaims_CredentialPassedThroughWithEmptyMatchingClaims() throws {
+    func testNoClaims_CredentialPassedThroughWithEmptyMatchingClaims() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 0)
     }
 
     // Scenario 2: matchesExpectedValues - int (SD-JWT payload `nbf` is an integer)
-    func testValueMatching_Int_Matches() throws {
+    func testValueMatching_Int_Matches() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"nbf","path":["nbf"],"values":[1755475200]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 1)
     }
 
-    func testValueMatching_Int_NoMatch() throws {
+    func testValueMatching_Int_NoMatch() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"nbf","path":["nbf"],"values":[9999999999]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimValueMismatch.rawValue)
     }
 
     // Scenario 3: matchesExpectedValues - boolean (ldp_vc credentialSubject with a bool field)
-    func testValueMatching_Bool_Matches() throws {
+    func testValueMatching_Bool_Matches() async throws {
         var credential = ldpVC()
         if var subject = credential["credentialSubject"] as? [String: Any] {
             subject["id"] = "did:example:holder"
@@ -500,12 +504,12 @@ final class DCQLEvaluatorTests: XCTestCase {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"claims":[{"id":"iv","path":["credentialSubject","is_verified"],"values":[true]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [boolCredential])
+        let result = try await evaluator.evaluate(query, inputCredentials: [boolCredential])
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.matchingCredentials?.first?.matchingClaims.count, 1)
     }
 
-    func testValueMatching_Bool_NoMatch() throws {
+    func testValueMatching_Bool_NoMatch() async throws {
         var credential = ldpVC()
         if var subject = credential["credentialSubject"] as? [String: Any] {
             subject["id"] = "did:example:holder"
@@ -516,50 +520,50 @@ final class DCQLEvaluatorTests: XCTestCase {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{},"claims":[{"id":"iv","path":["credentialSubject","is_verified"],"values":[true]}]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [boolCredential])
+        let result = try await evaluator.evaluate(query, inputCredentials: [boolCredential])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimValueMismatch.rawValue)
     }
 
     // Scenario 4: matchesMeta - doctype_value not matching (dedicated)
-    func testMatchesMeta_DocType_NotMatching() throws {
+    func testMatchesMeta_DocType_NotMatching() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"mso_mdoc","meta":{"doctype_value":"org.iso.23220.photoid.1"}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [mdocCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [mdocCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
     // Scenario 5: matchesMeta - vct_values not matching (dedicated)
-    func testMatchesMeta_Vct_NotMatching() throws {
+    func testMatchesMeta_Vct_NotMatching() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{"vct_values":["https://example.com/wrong-vct"]}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
     // Scenario 6: matchesMeta - type_values not matching (dedicated)
-    func testMatchesMeta_TypeValues_NotMatching() throws {
+    func testMatchesMeta_TypeValues_NotMatching() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"ldp_vc","meta":{"type_values":[["VerifiableCredential","PassportCredential"]]}}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [ldpVcCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.cryptographicHolderBindingOrMetaFilterMismatch.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)
     }
 
     // Scenario 7: noClaimsSetOptionSatisfied error (dedicated)
-    func testNoClaimsSetOptionSatisfied_ErrorReturned() throws {
+    func testNoClaimsSetOptionSatisfied_ErrorReturned() async throws {
         let query = try dcqlQuery("""
         {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"m1","path":["missing_a"]},{"id":"m2","path":["missing_b"]}],"claim_sets":[["m1","m2"],["m1"],["m2"]]}]}
         """)
-        let result = try evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.noClaimsSetOptionSatisfied.rawValue)
         XCTAssertNil(result.queryMatches["q1"]?.matchingCredentials)

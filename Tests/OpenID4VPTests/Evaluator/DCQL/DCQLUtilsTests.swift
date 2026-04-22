@@ -5,7 +5,7 @@ final class DCQLUtilsTests: XCTestCase {
 
     // MARK: - expandCredentialTag: ldp_vc
 
-    func testExpandCredentialTag_LdpVc_WithHolderBinding() throws {
+    func testExpandCredentialTag_LdpVc_WithHolderBinding() async throws {
         var credential = ldpVC()
         if var subject = credential["credentialSubject"] as? [String: Any] {
             subject["id"] = "did:example:holder"
@@ -13,7 +13,7 @@ final class DCQLUtilsTests: XCTestCase {
         }
         let input = Credential(format: .ldp_vc, data: AnyCodable(credential), credentialId: "c1")
 
-        let result = try expandCredentialTag(input)
+        let result = try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())
 
         let w3c = try XCTUnwrap(result as? W3cTaggedCredential)
         XCTAssertEqual(w3c.credentialFormat, .ldp_vc)
@@ -21,58 +21,58 @@ final class DCQLUtilsTests: XCTestCase {
         XCTAssertTrue(w3c.types.contains("IDCardCredential"))
     }
 
-    func testExpandCredentialTag_LdpVc_WithoutHolderBinding() throws {
+    func testExpandCredentialTag_LdpVc_WithoutHolderBinding() async throws {
         let credential = ldpVC()
         let input = Credential(format: .ldp_vc, data: AnyCodable(credential), credentialId: "c1")
 
-        let result = try expandCredentialTag(input)
+        let result = try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())
 
         let w3c = try XCTUnwrap(result as? W3cTaggedCredential)
         XCTAssertFalse(w3c.hasCryptographicHolderBinding)
     }
 
-    func testExpandCredentialTag_LdpVc_ThrowsWhenDataIsNotDictionary() throws {
+    func testExpandCredentialTag_LdpVc_ThrowsWhenDataIsNotDictionary() async throws {
         let input = Credential(format: .ldp_vc, data: AnyCodable("invalid"), credentialId: "c1")
 
-        XCTAssertThrowsError(try expandCredentialTag(input)) { error in
+        await XCTAssertAsyncThrowsError(try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())) { error in
             assertOpenID4VPException(error, expectedMessage: "Credential data is not in the expected format", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
     // MARK: - expandCredentialTag: mso_mdoc
 
-    func testExpandCredentialTag_MsoMdoc_ReturnsDoctype() throws {
+    func testExpandCredentialTag_MsoMdoc_ReturnsDoctype() async throws {
         let input = Credential(format: .mso_mdoc, data: AnyCodable(sampleMdoc), credentialId: "c1")
 
-        let result = try expandCredentialTag(input)
+        let result = try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())
 
         let mdoc = try XCTUnwrap(result as? MdocTaggedCredential)
         XCTAssertEqual(mdoc.doctype, "org.iso.18013.5.1.mDL")
         XCTAssertTrue(mdoc.hasCryptographicHolderBinding)
     }
 
-    func testExpandCredentialTag_MsoMdoc_ThrowsWhenDataIsNotString() throws {
+    func testExpandCredentialTag_MsoMdoc_ThrowsWhenDataIsNotString() async throws {
         let input = Credential(format: .mso_mdoc, data: AnyCodable(["invalid": "data"]), credentialId: "c1")
 
-        XCTAssertThrowsError(try expandCredentialTag(input)) { error in
+        await XCTAssertAsyncThrowsError(try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())) { error in
             assertOpenID4VPException(error, expectedMessage: "MDOC credential is not a String", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
-    func testExpandCredentialTag_MsoMdoc_ThrowsWhenBase64IsInvalid() throws {
+    func testExpandCredentialTag_MsoMdoc_ThrowsWhenBase64IsInvalid() async throws {
         let input = Credential(format: .mso_mdoc, data: AnyCodable("not-valid-cbor!!!"), credentialId: "c1")
 
-        XCTAssertThrowsError(try expandCredentialTag(input)) { error in
+        await XCTAssertAsyncThrowsError(try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())) { error in
             assertOpenID4VPException(error, expectedMessage: "Invalid Verifiable Credential: Error while decoding credential", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
     // MARK: - expandCredentialTag: dc_sd_jwt / vc_sd_jwt
 
-    func testExpandCredentialTag_DcSdJwt_WithHolderBinding() throws {
+    func testExpandCredentialTag_DcSdJwt_WithHolderBinding() async throws {
         let input = Credential(format: .dc_sd_jwt, data: AnyCodable(sampeVcSdJwtWithHolderBinding), credentialId: "c1")
 
-        let result = try expandCredentialTag(input)
+        let result = try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())
 
         let sdJwt = try XCTUnwrap(result as? SdJwtTaggedCredential)
         XCTAssertEqual(sdJwt.credentialFormat, .dc_sd_jwt)
@@ -80,27 +80,27 @@ final class DCQLUtilsTests: XCTestCase {
         XCTAssertTrue(sdJwt.hasCryptographicHolderBinding)
     }
 
-    func testExpandCredentialTag_VcSdJwt_WithNoHolderBinding() throws {
+    func testExpandCredentialTag_VcSdJwt_WithNoHolderBinding() async throws {
         let input = Credential(format: .vc_sd_jwt, data: AnyCodable(sampleVcSdJwtWithNoHolderBinding), credentialId: "c1")
 
-        let result = try expandCredentialTag(input)
+        let result = try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())
 
         let sdJwt = try XCTUnwrap(result as? SdJwtTaggedCredential)
         XCTAssertEqual(sdJwt.credentialFormat, .vc_sd_jwt)
         XCTAssertTrue(sdJwt.hasCryptographicHolderBinding)
     }
 
-    func testExpandCredentialTag_SdJwt_ThrowsWhenDataIsNotString() throws {
+    func testExpandCredentialTag_SdJwt_ThrowsWhenDataIsNotString() async throws {
         let input = Credential(format: .dc_sd_jwt, data: AnyCodable(42), credentialId: "c1")
 
-        XCTAssertThrowsError(try expandCredentialTag(input)) { error in
+        await XCTAssertAsyncThrowsError(try await expandCredentialTag(input, jsonLdExpander: MockJsonLdExpander())) { error in
             assertOpenID4VPException(error, expectedMessage: "SD-JWT credential is not a String", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
     // MARK: - convertToProcessedCredentials: ldp_vc
 
-    func testConvertToProcessedCredentials_LdpVc_ReturnsW3cProcessedCredential() throws {
+    func testConvertToProcessedCredentials_LdpVc_ReturnsW3cProcessedCredential() async throws {
         let credential = ldpVC()
         let input = Credential(format: .ldp_vc, data: AnyCodable(credential), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
@@ -113,7 +113,7 @@ final class DCQLUtilsTests: XCTestCase {
         XCTAssertNotNil(w3c.claims["credentialSubject"])
     }
 
-    func testConvertToProcessedCredentials_LdpVc_ThrowsWhenDataIsNotDictionary() throws {
+    func testConvertToProcessedCredentials_LdpVc_ThrowsWhenDataIsNotDictionary() async throws {
         let input = Credential(format: .ldp_vc, data: AnyCodable("invalid"), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
 
@@ -124,7 +124,7 @@ final class DCQLUtilsTests: XCTestCase {
 
     // MARK: - convertToProcessedCredentials: mso_mdoc
 
-    func testConvertToProcessedCredentials_MsoMdoc_ReturnsMdocProcessedCredential() throws {
+    func testConvertToProcessedCredentials_MsoMdoc_ReturnsMdocProcessedCredential() async throws {
         let input = Credential(format: .mso_mdoc, data: AnyCodable(sampleMdoc), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
 
@@ -138,7 +138,7 @@ final class DCQLUtilsTests: XCTestCase {
         XCTAssertNotNil(ns["family_name"])
     }
 
-    func testConvertToProcessedCredentials_MsoMdoc_ThrowsWhenDataIsNotString() throws {
+    func testConvertToProcessedCredentials_MsoMdoc_ThrowsWhenDataIsNotString() async throws {
         let input = Credential(format: .mso_mdoc, data: AnyCodable(["invalid": "data"]), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
 
@@ -147,7 +147,7 @@ final class DCQLUtilsTests: XCTestCase {
         }
     }
 
-    func testConvertToProcessedCredentials_MsoMdoc_ThrowsWhenBase64IsInvalid() throws {
+    func testConvertToProcessedCredentials_MsoMdoc_ThrowsWhenBase64IsInvalid() async throws {
         let input = Credential(format: .mso_mdoc, data: AnyCodable("not-valid-cbor!!!"), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
 
@@ -158,7 +158,7 @@ final class DCQLUtilsTests: XCTestCase {
 
     // MARK: - convertToProcessedCredentials: dc_sd_jwt / vc_sd_jwt
 
-    func testConvertToProcessedCredentials_DcSdJwt_ReturnsSdJwtProcessedCredential() throws {
+    func testConvertToProcessedCredentials_DcSdJwt_ReturnsSdJwtProcessedCredential() async throws {
         let input = Credential(format: .dc_sd_jwt, data: AnyCodable(sampeVcSdJwtWithHolderBinding), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
 
@@ -170,7 +170,7 @@ final class DCQLUtilsTests: XCTestCase {
         XCTAssertNotNil(sdJwt.claims["vct"])
     }
 
-    func testConvertToProcessedCredentials_VcSdJwt_ReturnsSdJwtProcessedCredential() throws {
+    func testConvertToProcessedCredentials_VcSdJwt_ReturnsSdJwtProcessedCredential() async throws {
         let input = Credential(format: .vc_sd_jwt, data: AnyCodable(sampleVcSdJwtWithNoHolderBinding), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
 
@@ -180,7 +180,7 @@ final class DCQLUtilsTests: XCTestCase {
         XCTAssertEqual(sdJwt.credentialFormat, .vc_sd_jwt)
     }
 
-    func testConvertToProcessedCredentials_SdJwt_ThrowsWhenDataIsNotString() throws {
+    func testConvertToProcessedCredentials_SdJwt_ThrowsWhenDataIsNotString() async throws {
         let input = Credential(format: .dc_sd_jwt, data: AnyCodable(42), credentialId: "c1")
         let credentialIdToCredential = ["c1": input]
 
@@ -191,14 +191,14 @@ final class DCQLUtilsTests: XCTestCase {
 
     // MARK: - convertToProcessedCredentials: unknown credentialId
 
-    func testConvertToProcessedCredentials_SkipsUnknownCredentialId() throws {
+    func testConvertToProcessedCredentials_SkipsUnknownCredentialId() async throws {
         let result = try convertToProcessedCredentials(["unknown-id"], [:])
         XCTAssertTrue(result.isEmpty)
     }
 
     // MARK: - convertToProcessedCredentials: multiple credentials
 
-    func testConvertToProcessedCredentials_MultipleCredentials() throws {
+    func testConvertToProcessedCredentials_MultipleCredentials() async throws {
         let ldpInput = Credential(format: .ldp_vc, data: AnyCodable(ldpVC()), credentialId: "ldp1")
         let mdocInput = Credential(format: .mso_mdoc, data: AnyCodable(sampleMdoc), credentialId: "md1")
         let sdJwtInput = Credential(format: .dc_sd_jwt, data: AnyCodable(sampeVcSdJwtWithHolderBinding), credentialId: "sd1")
