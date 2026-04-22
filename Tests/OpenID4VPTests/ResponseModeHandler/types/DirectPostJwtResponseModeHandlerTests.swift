@@ -676,4 +676,29 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                )
            }
        }
+
+    // MARK: - getResponseEndpoint
+
+    func testGetResponseEndpointThrowsWhenResponseUriIsNil() throws {
+        let requestWithNoResponseUri = AuthorizationPresentationExchangeRequest(
+            clientId: "client_id",
+            responseType: "vp_token",
+            responseMode: ResponseMode.directPostJwt.rawValue,
+            responseUri: nil,
+            redirectUri: nil,
+            nonce: "nonce",
+            walletNonce: nil,
+            state: "state",
+            presentationDefinition: mockPresentationDefinitionObject,
+            clientMetadata: mockClientMetadataSpecVersionDraft23[.directPostJwt]
+        )
+
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getResponseEndpoint(authorizationRequest: requestWithNoResponseUri)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "response_uri is required in authorization request for response mode 'direct_post.jwt'",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
 }
