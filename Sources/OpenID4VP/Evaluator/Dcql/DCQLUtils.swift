@@ -43,7 +43,7 @@ func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpandi
             doctype: docTypeString
         )
     case .dc_sd_jwt, .vc_sd_jwt:
-        let (_, sdJWTPayload) = try extractSdJwtPayload(credential.data, className: className)
+        let (_, sdJWTPayload, _ ) = try extractSdJwtPayload(credential.data, className: className)
         
         return SdJwtTaggedCredential(
             credentialFormat: credential.format,
@@ -114,14 +114,12 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             ))
             
         case .dc_sd_jwt, .vc_sd_jwt:
-            let (_, sdJWTPayload) = try extractSdJwtPayload(credential.data, className: className)
-            
-            let claims = sdJWTPayload["credentialSubject"] as? [String: Any] ?? sdJWTPayload
+            let (_, _, fullyResolvedClaims) = try extractSdJwtPayload(credential.data, className: className, decodeDisclosures: true)
             
             processedCredentials[credentialId] = (SdJwtProcessedCredential(
                 credentialId: credential.credentialId,
                 credentialFormat: credential.format,
-                claims: claims
+                claims: fullyResolvedClaims
             ))
         }
     }

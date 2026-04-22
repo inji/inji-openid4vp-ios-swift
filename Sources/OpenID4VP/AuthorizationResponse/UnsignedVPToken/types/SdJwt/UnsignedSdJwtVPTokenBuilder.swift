@@ -24,7 +24,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         for index in 0..<credentialInputDescriptorMappings.count {
             let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
             let uuid = UUIDGenerator.generateUUID()
-            let (credential, sdJWTPayload) = try extractSdJwtPayload(credentialInputDescriptorMapping.credential, className: Self.className)
+            let (credential, sdJWTPayload, _) = try extractSdJwtPayload(credentialInputDescriptorMapping.credential, className: Self.className)
             
             credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
                 format: credentialInputDescriptorMapping.format,
