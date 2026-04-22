@@ -20,7 +20,7 @@ func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpandi
         guard let mdocCredential = credential.data.value as? String else {
             throw InvalidData(
                 message: "MDOC credential is not a String",
-                className: AuthorizationResponseHandler.className
+                className: className
             )
         }
         guard let decodedCredential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {

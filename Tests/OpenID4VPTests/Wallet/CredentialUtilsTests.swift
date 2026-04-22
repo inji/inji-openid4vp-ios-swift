@@ -10,7 +10,7 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSdJwtPayloadReturnsCredentialAndPayload() throws {
         let credential = AnyCodable(sampeVcSdJwtWithHolderBinding)
 
-        let (rawCredential, payload) = try extractSdJwtPayload(credential, className: className)
+        let (rawCredential, payload) = try extractSdJwtPayload(credential, className: classNameValue)
 
         XCTAssertEqual(rawCredential, sampeVcSdJwtWithHolderBinding)
         XCTAssertNotNil(payload["vct"])
@@ -20,7 +20,7 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSdJwtPayloadThrowsWhenCredentialIsNotString() throws {
         let credential = AnyCodable(["key": "value"])
 
-        XCTAssertThrowsError(try extractSdJwtPayload(credential, className: className)) { error in
+        XCTAssertThrowsError(try extractSdJwtPayload(credential, className: classNameValue)) { error in
             assertOpenID4VPException(error, expectedMessage: "SD-JWT credential is not a String", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -28,7 +28,7 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSdJwtPayloadThrowsWhenStringIsEmpty() throws {
         let credential = AnyCodable("")
 
-        XCTAssertThrowsError(try extractSdJwtPayload(credential, className: className)) { error in
+        XCTAssertThrowsError(try extractSdJwtPayload(credential, className: classNameValue)) { error in
             assertOpenID4VPException(error, expectedMessage: "SD-JWT credential is malformed or empty", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -36,13 +36,13 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSdJwtPayloadThrowsWhenJwtIsInvalid() throws {
         let credential = AnyCodable("not.a.valid~jwt")
 
-        XCTAssertThrowsError(try extractSdJwtPayload(credential, className: className))
+        XCTAssertThrowsError(try extractSdJwtPayload(credential, className: classNameValue))
     }
 
     func testExtractSdJwtPayloadWorksWithNoHolderBinding() throws {
         let credential = AnyCodable(sampleVcSdJwtWithNoHolderBinding)
 
-        let (rawCredential, payload) = try extractSdJwtPayload(credential, className: className)
+        let (rawCredential, payload) = try extractSdJwtPayload(credential, className: classNameValue)
 
         XCTAssertEqual(rawCredential, sampleVcSdJwtWithNoHolderBinding)
         XCTAssertNotNil(payload["vct"])
@@ -53,7 +53,7 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSDJwtStringReturnsStringValue() throws {
         let credential = AnyCodable(sampeVcSdJwtWithHolderBinding)
 
-        let result = try extractSDJwtString(from: credential, className: className)
+        let result = try extractSDJwtString(from: credential, className: classNameValue)
 
         XCTAssertEqual(result, sampeVcSdJwtWithHolderBinding)
     }
@@ -61,7 +61,7 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSDJwtStringThrowsWhenValueIsNotString() throws {
         let credential = AnyCodable(42)
 
-        XCTAssertThrowsError(try extractSDJwtString(from: credential, className: className)) { error in
+        XCTAssertThrowsError(try extractSDJwtString(from: credential, className: classNameValue)) { error in
             assertOpenID4VPException(error, expectedMessage: "SD-JWT credential is not a String", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -69,7 +69,7 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSDJwtStringThrowsWhenValueIsArray() throws {
         let credential = AnyCodable(["a", "b"])
 
-        XCTAssertThrowsError(try extractSDJwtString(from: credential, className: className)) { error in
+        XCTAssertThrowsError(try extractSDJwtString(from: credential, className: classNameValue)) { error in
             assertOpenID4VPException(error, expectedMessage: "SD-JWT credential is not a String", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
@@ -77,7 +77,7 @@ final class CredentialUtilsTests: XCTestCase {
     func testExtractSDJwtStringThrowsWhenValueIsDictionary() throws {
         let credential = AnyCodable(["key": "value"])
 
-        XCTAssertThrowsError(try extractSDJwtString(from: credential, className: className)) { error in
+        XCTAssertThrowsError(try extractSDJwtString(from: credential, className: classNameValue)) { error in
             assertOpenID4VPException(error, expectedMessage: "SD-JWT credential is not a String", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
