@@ -47,7 +47,7 @@ func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpandi
         
         return SdJwtTaggedCredential(
             credentialFormat: credential.format,
-            hasCryptographicHolderBinding: true,
+            hasCryptographicHolderBinding: sdJWTPayload["cnf"] != nil,
             vct: sdJWTPayload["vct"] as? String ?? ""
         )
     }

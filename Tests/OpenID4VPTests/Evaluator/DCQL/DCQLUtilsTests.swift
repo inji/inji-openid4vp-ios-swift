@@ -89,7 +89,7 @@ final class DCQLUtilsTests: XCTestCase {
 
         let sdJwt = try XCTUnwrap(result as? SdJwtTaggedCredential)
         XCTAssertEqual(sdJwt.credentialFormat, .vc_sd_jwt)
-        XCTAssertTrue(sdJwt.hasCryptographicHolderBinding)
+        XCTAssertFalse(sdJwt.hasCryptographicHolderBinding)
     }
 
     func testExpandCredentialTag_SdJwt_ThrowsWhenDataIsNotString() async throws {
