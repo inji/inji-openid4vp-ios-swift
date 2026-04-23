@@ -3,7 +3,6 @@ import JSONWebKey
 import CryptoKit
 
 protocol JWEKeyAgreement {
-    func deriveKey(publicKey: Data) throws -> SymmetricKey
     func deriveKey(publicKey: Data, algorithm: String,
                    apu: String,
                    apv: String) throws -> SymmetricKey
@@ -14,5 +13,5 @@ protocol JWEKeyAgreement {
 }
 
 protocol JWEEncryption {
-    func encrypt(_ data: Data, with key: SymmetricKey) throws -> (ciphertext: Data, nonce: Data, tag: Data)
+    func encrypt(_ data: Data, with key: SymmetricKey, aad: Data?) throws -> (ciphertext: Data, nonce: Data, tag: Data)
 }
