@@ -107,7 +107,10 @@ final class CredentialUtilsTests: XCTestCase {
 
     func testExtractSdJwtPayloadDecodeDisclosuresSkipsMalformedSegments() throws {
         let parts = sampeVcSdJwtWithHolderBinding.split(separator: "~", omittingEmptySubsequences: false).map(String.init)
-        guard parts.count > 2 else { return }
+        guard parts.count > 2 else {
+            XCTFail("fixture must include disclosures")
+            return
+        }
         var mutated = parts
         mutated[1] = "!!!not-valid!!!"
         let credential = AnyCodable(mutated.joined(separator: "~"))

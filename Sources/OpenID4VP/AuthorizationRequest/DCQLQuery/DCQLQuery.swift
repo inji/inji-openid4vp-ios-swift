@@ -156,7 +156,7 @@ public struct CredentialQuery: Codable {
             )
         }
 
-        guard isNeitherNullNorEmpty(field: format) else {
+        guard isValidString(format) else {
             throw InvalidInput(fieldPath: ["credential_query", "format"], className: className)
         }
 
