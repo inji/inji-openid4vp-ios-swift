@@ -4,6 +4,24 @@ import XCTest
 final class DCQLUtilsTests: XCTestCase {
 
     private let mockExpander = MockJsonLdExpander()
+    
+    private let claims: [String: Any] = [
+        "name": "Arthur Dent",
+        "address": [
+            "street_address": "42 Market Street",
+            "locality": "Milliways",
+            "postal_code": "12345"
+        ] as [String: Any],
+        "degrees": [
+            ["type": "Bachelor of Science", "university": "University of Betelgeuse"],
+            ["type": "Master of Science",   "university": "University of Betelgeuse"]
+        ] as [[String: Any]],
+        "nationalities": ["British", "Betelgeusian"]
+    ]
+
+    private func path(_ elements: Any?...) -> [AnyCodable] {
+        elements.map { AnyCodable($0) }
+    }
 
     // MARK: - expandCredentialTag: ldp_vc
 
@@ -229,5 +247,141 @@ final class DCQLUtilsTests: XCTestCase {
         XCTAssertTrue(result["ldp1"] is W3cProcessedCredential)
         XCTAssertTrue(result["md1"] is MdocProcessedCredential)
         XCTAssertTrue(result["sd1"] is SdJwtProcessedCredential)
+    }
+    
+    // MARK: - Resolve claims path pointer Tests
+
+    // String navigation
+
+    func testResolvesTopLevelStringKey() throws {
+        let result = try resolveClaimsPathPointer(path("name"), in: claims)
+        XCTAssertEqual(result as? String, "Arthur Dent")
+    }
+
+    func testResolvesNestedStringKey() throws {
+        let result = try resolveClaimsPathPointer(path("address", "street_address"), in: claims)
+        XCTAssertEqual(result as? String, "42 Market Street")
+    }
+
+    func testResolvesObjectValueWithSubClaims() throws {
+        let result = try resolveClaimsPathPointer(path("address"), in: claims)
+        
+        assertDictionariesEqual(expected: [
+            "street_address": "42 Market Street",
+            "locality": "Milliways",
+            "postal_code": "12345"
+        ], actual: result as? [String: Any])
+    }
+
+    func testReturnsEmptyForMissingKey() throws {
+        let result = try resolveClaimsPathPointer(path("nonexistent"), in: claims)
+        
+        XCTAssertNil(result)
+    }
+    
+    func testReturnsEmptyWhenStringNavigationHitsNonObject() {
+        // "name" is a String, not an object — navigating further into it must return []
+        
+        XCTAssertThrowsError(try resolveClaimsPathPointer(path("name", "first"), in: claims)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "currently selected element(s) is not an object",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    //  Integer index navigation
+
+    func testResolvesArrayElementByIndex() throws {
+        // ["nationalities", 1] → "Betelgeusian"
+        let result = try resolveClaimsPathPointer(path("nationalities", 1), in: claims)
+        
+        XCTAssertEqual(result as? String, "Betelgeusian")
+    }
+
+    func testResolvesFirstArrayElementByIndex() throws {
+        // ["nationalities", 0] → "British"
+        let result = try resolveClaimsPathPointer(path("nationalities", 0), in: claims)
+        
+        XCTAssertEqual(result as? String, "British")
+    }
+
+    func testReturnsEmptyForOutOfBoundsIndex() throws {
+        let result = try resolveClaimsPathPointer(path("nationalities", 99), in: claims)
+        
+        XCTAssertNil(result)
+    }
+
+    func testResolvesNestedFieldInsideIndexedArrayElement() throws {
+        // ["degrees", 0, "type"] → "Bachelor of Science"
+        let result = try resolveClaimsPathPointer(path("degrees", 0, "type"), in: claims)
+        
+        XCTAssertEqual(result as? String, "Bachelor of Science")
+    }
+
+    // Null wildcard navigation
+
+    func testNullWildcardSelectsAllArrayElements() throws {
+        // ["nationalities", null] → ["British", "Betelgeusian"]
+        let result = try resolveClaimsPathPointer(path("nationalities", Optional<Any>.none), in: claims)
+        
+        XCTAssertEqual(result as? [String], ["British", "Betelgeusian"])
+    }
+
+    func testNullWildcardThenStringSelectsFieldFromAllElements() throws {
+        // ["degrees", null, "type"] → ["Bachelor of Science", "Master of Science"]
+        let result = try resolveClaimsPathPointer(path("degrees", Optional<Any>.none, "type"), in: claims)
+        
+        XCTAssertEqual(result as? [String], ["Bachelor of Science", "Master of Science"])
+    }
+
+    func testNullWildcardThenStringSelectsNestedFieldFromAllElements() throws {
+        // ["degrees", null, "university"]
+        let result = try resolveClaimsPathPointer(path("degrees", Optional<Any>.none, "university"), in: claims)
+        
+        XCTAssertEqual(result as? [String], ["University of Betelgeuse", "University of Betelgeuse"])
+    }
+
+    // Error paths
+
+    func testReturnsEmptyForEmptyPath() throws {
+        let result = try resolveClaimsPathPointer([], in: claims)
+        
+        assertDictionariesEqual(expected: claims, actual: result as? [String: Any])
+    }
+
+    func testReturnsEmptyWhenIntegerIndexHitsNonArray() {
+        // "name" is a String, not an array — integer indexing must return []
+        XCTAssertThrowsError(try resolveClaimsPathPointer(path("name", 0), in: claims)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "currently selected element(s) is not an array",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testReturnsEmptyWhenNullWildcardHitsNonArray() {
+        // "address" is a dict, not an array — null wildcard must return []
+        XCTAssertThrowsError(try resolveClaimsPathPointer(path("address", Optional<Any>.none), in: claims)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "currently selected element(s) is not an array",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    // If the component is anything else, abort processing and return an error.
+    func testThrowsErrorWhenPathElementIsNotExpectedType() {
+        // "address" is a dict, not an array — null wildcard must return []
+        XCTAssertThrowsError(try resolveClaimsPathPointer(path(1.7), in: claims)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unexpected path pointer component",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
     }
 }

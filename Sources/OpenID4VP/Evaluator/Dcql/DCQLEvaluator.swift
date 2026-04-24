@@ -59,7 +59,7 @@ internal struct DcqlEvaluator {
                 processedCache: &processedCredentialsCache
             )
             
-            queryMatches[credentialQuery.id] = evaluateCredentialQueryClaims(credentialQuery, against: applicableInputCredentials)
+            queryMatches[credentialQuery.id] = try evaluateCredentialQueryClaims(credentialQuery, against: applicableInputCredentials)
         }
         
         let credentialSetRequirements = buildCredentialSetRequirements(dcqlQuery: dcqlQuery)
@@ -87,7 +87,7 @@ internal struct DcqlEvaluator {
         return matchingIds.compactMap { processedCache[$0] }
     }
     
-    private func evaluateCredentialQueryClaims(_ credentialQuery: CredentialQuery, against walletCredentials: [any ProcessedCredential]) -> QueryMatchResult {
+    private func evaluateCredentialQueryClaims(_ credentialQuery: CredentialQuery, against walletCredentials: [any ProcessedCredential]) throws -> QueryMatchResult {
         if(credentialQuery.claims == nil) {
             // If no claims are requested, then all credentials that passed format, meta and holder binding checks are candidate credentials
             let matchingCredentials = walletCredentials.map { MatchingCredential(credentialId: $0.credentialId, matchingClaims: []) }
@@ -99,7 +99,7 @@ internal struct DcqlEvaluator {
         var claimsCheckFailureReason: DCQLEvaluationErrorCodes? = nil
         
         for walletCredential in walletCredentials {
-            let (matchingClaims, claimFailures, failureReason) = evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
+            let (matchingClaims, claimFailures, failureReason) = try evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
             
             if claimFailures.isEmpty {
                 matchingCredentials.append(MatchingCredential(credentialId: walletCredential.credentialId, matchingClaims: matchingClaims))
@@ -118,7 +118,7 @@ internal struct DcqlEvaluator {
     }
     
     // Evaluates claims and claim_sets
-    private func evaluateClaims(credentialQuery: CredentialQuery, walletCredential: any ProcessedCredential) -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure], failureReason: DCQLEvaluationErrorCodes?) {
+    private func evaluateClaims(credentialQuery: CredentialQuery, walletCredential: any ProcessedCredential) throws -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure], failureReason: DCQLEvaluationErrorCodes?) {
         // If no claims is available in VP request, all mandatory claims of the credential needs to be shared to Verifier
         guard let claims = credentialQuery.claims else {
             return ([], [], nil)
@@ -132,7 +132,7 @@ internal struct DcqlEvaluator {
             for claimSetOption in claimSets {
                 //TODO: If claim set is there claim id is mandatory add that check instead of fallback to ""
                 let requestedClaims = claims.filter { claimSetOption.contains($0.id ?? "") }
-                let (matchingClaims, failedClaims) = checkClaims(requestedClaims, walletCredential: walletCredential)
+                let (matchingClaims, failedClaims) = try checkClaims(requestedClaims, walletCredential: walletCredential)
                 
                 // Once the claim_set option with all claims satisfied is found, return the result without evaluating further options as claim_sets are in order of preference
                 if failedClaims.isEmpty {
@@ -145,47 +145,47 @@ internal struct DcqlEvaluator {
         }
         
         // If claim_sets is not present, then all claims in the VP request need to be satisfied
-        let (matchingClaims, failedClaims) = checkClaims(claims, walletCredential: walletCredential)
+        let (matchingClaims, failedClaims) = try checkClaims(claims, walletCredential: walletCredential)
         return (matchingClaims, failedClaims, nil)
     }
     
-    private func checkClaims(_ claims: [ClaimsQuery], walletCredential: any ProcessedCredential) -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure]) {
+    private func checkClaims(_ claims: [ClaimsQuery], walletCredential: any ProcessedCredential) throws -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure]) {
         var matchingClaims: [ClaimsQuery] = []
         var failedClaims: [ClaimFailure] = []
-        
+
         for claimQuery in claims {
-            let pathStrings = claimQuery.path.compactMap { $0.value as? String }
-            
-            guard let claimValue = resolveClaimValue(path: pathStrings, credential: walletCredential) else {
+            let resolved: Any?
+            do {
+                switch walletCredential {
+                case let mdoc as MdocProcessedCredential:
+                    resolved = try resolveClaimsPathPointer(claimQuery.path, in: mdoc.namespaces)
+                case let w3c as W3cProcessedCredential:
+                    resolved = try resolveClaimsPathPointer(claimQuery.path, in: w3c.claims)
+                case let sdJwt as SdJwtProcessedCredential:
+                    resolved = try resolveClaimsPathPointer(claimQuery.path, in: sdJwt.claims)
+                default:
+                    resolved = []
+                }
+            } catch {
+                resolved = nil
+            }
+
+            guard let resolved = resolved else {
                 failedClaims.append(ClaimFailure(claim: claimQuery, reason: .claimUnavailable))
                 continue
             }
-            
+
             if let expectedClaimValues = claimQuery.values {
-                if !matchesExpectedValues(claimValue, expectedValues: expectedClaimValues) {
+                if !matchesExpectedValues(resolved, expectedValues: expectedClaimValues) {
                     failedClaims.append(ClaimFailure(claim: claimQuery, reason: .claimValueMismatch))
                     continue
                 }
             }
-            
+
             matchingClaims.append(claimQuery)
         }
-        
+
         return (matchingClaims, failedClaims)
-    }
-    
-    // Routes claim resolution based on credential type per spec Section 7
-    private func resolveClaimValue(path: [String], credential: any ProcessedCredential) -> Any? {
-        switch credential {
-        case let mdoc as MdocProcessedCredential:
-            return resolveMdocClaimPath(path, namespaces: mdoc.namespaces)
-        case let w3c as W3cProcessedCredential:
-            return resolveClaimPath(path, in: w3c.claims)
-        case let sdJwt as SdJwtProcessedCredential:
-            return resolveClaimPath(path, in: sdJwt.claims)
-        default:
-            return nil
-        }
     }
     
     // Resolves a two-element mdoc path [namespace, elementIdentifier] per spec Section 7.2
@@ -195,27 +195,20 @@ internal struct DcqlEvaluator {
         return namespaceElements[path[1]]
     }
     
-    // Resolves a JSON claims path pointer (Section 7.1) recursively
-    private func resolveClaimPath(_ path: [String], in claims: [String: Any]) -> Any? {
-        guard let first = path.first else { return nil }
-        let value = claims[first]
-        if path.count == 1 { return value }
-        guard let nested = value as? [String: Any] else { return nil }
-        return resolveClaimPath(Array(path.dropFirst()), in: nested)
-    }
-    
     private func matchesExpectedValues(_ claimValue: Any, expectedValues: [ClaimValue]) -> Bool {
-        for expected in expectedValues {
+        return expectedValues.contains { expected in
             switch expected {
-            case .string(let value):
-                if let actual = claimValue as? String, actual == value { return true }
-            case .int(let value):
-                if let actual = claimValue as? Int, actual == value { return true }
-            case .bool(let value):
-                if let actual = claimValue as? Bool, actual == value { return true }
+            case .string(let v):
+                return (claimValue as? String) == v
+            case .int(let v):
+                // Handle potential type mismatch if claimValue is parsed as Double from JSON
+                if let actualInt = claimValue as? Int { return actualInt == v }
+                if let actualDouble = claimValue as? Double { return Int(actualDouble) == v }
+                return false
+            case .bool(let v):
+                return (claimValue as? Bool) == v
             }
         }
-        return false
     }
     
     private func matchesMeta(_ meta: [String: AnyCodable], walletCredential: any TaggedCredential) -> Bool {

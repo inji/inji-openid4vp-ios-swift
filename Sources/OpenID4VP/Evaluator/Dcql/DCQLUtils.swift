@@ -1,7 +1,7 @@
 import Foundation
 import SwiftCBOR
 
-private let className = "CredentialUtils"
+private let className = "DCQLUtils"
 
 func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpanding) async throws -> TaggedCredential {
     switch credential.format {
@@ -125,4 +125,60 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
     }
     
     return processedCredentials
+}
+
+func resolveClaimsPathPointer(_ path: [AnyCodable], in claims: [String: Any]) throws -> Any? {
+    var selectedElement: Any? = claims
+    for (i, pathPointer) in path.enumerated() {
+        if let pathPointerValue = pathPointer.value as? String {
+            if let selectedElementObject = selectedElement as? [String: Any] {
+                if let value = selectedElementObject[pathPointerValue] {
+                    selectedElement = value
+                } else {
+                    // non-existent key - handle the edge case here (remove from selection)
+                    selectedElement = nil
+                }
+            } else {
+                // Selected element is an array of objects due to previous path pointer being null
+                if isNullPathPointer(path[i-1].value) {
+                    if let selectedArray = selectedElement as? [[String: Any]] {
+                        var selectedValues: [Any] = []
+                        for obj in selectedArray {
+                            if let value = obj[pathPointerValue] {
+                                selectedValues.append(value)
+                            }
+                        }
+                        selectedElement = selectedValues.isEmpty ? nil : selectedValues
+                    } else {
+                        throw InvalidData(message: "currently selected element(s) is not an object", className: className)
+                    }
+                } else {
+                    throw InvalidData(message: "currently selected element(s) is not an object", className: className)
+                }
+            }
+        } else if let pathPointerValue = pathPointer.value as? Int {
+            if let selectedArray = selectedElement as? [Any] {
+                if (pathPointerValue >= selectedArray.count || pathPointerValue < 0) {
+                    selectedElement = nil
+                } else {
+                    selectedElement = selectedArray[pathPointerValue]
+                }
+            } else {
+                throw InvalidData(message: "currently selected element(s) is not an array", className: className)
+            }
+        } else if isNullPathPointer(pathPointer.value) {
+            if let selectedArray = selectedElement as? [Any] {
+                selectedElement = selectedArray
+            } else {
+                throw InvalidData(message: "currently selected element(s) is not an array", className: className)
+            }
+        } else {
+            throw InvalidData(message: "Unexpected path pointer component", className: className)
+        }
+    }
+    return selectedElement
+}
+
+private func isNullPathPointer(_ value: Any?) -> Bool {
+    return value is NSNull || String(describing: value) == "nil" || String(describing: value) == "Optional(nil)" || String(describing: value).contains("Optional<Any>.none") || String(describing: value).contains("Optional<NSNull>.some") || String(describing: value) == "Optional<Any>(nil)"
 }
