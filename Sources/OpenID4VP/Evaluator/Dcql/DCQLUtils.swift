@@ -140,7 +140,7 @@ func resolveClaimsPathPointer(_ path: [AnyCodable], in claims: [String: Any]) th
                 }
             } else {
                 // Selected element is an array of objects due to previous path pointer being null
-                if isNullPathPointer(path[i-1].value) {
+                if (i > 0 && isNullPathPointer(path[i-1].value)) {
                     if let selectedArray = selectedElement as? [[String: Any]] {
                         var selectedValues: [Any] = []
                         for obj in selectedArray {

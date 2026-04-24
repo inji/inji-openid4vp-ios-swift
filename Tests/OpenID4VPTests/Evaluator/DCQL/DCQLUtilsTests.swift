@@ -363,7 +363,6 @@ final class DCQLUtilsTests: XCTestCase {
     }
 
     func testReturnsEmptyWhenNullWildcardHitsNonArray() {
-        // "address" is a dict, not an array — null wildcard must return []
         XCTAssertThrowsError(try resolveClaimsPathPointer(path("address", Optional<Any>.none), in: claims)) { error in
             assertOpenID4VPException(
                 error,
@@ -375,7 +374,6 @@ final class DCQLUtilsTests: XCTestCase {
     
     // If the component is anything else, abort processing and return an error.
     func testThrowsErrorWhenPathElementIsNotExpectedType() {
-        // "address" is a dict, not an array — null wildcard must return []
         XCTAssertThrowsError(try resolveClaimsPathPointer(path(1.7), in: claims)) { error in
             assertOpenID4VPException(
                 error,

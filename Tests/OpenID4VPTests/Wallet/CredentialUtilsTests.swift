@@ -28,7 +28,9 @@ final class CredentialUtilsTests: XCTestCase {
             "iss": "https://funke.animo.id",
             "iat": 1756896653,
             "_sd_alg": "sha-256",
-            "_sd": sdHashes
+            "_sd": sdHashes,
+            "family_name": "Doe",
+            "given_name": "John"
         ]
     }
 

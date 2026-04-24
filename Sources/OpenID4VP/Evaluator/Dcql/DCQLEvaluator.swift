@@ -1,4 +1,5 @@
 internal struct DcqlEvaluator {
+    private let className = "DcqlEvaluator"
     private let jsonLdExpander: JsonLdExpanding
     
     public init(jsonLdExpander: JsonLdExpanding) {
@@ -130,7 +131,6 @@ internal struct DcqlEvaluator {
             // claim_sets are ordered by preference, so we iterate through the options and return as soon as we find a satisfied option
             var failedClaimSetQuery: [ClaimFailure] = []
             for claimSetOption in claimSets {
-                //TODO: If claim set is there claim id is mandatory add that check instead of fallback to ""
                 let requestedClaims = claims.filter { claimSetOption.contains($0.id ?? "") }
                 let (matchingClaims, failedClaims) = try checkClaims(requestedClaims, walletCredential: walletCredential)
                 
@@ -164,7 +164,7 @@ internal struct DcqlEvaluator {
                 case let sdJwt as SdJwtProcessedCredential:
                     resolved = try resolveClaimsPathPointer(claimQuery.path, in: sdJwt.claims)
                 default:
-                    resolved = []
+                    resolved = nil
                 }
             } catch {
                 resolved = nil
