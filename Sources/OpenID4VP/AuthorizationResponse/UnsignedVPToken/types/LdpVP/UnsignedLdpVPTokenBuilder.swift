@@ -48,8 +48,9 @@ public class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             type: signatureSuite,
             created: nil,
             challenge: challenge,
-            domain: holder,
-            verificationMethod: holder, proofValue: nil
+            domain: domain,
+            verificationMethod: holder,
+            proofValue: nil
         )
         
         let vpTokenSigningPayload = LdpVPToken(
