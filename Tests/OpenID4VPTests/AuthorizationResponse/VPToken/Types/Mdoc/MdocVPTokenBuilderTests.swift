@@ -3,7 +3,7 @@ import XCTest
 
 final class MdocVPTokenBuilderTests: XCTestCase {
 
-    let builder = MdocVPTokenBuilder()
+    let builder = MdocVPTokenBuilder(authorizationRequest: getMockAuthorizationRequest())
     let docType = "org.iso.18013.5.1.mDL"
     let deviceAuthBytes = "d818587e847444657669636541757468656e7469636174696f6e"
 

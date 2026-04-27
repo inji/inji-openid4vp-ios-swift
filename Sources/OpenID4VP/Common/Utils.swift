@@ -334,3 +334,10 @@ func getEncryptionKey(_ jwks: JWKSet, _ supportedEncryptionAlgorithms: [String])
     
     throw InvalidData(message: "No encryption key with alg \(supportedEncryptionAlgorithms) found in JWK Set", className: "OpenID4VPUtils")
 }
+
+func matchingDCQLCredentialQuery(_  authorizationRequest: AuthorizationRequest, for credentialQueryId: String, className: String) throws -> CredentialQuery {
+    let matchingCredentialQuery = try (authorizationRequest as? AuthorizationDcqlRequest)?.dcqlQuery.credentials.first(where: { $0.id == credentialQueryId }) ?? {
+        throw InvalidData(message: "No matching credential query found for credentialQueryId: \(credentialQueryId)", className: className)
+    }()
+    return matchingCredentialQuery
+}

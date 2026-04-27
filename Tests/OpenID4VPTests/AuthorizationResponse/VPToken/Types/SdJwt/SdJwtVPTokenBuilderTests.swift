@@ -3,7 +3,7 @@ import XCTest
 @testable import OpenID4VP
 
 final class SdJwtVPTokenBuilderTests: XCTestCase {
-    let builder = SdJwtVPTokenBuilder()
+    let builder = SdJwtVPTokenBuilder(authorizationRequest: getMockAuthorizationRequest())
 
     let credentialWithBinding = sampeVcSdJwtWithHolderBinding
     let credentialWithoutBinding = sampleVcSdJwtWithNoHolderBinding

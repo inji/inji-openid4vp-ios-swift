@@ -85,11 +85,7 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
                 throw InvalidData(message: "identifier is null in CredentialInputDescriptorMapping for SD-JWT", className: className)
             }
             
-            let credentialQueryId = credentialToCredentialQueryIdMapping.credentialQueryId
-            let matchingCredentialQuery = try (authorizationRequest as? AuthorizationDcqlRequest)?.dcqlQuery.credentials.first(where: { $0.id == credentialQueryId }) ?? {
-                throw InvalidData(message: "No matching credential query found for credentialQueryId: \(credentialQueryId)", className: className)
-            }()
-            
+            let credentialQuery = try matchingDCQLCredentialQuery(authorizationRequest, for: credentialToCredentialQueryIdMapping.credentialQueryId, className: className)
             
 
             let sdJwtCredential = try extractSDJwtString(from: credentialToCredentialQueryIdMapping.credential, className: className)
@@ -97,7 +93,7 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
             let unsignedKBJwt = uuidToUnsignedKBT[uuid]
             let finalVPToken: String
             
-            if(matchingCredentialQuery.requireCryptographicHolderBinding) {
+            if(credentialQuery.requireCryptographicHolderBinding) {
                 if unsignedKBJwt == nil {
                     throw InvalidData(message: "Missing Key Binding JWT for uuid: \(uuid)", className: className)
                 }
@@ -117,11 +113,8 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
                 finalVPToken = sdJwtCredential
             }
             
-            if(vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId] == nil) {
-                vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId] = [SdJwtVPToken(value: finalVPToken)]
-            } else {
-                vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId]?.append(SdJwtVPToken(value: finalVPToken))
-            }
+            vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId, default: []]
+                .append(SdJwtVPToken(value: finalVPToken))
             
         }
 

@@ -144,12 +144,8 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             // attach deviceSigned to cborCredential
             document[CBOR.utf8String("deviceSigned")] = deviceSigned
             
-            if(queryIdToDocumentsMap[credentialToCredentialQueryIdMapping.credentialQueryId] != nil) {
-                queryIdToDocumentsMap[credentialToCredentialQueryIdMapping.credentialQueryId]?.append(document)
-            } else {
-                queryIdToDocumentsMap[credentialToCredentialQueryIdMapping.credentialQueryId] = [document]
-            }
-            
+            queryIdToDocumentsMap[credentialToCredentialQueryIdMapping.credentialQueryId, default: []]
+                .append(document)
         }
         
         if signingResultsIterator.next() != nil {
