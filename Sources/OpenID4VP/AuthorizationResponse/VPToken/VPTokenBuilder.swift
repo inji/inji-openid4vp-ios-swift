@@ -1,6 +1,8 @@
 import Foundation
 
 protocol VPTokenBuilder {
+    var authorizationRequest: AuthorizationRequest { get }
+    
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
         unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),

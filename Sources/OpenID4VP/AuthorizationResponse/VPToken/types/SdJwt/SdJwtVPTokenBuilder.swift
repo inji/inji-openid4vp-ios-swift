@@ -1,6 +1,12 @@
 import Foundation
 
 class SdJwtVPTokenBuilder : VPTokenBuilder {
+    let authorizationRequest: AuthorizationRequest
+    
+    init(authorizationRequest: AuthorizationRequest) {
+        self.authorizationRequest = authorizationRequest
+    }
+    
     private let className = String(describing: SdJwtVPTokenBuilder.self)
     
     func build(
@@ -59,6 +65,71 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
         }
 
         return (vpTokens, descriptorMaps, vpIndex)
+    }
+    
+    func build(
+        credentialToCredentialQueryIdMappings: [CredentialToCredentialQueryIdMapping],
+        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        vpTokenSigningResults: [VPTokenSigningResult],
+        rootIndex: Int
+    ) throws -> [String: [VPToken]] {
+        guard let uuidToUnsignedKBT = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
+             throw InvalidData(message: "Missing uuidToUnsignedKBT in payload", className: className)
+        }
+        
+        var vpTokenResult: [String: [VPToken]] = [:]
+        var signingResultsIterator = vpTokenSigningResults.makeIterator()
+
+        for credentialToCredentialQueryIdMapping in credentialToCredentialQueryIdMappings {
+            guard let uuid = credentialToCredentialQueryIdMapping.identifier else {
+                throw InvalidData(message: "identifier is null in CredentialInputDescriptorMapping for SD-JWT", className: className)
+            }
+            
+            let credentialQueryId = credentialToCredentialQueryIdMapping.credentialQueryId
+            let matchingCredentialQuery = try (authorizationRequest as? AuthorizationDcqlRequest)?.dcqlQuery.credentials.first(where: { $0.id == credentialQueryId }) ?? {
+                throw InvalidData(message: "No matching credential query found for credentialQueryId: \(credentialQueryId)", className: className)
+            }()
+            
+            
+
+            let sdJwtCredential = try extractSDJwtString(from: credentialToCredentialQueryIdMapping.credential, className: className)
+
+            let unsignedKBJwt = uuidToUnsignedKBT[uuid]
+            let finalVPToken: String
+            
+            if(matchingCredentialQuery.requireCryptographicHolderBinding) {
+                if unsignedKBJwt == nil {
+                    throw InvalidData(message: "Missing Key Binding JWT for uuid: \(uuid)", className: className)
+                }
+                guard let vpTokenSigningResult = signingResultsIterator.next() else {
+                    throw InvalidData(message: "Missing signing result for \(uuid)", className: className)
+                }
+
+                let signature = vpTokenSigningResult.signedData
+                guard !signature.isEmpty, let unsignedKBJwt else {
+                    throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
+                }
+                finalVPToken = "\(sdJwtCredential)\(unsignedKBJwt).\(signature)"
+            } else {
+                if unsignedKBJwt != nil {
+                    throw InvalidData(message: "Unexpected key binding jwt for uuid: \(uuid)", className: className)
+                }
+                finalVPToken = sdJwtCredential
+            }
+            
+            if(vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId] == nil) {
+                vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId] = [SdJwtVPToken(value: finalVPToken)]
+            } else {
+                vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId]?.append(SdJwtVPToken(value: finalVPToken))
+            }
+            
+        }
+
+        if signingResultsIterator.next() != nil {
+            throw InvalidData(message: "Extra signing results provided for SD-JWT", className: className)
+        }
+
+        return vpTokenResult
     }
     
     private func vpFormat(_ value: FormatType) -> VPFormatType {

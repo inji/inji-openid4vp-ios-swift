@@ -179,6 +179,7 @@ func resolveClaimsPathPointer(_ path: [AnyCodable], in claims: [String: Any]) th
     return selectedElement
 }
 
+// TODO: check the real usecase of the null in the swift codebase and update this condition check accordingly
 private func isNullPathPointer(_ value: Any?) -> Bool {
     return value is NSNull || String(describing: value) == "nil" || String(describing: value) == "Optional(nil)" || String(describing: value).contains("Optional<Any>.none") || String(describing: value).contains("Optional<NSNull>.some") || String(describing: value) == "Optional<Any>(nil)"
 }

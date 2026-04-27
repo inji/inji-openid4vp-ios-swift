@@ -306,7 +306,7 @@ public class AuthorizationResponseHandler {
                 )
             }
 
-            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(credentialFormat: credentialFormat)
+            let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(authorizationRequest: authorizationRequest, credentialFormat: credentialFormat)
 
             let (vpTokens, descriptorMaps, nextRootIndex) = try vpTokenBuilder.build(
                 credentialInputDescriptorMappings: credentialInputDescriptorMappings,

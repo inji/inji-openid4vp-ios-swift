@@ -19,3 +19,4 @@ public struct UnsignedVPToken: Codable {
         self.dataToSign = dataToSign
     }
 }
+

@@ -21,6 +21,21 @@ struct LdpVPToken: Encodable, VPToken {
         self.holder = holder
         self.proof = proof
     }
+    
+    init(
+        context: [String] = ["https://www.w3.org/2018/credentials/v1"],
+        type: [String] = ["VerifiablePresentation"],
+        verifiableCredential: [AnyCodable],
+        id: String,
+    ) {
+        self.context = context
+        self.type = type
+        self.verifiableCredential = verifiableCredential
+        self.id = id
+        // Holder is null then
+        self.holder = ""
+        self.proof = nil
+    }
 
     enum CodingKeys: String, CodingKey {
         case context = "@context"
