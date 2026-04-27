@@ -36,7 +36,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             guard let confirmationKeyClaim = sdJWTPayload["cnf"] as? [String: Any], !confirmationKeyClaim.isEmpty else {
                 continue
             }
-            
+
             var jwtSigningALgorithm: String = ""
             if let keyId = confirmationKeyClaim["kid"] as? String {
                 let didResolver = DidPublicKeyResolver(networkManager: networkManager)
@@ -45,39 +45,33 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             } else {
                 throw UnsupportedOperationException(message: "Unsupported cnf format, only 'kid' is supported", className: Self.className)
             }
-            
+
             let jwtHeader = [
                 "alg": jwtSigningALgorithm,
                 "typ": keyBindingJWT
             ]
-            
+
             let sdHashAlgorithm = sdJWTPayload["_sd_alg"] as? String ?? HashAlgorithm.sha256.rawValue
             let sdHash = try hashData(credential, hashAlgorithm: sdHashAlgorithm, className: Self.className).toBase64UrlEncoded()
-            
+
             let jwtPayload : [String: Any] = [
                 "iat": Int(Date().timeIntervalSince1970),
                 "aud": authorizationRequest.clientId,
                 "nonce": authorizationRequest.nonce,
                 "sd_hash": sdHash
             ]
-            
+
             let unsignedJWT = try JWSHandler.createUnsignedJWS(header: jwtHeader, payload: jwtPayload)
-            
+
             uuidToUnsignedKBJWT[uuid] = unsignedJWT
-        }
-        
-        // Ensure deterministic order by sorting by UUID
-        for uuid in uuidToUnsignedKBJWT.keys.sorted() {
-             let mapping = credentialInputDescriptorMappings.first(where: { $0.identifier == uuid })!
-             let credential = mapping.credential.value as! String
-             let (kid, alg) = try await resolveSdJwtKeyAndAlg(credential)
-             
-             unsignedVPTokens.append(UnsignedVPToken(
-                format: mapping.format,
+
+            let (kid, alg) = try await resolveSdJwtKeyAndAlg(credential)
+            unsignedVPTokens.append(UnsignedVPToken(
+                format: credentialInputDescriptorMapping.format,
                 holderKeyReference: kid,
                 signatureAlgorithm: alg,
-                dataToSign: uuidToUnsignedKBJWT[uuid]!
-             ))
+                dataToSign: unsignedJWT
+            ))
         }
 
         return (

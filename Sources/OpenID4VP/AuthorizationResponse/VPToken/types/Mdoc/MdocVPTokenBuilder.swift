@@ -69,7 +69,11 @@ class MdocVPTokenBuilder : VPTokenBuilder {
                 )
             )
         }
-        
+
+        if signingResultsIterator.next() != nil {
+            throw InvalidData(message: "Extra signing results provided for mso_mdoc", className: className)
+        }
+
         let deviceResponse = CBOR.map([
             .utf8String("version"): .utf8String("1.0"),
             .utf8String("documents"): .array(documents),
