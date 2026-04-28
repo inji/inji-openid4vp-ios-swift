@@ -96,8 +96,7 @@ class MdocVPTokenBuilder : VPTokenBuilder {
     func build(
         credentialToCredentialQueryIdMappings: [CredentialToCredentialQueryIdMapping],
         unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
-        vpTokenSigningResults: [VPTokenSigningResult],
-        rootIndex: Int
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
         var queryIdToDocumentsMap : [String: [CBOR]] = [:]
         guard let docTypeToDeviceAuthenticationBytes = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {

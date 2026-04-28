@@ -341,3 +341,78 @@ func matchingDCQLCredentialQuery(_  authorizationRequest: AuthorizationRequest, 
     }()
     return matchingCredentialQuery
 }
+
+
+private enum JWSAlgorithm {
+    static let eddsa = "EdDSA"
+    static let es256 = "ES256"
+    static let es384 = "ES384"
+    static let es256k = "ES256K"
+}
+
+private enum MulticodecPrefix {
+    static let ed25519 = "z6M"    // Ed25519
+    static let p256 = "zDn"       // P-256
+    static let p384 = "z82"       // P-384
+    static let secp256k1 = "zQ3"  // secp256k1
+}
+
+private enum DIDPrefix {
+    static let key = "did:key:"
+    static let jwk = "did:jwk:"
+}
+
+// MARK: - Utility Function
+/// Extracts the JWS 'alg' string based on a Subject ID (DID) without hardcoded magic strings.
+/// Reference: https://www.w3.org/TR/vc-data-model-1.1/#identifiers
+func getJWSAlgorithm(from uri: String) -> String {
+    
+    // 1. Handle did:key
+    if uri.hasPrefix(DIDPrefix.key) {
+        let identifier = uri.replacingOccurrences(of: DIDPrefix.key, with: "")
+        
+        if identifier.hasPrefix(MulticodecPrefix.ed25519) { return JWSAlgorithm.eddsa }
+        if identifier.hasPrefix(MulticodecPrefix.p256)    { return JWSAlgorithm.es256 }
+        if identifier.hasPrefix(MulticodecPrefix.p384)    { return JWSAlgorithm.es384 }
+        if identifier.hasPrefix(MulticodecPrefix.secp256k1) { return JWSAlgorithm.es256k }
+    }
+    
+    // 2. Handle did:jwk
+    if uri.hasPrefix(DIDPrefix.jwk) {
+        //TODO: reuse Did key resolver logic here to avoid code duplication
+        let base64Part = uri.replacingOccurrences(of: DIDPrefix.jwk, with: "")
+        if let jwk = decodeJWK(base64Part) {
+            // Priority 1: Use explicit 'alg' field
+            if let alg = jwk["alg"] as? String { return alg }
+            
+            // Priority 2: Map from kty/crv
+            let kty = jwk["kty"] as? String ?? ""
+            let crv = jwk["crv"] as? String ?? ""
+            
+            switch (kty, crv) {
+            case ("OKP", "Ed25519"): return JWSAlgorithm.eddsa
+            case ("EC", "P-256"):    return JWSAlgorithm.es256
+            case ("EC", "P-384"):    return JWSAlgorithm.es384
+            case ("EC", "secp256k1"): return JWSAlgorithm.es256k
+            default: break
+            }
+        }
+    }
+    
+    // Default fallback to EdDSA as per common mobile wallet profiles
+    return JWSAlgorithm.eddsa
+}
+
+private func decodeJWK(_ base64URL: String) -> [String: Any]? {
+    var base64 = base64URL
+        .replacingOccurrences(of: "-", with: "+")
+        .replacingOccurrences(of: "_", with: "/")
+    
+    let remainder = base64.count % 4
+    if remainder > 0 {
+        base64 = base64.padding(toLength: base64.count + (4 - remainder), withPad: "=", startingAt: 0)
+    }
+    
+    guard let data = Data(base64Encoded: base64) else { return nil }
+    return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+}

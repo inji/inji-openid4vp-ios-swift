@@ -12,7 +12,7 @@ public class OpenID4VP {
 
     private let className = String(describing: type(of: OpenID4VP.self))
 
-    public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil) {
+    public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil, jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil) {
         self.traceabilityId = traceabilityId
         networkManager = NetworkManager.shared
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletMetadata: walletMetadata)
@@ -20,6 +20,8 @@ public class OpenID4VP {
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
         nonceProvider = NonceProvider()
         walletNonce = nonceProvider.generateNonce()
+        
+        JsonLd.setCanonicalizer(jsonLdCanonicalizer)
     }
 
     internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata = WalletMetadata(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {

@@ -238,8 +238,8 @@ final class AuthorizationResponseTests: XCTestCase {
     // MARK: - DCQL Presentation Exchange Tests
 
     func testDcqlToJsonEncodedMapWithState() throws {
-        let vpToken: [String: Any] = [
-            "input_1": "eyJhbGciOiJFZERTQSJ9.payload.signature"
+        let vpToken: [String: [VPToken]] = [
+            "input_1": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")]
         ]
 
         let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: "test-state")
@@ -253,8 +253,8 @@ final class AuthorizationResponseTests: XCTestCase {
     }
 
     func testDcqlToJsonEncodedMapWithoutState() throws {
-        let vpToken: [String: Any] = [
-            "input_1": "eyJhbGciOiJFZERTQSJ9.payload.signature"
+        let vpToken: [String: [VPToken]] = [
+            "input_1": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")]
         ]
 
         let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: nil)
@@ -268,9 +268,9 @@ final class AuthorizationResponseTests: XCTestCase {
     }
 
     func testDcqlToJsonEncodedMapWithMultipleCredentials() throws {
-        let vpToken: [String: Any] = [
-            "input_1": "credential-one",
-            "input_2": "credential-two"
+        let vpToken: [String: [VPToken]] = [
+            "input_1": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")],
+            "input_2": [SdJwtVPToken(value: "eyJhbGciOiJFZERTQSJ9.payload.signature")]
         ]
 
         let authorizationResponse = AuthorizationResponse.dcql(vpToken: vpToken, state: "multi-state")

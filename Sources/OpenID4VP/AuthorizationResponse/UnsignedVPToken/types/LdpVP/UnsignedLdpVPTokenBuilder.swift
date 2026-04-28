@@ -113,7 +113,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             
             
             if(mappedCredentialQuery.requireCryptographicHolderBinding) {
-                let (signatureSuite, holder) = try extractHolderAndSignatureSuite(credential)
+                let (signatureSuite, holder, holderKeyAlg) = try extractHolderAndSignatureSuite(credential)
                 
                 context.append("https://w3id.org/security/suites/jws-2020/v1")
                 
@@ -139,11 +139,23 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                     throw InvalidData(message: "Failed to encode LdpVPToken for signing.", className: className)
                 }
                 
+                guard let jsonLdCanonicalizer = JsonLd.canonicalizer else {
+                    throw InvalidData(message: "Failed to get JsonLd canonicalizer.", className: className)
+                }
+                
+                let jwsPayload = try await jsonLdCanonicalizer(AnyCodable(jsonString))
+                let jwsHeader = try base64URLEncode([
+                    "alg": holderKeyAlg,
+                    "crit" : ["b64"],
+                    "b64": false
+                ])
+                let preHash = "\(jwsHeader).\(jwsPayload)"
+                
                 let unsignedVPToken = UnsignedVPToken(
                     format: .ldp_vc,
                     holderKeyReference: holder,
                     signatureAlgorithm: signatureSuite,
-                    dataToSign: jsonString
+                    dataToSign: preHash
                 )
                 
                 unsignedVPTokens.append(unsignedVPToken)
@@ -161,16 +173,19 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         return (vpTokenSigningPayload, unsignedVPTokens)
     }
     
-    private func extractHolderAndSignatureSuite(_ credential: AnyCodable) throws -> (holder: String, signatureSuite: String) {
+    private func extractHolderAndSignatureSuite(_ credential: AnyCodable) throws -> (holder: String, signatureSuite: String, holderKeyAlg: String) {
         guard let credentialDict = credential.value as? [String: Any] else {
             throw InvalidData(message: "Credential is not a valid JSON object", className: className)
         }
         
-        guard let credentialSubject = credentialDict["credentialSubject"] as? [String: Any], let holderId = credentialSubject["id"] else {
+        guard let credentialSubject = credentialDict["credentialSubject"] as? [String: Any], let holderId = credentialSubject["id"] as? String else {
             throw InvalidData(message: "Holder ID not available in the credential", className: className)
         }
         
+        // extract key alg from holderId
+        let holderKeyAlgorithm = getJWSAlgorithm(from: holderId)
         
-        return (holder: String(describing: holderId), signatureSuite: SignatureAlgorithm.jsonWebSignature2020.rawValue)
+        
+        return (holder: holderId, signatureSuite: SignatureAlgorithm.jsonWebSignature2020.rawValue, holderKeyAlg: holderKeyAlgorithm)
     }
 }

@@ -70,8 +70,7 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
     func build(
         credentialToCredentialQueryIdMappings: [CredentialToCredentialQueryIdMapping],
         unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
-        vpTokenSigningResults: [VPTokenSigningResult],
-        rootIndex: Int
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
         guard let uuidToUnsignedKBT = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
              throw InvalidData(message: "Missing uuidToUnsignedKBT in payload", className: className)

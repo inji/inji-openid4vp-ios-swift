@@ -4,7 +4,7 @@ fileprivate let className = String(describing: AuthorizationResponse.self)
 
 enum AuthorizationResponse {
     // Spec v1.0 compliant : DCQL structure
-    case dcql(vpToken: [String: Any], state: String?)
+    case dcql(vpToken: [String: [VPToken]], state: String?)
     
     // Draft 23 compliant: DIF Presentation Exchange structure
     case presentationExchange(vpToken: VPTokenType, presentationSubmission: PresentationSubmission, state: String?)

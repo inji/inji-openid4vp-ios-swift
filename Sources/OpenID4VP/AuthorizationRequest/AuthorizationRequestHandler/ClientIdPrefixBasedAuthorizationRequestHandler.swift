@@ -48,7 +48,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try self.validateClientId()
         try await self.fetchAuthorizationRequest()
         try self.setResponseUrl()
-        // TODO: Add validation for DCQL query in validateAndParseRequestFields
+        // TODO: Add validation for DCQL query in validateAndParseRequestFields - dcql_query + did prefix works - check it out once
         try await self.validateAndParseRequestFields()
         return self.createAuthorizationRequest()
     }

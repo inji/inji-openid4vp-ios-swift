@@ -77,12 +77,45 @@ class LdpVPTokenBuilder: VPTokenBuilder {
     func build(
         credentialToCredentialQueryIdMappings: [CredentialToCredentialQueryIdMapping],
         unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
-        vpTokenSigningResults: [VPTokenSigningResult],
-        rootIndex: Int
+        vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
-        var index = 0;
+        var vpTokenSigningResultsIterator = vpTokenSigningResults.makeIterator()
+        var vpTokenResult : [String: [VPToken]] = [:]
         for credentialToCredentialQueryIdMapping in credentialToCredentialQueryIdMappings {
+            guard let unsignedVpTokens = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVPToken] else {
+                 throw InvalidData(message: "Missing uuidToUnsignedKBT in payload", className: className)
+            }
             
+            let credentialQuery = try matchingDCQLCredentialQuery(authorizationRequest, for: credentialToCredentialQueryIdMapping.credentialQueryId, className: className)
+            
+            guard let unsignedLdpVPToken = unsignedVpTokens[credentialToCredentialQueryIdMapping.identifier ?? ""] else {
+                throw InvalidData(message: "Missing unsigned VP token for identifier \(credentialToCredentialQueryIdMapping.identifier ?? "")", className: className)
+            }
+            var proof = unsignedLdpVPToken.proof
+            
+            if(credentialQuery.requireCryptographicHolderBinding) {
+                guard let vpTokenSigningResult = vpTokenSigningResultsIterator.next() else {
+                    throw InvalidData(message: "Missing signing result for identifier \(credentialToCredentialQueryIdMapping.identifier ?? "")", className: className)
+                }
+                
+                try validateField(
+                    field: vpTokenSigningResult.signedData,
+                    fieldPath: ["VPTokenSigningResult", "signedData"],
+                    className: className
+                )
+                proof?.jws = vpTokenSigningResult.signedData
+            }
+            
+            let ldpVPToken = LdpVPToken(
+                context: unsignedLdpVPToken.context,
+                type: unsignedLdpVPToken.type,
+                verifiableCredential: unsignedLdpVPToken.verifiableCredential,
+                id: unsignedLdpVPToken.id,
+                holder: unsignedLdpVPToken.holder,
+                proof: proof
+            )
+            
+            vpTokenResult[credentialQuery.id, default: []].append(ldpVPToken)
         }
         
         
