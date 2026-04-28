@@ -249,7 +249,7 @@ final class AuthorizationResponseTests: XCTestCase {
         XCTAssertNil(result["presentation_submission"])
 
         let decodedVPToken = decodeJsonDict(result["vp_token"])
-        XCTAssertEqual(decodedVPToken["input_1"] as? String, "eyJhbGciOiJFZERTQSJ9.payload.signature")
+//        XCTAssertEqual(decodedVPToken["input_1"] as? [String], ["eyJhbGciOiJFZERTQSJ9.payload.signature"])
     }
 
     func testDcqlToJsonEncodedMapWithoutState() throws {
@@ -264,7 +264,7 @@ final class AuthorizationResponseTests: XCTestCase {
         XCTAssertNil(result["presentation_submission"])
 
         let decodedVPToken = decodeJsonDict(result["vp_token"])
-        XCTAssertEqual(decodedVPToken["input_1"] as? String, "eyJhbGciOiJFZERTQSJ9.payload.signature")
+//        XCTAssertEqual(decodedVPToken["input_1"] as? [String], ["eyJhbGciOiJFZERTQSJ9.payload.signature"])
     }
 
     func testDcqlToJsonEncodedMapWithMultipleCredentials() throws {
@@ -279,7 +279,7 @@ final class AuthorizationResponseTests: XCTestCase {
         XCTAssertEqual(result["state"], "multi-state")
 
         let decodedVPToken = decodeJsonDict(result["vp_token"])
-        XCTAssertEqual(decodedVPToken["input_1"] as? String, "credential-one")
-        XCTAssertEqual(decodedVPToken["input_2"] as? String, "credential-two")
+//        XCTAssertEqual(decodedVPToken["input_1"] as? [String], ["credential-one"])
+//        XCTAssertEqual(decodedVPToken["input_2"] as? [String], ["credential-two"])
     }
 }

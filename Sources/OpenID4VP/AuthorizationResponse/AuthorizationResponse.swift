@@ -14,7 +14,13 @@ enum AuthorizationResponse {
         
         switch self {
         case .dcql(let vpToken, let state):
-            let vpData = try JSONSerialization.data(withJSONObject: vpToken)
+            var encodedVpToken: [String: String] = [:]
+            for (credentialQueryId, vpTokenValue) in vpToken {
+                let wrapped = vpTokenValue.map { AnyEncodable($0) }
+                encodedVpToken[credentialQueryId] = try encode(wrapped, fieldName: "vp_token", className: className)
+            }
+            let vpData = try JSONSerialization.data(withJSONObject: encodedVpToken)
+            
             jsonEncodedAuthorizationResponse["vp_token"] = String(data: vpData, encoding: .utf8)
             if let state = state { jsonEncodedAuthorizationResponse["state"] = state }
             
