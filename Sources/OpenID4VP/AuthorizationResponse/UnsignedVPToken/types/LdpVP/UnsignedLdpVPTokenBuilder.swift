@@ -113,7 +113,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             
             
             if(mappedCredentialQuery.requireCryptographicHolderBinding) {
-                let (signatureSuite, holder, holderKeyAlg) = try extractHolderAndSignatureSuite(credential)
+                let (holder, signatureSuite, holderKeyAlg) = try extractHolderAndSignatureSuite(credential)
                 
                 context.append("https://w3id.org/security/suites/jws-2020/v1")
                 
@@ -155,7 +155,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 let unsignedVPToken = UnsignedVPToken(
                     format: .ldp_vc,
                     holderKeyReference: holder,
-                    signatureAlgorithm: signatureSuite,
+                    signatureAlgorithm: holderKeyAlg,
                     dataToSign: preHash
                 )
                 
