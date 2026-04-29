@@ -126,7 +126,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                     proofValue: nil
                 )
                 
-                vpTokenSigningPayload[uuid] = LdpVPToken(
+                let unsignedLdpVpToken: LdpVPToken = LdpVPToken(
                     context: context,
                     type: ["VerifiablePresentation"],
                     verifiableCredential: verifiableCredentials,
@@ -134,7 +134,8 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                     holder: holder,
                     proof: proof
                 )
-                guard let dataToSign = try? JSONEncoder().encode(vpTokenSigningPayload),
+                vpTokenSigningPayload[uuid] = unsignedLdpVpToken
+                guard let dataToSign = try? JSONEncoder().encode(unsignedLdpVpToken),
                       let jsonString = String(data: dataToSign, encoding: .utf8) else {
                     throw InvalidData(message: "Failed to encode LdpVPToken for signing.", className: className)
                 }
