@@ -144,7 +144,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                     throw InvalidData(message: "Failed to get JsonLd canonicalizer.", className: className)
                 }
                 
-                let jwsPayload = try await jsonLdCanonicalizer(AnyCodable(jsonString))
+                let jwsPayload = try await jsonLdCanonicalizer(jsonString)
                 let jwsHeader = try base64URLEncode([
                     "alg": holderKeyAlg,
                     "crit" : ["b64"],
