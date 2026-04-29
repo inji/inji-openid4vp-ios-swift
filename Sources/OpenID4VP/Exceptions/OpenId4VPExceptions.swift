@@ -354,3 +354,13 @@ public class ErrorDispatchFailure : OpenID4VPException {
         )
     }
 }
+
+public class InternalException: OpenID4VPException {
+    public init(message: String, className: String) {
+        super.init(
+            errorCode: OpenID4VPErrorCodes.serverError,
+            message: "Internal error occurred: \(message)",
+            className: className
+        )
+    }
+}

@@ -27,32 +27,36 @@ public class AuthorizationResponseHandler {
         signatureSuite: String?,
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
-        
-        if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
-            self.specVersion = .draft23
-        }
-        
-        let hasLdpVc = credentialsMap.values.contains { formatMap in
-            formatMap.keys.contains(.ldp_vc)
-        }
-        if hasLdpVc {
-            // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
-            if isNullOrEmpty(holderId) {
-                throw InvalidData(
-                    message: "Holder ID cannot be null or empty for LDP VC format",
-                    className: AuthorizationResponseHandler.className
-                )
+        do {
+            if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
+                self.specVersion = .draft23
             }
-            if isNullOrEmpty(signatureSuite) {
-                throw InvalidData(
-                    message: "Signature Suite cannot be null or empty for LDP VC format",
-                    className: AuthorizationResponseHandler.className
-                )
+            
+            let hasLdpVc = credentialsMap.values.contains { formatMap in
+                formatMap.keys.contains(.ldp_vc)
             }
+            if hasLdpVc {
+                // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
+                if isNullOrEmpty(holderId) {
+                    throw InvalidData(
+                        message: "Holder ID cannot be null or empty for LDP VC format",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+                if isNullOrEmpty(signatureSuite) {
+                    throw InvalidData(
+                        message: "Signature Suite cannot be null or empty for LDP VC format",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+            }
+            self.signatureSuite = signatureSuite ?? self.signatureSuite
+            
+            return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
+        } catch {
+            OpenID4VPException.error(error, className: Self.className)
+            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
         }
-        self.signatureSuite = signatureSuite ?? self.signatureSuite
-        
-        return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
     }
     
     func constructUnsignedVPToken(
@@ -63,12 +67,16 @@ public class AuthorizationResponseHandler {
         signatureSuite: String = "Ed25519Signature2020",
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
-        
-        if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
-            self.specVersion = .draft23
+        do {
+            if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
+                self.specVersion = .draft23
+            }
+            
+            return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
+        } catch {
+            OpenID4VPException.error(error, className: Self.className)
+            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
         }
-        
-        return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
     }
     
     func constructUnsignedVPToken(
