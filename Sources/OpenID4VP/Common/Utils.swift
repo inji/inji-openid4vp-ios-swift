@@ -250,38 +250,37 @@ func readCoseInt(_ cbor: CBOR) throws -> Int {
 
 
 
-    // MARK: - CONSTRUCT SIGNING RESULTS V2
+// MARK: - CONSTRUCT SIGNING RESULTS V2
 
-     func constructSigningResults(
-        unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])],
-        formatMappings: [FormatType: [CredentialInputDescriptorMapping]],
-        signingResults: [VPTokenSigningResult],
-        signatureSuite: String
-    ) throws -> [FormatType: [VPTokenSigningResult]] {
-
-        var iterator = signingResults.makeIterator()
-        var reconstructed: [FormatType: [VPTokenSigningResult]] = [:]
-
-        for format in unsignedVPTokenResults.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
-            guard let pair = unsignedVPTokenResults[format] else { continue }
-            let unsignedTokens = pair.1
-
-            var resultsForFormat: [VPTokenSigningResult] = []
-            for _ in unsignedTokens {
-                guard let nextResult = iterator.next() else {
-                    throw InvalidData(message: "Missing signing result for format \(format)", className: "OpenID4VPUtils")
-                }
-                resultsForFormat.append(nextResult)
+func constructSigningResults(
+    unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])],
+    signingResults: [VPTokenSigningResult],
+    signatureSuite: String
+) throws -> [FormatType: [VPTokenSigningResult]] {
+    
+    var iterator = signingResults.makeIterator()
+    var reconstructed: [FormatType: [VPTokenSigningResult]] = [:]
+    
+    for format in unsignedVPTokenResults.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
+        guard let pair = unsignedVPTokenResults[format] else { continue }
+        let unsignedTokens = pair.1
+        
+        var resultsForFormat: [VPTokenSigningResult] = []
+        for _ in unsignedTokens {
+            guard let nextResult = iterator.next() else {
+                throw InvalidData(message: "Missing signing result for format \(format)", className: "OpenID4VPUtils")
             }
-            reconstructed[format] = resultsForFormat
+            resultsForFormat.append(nextResult)
         }
-
-        if iterator.next() != nil {
-            throw InvalidData(message: "Extra signing results provided", className: "OpenID4VPUtils")
-        }
-
-        return reconstructed
+        reconstructed[format] = resultsForFormat
     }
+    
+    if iterator.next() != nil {
+        throw InvalidData(message: "Extra signing results provided", className: "OpenID4VPUtils")
+    }
+    
+    return reconstructed
+}
 
 func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: String, alg: String) {
     let parts = sdJwtCredential.split(separator: "~")

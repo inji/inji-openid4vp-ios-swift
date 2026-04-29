@@ -119,7 +119,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         }
         
         
-        return [:]
+        return vpTokenResult
     }
     
 //    func build(

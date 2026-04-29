@@ -79,35 +79,25 @@ public class AuthorizationResponseHandler {
         }
     }
     
-    func constructUnsignedVPToken(
-        credentialsMap: [String: [AnyCodable]],
-        authorizationRequest: AuthorizationRequest,
-        responseUri: String,
-        walletNonce: String
-    ) async throws -> [UnsignedVPToken] {
-        if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
-            self.specVersion = .draft23
-        }
-        
-        return []
-    }
-    
     func constructVPResponse(
         signingResults: [VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
-        
-        let reconstructed = try constructSigningResults(
-            unsignedVPTokenResults: unsignedVPTokenResults,
-            formatMappings: formatToCredentialInputDescriptorMapping,
-            signingResults: signingResults,
-            signatureSuite: self.signatureSuite
-        )
-        
-        return try constructAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: reconstructed
-        )
+        do {
+            let reconstructed = try constructSigningResults(
+                unsignedVPTokenResults: unsignedVPTokenResults,
+                signingResults: signingResults,
+                signatureSuite: self.signatureSuite
+            )
+            
+            return try constructAuthorizationResponse(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: reconstructed
+            )
+        } catch {
+            OpenID4VPException.error(error, className: Self.className)
+            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
+        }
     }
     
     func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> VerifierResponse {
@@ -157,17 +147,22 @@ public class AuthorizationResponseHandler {
         vpTokenSigningResults: [VPTokenSigningResult],
         responseUri: String
     ) async throws -> VerifierResponse {
-        let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
-            unsignedVPTokenResults: unsignedVPTokenResults,
-            formatMappings: formatToCredentialInputDescriptorMapping,
-            signingResults: vpTokenSigningResults,
-            signatureSuite: self.signatureSuite
-        )
-        
-        let authorizationResponse = try createAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: reconstructedVpTokenSigningResult
-        )
+        let authorizationResponse : AuthorizationResponse
+        do {
+            let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
+                unsignedVPTokenResults: unsignedVPTokenResults,
+                signingResults: vpTokenSigningResults,
+                signatureSuite: self.signatureSuite
+            )
+            
+            authorizationResponse = try createAuthorizationResponse(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: reconstructedVpTokenSigningResult
+            )
+        } catch {
+            OpenID4VPException.error(error, className: Self.className)
+            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
+        }
         
         let response: NetworkResponse = try await sendAuthorizationResponse(
             authorizationRequest: authorizationRequest,
@@ -212,7 +207,6 @@ public class AuthorizationResponseHandler {
                                walletNonce: String) async throws -> [UnsignedVPToken] {
         self.createFormatToCredentialQueryIdMapping(matchingCredentials: credentialsMap)
         
-        var unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])] = [:]
         let specVersion: SpecVersion = authorizationRequest is AuthorizationPresentationExchangeRequest ? .draft23 : .v1
         
         for format in self.credentialToCredentialQueryIdMappingsGroupedByFormat.keys {
