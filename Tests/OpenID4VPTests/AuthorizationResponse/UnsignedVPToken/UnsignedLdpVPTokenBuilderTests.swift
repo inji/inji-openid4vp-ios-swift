@@ -60,7 +60,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
     }
 
     func testContextIncludesJwsSuite() async throws {
-        JsonLd.setCanonicalizer { _ in "canonicalized" }
+        JsonLd.setCanonicalizer { _ in "Y2Fub25pY2FsaXplZA" }
         defer { JsonLd.setCanonicalizer(nil) }
 
         let builder = UnsignedLdpVPTokenBuilder(
@@ -75,6 +75,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         ]
 
         let (payload, unsignedVPTokens) = try await builder.build(credentialInputDescriptorMappings: &mappings)
+        print("unsignedVPTokens.first!.dataToSign \(unsignedVPTokens.first!.dataToSign)")
 
         let ldpToken = payload as! LdpVPToken
         XCTAssertTrue(ldpToken.context.contains("https://w3id.org/security/suites/jws-2020/v1"))

@@ -142,7 +142,12 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 throw InvalidData(message: "Failed to get JsonLd canonicalizer.", className: className)
             }
             
-            let jwsPayload = try await jsonLdCanonicalizer(jsonString)
+            let canonicalizedData = try await jsonLdCanonicalizer(jsonString)
+            let canonicalizedBinary = try Base64Decoder.decodeBase64ToData(canonicalizedData)
+            // base64 decoding
+            // attach that binary with jws header = "jwsHeader.canonicalizedData" (binary)
+            // conver to bas64 url encoded string
+            // consymer -> base64 to byte array -> create signature over byte array
             let signatureAlgorithm: String = getJWSAlgorithm(from: holder)
             let jwsHeader = try base64URLEncode([
                 "alg": signatureAlgorithm,
@@ -150,12 +155,19 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 "crit" : ["b64"],
                 "b64": false
             ])
-            let preHash = "\(jwsHeader).\(jwsPayload)"
+            let headerBytes = Data(jwsHeader.utf8)
+            let dot = Data([0x2E]) // "."
+            var signingInput = Data()
+            signingInput.append(headerBytes)
+            signingInput.append(dot)
+            signingInput.append(canonicalizedBinary)
+            // jws payload = just canonicalized data
+//            let preHash = "\(jwsHeader).\(canonicalizedData)"
             let unsignedVPToken = UnsignedVPToken(
                 format: .ldp_vc,
                 holderKeyReference: holder,
                 signatureAlgorithm: signatureAlgorithm,
-                dataToSign: preHash
+                dataToSign: signingInput.toBase64UrlEncoded()
             )
             
             return (vpTokenSigningPayload, unsignedVPToken)

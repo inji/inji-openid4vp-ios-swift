@@ -122,8 +122,13 @@ class LdpVPTokenBuilder: VPTokenBuilder {
                 guard let unsignedVPToken = unsignedVpTokenIterator.next() else {
                     throw InvalidData(message: "Missing data to sign", className: className)
                 }
-                let preHash = unsignedVPToken.dataToSign
-                let header = preHash.split(separator: ".").first ?? ""
+                let dataToSign = unsignedVPToken.dataToSign
+                // dataToSign is in base64 url encoded form
+                let decoded = Data(base64UrlEncoded: dataToSign) ?? Data()
+                // conver the preHash data to string for splitting the header
+                let dotIndex = decoded.firstIndex(of: 0x2E)
+                let headerData = decoded.prefix(upTo: dotIndex ?? Data.Index())
+                let header = String(data: headerData, encoding: .utf8) ?? ""
                 proof?.jws = header + ".." + vpTokenSigningResult.signedData
             }
             

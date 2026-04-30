@@ -5,6 +5,7 @@ public struct UnsignedVPToken: Codable {
     public let format: FormatType
     public let holderKeyReference: String
     public let signatureAlgorithm: String
+    // Base64 encoded byte array of the actual data to sign
     public let dataToSign: String
 
     public init(
