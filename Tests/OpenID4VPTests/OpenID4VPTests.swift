@@ -28,7 +28,7 @@ class OpenID4VPTests: XCTestCase {
         mockNetworkManager = MockNetworkManager()
         mockNonceProvider = MockNonceProvider()
 
-        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider())
+        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), jsonLdCanonicalizer: { _ in "canonicalized-payload" })
         openID4VP.setResponseUri("https://mock-verifier.com")
         openID4VP.authorizationRequest = authorizationRequest
     }
@@ -312,6 +312,7 @@ class OpenID4VPTests: XCTestCase {
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async {
         var received: [UnsignedVPToken]?
+        JsonLd.setCanonicalizer { _ in "canonicalized" }
 
         do {
             _ = try await openID4VP.authenticateVerifier(

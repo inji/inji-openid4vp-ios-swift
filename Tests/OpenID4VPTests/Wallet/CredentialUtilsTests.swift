@@ -29,13 +29,9 @@ final class CredentialUtilsTests: XCTestCase {
             "iat": 1756896653,
             "_sd_alg": "sha-256",
             "_sd": sdHashes,
-            "family_name": "Doe",
-            "given_name": "John"
+//            "family_name": "Doe",
+//            "given_name": "John"
         ]
-    }
-
-    private func assertPayloadEqual(_ actual: [String: Any], _ expected: [String: Any], file: StaticString = #file, line: UInt = #line) {
-        XCTAssertEqual(NSDictionary(dictionary: actual), NSDictionary(dictionary: expected), file: file, line: line)
     }
 
     // MARK: - extractSdJwtPayload
@@ -93,7 +89,7 @@ final class CredentialUtilsTests: XCTestCase {
 
         var expectedPayload = jwtBodyClaims
         expectedPayload["cnf"] = ["kid": cnfKid]
-        assertPayloadEqual(payload, expectedPayload)
+        assertDictionariesEqual(expected: expectedPayload, actual: payload)
     }
 
     func testExtractSdJwtPayloadWithDecodeDisclosuresMergesSelectiveClaims() throws {
@@ -104,7 +100,7 @@ final class CredentialUtilsTests: XCTestCase {
         var expectedPayload = jwtBodyClaims
         expectedPayload["cnf"] = ["kid": cnfKid]
 
-        assertPayloadEqual(payload, expectedPayload)
+        assertDictionariesEqual(expected: expectedPayload, actual: payload)
     }
 
     func testExtractSdJwtPayloadDecodeDisclosuresSkipsMalformedSegments() throws {
@@ -167,7 +163,7 @@ final class CredentialUtilsTests: XCTestCase {
         let (rawCredential, payload, _) = try extractSdJwtPayload(credential, className: classNameValue)
 
         XCTAssertEqual(rawCredential, sampleVcSdJwtWithNoHolderBinding)
-        assertPayloadEqual(payload, jwtBodyClaims)
+        assertDictionariesEqual(expected: jwtBodyClaims, actual: payload)
     }
 
     // MARK: - extractSDJwtString

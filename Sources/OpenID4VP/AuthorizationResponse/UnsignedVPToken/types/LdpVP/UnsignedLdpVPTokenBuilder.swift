@@ -77,6 +77,30 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             throw InvalidData(message: "Failed to encode LdpVPToken for signing.", className: className)
         }
         
+        if(signatureSuite == SignatureAlgorithm.jsonWebSignature2020.rawValue) {
+            guard let jsonLdCanonicalizer = JsonLd.canonicalizer else {
+                throw InvalidData(message: "Failed to get JsonLd canonicalizer.", className: className)
+            }
+            
+            let jwsPayload = try await jsonLdCanonicalizer(jsonString)
+            let jwsHeader = try base64URLEncode([
+                "alg": getJWSAlgorithm(from: holder),
+                // the payload is not Base64URL-encoded
+                "crit" : ["b64"],
+                "b64": false
+            ])
+            let preHash = "\(jwsHeader).\(jwsPayload)"
+            let unsignedVPToken = UnsignedVPToken(
+                format: .ldp_vc,
+                holderKeyReference: holder,
+                signatureAlgorithm: signatureSuite,
+                dataToSign: preHash
+            )
+            
+            return (vpTokenSigningPayload, [unsignedVPToken])
+        }
+        
+        // TODO: For non json web signature suite - how is the data to sign populated - should it be canonicalized or just the JSON string of the VP token?
         let unsignedVPToken = UnsignedVPToken(
             format: .ldp_vc,
             holderKeyReference: holder,

@@ -42,7 +42,7 @@ final class DCQLUtilsTests: XCTestCase {
     }
 
     func testExpandCredentialTag_LdpVc_WithoutHolderBinding() async throws {
-        let credential = ldpVC()
+        let credential = ldpVC(addHolderBinding: false)
         let input = Credential(format: .ldp_vc, data: AnyCodable(credential), credentialId: "c1")
 
         let result = try await expandCredentialTag(input, jsonLdExpander: mockExpander)

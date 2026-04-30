@@ -303,15 +303,18 @@ func createWalletMetadata(
     )
 }
 
-func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://www.w3.org/2018/credentials/examples/v1",
-    [
-        "sec": "https://w3id.org/security#"
-    ]
-    
-]) -> [String: Any] {
-    let data : [String: Any] = [
+func ldpVC(
+    credentialType : String = "IDCardCredential",
+    context: [Any] = [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1",
+        [
+            "sec": "https://w3id.org/security#"
+        ],
+    ],
+    addHolderBinding: Bool = true
+) -> [String: Any] {
+    var data : [String: Any] = [
         "@context": context,
         "id": "https://example.com/credentials/1872",
         "type": [
@@ -323,6 +326,7 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
         ],
         "issuanceDate": "2010-01-01T19:23:24Z",
         "credentialSubject": [
+            "id": "did:example:holder",
             "given_name": "MockUser",
             "family_name": "Mockister",
             "birthdate": "1949-01-22"
@@ -335,6 +339,20 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
             "verificationMethod": "did:example:issuer#keys-1"
         ]
     ]
+    if(addHolderBinding) {
+        data["credentialSubject"] = [
+            "id": "did:example:holder",
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ]
+    } else {
+        data["credentialSubject"] = [
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ]
+    }
     return data
 }
 

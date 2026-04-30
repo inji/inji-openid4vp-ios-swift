@@ -24,7 +24,7 @@ public class OpenID4VP {
         JsonLd.setCanonicalizer(jsonLdCanonicalizer)
     }
 
-    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata = WalletMetadata(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil) {
+    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata = WalletMetadata(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil, jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil) {
         self.networkManager = networkManager ?? NetworkManager.shared
         self.nonceProvider = nonceProvider
 

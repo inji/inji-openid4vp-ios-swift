@@ -81,7 +81,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         // ldp_vc without credentialSubject.id gives hasCryptographicHolderBinding = false
         let ldpVcWithoutBinding = Credential(
             format: .ldp_vc,
-            data: AnyCodable(ldpVC()),
+            data: AnyCodable(ldpVC(addHolderBinding: false)),
             credentialId: "no-binding"
         )
         let query = try dcqlQuery("""
