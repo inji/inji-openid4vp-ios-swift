@@ -596,4 +596,397 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertTrue(result.DescriptorMaps.isEmpty)
         XCTAssertEqual(result.nextIndex, 0)
     }
+
+    // MARK: - build(credentialToCredentialQueryIdMappings:) — success paths
+
+    func testDcqlBuildHolderBindingTrueProducesKBJwtAppendedToken() throws {
+        let uuid = "uuid-bound"
+        let unsignedKBJwt = "eyJhbGciOiJFUzI1NiJ9.kbpayload"
+        let signature = "kbSig"
+
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [uuid: unsignedKBJwt] as [String: String],
+            unsignedVPTokens: []
+        )
+
+        let result = try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: signature)]
+        )
+
+        let expectedTokenValue = "\(credentialWithBinding)\(unsignedKBJwt).\(signature)"
+        XCTAssertEqual(result.keys.sorted(), ["q1"])
+        XCTAssertEqual(result["q1"]?.count, 1)
+        let vpToken = try XCTUnwrap(result["q1"]?.first as? SdJwtVPToken)
+        XCTAssertEqual(vpToken.value, expectedTokenValue)
+    }
+
+    func testDcqlBuildHolderBindingFalseProducesBareCredentialToken() throws {
+        let uuid = "uuid-unbound"
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "q1", identifier: uuid)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [String: String]() as [String: String],
+            unsignedVPTokens: []
+        )
+
+        let result = try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )
+
+        XCTAssertEqual(result.keys.sorted(), ["q1"])
+        XCTAssertEqual(result["q1"]?.count, 1)
+        let vpToken = try XCTUnwrap(result["q1"]?.first as? SdJwtVPToken)
+        XCTAssertEqual(vpToken.value, credentialWithoutBinding)
+    }
+
+    func testDcqlBuildMultipleCredentialsSameQueryIdAppendsAll() throws {
+        let uuid1 = "uuid-1"
+        let uuid2 = "uuid-2"
+        let kb1 = "eyJhbGciOiJFUzI1NiJ9.kb1"
+        let kb2 = "eyJhbGciOiJFUzI1NiJ9.kb2"
+        let sig1 = "sig1"
+        let sig2 = "sig2"
+
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid1),
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid2)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [uuid1: kb1, uuid2: kb2] as [String: String],
+            unsignedVPTokens: []
+        )
+
+        let result = try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: sig1), VPTokenSigningResult(signedData: sig2)]
+        )
+
+        XCTAssertEqual(result.keys.sorted(), ["q1"])
+        XCTAssertEqual(result["q1"]?.count, 2)
+        let token1 = try XCTUnwrap(result["q1"]?[0] as? SdJwtVPToken)
+        let token2 = try XCTUnwrap(result["q1"]?[1] as? SdJwtVPToken)
+        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(kb1).\(sig1)")
+        XCTAssertEqual(token2.value, "\(credentialWithBinding)\(kb2).\(sig2)")
+    }
+
+    func testDcqlBuildMultipleDifferentQueryIdsProducesKeyedResult() throws {
+        let uuid1 = "uuid-q1"
+        let uuid2 = "uuid-q2"
+        let kb1 = "eyJhbGciOiJFUzI1NiJ9.kb1"
+        let sig1 = "sig1"
+
+        let dcqlBuilder = builderWithDcqlRequest(
+            credentials: [("q1", "dc+sd-jwt", true), ("q2", "dc+sd-jwt", false)]
+        )
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid1),
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "q2", identifier: uuid2)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [uuid1: kb1] as [String: String],
+            unsignedVPTokens: []
+        )
+
+        let result = try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: sig1)]
+        )
+
+        XCTAssertEqual(result.keys.sorted(), ["q1", "q2"])
+        let token1 = try XCTUnwrap(result["q1"]?.first as? SdJwtVPToken)
+        let token2 = try XCTUnwrap(result["q2"]?.first as? SdJwtVPToken)
+        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(kb1).\(sig1)")
+        XCTAssertEqual(token2.value, credentialWithoutBinding)
+    }
+
+    func testDcqlBuildEmptyMappingsReturnsEmptyDict() throws {
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [String: String]() as [String: String],
+            unsignedVPTokens: []
+        )
+
+        let result = try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: [],
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )
+
+        XCTAssertEqual(result.count, 0)
+    }
+
+    // MARK: - build(credentialToCredentialQueryIdMappings:) — error paths
+
+    func testDcqlBuildThrowsWhenPayloadIsNotStringDictionary() {
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "q1", identifier: "uuid-1")
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: "invalid",
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing uuidToUnsignedKBT in payload",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenIdentifierIsNil() {
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "q1", identifier: nil)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [String: String]() as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "identifier is null in CredentialInputDescriptorMapping for SD-JWT",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenCredentialQueryIdNotFoundInDcqlQuery() {
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "nonexistent", identifier: "uuid-1")
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [String: String]() as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "No matching credential query found for credentialQueryId: nonexistent",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenCredentialIsNotString() {
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(12345), credentialQueryId: "q1", identifier: "uuid-1")
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [String: String]() as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "SD-JWT credential is not a String",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenHolderBindingTrueButNoKBJwt() {
+        let uuid = "uuid-bound"
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [String: String]() as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: "sig")]
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Key Binding JWT for uuid: \(uuid)",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenMissingSigningResultForBoundCredential() {
+        let uuid = "uuid-bound"
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [uuid: "eyJhbGciOiJFUzI1NiJ9.kb"] as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing signing result for \(uuid)",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenSignatureIsEmptyForBoundCredential() {
+        let uuid = "uuid-bound"
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [uuid: "eyJhbGciOiJFUzI1NiJ9.kb"] as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: "")]
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: \(uuid) param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenUnexpectedKBJwtForUnboundCredential() {
+        let uuid = "uuid-unbound"
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "q1", identifier: uuid)
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [uuid: "eyJhbGciOiJFUzI1NiJ9.unexpected"] as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: []
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unexpected key binding jwt for uuid: \(uuid)",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenExtraSigningResultsProvided() {
+        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
+        let mappings = [
+            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "q1", identifier: "uuid-1")
+        ]
+        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [String: String]() as [String: String],
+            unsignedVPTokens: []
+        )
+
+        XCTAssertThrowsError(try dcqlBuilder.build(
+            credentialToCredentialQueryIdMappings: mappings,
+            unsignedVPTokenResult: unsignedResult,
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: "unexpected")]
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Extra signing results provided for SD-JWT",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func credentialQueryMapping(
+        format: FormatType,
+        credential: AnyCodable,
+        credentialQueryId: String,
+        identifier: String?
+    ) -> CredentialToCredentialQueryIdMapping {
+        var mapping = CredentialToCredentialQueryIdMapping(format: format, credential: credential, credentialQueryId: credentialQueryId)
+        mapping.identifier = identifier
+        return mapping
+    }
+
+    private func builderWithDcqlRequest(
+        credentialQueryId: String,
+        requireCryptographicHolderBinding: Bool
+    ) -> SdJwtVPTokenBuilder {
+        builderWithDcqlRequest(credentials: [(credentialQueryId, "dc+sd-jwt", requireCryptographicHolderBinding)])
+    }
+
+    private func builderWithDcqlRequest(
+        credentials: [(id: String, format: String, requireCryptographicHolderBinding: Bool)]
+    ) -> SdJwtVPTokenBuilder {
+        let dcqlJson: [String: Any] = [
+            "credentials": credentials.map { cred in
+                [
+                    "id": cred.id,
+                    "format": cred.format,
+                    "meta": [:] as [String: Any],
+                    "require_cryptographic_holder_binding": cred.requireCryptographicHolderBinding
+                ] as [String: Any]
+            }
+        ]
+        let dcqlQuery = createInstance(dcqlJson, as: DCQLQuery.self)
+        let authorizationRequest = AuthorizationDcqlRequest(
+            clientId: "client_id",
+            responseType: ResponseType.vp_token.rawValue,
+            responseMode: ResponseMode.directPost.rawValue,
+            responseUri: "https://mock-verifier.com",
+            redirectUri: nil,
+            nonce: "nonce",
+            walletNonce: nil,
+            state: "state",
+            dcqlQuery: dcqlQuery,
+            clientMetadata: nil
+        )
+        return SdJwtVPTokenBuilder(authorizationRequest: authorizationRequest)
+    }
 }

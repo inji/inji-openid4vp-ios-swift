@@ -17,26 +17,8 @@ func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpandi
             types: expandedCredential["@type"] as? [String] ?? []
         )
     case .mso_mdoc:
-        guard let mdocCredential = credential.data.value as? String else {
-            throw InvalidData(
-                message: "MDOC credential is not a String",
-                className: className
-            )
-        }
-        guard let decodedCredential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-            throw InvalidData(
-                message: "Invalid Verifiable Credential: Error while decoding credential",
-                className: className
-            )
-        }
-        
-        guard let docType = getValueFromCBORMap(cborMap: decodedCredential, key: "docType"),
-              let docTypeString = extractStringFromCBOR(docType) else {
-            throw InvalidData(
-                message: "docType missing or invalid in credential",
-                className: className
-            )
-        }
+        let (_, decodedMdocCredential) = try decodeMdoc(credential.data, className: className)
+        let (_, docTypeString) = try extractMdocDocType(from: decodedMdocCredential, className: className)
         
         return MdocTaggedCredential(
             hasCryptographicHolderBinding: true,
@@ -73,15 +55,10 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             ))
             
         case .mso_mdoc:
-            guard let mdocCredential = credential.data.value as? String else {
-                throw InvalidData(message: "MDOC credential is not a String", className: className)
-            }
-            guard let decodedCredential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-                throw InvalidData(message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
-            }
+            let (_, decodedMdocCredential) = try decodeMdoc(credential.data, className: className)
             
             var namespaces: [String: [String: Any]] = [:]
-            if let issuerSignedCBOR = getValueFromCBORMap(cborMap: decodedCredential, key: "issuerSigned"),
+            if let issuerSignedCBOR = getValueFromCBORMap(cborMap: decodedMdocCredential, key: "issuerSigned"),
                let nameSpacesCBOR = getValueFromCBORMap(cborMap: issuerSignedCBOR, key: "nameSpaces") {
                 
                 if case let .map(items) = nameSpacesCBOR {

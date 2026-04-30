@@ -44,26 +44,9 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
 
         for index in 0..<credentialInputDescriptorMappings.count {
             let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
-            guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
-                throw InvalidData(
-                    message: "MDOC credential is not a String",
-                    className: AuthorizationResponseHandler.className
-                )
-            }
-            guard let credential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-                throw InvalidData(
-                    message: "Invalid Verifiable Credential: Error while decoding credential",
-                    className: Self.className
-                )
-            }
+            let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credentialInputDescriptorMapping.credential, className: Self.className)
 
-            guard let docType = getValueFromCBORMap(cborMap: credential, key: "docType"),
-                  let docTypeString = extractStringFromCBOR(docType) else {
-                throw InvalidData(
-                    message: "docType missing or invalid in credential",
-                    className: Self.className
-                )
-            }
+            let (docType, docTypeString) = try extractMdocDocType(from: decodedMdocCredential, className: Self.className)
 
             if docTypeToDeviceAuthenticationBytes[docTypeString] != nil {
                 throw InvalidData(
@@ -136,21 +119,10 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         var unsignedVPTokens: [UnsignedVPToken] = []
 
         for index in 0..<credentialToCredentialQueryIdMappings.count {
-            let credentialInputDescriptorMapping = credentialToCredentialQueryIdMappings[index]
-            guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
-                throw InvalidData(
-                    message: "MDOC credential is not a String",
-                    className: AuthorizationResponseHandler.className
-                )
-            }
-            guard let credential = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-                throw InvalidData(
-                    message: "Invalid Verifiable Credential: Error while decoding credential",
-                    className: Self.className
-                )
-            }
-
-            guard let docType = getValueFromCBORMap(cborMap: credential, key: "docType"),
+            let credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
+            let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credentialToCredentialQueryIdMapping.credential, className: Self.className)
+            
+            guard let docType = getValueFromCBORMap(cborMap: decodedMdocCredential, key: "docType"),
                   let docTypeString = extractStringFromCBOR(docType) else {
                 throw InvalidData(
                     message: "docType missing or invalid in credential",
@@ -175,7 +147,8 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
             let dataToSign = cborToByteString(cbor: wrapped)
             docTypeToDeviceAuthenticationBytes[docTypeString] = dataToSign
-            
+            credentialToCredentialQueryIdMappings[index].identifier = docTypeString
+
             let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
             
             unsignedVPTokens.append(UnsignedVPToken(

@@ -29,21 +29,6 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     }
     
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
-        guard let holder = holder else {
-            throw InvalidData(message: "Holder is required for LDP VP Tokens", className: className)
-        }
-        
-        guard let signatureSuite = signatureSuite else {
-            throw InvalidData(message: "Signature suite is required for LDP VP Tokens", className: className)
-        }
-        
-        var context: [String] = ["https://www.w3.org/2018/credentials/v1"]
-        if signatureSuite == SignatureAlgorithm.ed25519Signature2020.rawValue {
-            context.append("https://w3id.org/security/suites/ed25519-2020/v1")
-        } else if signatureSuite == SignatureAlgorithm.jsonWebSignature2020.rawValue {
-            context.append("https://w3id.org/security/suites/jws-2020/v1")
-        }
-        
         var verifiableCredentials: [AnyCodable] = []
         
         for index in 0..<credentialInputDescriptorMappings.count {
@@ -54,21 +39,96 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 nestedPath: "$.\(Self.internalPath)[\(index)]"
             )
         }
+        let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(with: verifiableCredentials, signatureSuite: signatureSuite, holder: holder)
         
-        let proof = Proof(
-            type: signatureSuite,
-            created: nil,
-            challenge: authorizationRequest.nonce,
-            domain: authorizationRequest.clientId,
-            verificationMethod: holder, proofValue: nil
-        )
+        return (vpTokenSigningPayload, unsignedVPToken.map { [$0] } ?? [])
+    }
+    
+    //TODO: change the type to [Any] - list of payloads
+    func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
+        guard let authorizationRequest = authorizationRequest as? AuthorizationDcqlRequest else {
+            throw InvalidData(message: "Expected AuthorizationDcqlRequest for DCQL flow", className: className)
+        }
+        var unsignedVPTokens: [UnsignedVPToken] = []
+        var vpTokenSigningPayloads : [String: LdpVPToken] = [:]
+        
+        for index in 0..<credentialToCredentialQueryIdMappings.count {
+            var credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
+            let uuid = UUIDGenerator.generateUUID()
+            
+            credentialToCredentialQueryIdMapping.identifier = uuid
+            credentialToCredentialQueryIdMappings[index] = credentialToCredentialQueryIdMapping
+            
+            let (credential, credentialQueryId) = (credentialToCredentialQueryIdMapping.credential, credentialToCredentialQueryIdMapping.credentialQueryId)
+            
+            let verifiableCredentials: [AnyCodable] = [credential]
+            
+            let mappedCredentialQuery = try authorizationRequest.dcqlQuery.credentials.first(where: { $0.id == credentialQueryId }) ?? {
+                throw InvalidData(message: "No matching credential query found for credential query id: \(credentialQueryId)", className: className)
+            }()
+            
+            let result = mappedCredentialQuery.requireCryptographicHolderBinding ? try extractHolderAndSignatureSuite(credential) : nil
+            
+            let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(with: verifiableCredentials, signatureSuite: result?.signatureSuite, holder: result?.holder, addCryptograhicHolderBinding: mappedCredentialQuery.requireCryptographicHolderBinding)
+            
+            vpTokenSigningPayloads[uuid] = vpTokenSigningPayload
+            if let unsignedVPToken = unsignedVPToken {
+                unsignedVPTokens.append(unsignedVPToken)
+            }
+            
+        }
+        
+        return (vpTokenSigningPayloads, unsignedVPTokens)
+    }
+    
+    private func buildPayloadAndUnsignedVPToken(with credentials: [AnyCodable], signatureSuite: String?, holder: String?, addCryptograhicHolderBinding: Bool = true) async throws -> (vpTokenSigningPayload: LdpVPToken, unsignedVPToken: UnsignedVPToken?) {
+        var context: [String] = ["https://www.w3.org/2018/credentials/v1"]
+        if signatureSuite == SignatureAlgorithm.ed25519Signature2020.rawValue {
+            context.append("https://w3id.org/security/suites/ed25519-2020/v1")
+        } else if signatureSuite == SignatureAlgorithm.jsonWebSignature2020.rawValue {
+            context.append("https://w3id.org/security/suites/jws-2020/v1")
+        }
+        
+        if(addCryptograhicHolderBinding == false) {
+            return (
+                LdpVPToken(
+                    context: context,
+                    type: ["VerifiablePresentation"],
+                    verifiableCredential: credentials,
+                    id: id,
+                    holder: holder,
+                    proof: nil
+                ),
+                nil)
+        }
+        
+        guard let holder = holder else {
+            throw InvalidData(message: "Holder is required for LDP VP Tokens", className: className)
+        }
+        
+        guard let signatureSuite = signatureSuite else {
+            throw InvalidData(message: "Signature suite is required for LDP VP Tokens", className: className)
+        }
+        
+        let holderId: String = sanitize(holder)
+        
+        let proof = {
+            addCryptograhicHolderBinding ? Proof(
+                type: signatureSuite,
+                created: nil,
+                challenge: authorizationRequest.nonce,
+                domain: authorizationRequest.clientId,
+                verificationMethod: holderId,
+                proofValue: nil
+            ) : nil
+        }()
         
         let vpTokenSigningPayload = LdpVPToken(
             context: context,
             type: ["VerifiablePresentation"],
-            verifiableCredential: verifiableCredentials,
+            verifiableCredential: credentials,
             id: id,
-            holder: holder,
+            holder: holderId,
             proof: proof
         )
         
@@ -83,8 +143,9 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             }
             
             let jwsPayload = try await jsonLdCanonicalizer(jsonString)
+            let signatureAlgorithm: String = getJWSAlgorithm(from: holder)
             let jwsHeader = try base64URLEncode([
-                "alg": getJWSAlgorithm(from: holder),
+                "alg": signatureAlgorithm,
                 // the payload is not Base64URL-encoded
                 "crit" : ["b64"],
                 "b64": false
@@ -93,11 +154,11 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             let unsignedVPToken = UnsignedVPToken(
                 format: .ldp_vc,
                 holderKeyReference: holder,
-                signatureAlgorithm: signatureSuite,
+                signatureAlgorithm: signatureAlgorithm,
                 dataToSign: preHash
             )
             
-            return (vpTokenSigningPayload, [unsignedVPToken])
+            return (vpTokenSigningPayload, unsignedVPToken)
         }
         
         // TODO: For non json web signature suite - how is the data to sign populated - should it be canonicalized or just the JSON string of the VP token?
@@ -108,97 +169,10 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             dataToSign: jsonString
         )
         
-        return (vpTokenSigningPayload, [unsignedVPToken])
+        return (vpTokenSigningPayload, unsignedVPToken)
     }
     
-    func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
-        guard let authorizationRequest = authorizationRequest as? AuthorizationDcqlRequest else {
-            throw InvalidData(message: "Expected AuthorizationDcqlRequest for DCQL flow", className: className)
-        }
-        var unsignedVPTokens: [UnsignedVPToken] = []
-        var vpTokenSigningPayload : [String: LdpVPToken] = [:]
-        
-        for index in 0..<credentialToCredentialQueryIdMappings.count {
-            var credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
-            let uuid = UUIDGenerator.generateUUID()
-            
-            credentialToCredentialQueryIdMapping.identifier = uuid
-            credentialToCredentialQueryIdMappings[index] = credentialToCredentialQueryIdMapping
-            
-            let (credential, credentialQueryId) = (credentialToCredentialQueryIdMapping.credential, credentialToCredentialQueryIdMapping.credentialQueryId)
-            
-            var context: [String] = ["https://www.w3.org/2018/credentials/v1"]
-            
-            let verifiableCredentials: [AnyCodable] = [credential]
-            
-            let mappedCredentialQuery = try authorizationRequest.dcqlQuery.credentials.first(where: { $0.id == credentialQueryId }) ?? {
-                throw InvalidData(message: "No matching credential query found for credential query id: \(credentialQueryId)", className: className)
-            }()
-            
-            
-            if(mappedCredentialQuery.requireCryptographicHolderBinding) {
-                let (holder, signatureSuite, holderKeyAlg) = try extractHolderAndSignatureSuite(credential)
-                
-                context.append("https://w3id.org/security/suites/jws-2020/v1")
-                
-                let proof = Proof(
-                    type: signatureSuite,
-                    created: nil,
-                    challenge: authorizationRequest.nonce,
-                    domain: authorizationRequest.clientId,
-                    verificationMethod: holder,
-                    proofValue: nil
-                )
-                
-                let unsignedLdpVpToken: LdpVPToken = LdpVPToken(
-                    context: context,
-                    type: ["VerifiablePresentation"],
-                    verifiableCredential: verifiableCredentials,
-                    id: id,
-                    holder: holder,
-                    proof: proof
-                )
-                vpTokenSigningPayload[uuid] = unsignedLdpVpToken
-                guard let dataToSign = try? JSONEncoder().encode(unsignedLdpVpToken),
-                      let jsonString = String(data: dataToSign, encoding: .utf8) else {
-                    throw InvalidData(message: "Failed to encode LdpVPToken for signing.", className: className)
-                }
-                
-                guard let jsonLdCanonicalizer = JsonLd.canonicalizer else {
-                    throw InvalidData(message: "Failed to get JsonLd canonicalizer.", className: className)
-                }
-                
-                let jwsPayload = try await jsonLdCanonicalizer(jsonString)
-                let jwsHeader = try base64URLEncode([
-                    "alg": holderKeyAlg,
-                    "crit" : ["b64"],
-                    "b64": false
-                ])
-                let preHash = "\(jwsHeader).\(jwsPayload)"
-                
-                let unsignedVPToken = UnsignedVPToken(
-                    format: .ldp_vc,
-                    holderKeyReference: holder,
-                    signatureAlgorithm: holderKeyAlg,
-                    dataToSign: preHash
-                )
-                
-                unsignedVPTokens.append(unsignedVPToken)
-            } else {
-                vpTokenSigningPayload[uuid] = LdpVPToken(
-                    context: context,
-                    type: ["VerifiablePresentation"],
-                    verifiableCredential: verifiableCredentials,
-                    id: id
-                )
-            }
-            
-        }
-        
-        return (vpTokenSigningPayload, unsignedVPTokens)
-    }
-    
-    private func extractHolderAndSignatureSuite(_ credential: AnyCodable) throws -> (holder: String, signatureSuite: String, holderKeyAlg: String) {
+    private func extractHolderAndSignatureSuite(_ credential: AnyCodable) throws -> (holder: String, signatureSuite: String) {
         guard let credentialDict = credential.value as? [String: Any] else {
             throw InvalidData(message: "Credential is not a valid JSON object", className: className)
         }
@@ -207,10 +181,14 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             throw InvalidData(message: "Holder ID not available in the credential", className: className)
         }
         
-        // extract key alg from holderId
-        let holderKeyAlgorithm = getJWSAlgorithm(from: holderId)
         
-        
-        return (holder: holderId, signatureSuite: SignatureAlgorithm.jsonWebSignature2020.rawValue, holderKeyAlg: holderKeyAlgorithm)
+        return (holder: holderId, signatureSuite: SignatureAlgorithm.jsonWebSignature2020.rawValue)
+    }
+    
+    private func sanitize(_ holderId: String) -> String {
+        return (holderId
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")) + "#0"
     }
 }

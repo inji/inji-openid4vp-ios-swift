@@ -129,4 +129,151 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - build(credentialToCredentialQueryIdMappings:)
+
+    func testDcqlBuildReturnsCorrectPayloadAndUnsignedTokensForV1() async throws {
+        let builder = try UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            mdocGeneratedNonce: "mock-nonce"
+        )
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
+        ]
+
+        let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
+
+        let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
+        XCTAssertEqual(docTypeToBytes.keys.sorted(), ["org.iso.18013.5.1.mDL"])
+        XCTAssertTrue(docTypeToBytes["org.iso.18013.5.1.mDL"]!.starts(with: "d8"))
+        XCTAssertEqual(unsignedVPTokens.count, 1)
+        XCTAssertEqual(unsignedVPTokens[0].format, .mso_mdoc)
+        XCTAssertFalse(unsignedVPTokens[0].dataToSign.isEmpty)
+        XCTAssertEqual(mappings[0].identifier, "org.iso.18013.5.1.mDL")
+    }
+
+    func testDcqlBuildReturnsCorrectPayloadAndUnsignedTokensForDraft23() async throws {
+        let builder = try UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+            specVersion: .draft23,
+            mdocGeneratedNonce: "mock-nonce"
+        )
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
+        ]
+
+        let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
+
+        let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
+        XCTAssertEqual(docTypeToBytes.keys.sorted(), ["org.iso.18013.5.1.mDL"])
+        XCTAssertTrue(docTypeToBytes["org.iso.18013.5.1.mDL"]!.starts(with: "d8"))
+        XCTAssertEqual(unsignedVPTokens.count, 1)
+        XCTAssertEqual(unsignedVPTokens[0].format, .mso_mdoc)
+        XCTAssertEqual(mappings[0].identifier, "org.iso.18013.5.1.mDL")
+    }
+
+    func testDcqlBuildDeviceAuthBytesAreDifferentBetweenSpecVersions() async throws {
+        var mappingsDraft23 = [CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")]
+        var mappingsV1 = [CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")]
+
+        let (draft23Payload, _) = try await UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+            specVersion: .draft23,
+            mdocGeneratedNonce: "mock-nonce"
+        ).build(credentialToCredentialQueryIdMappings: &mappingsDraft23)
+
+        let (v1Payload, _) = try await UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            mdocGeneratedNonce: "mock-nonce"
+        ).build(credentialToCredentialQueryIdMappings: &mappingsV1)
+
+        let draft23Bytes = try XCTUnwrap((draft23Payload as? [String: String])?["org.iso.18013.5.1.mDL"])
+        let v1Bytes = try XCTUnwrap((v1Payload as? [String: String])?["org.iso.18013.5.1.mDL"])
+        XCTAssertNotEqual(draft23Bytes, v1Bytes)
+    }
+
+    func testDcqlBuildThrowsWhenCredentialIsNotString() async throws {
+        let builder = try UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            mdocGeneratedNonce: "mock-nonce"
+        )
+        var mappings = [CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(12345), credentialQueryId: "q1")]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialToCredentialQueryIdMappings: &mappings)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "MDOC credential is not a String",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenCredentialIsInvalidCBOR() async throws {
+        let builder = try UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            mdocGeneratedNonce: "mock-nonce"
+        )
+        var mappings = [CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable("invalidCBOR"), credentialQueryId: "q1")]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialToCredentialQueryIdMappings: &mappings)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Invalid Verifiable Credential: Error while decoding credential",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildThrowsWhenDuplicateDocTypes() async throws {
+        let builder = try UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            mdocGeneratedNonce: "mock-nonce"
+        )
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1"),
+            CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q2")
+        ]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialToCredentialQueryIdMappings: &mappings)) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Duplicate Mdoc Credentials with same doctype found",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlBuildSetsIdentifierToDocTypeOnMapping() async throws {
+        let builder = try UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            mdocGeneratedNonce: "mock-nonce"
+        )
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
+        ]
+
+        _ = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
+
+        XCTAssertEqual(mappings[0].identifier, "org.iso.18013.5.1.mDL")
+    }
+
+    func testDcqlBuildUnsignedTokensAreSortedByDocType() async throws {
+        let builder = try UnsignedMdocVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            mdocGeneratedNonce: "mock-nonce"
+        )
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
+        ]
+
+        let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
+
+        let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
+        let expectedDocType = "org.iso.18013.5.1.mDL"
+        XCTAssertEqual(unsignedVPTokens[0].dataToSign, docTypeToBytes[expectedDocType])
+    }
 }

@@ -243,7 +243,7 @@ public class AuthorizationResponseHandler {
         
         var unsignedVPTokensExtracted: [UnsignedVPToken] = []
         
-        for (format, unsignedVPTokenResult) in unsignedVPTokenResults {
+        for (_, unsignedVPTokenResult) in unsignedVPTokenResults {
             unsignedVPTokensExtracted.append(contentsOf: unsignedVPTokenResult.1)
         }
         
