@@ -482,8 +482,8 @@ class OpenID4VPTests: XCTestCase {
 
     func testConstructUnsignedVPTokenReturnsTokenList() async {
         let expectedTokens = [
-            UnsignedVPToken(format: .ldp_vc, holderKeyReference: "did:example:123", signatureAlgorithm: "JsonWebSignature2020", dataToSign: "data1"),
-            UnsignedVPToken(format: .mso_mdoc, holderKeyReference: "key-ref", signatureAlgorithm: "ES256", dataToSign: "data2")
+            UnsignedVPToken(format: .ldp_vc, holderKeyReference: "did:example:123", signatureAlgorithm: "JsonWebSignature2020", dataToSign: Data("data1".utf8)),
+            UnsignedVPToken(format: .mso_mdoc, holderKeyReference: "key-ref", signatureAlgorithm: "ES256", dataToSign: Data("data2".utf8))
         ]
         let handler = MockAuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: WalletMetadata())
         handler.expectedUnsignedVPTokens = expectedTokens

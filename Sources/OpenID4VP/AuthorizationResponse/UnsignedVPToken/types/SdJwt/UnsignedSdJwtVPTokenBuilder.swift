@@ -129,7 +129,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             format: format,
             holderKeyReference: keyId,
             signatureAlgorithm: signingAlgorithm,
-            dataToSign: unsignedJWT
+            dataToSign: Data(unsignedJWT.utf8)
         )
         
         return (unsignedJWT, vpToken)

@@ -69,7 +69,12 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             
             let result = mappedCredentialQuery.requireCryptographicHolderBinding ? try extractHolderAndSignatureSuite(credential) : nil
             
-            let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(with: verifiableCredentials, signatureSuite: result?.signatureSuite, holder: result?.holder, addCryptograhicHolderBinding: mappedCredentialQuery.requireCryptographicHolderBinding)
+            let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
+                with: verifiableCredentials,
+                signatureSuite: result?.signatureSuite,
+                holder: sanitize(result?.holder),
+                addCryptograhicHolderBinding: mappedCredentialQuery.requireCryptographicHolderBinding
+            )
             
             vpTokenSigningPayloads[uuid] = vpTokenSigningPayload
             if let unsignedVPToken = unsignedVPToken {
@@ -110,15 +115,13 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             throw InvalidData(message: "Signature suite is required for LDP VP Tokens", className: className)
         }
         
-        let holderId: String = sanitize(holder)
-        
         let proof = {
             addCryptograhicHolderBinding ? Proof(
                 type: signatureSuite,
                 created: nil,
                 challenge: authorizationRequest.nonce,
                 domain: authorizationRequest.clientId,
-                verificationMethod: holderId,
+                verificationMethod: holder,
                 proofValue: nil
             ) : nil
         }()
@@ -128,7 +131,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             type: ["VerifiablePresentation"],
             verifiableCredential: credentials,
             id: id,
-            holder: holderId,
+            holder: holder,
             proof: proof
         )
         
@@ -143,11 +146,8 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             }
             
             let canonicalizedData = try await jsonLdCanonicalizer(jsonString)
-            let canonicalizedBinary = try Base64Decoder.decodeBase64ToData(canonicalizedData)
-            // base64 decoding
-            // attach that binary with jws header = "jwsHeader.canonicalizedData" (binary)
-            // conver to bas64 url encoded string
-            // consymer -> base64 to byte array -> create signature over byte array
+            let normalizedCredentialData = try Base64Decoder.decodeBase64ToData(canonicalizedData)
+            
             let signatureAlgorithm: String = getJWSAlgorithm(from: holder)
             let jwsHeader = try base64URLEncode([
                 "alg": signatureAlgorithm,
@@ -160,14 +160,13 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             var signingInput = Data()
             signingInput.append(headerBytes)
             signingInput.append(dot)
-            signingInput.append(canonicalizedBinary)
-            // jws payload = just canonicalized data
-//            let preHash = "\(jwsHeader).\(canonicalizedData)"
+            signingInput.append(normalizedCredentialData)
+
             let unsignedVPToken = UnsignedVPToken(
                 format: .ldp_vc,
                 holderKeyReference: holder,
                 signatureAlgorithm: signatureAlgorithm,
-                dataToSign: signingInput.toBase64UrlEncoded()
+                dataToSign: signingInput
             )
             
             return (vpTokenSigningPayload, unsignedVPToken)
@@ -178,7 +177,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             format: .ldp_vc,
             holderKeyReference: holder,
             signatureAlgorithm: signatureSuite,
-            dataToSign: jsonString
+            dataToSign: Data(jsonString.utf8)
         )
         
         return (vpTokenSigningPayload, unsignedVPToken)
@@ -197,7 +196,10 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         return (holder: holderId, signatureSuite: SignatureAlgorithm.jsonWebSignature2020.rawValue)
     }
     
-    private func sanitize(_ holderId: String) -> String {
+    private func sanitize(_ holderId: String?) -> String? {
+        guard let holderId = holderId else {
+            return nil
+        }
         return (holderId
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")

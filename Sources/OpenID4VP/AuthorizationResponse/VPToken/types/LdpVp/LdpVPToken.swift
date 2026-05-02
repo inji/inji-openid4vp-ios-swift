@@ -31,3 +31,19 @@ struct LdpVPToken: Encodable, VPToken {
         case proof
     }
 }
+
+
+struct LdpVCToken: Encodable, VPToken {
+    let verifiableCredential: AnyCodable
+
+    init(
+        verifiableCredential: AnyCodable,
+    ) {
+        self.verifiableCredential = verifiableCredential
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(verifiableCredential)
+    }
+}

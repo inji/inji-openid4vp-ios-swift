@@ -65,6 +65,9 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
             let dataToSign = cborToByteString(cbor: wrapped)
             docTypeToDeviceAuthenticationBytes[docTypeString] = dataToSign
+            
+            let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
+            
             credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
                 format: credentialInputDescriptorMapping.format,
                 credential: credentialInputDescriptorMapping.credential,
@@ -72,13 +75,11 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                 identifier: docTypeString
                 )
             
-            let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
-            
             unsignedVPTokens.append(UnsignedVPToken(
                 format: .mso_mdoc,
                 holderKeyReference: keyRef,
                 signatureAlgorithm: alg,
-                dataToSign: dataToSign
+                dataToSign: Data(dataToSign.utf8)
             ))
         }
 
@@ -92,7 +93,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                 format: .mso_mdoc,
                 holderKeyReference: keyRef,
                 signatureAlgorithm: alg,
-                dataToSign: docTypeToDeviceAuthenticationBytes[docType]!
+                dataToSign: Data((docTypeToDeviceAuthenticationBytes[docType]!).utf8)
              ))
         }
 
@@ -122,13 +123,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             let credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
             let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credentialToCredentialQueryIdMapping.credential, className: Self.className)
             
-            guard let docType = getValueFromCBORMap(cborMap: decodedMdocCredential, key: "docType"),
-                  let docTypeString = extractStringFromCBOR(docType) else {
-                throw InvalidData(
-                    message: "docType missing or invalid in credential",
-                    className: Self.className
-                )
-            }
+            let (docType, docTypeString) = try extractMdocDocType(from: decodedMdocCredential, className: Self.className)
 
             if docTypeToDeviceAuthenticationBytes[docTypeString] != nil {
                 throw InvalidData(
@@ -155,7 +150,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                 format: .mso_mdoc,
                 holderKeyReference: keyRef,
                 signatureAlgorithm: alg,
-                dataToSign: dataToSign
+                dataToSign: Data(dataToSign.utf8)
             ))
         }
 
@@ -169,7 +164,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                 format: .mso_mdoc,
                 holderKeyReference: keyRef,
                 signatureAlgorithm: alg,
-                dataToSign: docTypeToDeviceAuthenticationBytes[docType]!
+                dataToSign: Data((docTypeToDeviceAuthenticationBytes[docType]!).utf8)
              ))
         }
 

@@ -33,7 +33,8 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         let expectedDataToSign = """
         {"holder":"did:example:wallet","type":["VerifiablePresentation"],"@context":["https://www.w3.org/2018/credentials/v1","https://w3id.org/security/suites/ed25519-2020/v1"],"id":"ebc6f1c2","verifiableCredential":[{"type":["VerifiableCredential"],"issuanceDate":"2020-08-19T21:41:50Z","credentialSubject":{"id":"did:example:subject"},"@context":["https://www.w3.org/2018/credentials/v1"],"issuer":"did:example:issuer"}],"proof":{"verificationMethod":"did:example:wallet","challenge":"nonce","domain":"client_id","type":"Ed25519Signature2020"}}
         """
-        assertJsonString(expected: expectedDataToSign, actual: unsignedVPTokens.first!.dataToSign)
+        let actualDataToSign = String(decoding: unsignedVPTokens.first!.dataToSign, as: UTF8.self)
+        assertJsonString(expected: expectedDataToSign, actual: actualDataToSign)
     }
 
     func testContextIncludesEd25519Suite() async throws {
@@ -55,7 +56,8 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         let expectedDataToSign = """
         {"holder":"did:example:wallet","type":["VerifiablePresentation"],"@context":["https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/ed25519-2020/v1"],"id":"ebc6f1c2","verifiableCredential":[{"type":["VerifiableCredential"],"issuanceDate":"2020-08-19T21:41:50Z","credentialSubject":{"id":"did:example:subject"},"@context":["https://www.w3.org/2018/credentials/v1"],"issuer":"did:example:issuer"}],"proof":{"verificationMethod":"did:example:wallet","challenge":"nonce","domain":"client_id","type":"Ed25519Signature2020"}}
         """
-        assertJsonString(expected: expectedDataToSign, actual: unsignedVPTokens.first!.dataToSign)
+        let actualDataToSign = String(decoding: unsignedVPTokens.first!.dataToSign, as: UTF8.self)
+        assertJsonString(expected: expectedDataToSign, actual: actualDataToSign)
 //    TODO:    assert the ldpVPTokenPaylload as well
     }
 
@@ -84,10 +86,11 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         {"holder":"did:example:wallet","type":["VerifiablePresentation"],"@context":["https://www.w3.org/2018/credentials/v1","https://w3id.org/security/suites/jws-2020/v1"],"id":"ebc6f1c2","verifiableCredential":[{"type":["VerifiableCredential"],"issuanceDate":"2020-08-19T21:41:50Z","credentialSubject":{"id":"did:example:subject"},"@context":["https://www.w3.org/2018/credentials/v1"],"issuer":"did:example:issuer"}],"proof":{"verificationMethod":"did:example:wallet","challenge":"nonce","domain":"client_id","type":"JsonWebSignature2020"}}
         """
 //        assertJsonString(expected: expectedDataToSign, actual: unsignedVPTokens.first!.dataToSign)
-        XCTAssertTrue(unsignedVPTokens.first!.dataToSign.contains("canonicalized"))
-        XCTAssertTrue(unsignedVPTokens.first!.dataToSign.starts(with: "ey"))
-        XCTAssertTrue(unsignedVPTokens.first!.dataToSign.contains("."))
-        XCTAssertTrue(unsignedVPTokens.first!.dataToSign.split(separator: ".").count == 2)
+        let actualDataToSign = String(decoding: unsignedVPTokens.first!.dataToSign, as: UTF8.self)
+        XCTAssertTrue(actualDataToSign.contains("canonicalized"))
+        XCTAssertTrue(actualDataToSign.starts(with: "ey"))
+        XCTAssertTrue(actualDataToSign.contains("."))
+        XCTAssertTrue(actualDataToSign.split(separator: ".").count == 2)
     }
 
     // MARK: - build(credentialToCredentialQueryIdMappings:) — error paths
@@ -259,7 +262,8 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(token.format, .ldp_vc)
         XCTAssertEqual(token.holderKeyReference, "did:example:subject")
         XCTAssertFalse(token.dataToSign.isEmpty)
-        XCTAssertTrue(token.dataToSign.contains("."))
+        let actualDataToSign = String(decoding: unsignedVPTokens.first!.dataToSign, as: UTF8.self)
+        XCTAssertTrue(actualDataToSign.contains("."))
 
         let vpPayload = payload as? [String: LdpVPToken]
         XCTAssertEqual(vpPayload?.count, 1)
@@ -324,8 +328,8 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
 
         let (_, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
-        let dataToSign = unsignedVPTokens[0].dataToSign
-        let parts = dataToSign.components(separatedBy: ".")
+        let actualDataToSign = String(decoding: unsignedVPTokens.first!.dataToSign, as: UTF8.self)
+        let parts = actualDataToSign.components(separatedBy: ".")
         XCTAssertEqual(parts.count, 2, "dataToSign must be '<jwsHeader>.<canonicalizedPayload>'")
         XCTAssertFalse(parts[0].isEmpty, "JWS header must be non-empty base64url string")
         XCTAssertEqual(parts[1], canonicalized)
