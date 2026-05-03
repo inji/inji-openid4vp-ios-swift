@@ -111,4 +111,14 @@ class DidPublicKeyResolverTests: XCTestCase {
             )
         }
     }
+    
+    // Get JWS Algorithm from the resolved public key
+    func testGetJWSAlgorithmFromResolvedPublicKey() async {
+        let didJwkUri = "did:jwk:eyJrdHkiOiJFQyIsInVzZSI6InNpZyIsImNydiI6IlAtMjU2IiwieCI6IlE2ZExER0pIT3RyalFnX1RQNW5GZkZ6Tlg1LUdjal9kYUhjZ29VT2FWLU0iLCJ5Ijoia1lBa19lejYxQkt2Vi1RUDlpWC01eUEtNS1pSHlqRWprc3RKejZUdVhicyJ9#0"
+        let expectedJWSAlgorithm: String = "ES256"
+        
+        let resolvedJWSAlgrithm = try? didKeyResolver.getJWSAlgorithm(uri: didJwkUri)
+        
+        XCTAssertEqual(expectedJWSAlgorithm, resolvedJWSAlgrithm)
+    }
 }

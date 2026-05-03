@@ -341,22 +341,6 @@ func matchingDCQLCredentialQuery(_  authorizationRequest: AuthorizationRequest, 
     return matchingCredentialQuery
 }
 
-
-private enum JWSAlgorithm {
-    static let eddsa = "EdDSA"
-    static let rs256 = "RS256"
-    static let es256 = "ES256"
-    static let es384 = "ES384"
-    static let es256k = "ES256K"
-}
-
-private enum MulticodecPrefix {
-    static let ed25519 = "z6M"    // Ed25519
-    static let p256 = "zDn"       // P-256
-    static let p384 = "z82"       // P-384
-    static let secp256k1 = "zQ3"  // secp256k1
-}
-
 private enum DIDPrefix {
     static let key = "did:key:"
     static let jwk = "did:jwk:"
@@ -367,58 +351,12 @@ private enum DIDPrefix {
 /// Reference: https://www.w3.org/TR/vc-data-model-1.1/#identifiers
 func getJWSAlgorithm(from uri: String) throws -> String {
     
-    // 1. Handle did:key
-    if uri.hasPrefix(DIDPrefix.key) {
-        let identifier = uri.replacingOccurrences(of: DIDPrefix.key, with: "")
-        
-        if identifier.hasPrefix(MulticodecPrefix.ed25519) { return JWSAlgorithm.eddsa }
-        if identifier.hasPrefix(MulticodecPrefix.p256)    { return JWSAlgorithm.es256 }
-        if identifier.hasPrefix(MulticodecPrefix.p384)    { return JWSAlgorithm.es384 }
-        if identifier.hasPrefix(MulticodecPrefix.secp256k1) { return JWSAlgorithm.es256k }
-    }
-    
-    // 2. Handle did:jwk
-    if uri.hasPrefix(DIDPrefix.jwk) {
-        //TODO: reuse Did key resolver logic here to avoid code duplication
-        let base64Part = uri.replacingOccurrences(of: DIDPrefix.jwk, with: "")
-        let jwk = try decodeJWK(base64Part)
-        // Priority 1: Use explicit 'alg' field
-        if let alg = jwk.algorithm { return alg }
-        
-        // Priority 2: Map from kty/crv
-        let kty = jwk.keyType
-        let crv = jwk.curve
-        
-        switch (kty, crv) {
-        case (.octetKeyPair, .ed25519): return JWSAlgorithm.eddsa
-        case (.ellipticCurve, .p256):    return JWSAlgorithm.es256
-        case (.ellipticCurve, .p384):    return JWSAlgorithm.es384
-        case (.ellipticCurve, .secp256k1): return JWSAlgorithm.es256k
-        case (.rsa, .p256): return JWSAlgorithm.rs256
-        default: break
-        }
-        
+    if(uri.hasPrefix("did:")) {
+        return try DidPublicKeyResolver().getJWSAlgorithm(uri: uri)
     }
     
     // TODO: Throw unsupported key resolution
     return JWSAlgorithm.eddsa
 }
 
-private func decodeJWK(_ base64urlJwk: String) throws -> JWK {
-    guard let jwkData = Data(base64UrlEncoded: base64urlJwk) else {
-        throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: "Utils")
-    }
-    
-    let jwk = try {
-        do {
-            return try JSONDecoder().decode(JWK.self, from: jwkData)
-        } catch {
-            throw PublicKeyResolutionFailed(
-                message: "Failed to decode JWK: \(error.localizedDescription)",
-                className: "Utils"
-            )
-        }
-    }()
-    
-    return jwk
-}
+

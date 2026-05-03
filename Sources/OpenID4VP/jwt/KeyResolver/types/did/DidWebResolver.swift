@@ -46,6 +46,11 @@ class DidWebResolver : BaseDidPublicKeyResolver {
         }
     }
     
+    func extractJWSAlgorithm(parsedDid: ParsedDID) throws -> String {
+//TODO: Implement extraction of JWS algorithm from DID document based on the verification method used for signing. For now, returning empty string as placeholder.
+        return ""
+    }
+    
     private func constructDIDUrl(from parsedDID: ParsedDID) -> String {
         let idComponents = parsedDID.id.split(separator: ":").map(String.init)
         let baseDomain = idComponents.first!

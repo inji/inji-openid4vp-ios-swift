@@ -42,7 +42,7 @@ class UtilsTest : XCTestCase {
     }
     
     func testValidUrl(){
-        XCTAssertTrue(isValidUri("https://example.com"))
+        XCTAssertTrue(isValidUri("https://609e-122-178-244-112.ngrok-free.app/verifier/get-auth-request-obj/did?draft=version-1.0&response_mode=direct_post"))
     }
     
     /// Check if input is JWT tests
