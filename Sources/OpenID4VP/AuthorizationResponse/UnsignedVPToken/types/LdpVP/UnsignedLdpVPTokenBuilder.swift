@@ -140,45 +140,35 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             throw InvalidData(message: "Failed to encode LdpVPToken for signing.", className: className)
         }
         
-        if(signatureSuite == SignatureAlgorithm.jsonWebSignature2020.rawValue) {
-            guard let jsonLdCanonicalizer = JsonLd.canonicalizer else {
-                throw InvalidData(message: "Failed to get JsonLd canonicalizer.", className: className)
-            }
-            
-            let canonicalizedData = try await jsonLdCanonicalizer(jsonString)
-            let normalizedCredentialData = try Base64Decoder.decodeBase64ToData(canonicalizedData)
-            
-            let signatureAlgorithm: String = try getJWSAlgorithm(from: holder)
-            let jwsHeader = try base64URLEncode([
-                "alg": signatureAlgorithm,
-                // the payload is not Base64URL-encoded
-                "crit" : ["b64"],
-                "b64": false
-            ])
-            let headerBytes = Data(jwsHeader.utf8)
-            let dot = Data([0x2E]) // "."
-            var signingInput = Data()
-            signingInput.append(headerBytes)
-            signingInput.append(dot)
-            signingInput.append(normalizedCredentialData)
-
-            let unsignedVPToken = UnsignedVPToken(
-                format: .ldp_vc,
-                holderKeyReference: holder,
-                signatureAlgorithm: signatureAlgorithm,
-                dataToSign: signingInput
-            )
-            
-            return (vpTokenSigningPayload, unsignedVPToken)
+        
+        guard let jsonLdCanonicalizer = JsonLd.canonicalizer else {
+            throw InvalidData(message: "Failed to get JsonLd canonicalizer.", className: className)
         }
         
-        // TODO: For non json web signature suite - how is the data to sign populated - should it be canonicalized or just the JSON string of the VP token?
+        let canonicalizedData = try await jsonLdCanonicalizer(jsonString)
+        let normalizedCredentialData = try Base64Decoder.decodeBase64ToData(canonicalizedData)
+        
+        let signatureAlgorithm: String = try getJWSAlgorithm(from: holder)
+        let jwsHeader = try base64URLEncode([
+            "alg": signatureAlgorithm,
+            // the payload is not Base64URL-encoded
+            "crit" : ["b64"],
+            "b64": false
+        ])
+        let headerBytes = Data(jwsHeader.utf8)
+        let dot = Data([0x2E]) // "."
+        var signingInput = Data()
+        signingInput.append(headerBytes)
+        signingInput.append(dot)
+        signingInput.append(normalizedCredentialData)
+        
         let unsignedVPToken = UnsignedVPToken(
             format: .ldp_vc,
             holderKeyReference: holder,
-            signatureAlgorithm: signatureSuite,
-            dataToSign: Data(jsonString.utf8)
+            signatureAlgorithm: signatureAlgorithm,
+            dataToSign: signingInput
         )
+        
         
         return (vpTokenSigningPayload, unsignedVPToken)
     }
