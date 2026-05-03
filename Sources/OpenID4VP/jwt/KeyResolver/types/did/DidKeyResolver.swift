@@ -35,7 +35,7 @@ class DidKeyResolver : BaseDidPublicKeyResolver{
         return try toEd25519Key(publicKeyData: keyBytes)
     }
     
-    func extractJWSAlgorithm(parsedDid: ParsedDID) throws -> String {
+    func extractJWSAlgorithm(parsedDid: ParsedDID) async throws -> String {
         let identifier = parsedDid.id.replacingOccurrences(of: "did:key:", with: "")
         
         if identifier.hasPrefix(MulticodecPrefix.ed25519) { return JWSAlgorithm.eddsa }

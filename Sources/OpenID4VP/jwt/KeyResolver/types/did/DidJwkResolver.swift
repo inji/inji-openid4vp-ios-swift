@@ -18,7 +18,7 @@ class DidJwkResolver : BaseDidPublicKeyResolver {
         return try jwkToPublicKey(jwk, className: Self.className)
     }
     
-    func extractJWSAlgorithm(parsedDid: ParsedDID) throws -> String {
+    func extractJWSAlgorithm(parsedDid: ParsedDID) async throws -> String {
         let base64urlJwk = String(parsedDid.id)
         let jwk = try decodeJWK(base64urlJwk)
         

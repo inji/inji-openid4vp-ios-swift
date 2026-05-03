@@ -118,8 +118,8 @@ class DidPublicKeyResolverTests: XCTestCase {
         let ecR1DidJwkUri = "did:jwk:eyJrdHkiOiJFQyIsInVzZSI6InNpZyIsImNydiI6IlAtMjU2IiwieCI6IlE2ZExER0pIT3RyalFnX1RQNW5GZkZ6Tlg1LUdjal9kYUhjZ29VT2FWLU0iLCJ5Ijoia1lBa19lejYxQkt2Vi1RUDlpWC01eUEtNS1pSHlqRWprc3RKejZUdVhicyJ9#0" // EC key and secpr1 curve which should resolve to ES256 algorithm
         let rsaDidJwkUri = "did:jwk:eyJrdHkiOiJSU0EiLCJlIjoiQVFBQiIsInVzZSI6InNpZyIsImtpZCI6InpubTJ5NjhzLUxDX1M0a0dITkxoVXJ1YmlteUIwVWNRcXM0cUgzb1poWWsiLCJuIjoicWdoRnNPOWJYcUtiRWpNR2dMZ2NJenJHS3dyVjZxLUV6MFZaNXA1cW1Qdkw0bjQtQUFIbTdSbEpaVGw1Xzg2NDlJUHMxUUQtQWdscEpEaEJrZm1LVXg4ODMxeU95WjJKeGNpNjhILVBXTVgyUU9qYXlycjRoamQzQXRnNXIzY3lPZWJpWG4yUFEzZHZ6MmtlSnF5dUZiSkx0aVNGdHREeXJZT2ZLNnNsUDFZOFhwMHdMNHRZS0JWNEE3LU0yOWlhT2xGOGU4MWtFWDdCUzZ3U2pldGNDLUFybklldU04S3hNNFZXeHRnNXd3WmFGaGtXNjQydnJZa1ZQRlNxZE1wcUV4ZkV4dUNhbWVBN2xDMGdYZEtEOERxRWIyQ2UwNmIzQXRvM0M3TWFqR2ZJZmh2bExRQzVhc2luZTZXOGxGbG1ldFFHMHhGRE8xMGJXdzVSQTJOYmR3In0#0"
         
-        let resolvedJWSAlgrithm1 = try? didKeyResolver.getJWSAlgorithm(uri: ecR1DidJwkUri)
-        let resolvedJWSAlgrithm2 = try? didKeyResolver.getJWSAlgorithm(uri: rsaDidJwkUri)
+        let resolvedJWSAlgrithm1 = try? await didKeyResolver.getJWSAlgorithm(uri: ecR1DidJwkUri)
+        let resolvedJWSAlgrithm2 = try? await didKeyResolver.getJWSAlgorithm(uri: rsaDidJwkUri)
         
         XCTAssertEqual("ES256", resolvedJWSAlgrithm1)
         XCTAssertEqual("RS256", resolvedJWSAlgrithm2)

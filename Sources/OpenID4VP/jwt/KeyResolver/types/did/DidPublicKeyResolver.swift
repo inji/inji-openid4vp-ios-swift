@@ -3,7 +3,7 @@ import Base58Swift
 
 protocol BaseDidPublicKeyResolver {
     func extractPublicKey(parsedDID: ParsedDID, keyId : String?) async throws -> PublicKeyType
-    func extractJWSAlgorithm(parsedDid: ParsedDID) throws -> String
+    func extractJWSAlgorithm(parsedDid: ParsedDID) async throws -> String
 }
 
 // This should be moved to other module - vc-verifier once available
@@ -27,11 +27,11 @@ public class DidPublicKeyResolver : PublicKeyResolver {
         return try await resolver.extractPublicKey(parsedDID: parsedDID, keyId: kid)
     }
     
-    func getJWSAlgorithm(uri: String) throws -> String {
+    func getJWSAlgorithm(uri: String) async throws -> String {
         let parsedDID = try parseDid(uri)
         let resolver : BaseDidPublicKeyResolver = try resolver(parsedDid : parsedDID, networkManager: networkManager)
         
-        return try resolver.extractJWSAlgorithm(parsedDid: parsedDID)
+        return try await resolver.extractJWSAlgorithm(parsedDid: parsedDID)
     }
     
     private func resolver(parsedDid: ParsedDID, networkManager: NetworkManaging) throws -> BaseDidPublicKeyResolver {

@@ -3,7 +3,7 @@ import Foundation
 extension Data {
     func toBase58BtcEncoded() -> String {
         let alphabet = Array("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
-        var bytes = [UInt8](self)
+        let bytes = [UInt8](self)
 
         var leadingZeroCount = 0
         for byte in bytes {

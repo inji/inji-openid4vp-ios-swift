@@ -349,10 +349,10 @@ private enum DIDPrefix {
 // MARK: - Utility Function
 /// Extracts the JWS 'alg' string based on a Subject ID (DID) without hardcoded magic strings.
 /// Reference: https://www.w3.org/TR/vc-data-model-1.1/#identifiers
-func getJWSAlgorithm(from uri: String) throws -> String {
+func getJWSAlgorithm(from uri: String) async throws -> String {
     
     if(uri.hasPrefix("did:")) {
-        return try DidPublicKeyResolver().getJWSAlgorithm(uri: uri)
+        return try await DidPublicKeyResolver().getJWSAlgorithm(uri: uri)
     }
     
     // TODO: Throw unsupported key resolution
