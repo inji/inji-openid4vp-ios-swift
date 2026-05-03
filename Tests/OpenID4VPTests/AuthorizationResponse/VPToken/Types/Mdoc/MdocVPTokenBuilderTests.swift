@@ -8,7 +8,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
     let deviceAuthBytes = "d818587e847444657669636541757468656e7469636174696f6e"
 
     func testBuildSuccess() throws {
-        let signature = Data("mock-signature".utf8).base64EncodedString()
+        let signature = Data("mock-signature".utf8)
         let mappings = [
             CredentialInputDescriptorMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), inputDescriptorId: "id-1", identifier: docType)
         ]
@@ -71,7 +71,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
     }
 
     func testBuildThrowsWhenExtraSigningResults() {
-        let signature = Data("mock-signature".utf8).base64EncodedString()
+        let signature = Data("mock-signature".utf8)
         let mappings = [
             CredentialInputDescriptorMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), inputDescriptorId: "id-1", identifier: docType)
         ]

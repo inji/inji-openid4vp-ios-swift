@@ -2,9 +2,9 @@ import Foundation
 
 public struct VPTokenSigningResult: Codable {
 
-    public let signedData: String
+    public let signedData: Data
 
-    public init(signedData: String) {
+    public init(signedData: Data) {
         self.signedData = signedData
     }
 }

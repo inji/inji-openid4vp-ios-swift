@@ -13,7 +13,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
     func testBuildWithHolderBinding() throws {
         let uuid = "uuid-with-binding"
         let unsignedKBJwt = "eyJhbGciOiJFUzI1NiIsInR5cCI6ImtiK2p3dCJ9.eyJpYXQiOjE3NTc0NzcxNjQsIm5vbmNlIjoibm9uY2UifQ"
-        let signature = "kbSignature"
+        let signature = Data("kbSignature".utf8)
 
         let mappings = [
             CredentialInputDescriptorMapping(
@@ -88,7 +88,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let uuidWithBinding = "uuid-with-binding"
         let uuidNoBinding = "uuid-no-binding"
         let unsignedKBJwt = "eyJhbGciOiJFUzI1NiIsInR5cCI6ImtiK2p3dCJ9.eyJpYXQiOjE3NTc0NzcxNjQsIm5vbmNlIjoibm9uY2UifQ"
-        let signature = "kbSignature"
+        let signature = Data("kbSignature".utf8)
 
         let mappings = [
             CredentialInputDescriptorMapping(
@@ -137,7 +137,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let uuidWithBinding = "uuid-with-binding"
         let uuidNoBinding = "uuid-no-binding"
         let unsignedKBJwt = "eyJhbGciOiJFUzI1NiIsInR5cCI6ImtiK2p3dCJ9.eyJpYXQiOjE3NTc0NzcxNjQsIm5vbmNlIjoibm9uY2UifQ"
-        let signature = "kbSignature"
+        let signature = Data("kbSignature".utf8)
 
         let mappings = [
             CredentialInputDescriptorMapping(
@@ -188,8 +188,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let uuid2 = "uuid-2"
         let unsignedKBJwt1 = "eyJhbGciOiJFUzI1NiJ9.payload1"
         let unsignedKBJwt2 = "eyJhbGciOiJFUzI1NiJ9.payload2"
-        let sig1 = "sig1"
-        let sig2 = "sig2"
+        let sig1 = Data("sig1".utf8)
+        let sig2 = Data("sig2".utf8)
 
         let mappings = [
             CredentialInputDescriptorMapping(
@@ -430,7 +430,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try builder.build(
             credentialInputDescriptorMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(signedData: "unexpected")],
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("unexpected".utf8))],
             rootIndex: 0
         )) { error in
             assertOpenID4VPException(
@@ -496,7 +496,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try builder.build(
             credentialInputDescriptorMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(signedData: "")],
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("".utf8))],
             rootIndex: 0
         )) { error in
             assertOpenID4VPException(
@@ -515,8 +515,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let uuid3 = "uuid-bound-2"
         let unsignedKB1 = "eyJhbGciOiJFUzI1NiJ9.kb1"
         let unsignedKB2 = "eyJhbGciOiJFUzI1NiJ9.kb2"
-        let sig1 = "sig1"
-        let sig2 = "sig2"
+        let sig1 = Data("sig1".utf8)
+        let sig2 = Data("sig2".utf8)
 
         let mappings = [
             CredentialInputDescriptorMapping(
@@ -602,7 +602,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
     func testDcqlBuildHolderBindingTrueProducesKBJwtAppendedToken() throws {
         let uuid = "uuid-bound"
         let unsignedKBJwt = "eyJhbGciOiJFUzI1NiJ9.kbpayload"
-        let signature = "kbSig"
+        let signature = Data("kbSig".utf8)
 
         let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
         let mappings = [
@@ -654,8 +654,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let uuid2 = "uuid-2"
         let kb1 = "eyJhbGciOiJFUzI1NiJ9.kb1"
         let kb2 = "eyJhbGciOiJFUzI1NiJ9.kb2"
-        let sig1 = "sig1"
-        let sig2 = "sig2"
+        let sig1 = Data("sig1".utf8)
+        let sig2 = Data("sig2".utf8)
 
         let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
         let mappings = [
@@ -685,7 +685,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let uuid1 = "uuid-q1"
         let uuid2 = "uuid-q2"
         let kb1 = "eyJhbGciOiJFUzI1NiJ9.kb1"
-        let sig1 = "sig1"
+        let sig1 = Data("sig1".utf8)
 
         let dcqlBuilder = builderWithDcqlRequest(
             credentials: [("q1", "dc+sd-jwt", true), ("q2", "dc+sd-jwt", false)]
@@ -836,7 +836,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(signedData: "sig")]
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("sig".utf8))]
         )) { error in
             assertOpenID4VPException(
                 error,
@@ -884,7 +884,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(signedData: "")]
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("".utf8))]
         )) { error in
             assertOpenID4VPException(
                 error,
@@ -931,7 +931,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(signedData: "unexpected")]
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("unexpected".utf8))]
         )) { error in
             assertOpenID4VPException(
                 error,

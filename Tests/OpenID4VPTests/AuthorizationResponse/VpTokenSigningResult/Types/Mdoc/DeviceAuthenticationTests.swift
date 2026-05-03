@@ -4,7 +4,7 @@ import XCTest
 final class DeviceAuthenticationTests: XCTestCase {
     
     func testDeviceAuthenticationSuccess() {
-        let validSignature = "validSignature123"
+        let validSignature = Data("validSignature123".utf8)
         let validAlgorithm = "ES256"
         
         let deviceAuth = DeviceAuthentication(signature: validSignature, algorithm: validAlgorithm)
@@ -15,10 +15,10 @@ final class DeviceAuthenticationTests: XCTestCase {
     }
     
     func testDeviceAuthenticationInvalidSignature() {
-        let testCases: [TestCase<String, String>] = [
-            TestCase(input: "null", expectedError: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null"),
-            TestCase(input: "nil", expectedError: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null"),
-            TestCase(input: "", expectedError: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null")
+        let testCases: [TestCase<Data, String>] = [
+            TestCase(input: Data("null".utf8), expectedError: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null"),
+            TestCase(input: Data("nil".utf8), expectedError: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null"),
+            TestCase(input: Data("".utf8), expectedError: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null")
         ]
         
         let validAlgorithm = "ES256"
@@ -42,7 +42,7 @@ final class DeviceAuthenticationTests: XCTestCase {
             TestCase(input: "", expectedError: "Invalid Input: DeviceAuthentication->algorithm value cannot be empty or null")
         ]
         
-        let validSignature = "validSignature123"
+        let validSignature = Data("validSignature123".utf8)
         
         for testCase in testCases {
             let deviceAuth = DeviceAuthentication(signature: validSignature, algorithm: testCase.input)

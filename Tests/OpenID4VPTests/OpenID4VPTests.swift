@@ -447,7 +447,7 @@ class OpenID4VPTests: XCTestCase {
 
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
-        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult(signedData: "signed-data")])
+        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("signed-data".utf8))])
 
         XCTAssertEqual(result["vp_token"] as! String, "jwt-token")
     }
@@ -461,7 +461,7 @@ class OpenID4VPTests: XCTestCase {
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
 
-        let signingResults = [VPTokenSigningResult(signedData: "signed-data")]
+        let signingResults = [VPTokenSigningResult(signedData: Data("signed-token".utf8))]
         let result = openIdVP.constructVPResponse(vpTokenSigningResults: signingResults)
 
         XCTAssertEqual(result["vp_token"] as? String, "signed-token")

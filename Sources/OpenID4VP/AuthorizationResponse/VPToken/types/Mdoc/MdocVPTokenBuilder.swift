@@ -176,7 +176,7 @@ class MdocVPTokenBuilder : VPTokenBuilder {
      ]
      */
     private func createDeviceSignature(_ vpResponseMetadata: DeviceAuthentication) throws -> CBOR {
-        let base64DecodedSignature = try Base64Decoder.decodeBase64ToData(vpResponseMetadata.signature)
+        let base64DecodedSignature = vpResponseMetadata.signature
         let cborEncodedSignature = cborEncode(toCBOR(base64DecodedSignature))
         let protectedHeaders = CBOR.map([
             .unsignedInt(1): try mapSigningAlgorithmToProtectedAlg(algorithm: vpResponseMetadata.algorithm)

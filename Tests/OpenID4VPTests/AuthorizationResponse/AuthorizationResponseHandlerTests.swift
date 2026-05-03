@@ -83,7 +83,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
         
         let vpTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "testJWS"),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
         ]
         
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
@@ -113,8 +113,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
         
         let vpTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "testJWS"),
-            VPTokenSigningResult(signedData: "aGVsbG8="),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
+            VPTokenSigningResult(signedData: Data("aGVsbG8=".utf8)),
         ]
         
         _ = try await handler.constructUnsignedVPToken(
@@ -230,8 +230,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
         
         let mockVPTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "testJWS"),
-            VPTokenSigningResult(signedData: "sign"),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
+            VPTokenSigningResult(signedData: Data("sign=".utf8)),
         ]
         
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
@@ -309,7 +309,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: walletNonce
         )
         
-        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(authorizationRequest: authorizationRequest, vpTokenSigningResults: [VPTokenSigningResult(signedData: "ayuht")], responseUri: responseUri)
+        let result = try await handler.constructAndSendAuthorizationResponseToVerifier(authorizationRequest: authorizationRequest, vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("ayuht".utf8))], responseUri: responseUri)
         
         XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!
@@ -396,10 +396,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         print("unsignedVPTokens: \(unsignedVPTokens)")
         
         let vpTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "ayuht"),
-            VPTokenSigningResult(signedData: "testJWS"),
-            VPTokenSigningResult(signedData: "aGVsbG8="),
-            VPTokenSigningResult(signedData: "ayuht"),
+            VPTokenSigningResult(signedData: Data("ayuht".utf8)),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
+            VPTokenSigningResult(signedData: Data("aGVsbG8=".utf8)),
+            VPTokenSigningResult(signedData: Data("ayuht".utf8)),
         ]
         
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
@@ -435,9 +435,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
 
         let vpTokenSigningResults: [VPTokenSigningResult] = [ // simulate missing signed data
-            VPTokenSigningResult(signedData: "testJWS"),
-            VPTokenSigningResult(signedData: "aGVsbG8="),
-            VPTokenSigningResult(signedData: "ayuht"),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
+            VPTokenSigningResult(signedData: Data("aGVsbG8=".utf8)),
+            VPTokenSigningResult(signedData: Data("ayuht".utf8)),
         ]
         
         do {
@@ -489,7 +489,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
         
         let vpTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "testJWS"),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
         ]
         
         let authorizationResponse = try handler.constructVPResponse(
@@ -537,7 +537,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         XCTAssertThrowsError(
             try handler.constructVPResponse(
-                signingResults: [VPTokenSigningResult(signedData: "")],
+                signingResults: [VPTokenSigningResult(signedData: Data("".utf8))],
                 authorizationRequest: authorizationRequest
             )
         ) { error in
@@ -568,7 +568,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         XCTAssertThrowsError(
             try handler.constructVPResponse(
-                signingResults: [VPTokenSigningResult(signedData: "")],
+                signingResults: [VPTokenSigningResult(signedData: Data("".utf8))],
                 authorizationRequest: authorizationRequest
             )
         ) { error in
@@ -706,7 +706,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
 
         let vpTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "testJWS"),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
         ]
 
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "sending is success in AuthorizationResponseTests")
@@ -782,7 +782,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: [VPTokenSigningResult(signedData: "ayuht")],
+            vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("ayuht".utf8))],
             responseUri: responseUri
         )
 
@@ -844,10 +844,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
 
         let vpTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "testJWS"),
-            VPTokenSigningResult(signedData: "aGVsbG8="),
-            VPTokenSigningResult(signedData: "ayuht"),
-            VPTokenSigningResult(signedData: "ayuht"),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
+            VPTokenSigningResult(signedData: Data("aGVsbG8=".utf8)),
+            VPTokenSigningResult(signedData: Data("ayuht".utf8)),
+            VPTokenSigningResult(signedData: Data("ayuht".utf8)),
         ]
 
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
@@ -881,7 +881,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         )
 
         let vpTokenSigningResults: [VPTokenSigningResult] = [
-            VPTokenSigningResult(signedData: "testJWS"),
+            VPTokenSigningResult(signedData: Data("testJWS".utf8)),
         ]
 
         let authorizationResponse = try handler.constructVPResponse(

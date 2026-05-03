@@ -100,14 +100,14 @@ class LdpVPTokenBuilder: VPTokenBuilder {
                 let dotIndex = dataToSign.firstIndex(of: 0x2E)
                 let headerData = dataToSign.prefix(upTo: dotIndex ?? Data.Index())
                 let header = String(data: headerData, encoding: .utf8) ?? ""
-                proof?.jws = header + ".." + vpTokenSigningResult.signedData
+                proof?.jws = header + ".." + vpTokenSigningResult.signedData.toBase64UrlEncoded()
 
             case SignatureAlgorithm.rsaSignature2018.rawValue,
                 SignatureAlgorithm.ed25519Signature2018.rawValue:
                 
 //                let preHash = unsignedVPToken.dataToSign
     //            let header = preHash.split(separator: ".").first ?? ""
-                proof?.jws = "header" + ".." + vpTokenSigningResult.signedData
+                proof?.jws = "header" + ".." + vpTokenSigningResult.signedData.toBase64UrlEncoded()
 
             case SignatureAlgorithm.ed25519Signature2020.rawValue:
                 try validateField(
@@ -115,7 +115,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
                     fieldPath: ["VPTokenSigningResult", "signedData"],
                     className: className
                 )
-                proof?.proofValue = vpTokenSigningResult.signedData
+                proof?.proofValue = vpTokenSigningResult.signedData.toBase64UrlEncoded()
 
             default:
                 throw UnsupportedSignatureAlgorithm(

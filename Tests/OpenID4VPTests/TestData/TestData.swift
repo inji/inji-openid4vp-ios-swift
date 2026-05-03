@@ -504,9 +504,9 @@ let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadata] = [
     ], as: ClientMetadata.self)
 ]
 
-let ldpVPTokenSigningResult = VPTokenSigningResult(signedData: "validJWS")
+let ldpVPTokenSigningResult = VPTokenSigningResult(signedData: Data("validJWS".utf8))
 
-let mdocSigningResult = VPTokenSigningResult(signedData: "signature")
+let mdocSigningResult = VPTokenSigningResult(signedData: Data("signature".utf8))
 
 //  client_id_prefix = redirect_uri
 let authorizationRequestParamsWithRedirectUri: [String: Any] = [

@@ -115,7 +115,7 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
         guard let vpTokenSigningResult = signingResultsIterator.next() else {
             throw InvalidData(message: "Missing signing result for \(uuid)", className: className)
         }
-        let signature = vpTokenSigningResult.signedData
+        let signature = vpTokenSigningResult.signedData.toBase64UrlEncoded()
         guard !signature.isEmpty else {
             throw MissingInput(fieldPath: uuid, message: "Missing Key Binding JWT signature for uuid: \(uuid)", className: className)
         }

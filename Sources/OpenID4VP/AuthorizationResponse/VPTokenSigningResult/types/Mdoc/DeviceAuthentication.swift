@@ -1,9 +1,11 @@
+import Foundation
+
 public struct DeviceAuthentication {
-    let signature: String
+    let signature: Data
     let algorithm: String
     static let className = String(describing: DeviceAuthentication.self)
     
-    public init(signature: String, algorithm: String) {
+    public init(signature: Data, algorithm: String) {
         self.signature = signature
         self.algorithm = algorithm
     }
