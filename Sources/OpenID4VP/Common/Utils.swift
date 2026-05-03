@@ -65,7 +65,7 @@ func convertToInstance<T: Decodable>(_ input: String, as type: T.Type, fieldPath
 
 func toData(_ input: [String: Any]) throws -> Data {
     var processedInput: [String: Any] = [:]
-
+    
     for (key, value) in input {
         if let encodableValue = value as? Encodable {
             if let converted = encodableValue.toDictionary() {
@@ -142,7 +142,7 @@ func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, classNam
             )
         }
         let data = try response.body.data(using: .utf8) ?? {
-           throw InvalidData(
+            throw InvalidData(
                 message: "unable to convert the jwks response to data",
                 className: className
             )
@@ -153,7 +153,7 @@ func resolveJwksFromUri(_ uri: String, networkManager: NetworkManaging, classNam
             message: "Public key extraction failed - Unable to fetch/parse jwks from \(uri) due to \(error.localizedDescription)",
             className: className,
             code: OpenID4VPErrorCodes.invalidRequestObject
-                )
+        )
     }
 }
 
@@ -164,7 +164,7 @@ internal func validate(_ value: String, fieldPath: String,className: String) thr
 }
 
 func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, alg: String) {
-
+    
     
     guard let data = Data(base64UrlEncoded: mdocCredential) else {
         throw InvalidData(
@@ -172,16 +172,16 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
             className: "OpenID4VPUtils"
         )
     }
-
+    
     var decoded = try CBORDecoder(input: [UInt8](data)).decodeItem()
-
+    
     
     guard case let CBOR.map(rootMap)? = decoded,
           let issuerSigned = rootMap[CBOR.utf8String("issuerSigned")],
           case let CBOR.map(issuerSignedMap) = issuerSigned else {
         throw InvalidData(message: "issuerSigned missing", className: "OpenID4VPUtils")
     }
-
+    
     
     guard let issuerAuth = issuerSignedMap[CBOR.utf8String("issuerAuth")],
           case let CBOR.array(issuerAuthArray) = issuerAuth,
@@ -189,10 +189,10 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
           case let CBOR.byteString(payloadBytes) = issuerAuthArray[2] else {
         throw InvalidData(message: "issuerAuth payload missing", className: "OpenID4VPUtils")
     }
-
+    
     
     decoded = try CBORDecoder(input: payloadBytes).decodeItem()
-
+    
     
     if case let CBOR.tagged(tag, inner)? = decoded, tag.rawValue == CBOR_TAG_ENCODED_CBOR {
         guard case let CBOR.byteString(innerBytes) = inner else {
@@ -200,7 +200,7 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
         }
         decoded = try CBORDecoder(input: innerBytes).decodeItem()
     }
-
+    
     
     guard case let CBOR.map(msoMap)? = decoded,
           let deviceKeyInfo = msoMap[CBOR.utf8String("deviceKeyInfo")],
@@ -209,11 +209,11 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
           case let CBOR.map(deviceKeyMap) = deviceKey else {
         throw InvalidData(message: "deviceKey missing", className: "OpenID4VPUtils")
     }
-
+    
     
     let keyBytes = Data(cborEncode(deviceKey))
     let keyRef = keyBytes.toBase64UrlEncoded()
-
+    
     
     if let algItem = deviceKeyMap[CBOR.unsignedInt(3)]{
         let coseAlg = try readCoseInt(algItem)
@@ -224,12 +224,12 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
             throw InvalidData(message: "Unsupported COSE alg \(coseAlg)", className: "OpenID4VPUtils")
         }
     }
-
+    
     
     guard let crvItem = deviceKeyMap[CBOR.negativeInt(0)] else {
         throw InvalidData(message: "crv missing for alg inference", className: "OpenID4VPUtils")
     }
-
+    
     let crv = try readCoseInt(crvItem)
     switch crv {
     case COSE_CRV_P256: return (keyRef, "ES256")
@@ -287,40 +287,40 @@ func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: S
     guard let sdJwt = parts.first else {
         throw InvalidData(message: "Invalid SD-JWT credential format", className: "OpenID4VPUtils")
     }
-
+    
     let jwsParts = sdJwt.split(separator: ".")
     guard jwsParts.count >= 2 else {
         throw InvalidData(message: "Invalid SD-JWT JWS format", className: "OpenID4VPUtils")
     }
-
+    
     guard let payloadData = Data(base64UrlEncoded: String(jwsParts[1])) else {
         throw InvalidData(message: "Invalid SD-JWT payload encoding", className: "OpenID4VPUtils")
     }
-
+    
     guard let json = try JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
           let cnf = json["cnf"] as? [String: Any],
           let kid = cnf["kid"] as? String else {
         throw InvalidData(message: "cnf.kid missing in SD-JWT", className: "OpenID4VPUtils")
     }
-
+    
     
     let resolver = DidPublicKeyResolver()
     let publicKey = try await resolver.resolve(
         uri: kid.trimmingCharacters(in: CharacterSet(charactersIn: "=")),
         keyId: nil
     )
-
+    
     
     let alg: String
-
+    
     switch publicKey {
     case .ed25519:
         alg = "EdDSA"
-
+        
     case .secKey:
         alg = "ES256"
     }
-
+    
     return (kid, alg)
 }
 
@@ -344,6 +344,7 @@ func matchingDCQLCredentialQuery(_  authorizationRequest: AuthorizationRequest, 
 
 private enum JWSAlgorithm {
     static let eddsa = "EdDSA"
+    static let rs256 = "RS256"
     static let es256 = "ES256"
     static let es384 = "ES384"
     static let es256k = "ES256K"
@@ -364,7 +365,7 @@ private enum DIDPrefix {
 // MARK: - Utility Function
 /// Extracts the JWS 'alg' string based on a Subject ID (DID) without hardcoded magic strings.
 /// Reference: https://www.w3.org/TR/vc-data-model-1.1/#identifiers
-func getJWSAlgorithm(from uri: String) -> String {
+func getJWSAlgorithm(from uri: String) throws -> String {
     
     // 1. Handle did:key
     if uri.hasPrefix(DIDPrefix.key) {
@@ -380,38 +381,44 @@ func getJWSAlgorithm(from uri: String) -> String {
     if uri.hasPrefix(DIDPrefix.jwk) {
         //TODO: reuse Did key resolver logic here to avoid code duplication
         let base64Part = uri.replacingOccurrences(of: DIDPrefix.jwk, with: "")
-        if let jwk = decodeJWK(base64Part) {
-            // Priority 1: Use explicit 'alg' field
-            if let alg = jwk["alg"] as? String { return alg }
-            
-            // Priority 2: Map from kty/crv
-            let kty = jwk["kty"] as? String ?? ""
-            let crv = jwk["crv"] as? String ?? ""
-            
-            switch (kty, crv) {
-            case ("OKP", "Ed25519"): return JWSAlgorithm.eddsa
-            case ("EC", "P-256"):    return JWSAlgorithm.es256
-            case ("EC", "P-384"):    return JWSAlgorithm.es384
-            case ("EC", "secp256k1"): return JWSAlgorithm.es256k
-            default: break
-            }
+        let jwk = try decodeJWK(base64Part)
+        // Priority 1: Use explicit 'alg' field
+        if let alg = jwk.algorithm { return alg }
+        
+        // Priority 2: Map from kty/crv
+        let kty = jwk.keyType
+        let crv = jwk.curve
+        
+        switch (kty, crv) {
+        case (.octetKeyPair, .ed25519): return JWSAlgorithm.eddsa
+        case (.ellipticCurve, .p256):    return JWSAlgorithm.es256
+        case (.ellipticCurve, .p384):    return JWSAlgorithm.es384
+        case (.ellipticCurve, .secp256k1): return JWSAlgorithm.es256k
+        case (.rsa, .p256): return JWSAlgorithm.rs256
+        default: break
         }
+        
     }
     
-    // Default fallback to EdDSA as per common mobile wallet profiles
+    // TODO: Throw unsupported key resolution
     return JWSAlgorithm.eddsa
 }
 
-private func decodeJWK(_ base64URL: String) -> [String: Any]? {
-    var base64 = base64URL
-        .replacingOccurrences(of: "-", with: "+")
-        .replacingOccurrences(of: "_", with: "/")
-    
-    let remainder = base64.count % 4
-    if remainder > 0 {
-        base64 = base64.padding(toLength: base64.count + (4 - remainder), withPad: "=", startingAt: 0)
+private func decodeJWK(_ base64urlJwk: String) throws -> JWK {
+    guard let jwkData = Data(base64UrlEncoded: base64urlJwk) else {
+        throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: "Utils")
     }
     
-    guard let data = Data(base64Encoded: base64) else { return nil }
-    return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    let jwk = try {
+        do {
+            return try JSONDecoder().decode(JWK.self, from: jwkData)
+        } catch {
+            throw PublicKeyResolutionFailed(
+                message: "Failed to decode JWK: \(error.localizedDescription)",
+                className: "Utils"
+            )
+        }
+    }()
+    
+    return jwk
 }

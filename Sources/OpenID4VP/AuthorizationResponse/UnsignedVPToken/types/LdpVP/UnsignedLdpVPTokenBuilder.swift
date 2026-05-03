@@ -148,7 +148,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             let canonicalizedData = try await jsonLdCanonicalizer(jsonString)
             let normalizedCredentialData = try Base64Decoder.decodeBase64ToData(canonicalizedData)
             
-            let signatureAlgorithm: String = getJWSAlgorithm(from: holder)
+            let signatureAlgorithm: String = try getJWSAlgorithm(from: holder)
             let jwsHeader = try base64URLEncode([
                 "alg": signatureAlgorithm,
                 // the payload is not Base64URL-encoded

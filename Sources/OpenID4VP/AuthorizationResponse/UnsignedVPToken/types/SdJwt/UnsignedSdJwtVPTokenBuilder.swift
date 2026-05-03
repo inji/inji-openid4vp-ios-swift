@@ -102,15 +102,13 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         guard try shouldAddCryptographicHolderBinding(confirmationKeyClaim) else {
             return nil
         }
-
-        var signingAlgorithm: String = ""
         
         guard let keyId = confirmationKeyClaim["kid"] as? String else {
             throw UnsupportedOperationException(message: "Unsupported cnf format, only 'kid' is supported", className: Self.className)
         }
         let didResolver = DidPublicKeyResolver(networkManager: networkManager)
         let confirmationKey = try await didResolver.resolve(uri: keyId, keyId: nil)
-        signingAlgorithm = extractSigningAlgorithm(from: confirmationKey)
+        let signingAlgorithm: String = extractSigningAlgorithm(from: confirmationKey)
         
         let sdHashAlgorithm = sdJWTPayload["_sd_alg"] as? String ?? HashAlgorithm.sha256.rawValue
         let sdHash = try hashData(credential, hashAlgorithm: sdHashAlgorithm, className: Self.className).toBase64UrlEncoded()
