@@ -1,4 +1,5 @@
 import Foundation
+import MultiformatsKit
 
 func base64URLEncode(_ input: [String: Any]) throws -> String {
     guard let jsonData = try? JSONSerialization.data(withJSONObject: input, options: []) else {
@@ -15,15 +16,17 @@ struct BaseEncoding {
     /// Standard Base-58-BTC alphabet (excludes 0, O, l, I)
     private static let base58BtcAlphabet = Array("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".utf8)
     
+    private static let base56BtcHeader = "z" // Prefix for base-58-btc encoded strings
+    
     /// Converts a byte array (base-256) to a base-encoded string (e.g., base-58-btc)
     /// - Parameters:
     ///   - bytes: Array of UInt8 representing the data.
     ///   - targetBase: The target base (e.g., 58 for base-58-btc).
     ///   - baseAlphabet: The alphabet used for character mapping.
     /// - Returns: A base-encoded string.
-     private static func baseEncode(bytes: [UInt8], targetBase: Int, baseAlphabet: [UInt8]) -> String {
+    private static func baseEncode(bytes: [UInt8], targetBase: Int, baseAlphabet: [UInt8], header: String) -> String {
         var begin = 0
-        var end = bytes.count
+        let end = bytes.count
         var zeroes = 0
         var length = 0
         
@@ -52,21 +55,22 @@ struct BaseEncoding {
             var basePosition = estimatedSize - 1
             var i = 0
             
-            while carry != 0 || i < length {
-                carry += Int(baseValue[basePosition]) * 256
+            while (carry != 0 || i < length) && basePosition != -1 {
+                carry += (Int(baseValue[basePosition]) * 256)
                 baseValue[basePosition] = UInt8(carry % targetBase)
                 carry /= targetBase
                 
                 basePosition -= 1
                 i += 1
             }
+            
             length = i
             begin += 1
         }
         
         // 4. Skip the leading zeros of baseValue
         var baseEncodingPosition = estimatedSize - length
-        while baseEncodingPosition < estimatedSize && baseValue[baseEncodingPosition] == 0 {
+        while baseEncodingPosition != estimatedSize && baseValue[baseEncodingPosition] == 0 {
             baseEncodingPosition += 1
         }
         
@@ -89,10 +93,14 @@ struct BaseEncoding {
             baseEncodingPosition += 1
         }
         
-        return baseEncoding
+        return "\(header)\(baseEncoding)"
     }
     
     static func base58BtcEncode(bytes: Data) -> String {
-        return baseEncode(bytes: [UInt8](bytes), targetBase: 58, baseAlphabet: base58BtcAlphabet)
+        return base58BtcMultiformatsEncode(data: bytes)
+    }
+    
+    static func base58BtcMultiformatsEncode(data: Data) -> String {
+        return Multibase.base58btc.encode(data)
     }
 }
