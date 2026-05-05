@@ -34,31 +34,10 @@ class MdocVPTokenBuilder : VPTokenBuilder {
                 throw InvalidData(message: "Missing mapping for \(docTypeString)", className: className)
             }
             
-            guard let mdocCredential = credentialInputDescriptorMapping.credential.value as? String else {
-                throw InvalidType(
-                    message: "Invalid MSO-MDOC token: expected String",
-                    className: className
-                )
-            }
-            guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-                throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
-            }
-            
-            let (_, alg) = try resolveMdocKeyAndAlg(mdocCredential)
-            
-            let deviceAuthSignature = DeviceAuthentication(signature: vpTokenSigningResult.signedData, algorithm: alg)
-            
-            let deviceSignature = try createDeviceSignature(deviceAuthSignature)
-            
-            let deviceAuth = CBOR.map([.utf8String("deviceSignature"): deviceSignature])
-            let deviceNamespacesBytes = wrapCBORInputWithTag24(input: CBOR.map([:]))!
-            let deviceSigned = CBOR.map([
-                .utf8String("deviceAuthentication"): deviceAuth,
-                .utf8String("namespaces"): deviceNamespacesBytes,
-            ])
-            
-            // attach deviceSigned to cborCredential
-            document[CBOR.utf8String("deviceSigned")] = deviceSigned
+            let document = try buildDocument(
+                credential: credentialInputDescriptorMapping.credential,
+                vpTokenSigningResult: vpTokenSigningResult
+            )
             
             documents.append(document)
             descriptorMaps.append(
@@ -115,31 +94,10 @@ class MdocVPTokenBuilder : VPTokenBuilder {
                 throw InvalidData(message: "Missing mapping for \(docTypeString)", className: className)
             }
             
-            guard let mdocCredential = credentialToCredentialQueryIdMapping.credential.value as? String else {
-                throw InvalidType(
-                    message: "Invalid MSO-MDOC token: expected String",
-                    className: className
-                )
-            }
-            guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-                throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
-            }
-            
-            let (_, alg) = try resolveMdocKeyAndAlg(mdocCredential)
-            
-            let deviceAuthSignature = DeviceAuthentication(signature: vpTokenSigningResult.signedData, algorithm: alg)
-            
-            let deviceSignature = try createDeviceSignature(deviceAuthSignature)
-            
-            let deviceAuth = CBOR.map([.utf8String("deviceSignature"): deviceSignature])
-            let deviceNamespacesBytes = wrapCBORInputWithTag24(input: CBOR.map([:]))!
-            let deviceSigned = CBOR.map([
-                .utf8String("deviceAuthentication"): deviceAuth,
-                .utf8String("namespaces"): deviceNamespacesBytes,
-            ])
-            
-            // attach deviceSigned to cborCredential
-            document[CBOR.utf8String("deviceSigned")] = deviceSigned
+            let document = try buildDocument(
+                credential: credentialToCredentialQueryIdMapping.credential,
+                vpTokenSigningResult: vpTokenSigningResult
+            )
             
             queryIdToDocumentsMap[credentialToCredentialQueryIdMapping.credentialQueryId, default: []]
                 .append(document)
@@ -163,6 +121,39 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         }
         
         return vpTokenResult
+    }
+    
+    func buildDocument(
+        credential: AnyCodable,
+        vpTokenSigningResult: VPTokenSigningResult
+    ) throws -> CBOR {
+        guard let mdocCredential = credential.value as? String else {
+            throw InvalidType(
+                message: "Invalid MSO-MDOC token: expected String",
+                className: className
+            )
+        }
+        guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
+            throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
+        }
+        
+        let (_, alg) = try resolveMdocKeyAndAlg(mdocCredential)
+        
+        let deviceAuthSignature = DeviceAuthentication(signature: vpTokenSigningResult.signedData, algorithm: alg)
+        
+        let deviceSignature = try createDeviceSignature(deviceAuthSignature)
+        
+        let deviceAuth = CBOR.map([.utf8String("deviceSignature"): deviceSignature])
+        let deviceNamespacesBytes = wrapCBORInputWithTag24(input: CBOR.map([:]))!
+        let deviceSigned = CBOR.map([
+            .utf8String("deviceAuthentication"): deviceAuth,
+            .utf8String("namespaces"): deviceNamespacesBytes,
+        ])
+        
+        // attach deviceSigned to cborCredential
+        document[CBOR.utf8String("deviceSigned")] = deviceSigned
+        
+        return document
     }
     
     // DeviceSignature is of COSE_Sign1 structure

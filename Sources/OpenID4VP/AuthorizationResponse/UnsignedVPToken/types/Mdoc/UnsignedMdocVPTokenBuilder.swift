@@ -28,59 +28,25 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
         var docTypeToDeviceAuthenticationBytes: [String: String] = [:]
-
-        let openID4VPHandover = try SpecVersionHandler.from(specVersion).buildOpenID4VPHandover(
-            authorizationRequest: authorizationRequest,
-            mdocGeneratedNonce: mdocGeneratedNonce,
-            responseUri: responseUri,
-            walletMetadata: walletMetadata
-        )
-        let sessionTranscript = CBOR.array([.null, .null, openID4VPHandover])
-
-        let deviceNamespaces = CBOR.map([:])
-        let deviceNamespacesBytes = wrapCBORInputWithTag24(input: deviceNamespaces)!
-
         var unsignedVPTokens: [UnsignedVPToken] = []
+
+        let sessionTranscript = try getSessionTranscript()
+        let deviceNamespacesBytes = getDeviceNamespacesBytes()
 
         for index in 0..<credentialInputDescriptorMappings.count {
             let credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
-            let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credentialInputDescriptorMapping.credential, className: Self.className)
-
-            let (docType, docTypeString) = try extractMdocDocType(from: decodedMdocCredential, className: Self.className)
-
-            if docTypeToDeviceAuthenticationBytes[docTypeString] != nil {
-                throw InvalidData(
-                    message: "Duplicate Mdoc Credentials with same doctype found",
-                    className: Self.className
-                )
-            }
-
-            let deviceAuthentication = CBOR.array([
-                .utf8String("DeviceAuthentication"),
-                sessionTranscript,
-                docType,
-                deviceNamespacesBytes
-            ])
-
-            let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
-            let dataToSign = cborToByteString(cbor: wrapped)
-            docTypeToDeviceAuthenticationBytes[docTypeString] = dataToSign
+            let (docType, deviceAuthentication, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
+                with: credentialInputDescriptorMapping.credential,
+                sessionTranscript: sessionTranscript,
+                deviceNamespacesBytes: deviceNamespacesBytes,
+                docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes,
+                updateIdentifier: { docTypeString in
+                    credentialInputDescriptorMappings[index].identifier = docTypeString
+                }
+            )
             
-            let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
-            
-            credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
-                format: credentialInputDescriptorMapping.format,
-                credential: credentialInputDescriptorMapping.credential,
-                inputDescriptorId: credentialInputDescriptorMapping.inputDescriptorId,
-                identifier: docTypeString
-                )
-            
-            unsignedVPTokens.append(UnsignedVPToken(
-                format: .mso_mdoc,
-                holderKeyReference: keyRef,
-                signatureAlgorithm: alg,
-                dataToSign: Data(dataToSign.utf8)
-            ))
+            docTypeToDeviceAuthenticationBytes[docType] = deviceAuthentication
+            unsignedVPTokens.append(unsignedVPToken)
         }
 
 
@@ -105,56 +71,28 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     
     func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
         var docTypeToDeviceAuthenticationBytes: [String: String] = [:]
-
-        let openID4VPHandover = try SpecVersionHandler.from(specVersion).buildOpenID4VPHandover(
-            authorizationRequest: authorizationRequest,
-            mdocGeneratedNonce: mdocGeneratedNonce,
-            responseUri: responseUri,
-            walletMetadata: walletMetadata
-        )
-        let sessionTranscript = CBOR.array([.null, .null, openID4VPHandover])
-
-        let deviceNamespaces = CBOR.map([:])
-        let deviceNamespacesBytes = wrapCBORInputWithTag24(input: deviceNamespaces)!
-
         var unsignedVPTokens: [UnsignedVPToken] = []
+
+        let sessionTranscript = try getSessionTranscript()
+        let deviceNamespacesBytes = getDeviceNamespacesBytes()
 
         for index in 0..<credentialToCredentialQueryIdMappings.count {
             let credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
-            let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credentialToCredentialQueryIdMapping.credential, className: Self.className)
-            
-            let (docType, docTypeString) = try extractMdocDocType(from: decodedMdocCredential, className: Self.className)
-
-            if docTypeToDeviceAuthenticationBytes[docTypeString] != nil {
-                throw InvalidData(
-                    message: "Duplicate Mdoc Credentials with same doctype found",
-                    className: Self.className
+            let (docType, deviceAuthentication, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
+                with: credentialToCredentialQueryIdMapping.credential,
+                sessionTranscript: sessionTranscript,
+                deviceNamespacesBytes: deviceNamespacesBytes,
+                docTypeToDeviceAuthenticationBytes: docTypeToDeviceAuthenticationBytes,
+                updateIdentifier: { docTypeString in
+                    credentialToCredentialQueryIdMappings[index].identifier = docTypeString
+                }
                 )
-            }
-
-            let deviceAuthentication = CBOR.array([
-                .utf8String("DeviceAuthentication"),
-                sessionTranscript,
-                docType,
-                deviceNamespacesBytes
-            ])
-
-            let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
-            let dataToSign = cborToByteString(cbor: wrapped)
-            docTypeToDeviceAuthenticationBytes[docTypeString] = dataToSign
-            credentialToCredentialQueryIdMappings[index].identifier = docTypeString
-
-            let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
             
-            unsignedVPTokens.append(UnsignedVPToken(
-                format: .mso_mdoc,
-                holderKeyReference: keyRef,
-                signatureAlgorithm: alg,
-                dataToSign: Data(dataToSign.utf8)
-            ))
+            docTypeToDeviceAuthenticationBytes[docType] = deviceAuthentication
+            unsignedVPTokens.append(unsignedVPToken)
         }
 
-
+// TODO: Check why we need this reordering - do we need it actually
         unsignedVPTokens = []
         for docType in docTypeToDeviceAuthenticationBytes.keys.sorted() {
              let mapping = credentialToCredentialQueryIdMappings.first(where: { $0.identifier == docType })!
@@ -171,6 +109,66 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         return (
             vpTokenSigningPayload: docTypeToDeviceAuthenticationBytes,
             unsignedVPTokens: unsignedVPTokens
+        )
+    }
+    
+    private func getSessionTranscript() throws -> CBOR {
+        let openID4VPHandover = try SpecVersionHandler.from(specVersion).buildOpenID4VPHandover(
+            authorizationRequest: authorizationRequest,
+            mdocGeneratedNonce: mdocGeneratedNonce,
+            responseUri: responseUri,
+            walletMetadata: walletMetadata
+        )
+        let sessionTranscript = CBOR.array([.null, .null, openID4VPHandover])
+        
+        return sessionTranscript
+    }
+    
+    private func getDeviceNamespacesBytes() -> CBOR {
+        let deviceNamespaces = CBOR.map([:])
+        return wrapCBORInputWithTag24(input: deviceNamespaces)!
+    }
+    
+    private func buildPayloadAndUnsignedVPToken(with credential: AnyCodable,
+                                                sessionTranscript: CBOR,
+                                                deviceNamespacesBytes: CBOR,
+                                                docTypeToDeviceAuthenticationBytes: [String: String],
+                                                updateIdentifier: (String) -> Void,
+    ) async throws -> (docType: String, deviceAuthenticationBytes: String, unsignedVPToken: UnsignedVPToken) {
+        let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credential, className: Self.className)
+        
+        let (docType, docTypeString) = try extractMdocDocType(from: decodedMdocCredential, className: Self.className)
+        
+        if docTypeToDeviceAuthenticationBytes[docTypeString] != nil {
+            throw InvalidData(
+                message: "Duplicate Mdoc Credentials with same doctype found",
+                className: Self.className
+            )
+        }
+        
+        let deviceAuthentication = CBOR.array([
+            .utf8String("DeviceAuthentication"),
+            sessionTranscript,
+            docType,
+            deviceNamespacesBytes
+        ])
+        
+        let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
+        let dataToSign = cborToByteString(cbor: wrapped)
+        
+        updateIdentifier(docTypeString)
+        
+        let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
+        
+        return (
+            docTypeString,
+            dataToSign,
+            UnsignedVPToken(
+                format: .mso_mdoc,
+                holderKeyReference: keyRef,
+                signatureAlgorithm: alg,
+                dataToSign: Data(dataToSign.utf8)
+            )
         )
     }
     
