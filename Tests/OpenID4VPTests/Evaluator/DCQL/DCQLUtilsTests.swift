@@ -1,9 +1,15 @@
 import XCTest
 @testable import OpenID4VP
 
+fileprivate func mockJsonLdExpander(data: [String : Any]) async throws -> [String : Any] {
+    return [
+        "@type": data["type"] ?? []
+    ]
+}
+
 final class DCQLUtilsTests: XCTestCase {
 
-    private let mockExpander = MockJsonLdExpander()
+    private let mockExpander = mockJsonLdExpander
     
     private let claims: [String: Any] = [
         "name": "Arthur Dent",

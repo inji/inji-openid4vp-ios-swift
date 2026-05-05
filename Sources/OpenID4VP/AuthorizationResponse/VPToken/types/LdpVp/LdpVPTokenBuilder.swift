@@ -84,11 +84,10 @@ class LdpVPTokenBuilder: VPTokenBuilder {
                 throw InvalidData(message: "vpTokenSigningResult is missing", className: className)
             }
             
-            try validateField(
-                field: vpTokenSigningResult.signedData,
-                fieldPath: ["VPTokenSigningResult", "signedData"],
-                className: className
-            )
+            if(vpTokenSigningResult.signedData.isEmpty) {
+                throw InvalidInput(fieldPath: ["VPTokenSigningResult", "signedData"], className: className)
+            }
+
             guard let unsignedVPToken = getUnsignedVPToken() else {
                 throw InvalidData(message: "Missing data to sign", className: className)
             }

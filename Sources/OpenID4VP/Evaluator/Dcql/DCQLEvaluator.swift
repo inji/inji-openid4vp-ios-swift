@@ -1,8 +1,8 @@
 internal struct DcqlEvaluator {
     private let className = "DcqlEvaluator"
-    private let jsonLdExpander: JsonLdExpanding
+    private let jsonLdExpander: JsonLdExpanderCallback
     
-    public init(jsonLdExpander: JsonLdExpanding) {
+    public init(jsonLdExpander: @escaping JsonLdExpanderCallback) {
         self.jsonLdExpander = jsonLdExpander
     }
     
