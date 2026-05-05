@@ -149,18 +149,29 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         let normalizedCredentialData = try Base64Decoder.decodeBase64ToData(canonicalizedData)
         
         let signatureAlgorithm: String = try await getJWSAlgorithm(from: holder)
-        let jwsHeader = try base64URLEncode([
-            "alg": signatureAlgorithm,
-            // the payload is not Base64URL-encoded
-            "crit" : ["b64"],
-            "b64": false
-        ])
-        let headerBytes = Data(jwsHeader.utf8)
-        let dot = Data([0x2E]) // "."
         var signingInput = Data()
-        signingInput.append(headerBytes)
-        signingInput.append(dot)
-        signingInput.append(normalizedCredentialData)
+        switch signatureSuite {
+        case SignatureSuite.jsonWebSignature2020.rawValue,
+            SignatureSuite.ed25519Signature2018.rawValue:
+            let jwsHeader = try BaseEncoding.base64URLEncode([
+                "alg": signatureAlgorithm,
+                // the payload is not Base64URL-encoded
+                "crit" : ["b64"],
+                "b64": false
+            ])
+            let headerBytes = Data(jwsHeader.utf8)
+            let dot = Data([0x2E]) // "."
+            
+            signingInput.append(headerBytes)
+            signingInput.append(dot)
+            signingInput.append(normalizedCredentialData)
+        case SignatureSuite.ed25519Signature2020.rawValue,
+            SignatureSuite.rsaSignature2018.rawValue:
+            signingInput.append(normalizedCredentialData)
+        default:
+            throw UnsupportedOperationException(message: "Unsupported signature suite: \(signatureSuite)", className: className)
+        }
+        
         
         let unsignedVPToken = UnsignedVPToken(
             format: .ldp_vc,
