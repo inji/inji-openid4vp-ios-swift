@@ -35,7 +35,7 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(token.format, .vc_sd_jwt)
         XCTAssertEqual(token.holderKeyReference, expectedCnfKid)
         XCTAssertEqual(token.signatureAlgorithm, expectedSignatureAlgorithm)
-//        XCTAssertEqual(token.dataToSign, kbJwt)
+        XCTAssertEqual(String(decoding: token.dataToSign, as: UTF8.self), kbJwt)
     }
 
     func testBuildReturnsExpectedStructureForDraft23() async throws {
@@ -62,7 +62,7 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(token.format, .vc_sd_jwt)
         XCTAssertEqual(token.holderKeyReference, expectedCnfKid)
         XCTAssertEqual(token.signatureAlgorithm, expectedSignatureAlgorithm)
-//        XCTAssertEqual(token.dataToSign, kbJwt)
+        XCTAssertEqual(String(decoding: token.dataToSign, as: UTF8.self), kbJwt)
     }
 
     func testBuildPreservesOriginalMappingOrder() async throws {
@@ -85,8 +85,8 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let id0 = try XCTUnwrap(mappings[0].identifier)
         let id1 = try XCTUnwrap(mappings[1].identifier)
         XCTAssertNotEqual(id0, id1)
-//        XCTAssertEqual(unsignedVPTokens[0].dataToSign, uuidToKB[id0])
-//        XCTAssertEqual(unsignedVPTokens[1].dataToSign, uuidToKB[id1])
+        XCTAssertEqual(String(decoding: unsignedVPTokens[0].dataToSign, as: UTF8.self), uuidToKB[id0])
+        XCTAssertEqual(String(decoding: unsignedVPTokens[1].dataToSign, as: UTF8.self), uuidToKB[id1])
         XCTAssertEqual(unsignedVPTokens[0].format, .vc_sd_jwt)
         XCTAssertEqual(unsignedVPTokens[1].format, .vc_sd_jwt)
         XCTAssertEqual(unsignedVPTokens[0].holderKeyReference, expectedCnfKid)
@@ -110,7 +110,8 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let uuidToKB = try XCTUnwrap(payload as? [String: String])
         XCTAssertEqual(uuidToKB, [:])
         XCTAssertEqual(unsignedVPTokens.count, 0)
-        XCTAssertEqual(mappings[0].identifier?.isEmpty, false)
+        let identifier = try XCTUnwrap(mappings[0].identifier)
+        XCTAssertFalse(identifier.isEmpty)
     }
 
     // MARK: - build(credentialInputDescriptorMappings:) — error paths
@@ -241,7 +242,8 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let uuidToKB = try XCTUnwrap(payload as? [String: String])
         XCTAssertEqual(uuidToKB, [:])
         XCTAssertEqual(unsignedVPTokens.count, 0)
-        XCTAssertEqual(mappings[0].identifier?.isEmpty, false)
+        let identifier = try XCTUnwrap(mappings[0].identifier)
+        XCTAssertFalse(identifier.isEmpty)
     }
 
     func testDcqlHolderBindingFalseForMultipleMappingsSetsAllIdentifiers() async throws {
@@ -261,8 +263,8 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(unsignedVPTokens.count, 0)
         let id0 = try XCTUnwrap(mappings[0].identifier)
         let id1 = try XCTUnwrap(mappings[1].identifier)
-        XCTAssertEqual(id0.isEmpty, false)
-        XCTAssertEqual(id1.isEmpty, false)
+        XCTAssertFalse(id0.isEmpty)
+        XCTAssertFalse(id1.isEmpty)
         XCTAssertNotEqual(id0, id1)
     }
 
@@ -287,7 +289,7 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(token.format, .dc_sd_jwt)
         XCTAssertEqual(token.holderKeyReference, expectedCnfKid)
         XCTAssertEqual(token.signatureAlgorithm, expectedSignatureAlgorithm)
-//        XCTAssertEqual(token.dataToSign, kbJwt)
+        XCTAssertEqual(String(decoding: token.dataToSign, as: UTF8.self), kbJwt)
         assertKBJwtHeader(kbJwt, expectedHeader: expectedKBJwtHeader)
     }
 
@@ -312,18 +314,20 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
 
         let (_, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
-//        let jwtParts = unsignedVPTokens[0].dataToSign.split(separator: ".")
-//        XCTAssertEqual(jwtParts.count, 2)
-//        assertKBJwtHeader(unsignedVPTokens[0].dataToSign, expectedHeader: expectedKBJwtHeader)
+        let dataToSignString = String(decoding: unsignedVPTokens[0].dataToSign, as: UTF8.self)
+        let jwtParts = dataToSignString.split(separator: ".")
+        XCTAssertEqual(jwtParts.count, 2)
+        assertKBJwtHeader(dataToSignString, expectedHeader: expectedKBJwtHeader)
 
-//        let payloadData = try XCTUnwrap(Data(base64Encoded: String(jwtParts[1]).base64URLToBase64()))
-//        let jwtPayload = try XCTUnwrap(try JSONSerialization.jsonObject(with: payloadData) as? [String: Any])
+        let payloadData = try XCTUnwrap(Data(base64Encoded: String(jwtParts[1]).base64URLToBase64()))
+        let jwtPayload = try XCTUnwrap(try JSONSerialization.jsonObject(with: payloadData) as? [String: Any])
 
-//        XCTAssertEqual(jwtPayload["aud"] as? String, "client_id")
-//        XCTAssertEqual(jwtPayload["nonce"] as? String, "nonce")
-//        XCTAssertEqual(jwtPayload.keys.sorted(), ["aud", "iat", "nonce", "sd_hash"])
-//        XCTAssertEqual((jwtPayload["sd_hash"] as? String)?.isEmpty, false)
-//        XCTAssertEqual((jwtPayload["iat"] as? Int) != nil, true)
+        XCTAssertEqual(jwtPayload["aud"] as? String, "client_id")
+        XCTAssertEqual(jwtPayload["nonce"] as? String, "nonce")
+        XCTAssertEqual(jwtPayload.keys.sorted(), ["aud", "iat", "nonce", "sd_hash"])
+        let sdHash = try XCTUnwrap(jwtPayload["sd_hash"] as? String)
+        XCTAssertFalse(sdHash.isEmpty)
+        XCTAssertNotNil(jwtPayload["iat"] as? Int)
     }
 
     func testDcqlHolderBindingTruePreservesPayloadOrderAcrossMultipleMappings() async throws {
@@ -345,8 +349,8 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let id0 = try XCTUnwrap(mappings[0].identifier)
         let id1 = try XCTUnwrap(mappings[1].identifier)
         XCTAssertNotEqual(id0, id1)
-//        XCTAssertEqual(uuidToKB[id0], unsignedVPTokens[0].dataToSign)
-//        XCTAssertEqual(uuidToKB[id1], unsignedVPTokens[1].dataToSign)
+        XCTAssertEqual(String(decoding: unsignedVPTokens[0].dataToSign, as: UTF8.self), uuidToKB[id0])
+        XCTAssertEqual(String(decoding: unsignedVPTokens[1].dataToSign, as: UTF8.self), uuidToKB[id1])
         XCTAssertEqual(unsignedVPTokens[0].format, .dc_sd_jwt)
         XCTAssertEqual(unsignedVPTokens[1].format, .dc_sd_jwt)
         XCTAssertEqual(unsignedVPTokens[0].holderKeyReference, expectedCnfKid)

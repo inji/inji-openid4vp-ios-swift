@@ -41,7 +41,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         }
         let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(with: verifiableCredentials, signatureSuite: signatureSuite, holder: holder)
         
-        return (vpTokenSigningPayload, unsignedVPToken.map { [$0] } ?? [])
+        return (vpTokenSigningPayload, unsignedVPToken != nil ? [unsignedVPToken!] : [])
     }
     
     //TODO: change the type to [Any] - list of payloads
@@ -115,16 +115,14 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             throw InvalidData(message: "Signature suite is required for LDP VP Tokens", className: className)
         }
         
-        let proof = {
-            addCryptograhicHolderBinding ? Proof(
-                type: signatureSuite,
-                created: nil,
-                challenge: authorizationRequest.nonce,
-                domain: authorizationRequest.clientId,
-                verificationMethod: holder,
-                proofValue: nil
-            ) : nil
-        }()
+        let proof = Proof(
+            type: signatureSuite,
+            created: nil,
+            challenge: authorizationRequest.nonce,
+            domain: authorizationRequest.clientId,
+            verificationMethod: holder,
+            proofValue: nil
+        )
         
         let vpTokenSigningPayload = LdpVPToken(
             context: context,

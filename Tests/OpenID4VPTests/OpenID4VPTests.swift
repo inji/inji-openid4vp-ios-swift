@@ -314,7 +314,7 @@ class OpenID4VPTests: XCTestCase {
     // Construct and return VP token for signing
     func testShareVerifiablePresentation() async {
         var received: [UnsignedVPToken]?
-        JsonLd.setCanonicalizer { _ in "canonicalized" }
+        JsonLd.setCanonicalizer { _ in "Y2Fub25pY2FsaXplZA" }
 
         do {
             _ = try await openID4VP.authenticateVerifier(
@@ -331,7 +331,7 @@ class OpenID4VPTests: XCTestCase {
 
             received = try await openID4VP.constructUnsignedVPToken(
                 verifiableCredentials: mockCredentials,
-                holderId: "did:example:123",
+                holderId: didJwkKey,
                 signatureSuite: "JsonWebSignature2020"
             )
         } catch {

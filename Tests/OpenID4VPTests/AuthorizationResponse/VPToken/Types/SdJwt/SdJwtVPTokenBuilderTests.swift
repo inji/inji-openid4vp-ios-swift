@@ -37,9 +37,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(result.vpTokens.count, 1)
-        let vpToken = result.vpTokens[0] as! SdJwtVPToken
-        XCTAssertTrue(vpToken.value.hasSuffix("\(unsignedKBJwt).\(signature)"))
-        XCTAssertTrue(vpToken.value.hasPrefix(credentialWithBinding))
+        let vpToken = try XCTUnwrap(result.vpTokens[0] as? SdJwtVPToken)
+        XCTAssertEqual(vpToken.value, "\(credentialWithBinding)\(unsignedKBJwt).\(signature.toBase64UrlEncoded())")
         XCTAssertEqual(result.DescriptorMaps.count, 1)
         XCTAssertEqual(result.DescriptorMaps[0].id, "id1")
         XCTAssertEqual(result.DescriptorMaps[0].format, .vc_sd_jwt)
@@ -73,7 +72,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(result.vpTokens.count, 1)
-        let vpToken = result.vpTokens[0] as! SdJwtVPToken
+        let vpToken = try XCTUnwrap(result.vpTokens[0] as? SdJwtVPToken)
         XCTAssertEqual(vpToken.value, credentialWithoutBinding)
         XCTAssertEqual(result.DescriptorMaps.count, 1)
         XCTAssertEqual(result.DescriptorMaps[0].id, "id1")
@@ -119,11 +118,10 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
 
         XCTAssertEqual(result.vpTokens.count, 2)
 
-        let boundToken = result.vpTokens[0] as! SdJwtVPToken
-        XCTAssertTrue(boundToken.value.hasSuffix("\(unsignedKBJwt).\(signature)"))
-        XCTAssertTrue(boundToken.value.hasPrefix(credentialWithBinding))
+        let boundToken = try XCTUnwrap(result.vpTokens[0] as? SdJwtVPToken)
+        XCTAssertEqual(boundToken.value, "\(credentialWithBinding)\(unsignedKBJwt).\(signature.toBase64UrlEncoded())")
 
-        let unboundToken = result.vpTokens[1] as! SdJwtVPToken
+        let unboundToken = try XCTUnwrap(result.vpTokens[1] as? SdJwtVPToken)
         XCTAssertEqual(unboundToken.value, credentialWithoutBinding)
 
         XCTAssertEqual(result.DescriptorMaps[0].id, "id_with_binding")
@@ -168,11 +166,11 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
 
         XCTAssertEqual(result.vpTokens.count, 2)
 
-        let unboundToken = result.vpTokens[0] as! SdJwtVPToken
+        let unboundToken = try XCTUnwrap(result.vpTokens[0] as? SdJwtVPToken)
         XCTAssertEqual(unboundToken.value, credentialWithoutBinding)
 
-        let boundToken = result.vpTokens[1] as! SdJwtVPToken
-        XCTAssertTrue(boundToken.value.hasSuffix("\(unsignedKBJwt).\(signature)"))
+        let boundToken = try XCTUnwrap(result.vpTokens[1] as? SdJwtVPToken)
+        XCTAssertEqual(boundToken.value, "\(credentialWithBinding)\(unsignedKBJwt).\(signature.toBase64UrlEncoded())")
 
         XCTAssertEqual(result.DescriptorMaps[0].id, "id_no_binding")
         XCTAssertEqual(result.DescriptorMaps[0].path, "$[0]")
@@ -222,10 +220,10 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(result.vpTokens.count, 2)
-        let token1 = result.vpTokens[0] as! SdJwtVPToken
-        XCTAssertTrue(token1.value.hasSuffix("\(unsignedKBJwt1).\(sig1)"))
-        let token2 = result.vpTokens[1] as! SdJwtVPToken
-        XCTAssertTrue(token2.value.hasSuffix("\(unsignedKBJwt2).\(sig2)"))
+        let token1 = try XCTUnwrap(result.vpTokens[0] as? SdJwtVPToken)
+        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(unsignedKBJwt1).\(sig1.toBase64UrlEncoded())")
+        let token2 = try XCTUnwrap(result.vpTokens[1] as? SdJwtVPToken)
+        XCTAssertEqual(token2.value, "\(credentialWithBinding)\(unsignedKBJwt2).\(sig2.toBase64UrlEncoded())")
         XCTAssertEqual(result.DescriptorMaps[0].format, .vc_sd_jwt)
         XCTAssertEqual(result.DescriptorMaps[1].format, .dc_sd_jwt)
         XCTAssertEqual(result.nextIndex, 2)
@@ -261,9 +259,9 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         )
 
         XCTAssertEqual(result.vpTokens.count, 2)
-        let token1 = result.vpTokens[0] as! SdJwtVPToken
+        let token1 = try XCTUnwrap(result.vpTokens[0] as? SdJwtVPToken)
         XCTAssertEqual(token1.value, credentialWithoutBinding)
-        let token2 = result.vpTokens[1] as! SdJwtVPToken
+        let token2 = try XCTUnwrap(result.vpTokens[1] as? SdJwtVPToken)
         XCTAssertEqual(token2.value, credentialWithoutBinding)
         XCTAssertEqual(result.nextIndex, 2)
     }
@@ -556,14 +554,14 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
 
         XCTAssertEqual(result.vpTokens.count, 3)
 
-        let token1 = result.vpTokens[0] as! SdJwtVPToken
-        XCTAssertTrue(token1.value.hasSuffix("\(unsignedKB1).\(sig1)"))
+        let token1 = try XCTUnwrap(result.vpTokens[0] as? SdJwtVPToken)
+        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(unsignedKB1).\(sig1.toBase64UrlEncoded())")
 
-        let token2 = result.vpTokens[1] as! SdJwtVPToken
+        let token2 = try XCTUnwrap(result.vpTokens[1] as? SdJwtVPToken)
         XCTAssertEqual(token2.value, credentialWithoutBinding)
 
-        let token3 = result.vpTokens[2] as! SdJwtVPToken
-        XCTAssertTrue(token3.value.hasSuffix("\(unsignedKB2).\(sig2)"))
+        let token3 = try XCTUnwrap(result.vpTokens[2] as? SdJwtVPToken)
+        XCTAssertEqual(token3.value, "\(credentialWithBinding)\(unsignedKB2).\(sig2.toBase64UrlEncoded())")
 
         XCTAssertEqual(result.DescriptorMaps[0].id, "desc1")
         XCTAssertEqual(result.DescriptorMaps[0].path, "$[3]")
@@ -592,8 +590,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             rootIndex: 0
         )
 
-        XCTAssertTrue(result.vpTokens.isEmpty)
-        XCTAssertTrue(result.DescriptorMaps.isEmpty)
+        XCTAssertEqual(result.vpTokens.count, 0)
+        XCTAssertEqual(result.DescriptorMaps.count, 0)
         XCTAssertEqual(result.nextIndex, 0)
     }
 
@@ -619,11 +617,10 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             vpTokenSigningResults: [VPTokenSigningResult(signedData: signature)]
         )
 
-        let expectedTokenValue = "\(credentialWithBinding)\(unsignedKBJwt).\(signature)"
         XCTAssertEqual(result.keys.sorted(), ["q1"])
         XCTAssertEqual(result["q1"]?.count, 1)
         let vpToken = try XCTUnwrap(result["q1"]?.first as? SdJwtVPToken)
-        XCTAssertEqual(vpToken.value, expectedTokenValue)
+        XCTAssertEqual(vpToken.value, "\(credentialWithBinding)\(unsignedKBJwt).\(signature.toBase64UrlEncoded())")
     }
 
     func testDcqlBuildHolderBindingFalseProducesBareCredentialToken() throws {
@@ -677,8 +674,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(result["q1"]?.count, 2)
         let token1 = try XCTUnwrap(result["q1"]?[0] as? SdJwtVPToken)
         let token2 = try XCTUnwrap(result["q1"]?[1] as? SdJwtVPToken)
-        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(kb1).\(sig1)")
-        XCTAssertEqual(token2.value, "\(credentialWithBinding)\(kb2).\(sig2)")
+        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(kb1).\(sig1.toBase64UrlEncoded())")
+        XCTAssertEqual(token2.value, "\(credentialWithBinding)\(kb2).\(sig2.toBase64UrlEncoded())")
     }
 
     func testDcqlBuildMultipleDifferentQueryIdsProducesKeyedResult() throws {
@@ -708,7 +705,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(result.keys.sorted(), ["q1", "q2"])
         let token1 = try XCTUnwrap(result["q1"]?.first as? SdJwtVPToken)
         let token2 = try XCTUnwrap(result["q2"]?.first as? SdJwtVPToken)
-        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(kb1).\(sig1)")
+        XCTAssertEqual(token1.value, "\(credentialWithBinding)\(kb1).\(sig1.toBase64UrlEncoded())")
         XCTAssertEqual(token2.value, credentialWithoutBinding)
     }
 

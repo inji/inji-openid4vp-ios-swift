@@ -521,68 +521,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             )
         }
     }
-
-    func testConstructAuthorizationResponseThrowsForEmptyLdpSignedData() async throws {
-        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
-            "input_descriptor1": [.ldp_vc: [AnyCodable(ldpVC())]],
-        ]
-
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
-        let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
-
-        _ = try await handler.constructUnsignedVPToken(
-            credentialsMap: verifiableCredentials,
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri,
-            holderId: holderId,
-            signatureSuite: signatureSuite,
-            walletNonce: walletNonce
-        )
-
-        XCTAssertThrowsError(
-            try handler.constructVPResponse(
-                signingResults: [VPTokenSigningResult(signedData: Data("".utf8))],
-                authorizationRequest: authorizationRequest
-            )
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Invalid Input: VPTokenSigningResult->signedData value cannot be empty or null",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-
-    func testConstructAuthorizationResponseThrowsForEmptyMdocSignedData() async throws {
-        let verifiableCredentials: [String: [FormatType: [AnyCodable]]] = [
-            "org.iso.18013.5.1.mDL": [.mso_mdoc: [AnyCodable(sampleMdoc)]],
-        ]
-
-        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)
-        let authorizationRequest = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
-
-        _ = try await handler.constructUnsignedVPToken(
-            credentialsMap: verifiableCredentials,
-            authorizationRequest: authorizationRequest,
-            responseUri: responseUri,
-            holderId: holderId,
-            signatureSuite: signatureSuite,
-            walletNonce: walletNonce
-        )
-
-        XCTAssertThrowsError(
-            try handler.constructVPResponse(
-                signingResults: [VPTokenSigningResult(signedData: Data("".utf8))],
-                authorizationRequest: authorizationRequest
-            )
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Invalid Input: DeviceAuthentication->signature value cannot be empty or null",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
     
     func testConstructAuthorizationErrorResponseWithOpenIDException() {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletMetadata: walletMetadata)

@@ -3,6 +3,10 @@ import XCTest
 
 final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
 
+    private let expectedDocType = "org.iso.18013.5.1.mDL"
+
+    // MARK: - build(credentialInputDescriptorMappings:)
+
     func testCreationOfUnsignedMdocVPToken() async throws {
         let builder = try UnsignedMdocVPTokenBuilder(
             authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
@@ -15,13 +19,13 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
 
         let (payload, unsignedVPTokens) = try await builder.build(credentialInputDescriptorMappings: &mappings)
 
-        let docTypeToBytes = payload as? [String: String]
-        XCTAssertNotNil(docTypeToBytes)
-        XCTAssertEqual("org.iso.18013.5.1.mDL", docTypeToBytes!.keys.first)
-        XCTAssertTrue(docTypeToBytes!.values.first!.starts(with: "d8"))
+        let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
+        XCTAssertEqual(docTypeToBytes.keys.sorted(), [expectedDocType])
+        let bytes = try XCTUnwrap(docTypeToBytes[expectedDocType])
+        XCTAssertTrue(bytes.hasPrefix("d8"), "Expected CBOR-tagged hex starting with 'd8', got: \(bytes.prefix(4))")
         XCTAssertEqual(unsignedVPTokens.count, 1)
-        XCTAssertEqual(unsignedVPTokens.first?.format, .mso_mdoc)
-        XCTAssertEqual("org.iso.18013.5.1.mDL", mappings.first?.identifier)
+        XCTAssertEqual(unsignedVPTokens[0].format, .mso_mdoc)
+        XCTAssertEqual(mappings[0].identifier, expectedDocType)
     }
 
     func testCreationOfUnsignedMdocVPTokenForDraft23() async throws {
@@ -36,11 +40,13 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
 
         let (payload, unsignedVPTokens) = try await builder.build(credentialInputDescriptorMappings: &mappings)
 
-        let docTypeToBytes = payload as? [String: String]
-        XCTAssertNotNil(docTypeToBytes)
-        XCTAssertEqual("org.iso.18013.5.1.mDL", docTypeToBytes!.keys.first)
+        let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
+        XCTAssertEqual(docTypeToBytes.keys.sorted(), [expectedDocType])
+        let bytes = try XCTUnwrap(docTypeToBytes[expectedDocType])
+        XCTAssertTrue(bytes.hasPrefix("d8"), "Expected CBOR-tagged hex starting with 'd8', got: \(bytes.prefix(4))")
         XCTAssertEqual(unsignedVPTokens.count, 1)
-        XCTAssertEqual("org.iso.18013.5.1.mDL", mappings.first?.identifier)
+        XCTAssertEqual(unsignedVPTokens[0].format, .mso_mdoc)
+        XCTAssertEqual(mappings[0].identifier, expectedDocType)
     }
 
     func testDeviceAuthenticationBytesAreDifferentBetweenSpecVersions() async throws {
@@ -63,11 +69,8 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
             mdocGeneratedNonce: "mock-nonce"
         ).build(credentialInputDescriptorMappings: &mappingsV1)
 
-        let draft23Bytes = (draft23Payload as! [String: String])["org.iso.18013.5.1.mDL"]
-        let v1Bytes = (v1Payload as! [String: String])["org.iso.18013.5.1.mDL"]
-
-        XCTAssertNotNil(draft23Bytes)
-        XCTAssertNotNil(v1Bytes)
+        let draft23Bytes = try XCTUnwrap((draft23Payload as? [String: String])?[expectedDocType])
+        let v1Bytes = try XCTUnwrap((v1Payload as? [String: String])?[expectedDocType])
         XCTAssertNotEqual(draft23Bytes, v1Bytes)
     }
 
@@ -145,12 +148,13 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
         let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
-        XCTAssertEqual(docTypeToBytes.keys.sorted(), ["org.iso.18013.5.1.mDL"])
-        XCTAssertTrue(docTypeToBytes["org.iso.18013.5.1.mDL"]!.starts(with: "d8"))
+        XCTAssertEqual(docTypeToBytes.keys.sorted(), [expectedDocType])
+        let bytes = try XCTUnwrap(docTypeToBytes[expectedDocType])
+        XCTAssertTrue(bytes.hasPrefix("d8"), "Expected CBOR-tagged hex starting with 'd8', got: \(bytes.prefix(4))")
         XCTAssertEqual(unsignedVPTokens.count, 1)
         XCTAssertEqual(unsignedVPTokens[0].format, .mso_mdoc)
-        XCTAssertFalse(unsignedVPTokens[0].dataToSign.isEmpty)
-        XCTAssertEqual(mappings[0].identifier, "org.iso.18013.5.1.mDL")
+        XCTAssertEqual(String(decoding: unsignedVPTokens[0].dataToSign, as: UTF8.self), bytes)
+        XCTAssertEqual(mappings[0].identifier, expectedDocType)
     }
 
     func testDcqlBuildReturnsCorrectPayloadAndUnsignedTokensForDraft23() async throws {
@@ -166,11 +170,13 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
         let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
-        XCTAssertEqual(docTypeToBytes.keys.sorted(), ["org.iso.18013.5.1.mDL"])
-        XCTAssertTrue(docTypeToBytes["org.iso.18013.5.1.mDL"]!.starts(with: "d8"))
+        XCTAssertEqual(docTypeToBytes.keys.sorted(), [expectedDocType])
+        let bytes = try XCTUnwrap(docTypeToBytes[expectedDocType])
+        XCTAssertTrue(bytes.hasPrefix("d8"), "Expected CBOR-tagged hex starting with 'd8', got: \(bytes.prefix(4))")
         XCTAssertEqual(unsignedVPTokens.count, 1)
         XCTAssertEqual(unsignedVPTokens[0].format, .mso_mdoc)
-        XCTAssertEqual(mappings[0].identifier, "org.iso.18013.5.1.mDL")
+        XCTAssertEqual(String(decoding: unsignedVPTokens[0].dataToSign, as: UTF8.self), bytes)
+        XCTAssertEqual(mappings[0].identifier, expectedDocType)
     }
 
     func testDcqlBuildDeviceAuthBytesAreDifferentBetweenSpecVersions() async throws {
@@ -189,8 +195,8 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
             mdocGeneratedNonce: "mock-nonce"
         ).build(credentialToCredentialQueryIdMappings: &mappingsV1)
 
-        let draft23Bytes = try XCTUnwrap((draft23Payload as? [String: String])?["org.iso.18013.5.1.mDL"])
-        let v1Bytes = try XCTUnwrap((v1Payload as? [String: String])?["org.iso.18013.5.1.mDL"])
+        let draft23Bytes = try XCTUnwrap((draft23Payload as? [String: String])?[expectedDocType])
+        let v1Bytes = try XCTUnwrap((v1Payload as? [String: String])?[expectedDocType])
         XCTAssertNotEqual(draft23Bytes, v1Bytes)
     }
 
@@ -257,7 +263,7 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
 
         _ = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
-        XCTAssertEqual(mappings[0].identifier, "org.iso.18013.5.1.mDL")
+        XCTAssertEqual(mappings[0].identifier, expectedDocType)
     }
 
     func testDcqlBuildUnsignedTokensAreSortedByDocType() async throws {
@@ -273,7 +279,7 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
         let docTypeToBytes = try XCTUnwrap(payload as? [String: String])
-        let expectedDocType = "org.iso.18013.5.1.mDL"
-//        XCTAssertEqual(unsignedVPTokens[0].dataToSign, docTypeToBytes[expectedDocType])
+        let expectedBytes = try XCTUnwrap(docTypeToBytes[expectedDocType])
+        XCTAssertEqual(String(decoding: unsignedVPTokens[0].dataToSign, as: UTF8.self), expectedBytes)
     }
 }
