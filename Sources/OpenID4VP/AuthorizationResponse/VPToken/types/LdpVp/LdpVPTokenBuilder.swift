@@ -94,22 +94,15 @@ class LdpVPTokenBuilder: VPTokenBuilder {
             }
             
             switch signatureSuite {
-            case SignatureAlgorithm.jsonWebSignature2020.rawValue:
-                let dataToSign = unsignedVPToken.dataToSign
-                let dotIndex = dataToSign.firstIndex(of: 0x2E)
-                let headerData = dataToSign.prefix(upTo: dotIndex ?? Data.Index())
-                let header = String(data: headerData, encoding: .utf8) ?? ""
-                
+            case SignatureSuite.jsonWebSignature2020.rawValue,
+                SignatureSuite.ed25519Signature2018.rawValue:
                 proof?.jws = getHeader(unsignedVPToken) + ".." + vpTokenSigningResult.signedData.toBase64UrlEncoded()
 
-            case SignatureAlgorithm.rsaSignature2018.rawValue:
+            case SignatureSuite.rsaSignature2018.rawValue:
                 proof?.signatureValue = vpTokenSigningResult.signedData.toBase64UrlEncoded()
 
-            case SignatureAlgorithm.ed25519Signature2020.rawValue:
-                proof?.proofValue = vpTokenSigningResult.signedData.toBase58BtcEncoded()
-            
-            case SignatureAlgorithm.ed25519Signature2018.rawValue:
-                proof?.jws = getHeader(unsignedVPToken) + ".." + vpTokenSigningResult.signedData.toBase64UrlEncoded()
+            case SignatureSuite.ed25519Signature2020.rawValue:
+                proof?.proofValue = BaseEncoding.base58BtcEncode(vpTokenSigningResult.signedData)
 
             default:
                 throw UnsupportedSignatureAlgorithm(

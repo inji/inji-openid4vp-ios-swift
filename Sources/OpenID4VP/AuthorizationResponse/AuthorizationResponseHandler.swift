@@ -4,7 +4,7 @@ import Foundation
 public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
     private var walletNonce: String = ""
-    private var signatureSuite: String = SignatureAlgorithm.ed25519Signature2020.rawValue
+    private var signatureSuite: String = SignatureSuite.ed25519Signature2020.rawValue
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
     private var credentialToCredentialQueryIdMappingsGroupedByFormat: [FormatType: [CredentialToCredentialQueryIdMapping]] = [:]
     

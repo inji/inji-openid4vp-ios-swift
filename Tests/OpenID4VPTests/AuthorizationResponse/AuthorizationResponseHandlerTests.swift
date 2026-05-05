@@ -7,11 +7,15 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let responseUri = "https://mock-verifier.com"
     let holderId = "wallet-holder-id"
     let walletNonce = "mock-nonce"
-    let signatureSuite = SignatureAlgorithm.ed25519Signature2020.rawValue
+    let signatureSuite = SignatureSuite.ed25519Signature2020.rawValue
     let walletMetadata = WalletMetadata()
     
     // MARK: - OVP Spec Version Draft 23
     // MARK: Credential format = ldp_vc
+    
+    override func setUp() {
+        JsonLd.setCanonicalizer { _ in "Y2Fub25pY2FsaXplZA" }
+    }
     
     func testConstructUnsignedVPTokenThrowsErrorIncaseOfInvalidHoldersIdWithLdpVCAvailable() async throws {
         let invalidHolderIdTestCases = ["", " ", "  ", "null", nil]

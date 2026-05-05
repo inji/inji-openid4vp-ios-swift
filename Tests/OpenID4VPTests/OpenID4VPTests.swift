@@ -28,9 +28,11 @@ class OpenID4VPTests: XCTestCase {
         mockNetworkManager = MockNetworkManager()
         mockNonceProvider = MockNonceProvider()
 
-        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), jsonLdCanonicalizer: { _ in "canonicalized-payload" })
+        openID4VP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), jsonLdCanonicalizer: { _ in "Y2Fub25pY2FsaXplZA" })
         openID4VP.setResponseUri("https://mock-verifier.com")
         openID4VP.authorizationRequest = authorizationRequest
+        
+        JsonLd.setCanonicalizer { _ in "Y2Fub25pY2FsaXplZA" }
     }
 
     override func tearDown() {

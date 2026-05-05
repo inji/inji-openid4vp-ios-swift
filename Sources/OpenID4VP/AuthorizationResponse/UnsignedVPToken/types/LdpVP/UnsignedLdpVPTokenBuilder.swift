@@ -88,9 +88,9 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     
     private func buildPayloadAndUnsignedVPToken(with credentials: [AnyCodable], signatureSuite: String?, holder: String?, addCryptograhicHolderBinding: Bool = true) async throws -> (vpTokenSigningPayload: LdpVPToken, unsignedVPToken: UnsignedVPToken?) {
         var context: [String] = ["https://www.w3.org/2018/credentials/v1"]
-        if signatureSuite == SignatureAlgorithm.ed25519Signature2020.rawValue {
+        if signatureSuite == SignatureSuite.ed25519Signature2020.rawValue {
             context.append("https://w3id.org/security/suites/ed25519-2020/v1")
-        } else if signatureSuite == SignatureAlgorithm.jsonWebSignature2020.rawValue {
+        } else if signatureSuite == SignatureSuite.jsonWebSignature2020.rawValue {
             context.append("https://w3id.org/security/suites/jws-2020/v1")
         }
         
@@ -183,7 +183,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         }
         
         
-        return (holder: holderId, signatureSuite: SignatureAlgorithm.jsonWebSignature2020.rawValue)
+        return (holder: holderId, signatureSuite: SignatureSuite.jsonWebSignature2020.rawValue)
     }
     
     private func sanitize(_ holderId: String?) -> String? {

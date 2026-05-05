@@ -20,6 +20,8 @@ let jwkSet = """
                 "kid": "ed-key1"}] }
 """
 
+let didJwkKey =  "did:jwk:eyJrdHkiOiAiT0tQIiwiY3J2IjogIkVkMjU1MTkiLCJ4IjogIlhtdDBlTnE1TWNtLUZvbV9tbTAteHUxZTEtLWpJcXUtcUpuZTlOU25LRkUifQ#0"
+
 let clientMetadataString = """
         {
             "client_name": "Valid Client",

@@ -40,7 +40,7 @@ class DidJwkResolver : BaseDidPublicKeyResolver {
         }
     }
     
-    func decodeJWK(_ base64urlJwk: String) throws -> JWK {
+    private func decodeJWK(_ base64urlJwk: String) throws -> JWK {
         guard let jwkData = Data(base64UrlEncoded: base64urlJwk) else {
             throw PublicKeyResolutionFailed(message: "Invalid base64url encoding for public key data", className: "Utils")
         }

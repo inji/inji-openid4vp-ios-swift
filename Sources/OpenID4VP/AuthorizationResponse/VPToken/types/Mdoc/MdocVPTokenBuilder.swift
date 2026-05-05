@@ -47,7 +47,6 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             let (_, alg) = try resolveMdocKeyAndAlg(mdocCredential)
             
             let deviceAuthSignature = DeviceAuthentication(signature: vpTokenSigningResult.signedData, algorithm: alg)
-            try deviceAuthSignature.validate()
             
             let deviceSignature = try createDeviceSignature(deviceAuthSignature)
             
@@ -129,7 +128,6 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             let (_, alg) = try resolveMdocKeyAndAlg(mdocCredential)
             
             let deviceAuthSignature = DeviceAuthentication(signature: vpTokenSigningResult.signedData, algorithm: alg)
-            try deviceAuthSignature.validate()
             
             let deviceSignature = try createDeviceSignature(deviceAuthSignature)
             

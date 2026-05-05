@@ -174,7 +174,7 @@ func convertToJsonString<T: Encodable>(_ object: T) -> String {
         return String(data: jsonData, encoding: .utf8) ?? ""
     } catch {
         print("Error converting object to JSON string: \(error)")
-        return ""
+        return "{}"
     }
 }
 
