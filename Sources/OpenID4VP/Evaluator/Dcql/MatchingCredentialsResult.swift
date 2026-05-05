@@ -1,4 +1,4 @@
-public struct MatchingCredentialsResult {
+public struct MatchingCredentialsResult : Codable {
     public let success: Bool
     /// Results for each individual credential query, keyed by the `id` provided in the request.
     public let queryMatches: [String: QueryMatchResult]
@@ -12,7 +12,7 @@ public struct MatchingCredentialsResult {
     }
 }
 
-public struct QueryMatchResult {
+public struct QueryMatchResult: Codable {
     /// List of credentials that satisfy the query. Populated only if credentials are matching, otherwise `nil`.
     public let matchingCredentials: [MatchingCredential]?
     /// Reason of failure related to the claims requested by the Verifier. Populated only if no credentials match.
@@ -29,9 +29,16 @@ public struct QueryMatchResult {
         self.failureReason = failureReason?.rawValue
         self.allowMultipleCredentials = allowMultipleCredentials
     }
+    
+    private enum CodingKeys: String, CodingKey {
+        case matchingCredentials
+        case failedClaims
+        case failureReason
+        case allowMultipleCredentials
+    }
 }
 
-public struct MatchingCredential {
+public struct MatchingCredential: Codable {
     public let credentialId: String
     public let matchingClaims: [ClaimsQuery]
     
@@ -41,12 +48,18 @@ public struct MatchingCredential {
     }
 }
 
-public struct ClaimFailure {
+public struct ClaimFailure: Codable {
     public let claim: ClaimsQuery
+    // TODO: update reason type to an enum of known failure reasons
     public let reason: String
     
     public init(claim: ClaimsQuery, reason: DCQLEvaluationErrorCodes) {
         self.claim = claim
         self.reason = reason.rawValue
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case claim
+        case reason
     }
 }
