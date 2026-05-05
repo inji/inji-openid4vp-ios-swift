@@ -3,9 +3,12 @@ import SwiftCBOR
 
 private let className = "DCQLUtils"
 
-func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpanderCallback) async throws -> TaggedCredential {
+func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpanderCallback?) async throws -> TaggedCredential {
     switch credential.format {
     case .ldp_vc:
+        guard let jsonLdExpander = jsonLdExpander else {
+            throw InvalidData(message: "JsonLdExpander is required to process w3c credentials", className: className)
+        }
         guard let credentialData = credential.data.value as? [String:Any] else {
             throw InvalidData(message: "Credential data is not in the expected format", className: className)
         }

@@ -1,8 +1,8 @@
 internal struct DcqlEvaluator {
     private let className = "DcqlEvaluator"
-    private let jsonLdExpander: JsonLdExpanderCallback
+    private let jsonLdExpander: JsonLdExpanderCallback?
     
-    public init(jsonLdExpander: @escaping JsonLdExpanderCallback) {
+    public init(jsonLdExpander: JsonLdExpanderCallback?) {
         self.jsonLdExpander = jsonLdExpander
     }
     
@@ -15,6 +15,14 @@ internal struct DcqlEvaluator {
             inputCredentials.map { ($0.credentialId, $0) },
             uniquingKeysWith: { _, last in last }
         )
+        
+        // If any dcql query involves ldp_vc, jsonLd expander is required
+        let requiresJsonLdExpander: Bool = dcqlQuery.credentials.contains(where: { $0.format == FormatType.ldp_vc.rawValue })
+        
+        if(requiresJsonLdExpander && jsonLdExpander == nil) {
+            // If the query requires JSON-LD expansion but no expander is provided, we cannot evaluate the query
+            throw UnsupportedOperationException(message: "JSON-LD expander is required but not provided", className: className)
+        }
         
         // Local caches to ensure we only do work ONCE
         var credentialsTagCache: [String: TaggedCredential] = [:]
