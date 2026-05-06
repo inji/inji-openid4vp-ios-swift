@@ -25,7 +25,6 @@ class DidWebResolver : BaseDidPublicKeyResolver {
     }
     
     func extractJWSAlgorithm(parsedDid: ParsedDID) async throws -> String {
-//TODO: Implement extraction of JWS algorithm from DID document based on the verification method used for signing. For now, returning empty string as placeholder.
         let publicKey = try await extractPublicKey(parsedDID: parsedDid)
         switch publicKey {
         case .ed25519:

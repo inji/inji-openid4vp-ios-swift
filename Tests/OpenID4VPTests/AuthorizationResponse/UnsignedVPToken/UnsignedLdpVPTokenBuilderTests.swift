@@ -50,7 +50,10 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
 
         let (payload, unsignedVPTokens) = try await builder.build(credentialInputDescriptorMappings: &mappings)
 
-        let ldpTokenPayload = try XCTUnwrap(payload as? LdpVPToken)
+        let ldpVP = try XCTUnwrap(payload as? LdpVP)
+        guard case let .vp(ldpTokenPayload) = ldpVP else {
+            XCTFail("Expected LdpVP.vp"); return
+        }
         XCTAssertEqual(ldpTokenPayload.context, ["https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/ed25519-2020/v1"])
         XCTAssertEqual(ldpTokenPayload.type, ["VerifiablePresentation"])
         XCTAssertEqual(ldpTokenPayload.id, "ebc6f1c2")
@@ -88,7 +91,10 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
 
         let (payload, unsignedVPTokens) = try await builder.build(credentialInputDescriptorMappings: &mappings)
 
-        let ldpToken = try XCTUnwrap(payload as? LdpVPToken)
+        let ldpVP = try XCTUnwrap(payload as? LdpVP)
+        guard case let .vp(ldpToken) = ldpVP else {
+            XCTFail("Expected LdpVP.vp"); return
+        }
         XCTAssertEqual(ldpToken.context, ["https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/jws-2020/v1"])
         XCTAssertEqual(ldpToken.type, ["VerifiablePresentation"])
         XCTAssertEqual(ldpToken.id, "ebc6f1c2")
@@ -286,12 +292,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
         XCTAssertEqual(unsignedVPTokens.count, 0)
-        let vpPayload = try XCTUnwrap(payload as? [String: LdpVPToken])
-        XCTAssertEqual(vpPayload.count, 1)
-        let ldpToken = try XCTUnwrap(vpPayload.values.first)
-        XCTAssertEqual(ldpToken.type, ["VerifiablePresentation"])
-        XCTAssertNil(ldpToken.proof)
-        XCTAssertEqual(ldpToken.verifiableCredential.count, 1)
+        assertLdpVPTokenPayload(payload, expectedCredentialsInPresentation: convertToJsonString([ldpVC()]), tokenType: .vc)
     }
 
     func testBuildWithHolderBindingFalseSetsIdentifierOnMapping() async throws {
@@ -319,7 +320,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
         XCTAssertEqual(unsignedVPTokens.count, 0)
-        let vpPayload = try XCTUnwrap(payload as? [String: LdpVPToken])
+        let vpPayload = try XCTUnwrap(payload as? [String: LdpVP])
         XCTAssertEqual(vpPayload.count, 2)
         let id0 = try XCTUnwrap(mappings[0].identifier)
         let id1 = try XCTUnwrap(mappings[1].identifier)
@@ -347,9 +348,11 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
             ]
         ])
 
-        let vpPayload = try XCTUnwrap(payload as? [String: LdpVPToken])
+        let vpPayload = try XCTUnwrap(payload as? [String: LdpVP])
         XCTAssertEqual(vpPayload.count, 1)
-        let ldpToken = try XCTUnwrap(vpPayload.values.first)
+        guard case let .vp(ldpToken) = vpPayload.values.first else {
+            XCTFail("Expected LdpVP.vp entry in payload"); return
+        }
         XCTAssertNotNil(ldpToken.proof)
         XCTAssertEqual(ldpToken.proof?.verificationMethod, didJwkKey)
         XCTAssertEqual(ldpToken.proof?.challenge, "nonce")
@@ -378,7 +381,9 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
 
         let (payload, _) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
 
-        let ldpToken = try XCTUnwrap((payload as? [String: LdpVPToken])?.values.first)
+        let ldpToken = try XCTUnwrap((payload as? [String: LdpVP])?.values.first.flatMap {
+            if case let .vp(token) = $0 { return token } else { return nil }
+        })
         XCTAssertEqual(ldpToken.context, ["https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/jws-2020/v1"])
         XCTAssertEqual(ldpToken.type, ["VerifiablePresentation"])
         XCTAssertEqual(ldpToken.holder, didJwkKey)
@@ -521,17 +526,43 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         }
     }
 
-    private func assertLdpVPTokenPayload(_ payload: Any?, holder: String = didJwkKey, expectedCredentialsInPresentation: String) {
-        let ldpToken = payload as? LdpVPToken
-        XCTAssertNotNil(ldpToken)
-        XCTAssertEqual(ldpToken!.type, ["VerifiablePresentation"])
-        XCTAssertEqual(ldpToken!.id, "ebc6f1c2")
-        XCTAssertEqual(ldpToken!.holder, holder)
-        XCTAssertEqual(ldpToken!.proof?.type, SignatureSuite.ed25519Signature2020.rawValue)
-        XCTAssertEqual(ldpToken!.proof?.verificationMethod, holder)
-        XCTAssertEqual(ldpToken!.proof?.challenge, "nonce")
-        XCTAssertEqual(ldpToken!.proof?.domain, "client_id")
-        assertJsonString(expected: expectedCredentialsInPresentation, actual: convertToJsonString(ldpToken!.verifiableCredential))
+    private enum TokenPresentationType {
+        case vp
+        case vc
+    }
+
+    private func assertLdpVPTokenPayload(
+        _ payload: Any?,
+        holder: String = didJwkKey,
+        expectedCredentialsInPresentation: String,
+        tokenType: TokenPresentationType = .vp,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        switch tokenType {
+        case .vp:
+            guard case let .vp(ldpToken) = payload as? LdpVP else {
+                XCTFail("Expected LdpVP.vp payload", file: file, line: line)
+                return
+            }
+            XCTAssertEqual(ldpToken.type, ["VerifiablePresentation"], file: file, line: line)
+            XCTAssertEqual(ldpToken.id, "ebc6f1c2", file: file, line: line)
+            XCTAssertEqual(ldpToken.holder, holder, file: file, line: line)
+            XCTAssertEqual(ldpToken.proof?.type, SignatureSuite.ed25519Signature2020.rawValue, file: file, line: line)
+            XCTAssertEqual(ldpToken.proof?.verificationMethod, holder, file: file, line: line)
+            XCTAssertEqual(ldpToken.proof?.challenge, "nonce", file: file, line: line)
+            XCTAssertEqual(ldpToken.proof?.domain, "client_id", file: file, line: line)
+            assertJsonString(expected: expectedCredentialsInPresentation, actual: convertToJsonString(ldpToken.verifiableCredential), file: file, line: line)
+
+        case .vc:
+            guard let dict = payload as? [String: LdpVP],
+                  let firstEntry = dict.values.first,
+                  case let .vc(ldpVCToken) = firstEntry else {
+                XCTFail("Expected [String: LdpVP] payload with LdpVP.vc entries for VC type", file: file, line: line)
+                return
+            }
+            assertJsonString(expected: expectedCredentialsInPresentation, actual: convertToJsonString([ldpVCToken.verifiableCredential]), file: file, line: line)
+        }
     }
 
     private func assertJWSDataToSign(_ dataToSign: Data, expectedHeader: [String: Any], expectedPayload: String, file: StaticString = #file, line: UInt = #line) {

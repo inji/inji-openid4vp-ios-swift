@@ -44,13 +44,12 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         return (vpTokenSigningPayload, unsignedVPToken != nil ? [unsignedVPToken!] : [])
     }
     
-    //TODO: change the type to [Any] - list of payloads
     func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
         guard let authorizationRequest = authorizationRequest as? AuthorizationDcqlRequest else {
             throw InvalidData(message: "Expected AuthorizationDcqlRequest for DCQL flow", className: className)
         }
         var unsignedVPTokens: [UnsignedVPToken] = []
-        var vpTokenSigningPayloads : [String: LdpVPToken] = [:]
+        var vpTokenSigningPayloads : [String: LdpVP] = [:]
         
         for index in 0..<credentialToCredentialQueryIdMappings.count {
             var credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
@@ -67,13 +66,21 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 throw InvalidData(message: "No matching credential query found for credential query id: \(credentialQueryId)", className: className)
             }()
             
+            if(mappedCredentialQuery.requireCryptographicHolderBinding) {
+                vpTokenSigningPayloads[uuid] = .vc(LdpVCToken(verifiableCredential: credential))
+            }
+            
             let result = mappedCredentialQuery.requireCryptographicHolderBinding ? try extractHolderAndSignatureSuite(credential) : nil
+            
+            if !mappedCredentialQuery.requireCryptographicHolderBinding {
+                vpTokenSigningPayloads[uuid] = .vc(LdpVCToken(verifiableCredential: credential))
+                continue
+            }
             
             let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
                 with: verifiableCredentials,
                 signatureSuite: result?.signatureSuite,
-                holder: sanitize(result?.holder),
-                addCryptograhicHolderBinding: mappedCredentialQuery.requireCryptographicHolderBinding
+                holder: sanitize(result?.holder)
             )
             
             vpTokenSigningPayloads[uuid] = vpTokenSigningPayload
@@ -86,25 +93,12 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         return (vpTokenSigningPayloads, unsignedVPTokens)
     }
     
-    private func buildPayloadAndUnsignedVPToken(with credentials: [AnyCodable], signatureSuite: String?, holder: String?, addCryptograhicHolderBinding: Bool = true) async throws -> (vpTokenSigningPayload: LdpVPToken, unsignedVPToken: UnsignedVPToken?) {
+    private func buildPayloadAndUnsignedVPToken(with credentials: [AnyCodable], signatureSuite: String?, holder: String?) async throws -> (vpTokenSigningPayload: LdpVP, unsignedVPToken: UnsignedVPToken?) {
         var context: [String] = ["https://www.w3.org/2018/credentials/v1"]
         if signatureSuite == SignatureSuite.ed25519Signature2020.rawValue {
             context.append("https://w3id.org/security/suites/ed25519-2020/v1")
         } else if signatureSuite == SignatureSuite.jsonWebSignature2020.rawValue {
             context.append("https://w3id.org/security/suites/jws-2020/v1")
-        }
-        
-        if(addCryptograhicHolderBinding == false) {
-            return (
-                LdpVPToken(
-                    context: context,
-                    type: ["VerifiablePresentation"],
-                    verifiableCredential: credentials,
-                    id: id,
-                    holder: holder,
-                    proof: nil
-                ),
-                nil)
         }
         
         guard let holder = holder else {
@@ -124,13 +118,15 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             proofValue: nil
         )
         
-        let vpTokenSigningPayload = LdpVPToken(
-            context: context,
-            type: ["VerifiablePresentation"],
-            verifiableCredential: credentials,
-            id: id,
-            holder: holder,
-            proof: proof
+        let vpTokenSigningPayload : LdpVP = .vp(
+            LdpVPToken(
+                context: context,
+                type: ["VerifiablePresentation"],
+                verifiableCredential: credentials,
+                id: id,
+                holder: holder,
+                proof: proof
+            )
         )
         
         guard let dataToSign = try? JSONEncoder().encode(vpTokenSigningPayload),

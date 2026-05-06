@@ -47,3 +47,19 @@ struct LdpVCToken: Encodable, VPToken {
         try container.encode(verifiableCredential)
     }
 }
+
+enum LdpVP : Encodable, VPToken {
+    case vc(LdpVCToken)
+    case vp(LdpVPToken)
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .vc(let token):
+            try container.encode(token)
+        case .vp(let token):
+            try container.encode(token)
+        }
+    }
+}
+

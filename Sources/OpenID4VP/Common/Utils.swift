@@ -355,8 +355,7 @@ func getJWSAlgorithm(from uri: String) async throws -> String {
         return try await DidPublicKeyResolver().getJWSAlgorithm(uri: uri)
     }
     
-    // TODO: Throw unsupported key resolution
-    return JWSAlgorithm.eddsa
+    throw UnsupportedOperationException(message: "Unsupported identifier format for JWS algorithm resolution", className: "OpenID4VPUtils")
 }
 
 

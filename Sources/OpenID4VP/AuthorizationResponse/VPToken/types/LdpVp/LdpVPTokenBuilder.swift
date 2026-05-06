@@ -8,7 +8,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
     init(authorizationRequest: AuthorizationRequest) {
         self.authorizationRequest = authorizationRequest
     }
-
+    
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
         unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
@@ -16,7 +16,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
         let ldpVPToken = try buildVPToken(
-            getUnsignedLdpVPToken: unsignedVPTokenResult.vpTokenSigningPayload as? LdpVPToken,
+            getUnsignedLdpVPToken: unsignedVPTokenResult.vpTokenSigningPayload as? LdpVP,
             addCryptographicHolderBinding: true,
             getVPTokenSigningResult: vpTokenSigningResults.first,
             getUnsignedVPToken: unsignedVPTokenResult.unsignedVPTokens.first
@@ -45,7 +45,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         var vpTokenSigningResultsIterator = vpTokenSigningResults.makeIterator()
         var vpTokenResult : [String: [VPToken]] = [:]
         var unsignedVpTokenIterator = unsignedVPTokenResult.unsignedVPTokens.makeIterator()
-        guard let unsignedVpTokens = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVPToken] else {
+        guard let unsignedVpTokens = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {
             throw InvalidData(message: "Missing uuidToUnsignedKBT in payload", className: className)
         }
         for credentialToCredentialQueryIdMapping in credentialToCredentialQueryIdMappings {
@@ -66,7 +66,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
     }
     
     private func buildVPToken(
-        getUnsignedLdpVPToken: @autoclosure @escaping () -> LdpVPToken?,
+        getUnsignedLdpVPToken: @autoclosure @escaping () -> LdpVP?,
         addCryptographicHolderBinding: Bool = true,
         getVPTokenSigningResult: @autoclosure @escaping () -> VPTokenSigningResult?,
         getUnsignedVPToken: @autoclosure @escaping () -> UnsignedVPToken?
@@ -75,9 +75,12 @@ class LdpVPTokenBuilder: VPTokenBuilder {
             throw InvalidData(message: "payload is not available as LdpVPToken", className: className)
         }
         
-        var proof = unsignedLdpVPToken.proof
-        
         if(addCryptographicHolderBinding) {
+            guard case .vp(let unsignedLdpVPToken) = unsignedLdpVPToken else {
+                throw InvalidData(message: "unsignedLdpVPToken is not of type vp", className: className)
+            }
+            var proof = unsignedLdpVPToken.proof
+            
             let signatureSuite = proof?.type ?? ""
             
             guard let vpTokenSigningResult = getVPTokenSigningResult() else {
@@ -87,7 +90,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
             if(vpTokenSigningResult.signedData.isEmpty) {
                 throw InvalidInput(fieldPath: ["VPTokenSigningResult", "signedData"], className: className)
             }
-
+            
             guard let unsignedVPToken = getUnsignedVPToken() else {
                 throw InvalidData(message: "Missing data to sign", className: className)
             }
@@ -96,31 +99,33 @@ class LdpVPTokenBuilder: VPTokenBuilder {
             case SignatureSuite.jsonWebSignature2020.rawValue,
                 SignatureSuite.ed25519Signature2018.rawValue:
                 proof?.jws = getHeader(unsignedVPToken) + ".." + vpTokenSigningResult.signedData.toBase64UrlEncoded()
-
+                
             case SignatureSuite.rsaSignature2018.rawValue:
                 proof?.signatureValue = vpTokenSigningResult.signedData.toBase64UrlEncoded()
-
+                
             case SignatureSuite.ed25519Signature2020.rawValue:
                 proof?.proofValue = BaseEncoding.base58BtcEncode(vpTokenSigningResult.signedData)
-
+                
             default:
                 throw UnsupportedSignatureAlgorithm(
                     message: "Unsupported algorithm: \(signatureSuite)",
                     className: className
                 )
             }
+            
+            let ldpVPToken = LdpVPToken(
+                context: unsignedLdpVPToken.context,
+                type: unsignedLdpVPToken.type,
+                verifiableCredential: unsignedLdpVPToken.verifiableCredential,
+                id: unsignedLdpVPToken.id,
+                holder: unsignedLdpVPToken.holder,
+                proof: proof
+            )
+            
+            return ldpVPToken
+        } else {
+            return unsignedLdpVPToken
         }
-        
-        let ldpVPToken = LdpVPToken(
-            context: unsignedLdpVPToken.context,
-            type: unsignedLdpVPToken.type,
-            verifiableCredential: unsignedLdpVPToken.verifiableCredential,
-            id: unsignedLdpVPToken.id,
-            holder: unsignedLdpVPToken.holder,
-            proof: proof
-        )
-        
-        return ldpVPToken
     }
     
     private func getHeader(_ unsignedVPToken: UnsignedVPToken) -> String {

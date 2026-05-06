@@ -192,7 +192,6 @@ final class AuthorizationRequestTests: XCTestCase {
             networkManager: mockNetworkManager
         )
 
-        //TODO: Add validation on DCQL here
         XCTAssertTrue(request is AuthorizationDcqlRequest)
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)

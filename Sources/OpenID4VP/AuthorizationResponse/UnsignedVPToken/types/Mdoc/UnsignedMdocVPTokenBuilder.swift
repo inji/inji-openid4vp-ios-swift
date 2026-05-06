@@ -92,7 +92,6 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             unsignedVPTokens.append(unsignedVPToken)
         }
 
-// TODO: Check why we need this reordering - do we need it actually
         unsignedVPTokens = []
         for docType in docTypeToDeviceAuthenticationBytes.keys.sorted() {
              let mapping = credentialToCredentialQueryIdMappings.first(where: { $0.identifier == docType })!

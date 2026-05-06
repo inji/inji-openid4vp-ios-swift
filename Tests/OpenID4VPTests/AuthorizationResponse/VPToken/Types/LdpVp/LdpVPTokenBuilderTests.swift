@@ -19,7 +19,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         jws: String? = nil,
         proofValue: String? = nil,
         signatureValue: String? = nil
-    ) -> LdpVPToken {
+    ) ->LdpVP {
         let proof = Proof(
             type: proofType,
             created: nil,
@@ -28,11 +28,13 @@ final class LdpVPTokenBuilderTests: XCTestCase {
             jws: jws,
             verificationMethod: "did:example:holder"
         )
-        return LdpVPToken(
-            verifiableCredential: [credential],
-            id: "vp-id",
-            holder: "did:example:holder",
-            proof: proof
+        return .vp(
+            LdpVPToken(
+                verifiableCredential: [credential],
+                id: "vp-id",
+                holder: "did:example:holder",
+                proof: proof
+            )
         )
     }
 
@@ -265,7 +267,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         let ldpToken = makeLdpVPToken(proofType: SignatureSuite.jsonWebSignature2020.rawValue)
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping.identifier = "some-uuid"
-        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVPToken] as Any?, unsignedVPTokens: [unsignedVPToken])
+        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVP] as Any?, unsignedVPTokens: [unsignedVPToken])
 
         let result = try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
@@ -282,37 +284,42 @@ final class LdpVPTokenBuilderTests: XCTestCase {
 
     func testDcqlBuildWithoutHolderBinding() throws {
         let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
-        let ldpToken = makeLdpVPToken(proofType: SignatureSuite.jsonWebSignature2020.rawValue)
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping.identifier = "some-uuid"
-        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVPToken] as Any?, unsignedVPTokens: [unsignedVPToken])
-
+        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": LdpVP.vc(LdpVCToken(verifiableCredential: credential))] as [String: LdpVP] as Any?, unsignedVPTokens: [UnsignedVPToken]())
+        
         let result = try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
             unsignedVPTokenResult: unsignedResult,
             vpTokenSigningResults: []
         )
-
+        
         XCTAssertEqual(result.keys.sorted(), ["q1"])
-        let token = try XCTUnwrap(result["q1"]?.first as? LdpVPToken)
-        XCTAssertNil(token.proof?.jws)
-        XCTAssertNil(token.proof?.proofValue)
-        XCTAssertNil(token.proof?.signatureValue)
+        XCTAssertEqual(result["q1"]?.count, 1)
+        let token = try XCTUnwrap(result["q1"]?.first as? LdpVP)
+        guard case .vc(let presentation) = token else {
+            XCTFail("Expected VC here")
+            return
+        }
+        let credentialDict = try XCTUnwrap(presentation.verifiableCredential.value as? [String: Any])
+        XCTAssertEqual(credentialDict["type"] as? [String], ["VerifiableCredential"])
     }
 
     func testDcqlBuildMultipleCredentialsDifferentQueryIds() throws {
         let dcqlBuilder = builderWithDcqlRequest(credentials: [("q1", true), ("q2", false)])
         let signature = Data("mockSig".utf8)
         let ldpToken1 = makeLdpVPToken(proofType: SignatureSuite.jsonWebSignature2020.rawValue)
-        let ldpToken2 = makeLdpVPToken(proofType: SignatureSuite.jsonWebSignature2020.rawValue)
 
         var mapping1 = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping1.identifier = "uuid-1"
         var mapping2 = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q2")
         mapping2.identifier = "uuid-2"
 
-        let payload = ["uuid-1": ldpToken1, "uuid-2": ldpToken2] as [String: LdpVPToken]
-        let unsignedResult = (vpTokenSigningPayload: payload as Any?, unsignedVPTokens: [unsignedVPToken, unsignedVPToken])
+        let payload: [String: LdpVP] = [
+            "uuid-1": ldpToken1,
+            "uuid-2": .vc(LdpVCToken(verifiableCredential: credential))
+        ]
+        let unsignedResult = (vpTokenSigningPayload: payload as Any?, unsignedVPTokens: [unsignedVPToken])
 
         let result = try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping1, mapping2],
@@ -327,8 +334,11 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         let token1 = try XCTUnwrap(result["q1"]?.first as? LdpVPToken)
         XCTAssertNotNil(token1.proof?.jws)
 
-        let token2 = try XCTUnwrap(result["q2"]?.first as? LdpVPToken)
-        XCTAssertNil(token2.proof?.jws)
+        let tokenData = try XCTUnwrap(result["q2"]?.first as? LdpVP)
+        guard case .vc(_) = tokenData else {
+            XCTFail("Expected LdpVCToken for no-binding query")
+            return
+        }
     }
 
     func testDcqlBuildMultipleCredentialsSameQueryId() throws {
@@ -342,7 +352,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         var mapping2 = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping2.identifier = "uuid-2"
 
-        let payload = ["uuid-1": ldpToken1, "uuid-2": ldpToken2] as [String: LdpVPToken]
+        let payload = ["uuid-1": ldpToken1, "uuid-2": ldpToken2] as [String: LdpVP]
         let unsignedResult = (vpTokenSigningPayload: payload as Any?, unsignedVPTokens: [unsignedVPToken, unsignedVPToken])
 
         let result = try dcqlBuilder.build(
@@ -353,6 +363,8 @@ final class LdpVPTokenBuilderTests: XCTestCase {
 
         XCTAssertEqual(result.keys.sorted(), ["q1"])
         XCTAssertEqual(result["q1"]?.count, 2)
+        XCTAssertTrue(result["q1"]?.first is LdpVPToken)
+        XCTAssertTrue(result["q1"]?.last is LdpVPToken)
     }
 
     func testDcqlBuildThrowsWhenPayloadIsNotLdpVPTokenDictionary() {
@@ -372,10 +384,9 @@ final class LdpVPTokenBuilderTests: XCTestCase {
 
     func testDcqlBuildThrowsWhenCredentialQueryIdNotFoundInDcqlQuery() {
         let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
-        let ldpToken = makeLdpVPToken()
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "nonexistent")
         mapping.identifier = "some-uuid"
-        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVPToken] as Any?, unsignedVPTokens: [unsignedVPToken])
+        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": LdpVP.vc(LdpVCToken(verifiableCredential: credential))] as [String: LdpVP] as Any?, unsignedVPTokens: [UnsignedVPToken]())
 
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
@@ -391,7 +402,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         let signature = Data("mockSig".utf8)
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping.identifier = "uuid-missing"
-        let unsignedResult = (vpTokenSigningPayload: [String: LdpVPToken]() as Any?, unsignedVPTokens: [unsignedVPToken])
+        let unsignedResult = (vpTokenSigningPayload: [String: LdpVP]() as Any?, unsignedVPTokens: [unsignedVPToken])
 
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
@@ -407,7 +418,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         let ldpToken = makeLdpVPToken()
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping.identifier = "some-uuid"
-        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVPToken] as Any?, unsignedVPTokens: [unsignedVPToken])
+        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVP] as Any?, unsignedVPTokens: [unsignedVPToken])
 
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
@@ -423,7 +434,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         let ldpToken = makeLdpVPToken()
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping.identifier = "some-uuid"
-        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVPToken] as Any?, unsignedVPTokens: [unsignedVPToken])
+        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVP] as Any?, unsignedVPTokens: [unsignedVPToken])
 
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
@@ -439,7 +450,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         let ldpToken = makeLdpVPToken()
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping.identifier = "some-uuid"
-        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVPToken] as Any?, unsignedVPTokens: [UnsignedVPToken]())
+        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVP] as Any?, unsignedVPTokens: [UnsignedVPToken]())
 
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
@@ -455,7 +466,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         let ldpToken = makeLdpVPToken(proofType: "UnsupportedSuite2099")
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")
         mapping.identifier = "some-uuid"
-        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVPToken] as Any?, unsignedVPTokens: [unsignedVPToken])
+        let unsignedResult = (vpTokenSigningPayload: ["some-uuid": ldpToken] as [String: LdpVP] as Any?, unsignedVPTokens: [unsignedVPToken])
 
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: [mapping],
