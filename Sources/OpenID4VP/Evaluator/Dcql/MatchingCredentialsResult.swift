@@ -50,7 +50,6 @@ public struct MatchingCredential: Codable {
 
 public struct ClaimFailure: Codable {
     public let claim: ClaimsQuery
-    // TODO: update reason type to an enum of known failure reasons
     public let reason: String
     
     public init(claim: ClaimsQuery, reason: DCQLEvaluationErrorCodes) {

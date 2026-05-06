@@ -154,7 +154,13 @@ internal struct DcqlEvaluator {
         
         // If claim_sets is not present, then all claims in the VP request need to be satisfied
         let (matchingClaims, failedClaims) = try checkClaims(claims, walletCredential: walletCredential)
-        return (matchingClaims, failedClaims, nil)
+        if failedClaims.isEmpty {
+            return (matchingClaims, [], nil)
+        }
+        // All-or-nothing: if any claim is missing/mismatched, the entire set fails.
+        // Report all claims (including partially-matched ones) as failures.
+        let allFailed = failedClaims + matchingClaims.map { ClaimFailure(claim: $0, reason: .claimUnavailable) }
+        return ([], allFailed, .requiredClaimsMismatch)
     }
     
     private func checkClaims(_ claims: [ClaimsQuery], walletCredential: any ProcessedCredential) throws -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure]) {

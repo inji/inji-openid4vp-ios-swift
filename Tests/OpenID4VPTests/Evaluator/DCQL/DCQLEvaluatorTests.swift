@@ -240,11 +240,26 @@ final class DCQLEvaluatorTests: XCTestCase {
     
     func testClaimsMatching_MissingClaimFails() async throws {
         let query = try dcqlQuery("""
-        {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"nc","path":["nonexistent_claim"]}]}]}
+        {
+            "credentials": [
+                {
+                    "id":"q1",
+                    "format":"dc+sd-jwt",
+                    "meta":{},
+                    "claims":[
+                        {"id":"nc","path":["nonexistent_claim"]},
+                        {"id":"nc2","path":["issuance_date"]}
+                    ]
+                }
+            ]
+        }
         """)
+        // nc is no in the given credential but nc2 is available, since the case f all claims need to be matched from a credential - failed claims should include both nc and nc2
         let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential()])
         XCTAssertFalse(result.success)
         XCTAssertNotNil(result.queryMatches["q1"]?.failedClaims)
+        XCTAssertEqual(result.queryMatches["q1"]?.failureReason, DCQLEvaluationErrorCodes.requiredClaimsMismatch.rawValue)
+        XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.count, 2)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
     
