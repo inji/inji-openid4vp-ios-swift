@@ -105,6 +105,7 @@ internal struct DcqlEvaluator {
         
         var matchingCredentials: [MatchingCredential] = []
         var failedClaims: [ClaimFailure] = []
+        var seenClaimFailureKeys = Set<String>()
         var claimsCheckFailureReason: DCQLEvaluationErrorCodes? = nil
         
         for walletCredential in walletCredentials {
@@ -113,9 +114,15 @@ internal struct DcqlEvaluator {
             if claimFailures.isEmpty {
                 matchingCredentials.append(MatchingCredential(credentialId: walletCredential.credentialId, matchingClaims: matchingClaims))
             } else {
-                // Failed claims holds the reason for claims check failure which deos not include any details about credential
-                failedClaims.append(contentsOf: claimFailures)
-                claimsCheckFailureReason = failureReason
+                if claimsCheckFailureReason == nil {
+                    claimsCheckFailureReason = failureReason
+                }
+                for failure in claimFailures {
+                    let deduplicationKey = "\(failure.reason):\(failure.claim.path.map { "\($0.value)" }.joined(separator: "."))"
+                    if seenClaimFailureKeys.insert(deduplicationKey).inserted {
+                        failedClaims.append(failure)
+                    }
+                }
             }
         }
         

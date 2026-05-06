@@ -262,7 +262,33 @@ final class DCQLEvaluatorTests: XCTestCase {
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.count, 2)
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
-    
+
+    func testClaimsMatching_SameClaimMissingAcrossMultipleCredentials_DeduplicatedInFailedClaims() async throws {
+        // Both credentials are missing the same claim — failedClaims must not contain duplicates
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"nc","path":["nonexistent_claim"]}]}]}
+        """)
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(), sdJwtCredential()])
+        XCTAssertFalse(result.success)
+        let failedClaims = try XCTUnwrap(result.queryMatches["q1"]?.failedClaims)
+        XCTAssertEqual(failedClaims.count, 1)
+        XCTAssertEqual(failedClaims[0].reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
+        XCTAssertEqual(failedClaims[0].claim.path.first?.value as? String, "nonexistent_claim")
+    }
+
+    func testClaimsMatching_MultipleDistinctClaimsMissingAcrossMultipleCredentials_EachReportedOnce() async throws {
+        // Both credentials are missing both requested claims — each distinct claim must appear exactly once in failedClaims
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"a","path":["nonexistent_a"]},{"id":"b","path":["nonexistent_b"]}]}]}
+        """)
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(), sdJwtCredential()])
+        XCTAssertFalse(result.success)
+        let failedClaims = try XCTUnwrap(result.queryMatches["q1"]?.failedClaims)
+        XCTAssertEqual(failedClaims.count, 2)
+        let failedPaths = failedClaims.map { $0.claim.path.first?.value as? String }
+        XCTAssertEqual(failedPaths.sorted { ($0 ?? "") < ($1 ?? "") }, ["nonexistent_a", "nonexistent_b"])
+    }
+
     func testClaimsMatching_NestedClaimPath() async throws {
         // ldp_vc claims are stored as the credentialSubject contents — path keys are direct field names
         let query = try dcqlQuery("""
@@ -429,7 +455,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
     
-    // MARK: - credential_sets 
+    // MARK: - credential_sets
     
     func testCredentialSets_RequiredSetSatisfied() async throws {
         let query = try dcqlQuery("""
