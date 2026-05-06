@@ -104,6 +104,7 @@ internal struct DcqlEvaluator {
         }
         
         var matchingCredentials: [MatchingCredential] = []
+        var seenMatchingCredentialIds = Set<String>()
         var failedClaims: [ClaimFailure] = []
         var seenClaimFailureKeys = Set<String>()
         var claimsCheckFailureReason: DCQLEvaluationErrorCodes? = nil
@@ -112,7 +113,9 @@ internal struct DcqlEvaluator {
             let (matchingClaims, claimFailures, failureReason) = try evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
             
             if claimFailures.isEmpty {
-                matchingCredentials.append(MatchingCredential(credentialId: walletCredential.credentialId, matchingClaims: matchingClaims))
+                if seenMatchingCredentialIds.insert(walletCredential.credentialId).inserted {
+                    matchingCredentials.append(MatchingCredential(credentialId: walletCredential.credentialId, matchingClaims: matchingClaims))
+                }
             } else {
                 if claimsCheckFailureReason == nil {
                     claimsCheckFailureReason = failureReason
@@ -167,7 +170,7 @@ internal struct DcqlEvaluator {
         // All-or-nothing: if any claim is missing/mismatched, the entire set fails.
         // Report all claims (including partially-matched ones) as failures.
         let allFailed = failedClaims + matchingClaims.map { ClaimFailure(claim: $0, reason: .claimUnavailable) }
-        return ([], allFailed, .requiredClaimsMismatch)
+        return ([], allFailed, .requiredClaimsNotSatisfied)
     }
     
     private func checkClaims(_ claims: [ClaimsQuery], walletCredential: any ProcessedCredential) throws -> (matchingClaims: [ClaimsQuery], failedClaims: [ClaimFailure]) {

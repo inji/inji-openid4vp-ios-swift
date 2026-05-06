@@ -6,5 +6,5 @@ public enum DCQLEvaluationErrorCodes : String {
     case claimUnavailable = "claim_unavailable"
     case claimValueMismatch = "claim_value_not_matching"
     
-    case requiredClaimsMismatch = "required_claims_mismatch"
+    case requiredClaimsNotSatisfied = "required_claims_not_satisfied"
 }
