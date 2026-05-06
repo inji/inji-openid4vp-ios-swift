@@ -60,7 +60,7 @@ public class AuthorizationResponseHandler {
     }
     
     func constructUnsignedVPToken(
-        credentialsMap: [String: [SelectedCredential]],
+        credentialsMap: [String: [Credential]],
         authorizationRequest: AuthorizationRequest,
         responseUri: String,
         holderId: String = "",
@@ -202,7 +202,7 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
-    func createUnsignedVPToken(credentialsMap: [String: [SelectedCredential]],
+    func createUnsignedVPToken(credentialsMap: [String: [Credential]],
                                authorizationRequest: AuthorizationRequest,
                                walletNonce: String) async throws -> [UnsignedVPToken] {
         self.createFormatToCredentialQueryIdMapping(matchingCredentials: credentialsMap)
@@ -537,7 +537,7 @@ public class AuthorizationResponseHandler {
     }
     
     private func createFormatToCredentialQueryIdMapping(
-        matchingCredentials: [String: [SelectedCredential]]
+        matchingCredentials: [String: [Credential]]
     ) {
         var credentialToCredentialQueryIdMappings: [FormatType: [CredentialToCredentialQueryIdMapping]] = [:]
         
@@ -545,7 +545,7 @@ public class AuthorizationResponseHandler {
             for credential in credentials {
                 let mapping = CredentialToCredentialQueryIdMapping(
                     format: credential.format,
-                    credential: credential.credential,
+                    credential: credential.data,
                     credentialQueryId: credentialQueryId
                 )
                 credentialToCredentialQueryIdMappings[credential.format, default: []].append(mapping)
@@ -602,7 +602,7 @@ public class AuthorizationResponseHandler {
             return flattened
         }
         
-        static func createUnsignedVPToken(credentialsMap: [String: [SelectedCredential]],
+        static func createUnsignedVPToken(credentialsMap: [String: [Credential]],
                                           authorizationRequest: AuthorizationRequest,
                                           holderId: String?,
                                           signatureSuite: String?,
