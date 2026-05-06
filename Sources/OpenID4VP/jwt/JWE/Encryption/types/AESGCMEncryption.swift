@@ -9,7 +9,7 @@ class AESGCMEncryption: JWEEncryption {
            self.keySize = keySize
        }
     
-    func encrypt(_ data: Data, with key: SymmetricKey) throws -> (ciphertext: Data, nonce: Data, tag: Data) {
+    func encrypt(_ data: Data, with key: SymmetricKey, aad: Data? = nil) throws -> (ciphertext: Data, nonce: Data, tag: Data) {
         
         guard key.bitCount == keySize.bitCount else {
             
@@ -17,7 +17,13 @@ class AESGCMEncryption: JWEEncryption {
         }
         
         let nonce = AES.GCM.Nonce()
-        let sealedBox = try AES.GCM.seal(data, using: key, nonce: nonce)
+        let sealedBox: AES.GCM.SealedBox
+        
+        if let aad = aad {
+            sealedBox = try AES.GCM.seal(data, using: key, nonce: nonce, authenticating: aad)
+        } else {
+            sealedBox = try AES.GCM.seal(data, using: key, nonce: nonce)
+        }
         
         return (
             sealedBox.ciphertext,

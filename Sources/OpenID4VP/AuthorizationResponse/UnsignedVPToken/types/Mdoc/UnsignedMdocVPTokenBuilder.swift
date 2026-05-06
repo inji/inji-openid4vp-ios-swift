@@ -132,7 +132,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                                                 sessionTranscript: CBOR,
                                                 deviceNamespacesBytes: CBOR,
                                                 docTypeToDeviceAuthenticationBytes: [String: String],
-                                                updateIdentifier: (String) -> Void,
+                                                updateIdentifier: (String) -> Void
     ) async throws -> (docType: String, deviceAuthenticationBytes: String, unsignedVPToken: UnsignedVPToken) {
         let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credential, className: Self.className)
         

@@ -596,7 +596,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
 
         let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
-        let dcqlAuthorizationResult = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: v1Request, authorizationResponse: authorizationResponse, url: v1Request.responseUri!, networkManager: mockNetworkManager, producerInfo: "mock-nonce", recipientInfo: "verifier-nonce", walletMetadata: nil)
+        let dcqlAuthorizationResult = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: v1Request, authorizationResponse: authorizationResponse, url: v1Request.responseUri!, networkManager: mockNetworkManager, producerInfo: "tHwahwI6M5_Cd_Sj5k2_Aw", recipientInfo: "_G6UkKgcsUPFlHAbzUMerA", walletMetadata: nil)
         let v1RecordedRequest = mockNetworkManager.recordedRequests[responseUri]
         XCTAssertEqual(HttpMethod.post, v1RecordedRequest?.requestMethod)
         XCTAssertEqual(1, v1RecordedRequest?.requestBody?.keys.count)

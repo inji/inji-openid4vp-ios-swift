@@ -37,7 +37,7 @@ struct LdpVCToken: Encodable, VPToken {
     let verifiableCredential: AnyCodable
 
     init(
-        verifiableCredential: AnyCodable,
+        verifiableCredential: AnyCodable
     ) {
         self.verifiableCredential = verifiableCredential
     }
