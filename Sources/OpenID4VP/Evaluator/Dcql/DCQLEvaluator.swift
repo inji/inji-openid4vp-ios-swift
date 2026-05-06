@@ -196,7 +196,7 @@ internal struct DcqlEvaluator {
         return (matchingClaims, failedClaims)
     }
     
-    // Resolves a two-element mdoc path [namespace, elementIdentifier] per spec Section 7.2
+    // Resolves a two-element mdoc path [namespace, elementIdentifier]
     private func resolveMdocClaimPath(_ path: [String], namespaces: [String: [String: Any]]) -> Any? {
         guard path.count == 2,
               let namespaceElements = namespaces[path[0]] else { return nil }
@@ -258,11 +258,13 @@ internal struct DcqlEvaluator {
     
     // Builds CredentialSetRequirement array from dcqlQuery for the result
     private func buildCredentialSetRequirements(dcqlQuery: DCQLQuery) -> [CredentialSetQuery] {
-        guard let credentialSets = dcqlQuery.credentialSets else { return [] }
+        guard let credentialSets = dcqlQuery.credentialSets else {
+            // Populate the credential set stating all credential queries are required to be satisfied together if credential_sets is not present in the query
+            return [CredentialSetQuery(options: [dcqlQuery.credentials.map { $0.id }], required: true)]
+        }
         return credentialSets.map { CredentialSetQuery(options: $0.options, required: $0.required) }
     }
     
-    // Checks if the full DCQL query is satisfied per spec Section 6.4.2
     private func isQuerySatisfied(queryMatches: [String: QueryMatchResult], credentialSets: [CredentialSetQuery], dcqlQuery: DCQLQuery) -> Bool {
         if dcqlQuery.credentialSets == nil {
             // No credential_sets: all credential queries must be satisfied

@@ -83,6 +83,7 @@ func extractMdocString(from credential: AnyCodable, className: String) throws ->
 func extractMdocDocType(from decodedCredential: CBOR, className: String) throws -> (docType: CBOR, docTypeString: String) {
     guard let docType = getValueFromCBORMap(cborMap: decodedCredential, key: "docType"),
           let docTypeString = extractStringFromCBOR(docType) else {
+        
         throw InvalidData(
             message: "docType missing or invalid in credential",
             className: className

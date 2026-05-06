@@ -414,7 +414,7 @@ final class DCQLEvaluatorTests: XCTestCase {
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
     
-    // MARK: - credential_sets (spec §6.4.2)
+    // MARK: - credential_sets 
     
     func testCredentialSets_RequiredSetSatisfied() async throws {
         let query = try dcqlQuery("""
@@ -456,6 +456,18 @@ final class DCQLEvaluatorTests: XCTestCase {
         XCTAssertTrue(result.success)
     }
     
+    func testPopulateCredentialSet_When_CredentialsSetsAbsent() async throws {
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}]}
+        """)
+        
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1")])
+        
+        XCTAssertEqual(result.credentialSets.count, 1)
+        XCTAssertEqual(result.credentialSets.first?.options, [["q1", "q2"]])
+        XCTAssertEqual(result.credentialSets.first?.required, true)
+    }
+    
     // MARK: - Multi-format / multi-query scenarios
     
     func testMultipleQueriesDifferentFormats_BothSatisfied() async throws {
@@ -475,6 +487,14 @@ final class DCQLEvaluatorTests: XCTestCase {
         """)
         let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
         XCTAssertTrue(result.success)
+    }
+    
+    func testSuccessPopulatedAsFalseWhenAllRequiredDocumentsAreNotPresent() async throws {
+        let query = try dcqlQuery("""
+        {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{}},{"id":"q2","format":"mso_mdoc","meta":{}}]}
+        """)
+        let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1")])
+        XCTAssertFalse(result.success)
     }
     
     // MARK: - QueryEvaluationResult structure
