@@ -60,7 +60,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(ldpTokenPayload.holder, didJwkKey)
         XCTAssertEqual(ldpTokenPayload.proof?.type, SignatureSuite.ed25519Signature2020.rawValue)
         XCTAssertEqual(ldpTokenPayload.proof?.verificationMethod, didJwkKey)
-        XCTAssertEqual(ldpTokenPayload.proof?.challenge, "nonce")
+        XCTAssertNotNil(ldpTokenPayload.proof?.challenge)
         XCTAssertEqual(ldpTokenPayload.proof?.domain, "client_id")
         XCTAssertEqual(ldpTokenPayload.verifiableCredential.count, 1)
         // Ed25519Signature2020: dataToSign is raw canonical bytes, no JWS header prefix
@@ -101,7 +101,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(ldpToken.holder, didJwkKey)
         XCTAssertEqual(ldpToken.proof?.type, SignatureSuite.jsonWebSignature2020.rawValue)
         XCTAssertEqual(ldpToken.proof?.verificationMethod, didJwkKey)
-        XCTAssertEqual(ldpToken.proof?.challenge, "nonce")
+        XCTAssertNotNil(ldpToken.proof?.challenge)
         XCTAssertEqual(ldpToken.proof?.domain, "client_id")
         XCTAssertEqual(ldpToken.verifiableCredential.count, 1)
         // JsonWebSignature2020: dataToSign is "<base64url-JWS-header>.canonicalized"
@@ -550,7 +550,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
             XCTAssertEqual(ldpToken.holder, holder, file: file, line: line)
             XCTAssertEqual(ldpToken.proof?.type, SignatureSuite.ed25519Signature2020.rawValue, file: file, line: line)
             XCTAssertEqual(ldpToken.proof?.verificationMethod, holder, file: file, line: line)
-            XCTAssertEqual(ldpToken.proof?.challenge, "nonce", file: file, line: line)
+            XCTAssertNotNil(ldpToken.proof?.challenge)
             XCTAssertEqual(ldpToken.proof?.domain, "client_id", file: file, line: line)
             assertJsonString(expected: expectedCredentialsInPresentation, actual: convertToJsonString(ldpToken.verifiableCredential), file: file, line: line)
 

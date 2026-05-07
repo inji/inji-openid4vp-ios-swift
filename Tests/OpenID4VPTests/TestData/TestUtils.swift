@@ -326,7 +326,7 @@ func ldpVC(
         ],
         "issuanceDate": "2010-01-01T19:23:24Z",
         "credentialSubject": [
-            "id": "did:example:holder",
+            "id": didJwkKey,
             "given_name": "MockUser",
             "family_name": "Mockister",
             "birthdate": "1949-01-22"
