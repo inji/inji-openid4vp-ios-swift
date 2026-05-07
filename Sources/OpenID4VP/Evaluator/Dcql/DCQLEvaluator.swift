@@ -212,13 +212,6 @@ internal struct DcqlEvaluator {
         return (matchingClaims, failedClaims)
     }
     
-    // Resolves a two-element mdoc path [namespace, elementIdentifier]
-    private func resolveMdocClaimPath(_ path: [String], namespaces: [String: [String: Any]]) -> Any? {
-        guard path.count == 2,
-              let namespaceElements = namespaces[path[0]] else { return nil }
-        return namespaceElements[path[1]]
-    }
-    
     private func matchesExpectedValues(_ claimValue: Any, expectedValues: [ClaimValue]) -> Bool {
         return expectedValues.contains { expected in
             switch expected {

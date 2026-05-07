@@ -78,7 +78,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
                         return true
                     }
                     return false
-                },
+                }
             ) {
                 uuidToUnsignedKBJWT[uuid] = result.unsignedJWT
                 unsignedVPTokens.append(result.vpToken)
