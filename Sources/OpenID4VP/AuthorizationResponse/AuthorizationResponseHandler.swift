@@ -27,7 +27,6 @@ public class AuthorizationResponseHandler {
         signatureSuite: String?,
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
-        //        do {
         if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
             self.specVersion = .draft23
         }
@@ -53,10 +52,6 @@ public class AuthorizationResponseHandler {
         self.signatureSuite = signatureSuite ?? self.signatureSuite
         
         return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
-        //        } catch {
-        //            OpenID4VPException.error(error, className: Self.className)
-        //            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
-        //        }
     }
     
     func constructUnsignedVPToken(
@@ -67,16 +62,11 @@ public class AuthorizationResponseHandler {
         signatureSuite: String = "Ed25519Signature2020",
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
-        //        do {
         if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
             self.specVersion = .draft23
         }
         
         return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
-        //        } catch {
-        //            OpenID4VPException.error(error, className: Self.className)
-        //            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
-        //        }
     }
     
     func constructVPResponse(
@@ -148,7 +138,6 @@ public class AuthorizationResponseHandler {
         responseUri: String
     ) async throws -> VerifierResponse {
         let authorizationResponse : AuthorizationResponse
-        //        do {
         let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
             unsignedVPTokenResults: unsignedVPTokenResults,
             signingResults: vpTokenSigningResults,
@@ -159,10 +148,6 @@ public class AuthorizationResponseHandler {
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: reconstructedVpTokenSigningResult
         )
-        //        } catch {
-        //            OpenID4VPException.error(error, className: Self.className)
-        //            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
-        //        }
         
         let response: NetworkResponse = try await sendAuthorizationResponse(
             authorizationRequest: authorizationRequest,

@@ -96,6 +96,20 @@ public class OpenID4VP {
         }
     }
 
+    
+    /**
+         inputs
+             1. verifiableCredentials: Selected credentials in the form of a map of input descriptor ids to lists of verifiable credentials grouped by formats
+             2. holderId: This is related to ldp_vp holder, The ldp_vp's proof will be constructed using this holderId as Verification method, If not provided an error will be thrown to the consumer
+             3. signatureSuite: This is related to ldp_vp proof type, The ldp_vp's proof will be constructed using this signatureSuite as proof type. If not provided, error will be thrown to the consumer
+     
+         Output
+            - [UnsignedVPToken] : Array of unsigned VP tokens which includes the data to sign, signing algorithm and key reference along with VC format for which the data is to be signed
+     
+         Responsibility:
+            - This method focuses on building the data to be signed (UnsignedVPToken) which is required for the eventual VP construction
+            - Supports only Presentation Exchange VP request
+     */
     public func constructUnsignedVPToken(
         verifiableCredentials: [String: [FormatType: [AnyCodable]]],
         holderId: String? = nil,
@@ -116,6 +130,17 @@ public class OpenID4VP {
         }
     }
     
+    /**
+     inputs
+         1. verifiableCredentials: Selected credentials in the form of a map of credential query ids to lists of verifiable credentials
+ 
+     Output
+        - [UnsignedVPToken] : Array of unsigned VP tokens which includes the data to sign, signing algorithm and key reference along with VC format for which the data is to be signed
+ 
+     Responsibility:
+        - This method focuses on building the data to be signed (UnsignedVPToken) which is required for the eventual VP construction
+        - Supports only DCQL VP request
+     */
     public func constructUnsignedVPToken(
         selectedCredentials: [String: [Credential]]
     ) async throws -> [UnsignedVPToken] {
