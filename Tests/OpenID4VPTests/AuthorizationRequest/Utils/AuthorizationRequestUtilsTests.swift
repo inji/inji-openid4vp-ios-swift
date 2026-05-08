@@ -62,10 +62,15 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         }
         let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientIdDraft23, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientIdParameters, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+        let preRegisteredSchemeClientWithColonSeparatorAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters:  [
+            "client_id": "https://mock-verifier.com",
+        ], trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientIdParameter, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
         
         XCTAssertTrue(didAuthRequestHandler is DecentralizedIdentifierPrefixAuthorizationRequestHandler)
         XCTAssertTrue(preRegisteredSchemeAuthRequestHandler is PreRegisteredSchemeAuthorizationRequestHandler)
+        XCTAssertTrue(preRegisteredSchemeClientWithColonSeparatorAuthRequestHandler is PreRegisteredSchemeAuthorizationRequestHandler)
         XCTAssertTrue(redirectUriSchemeAuthRequestHandler is RedirectUriPrefixAuthorizationRequestHandler)
     }
     
@@ -95,15 +100,18 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     func testExtractClientIdPartOnlyWithValidInput(){
         let redirectUriSchemeClientId = "redirect_uri:https://client.example.org/cb"
         let preRegisteredSchemeClientId = "example-client"
+        let preRegisteredSchemeClientIdWithColonSeparator = "https://client.example.org/cb"
         let didSchemeClientId = "did:example#1"
         
         let result1 = extractClientIdPartOnly(redirectUriSchemeClientId)
         let result2 = extractClientIdPartOnly(preRegisteredSchemeClientId)
-        let result3 = extractClientIdPartOnly(didSchemeClientId)
+        let result3 = extractClientIdPartOnly(preRegisteredSchemeClientIdWithColonSeparator)
+        let result4 = extractClientIdPartOnly(didSchemeClientId)
         
         XCTAssertEqual(result1, "https://client.example.org/cb")
         XCTAssertEqual(result2, preRegisteredSchemeClientId)
-        XCTAssertEqual(result3, didSchemeClientId)
+        XCTAssertEqual(result3, preRegisteredSchemeClientIdWithColonSeparator)
+        XCTAssertEqual(result4, didSchemeClientId)
     }
     
     ///Extraction of client identifier scheme from Authorization request client_id property

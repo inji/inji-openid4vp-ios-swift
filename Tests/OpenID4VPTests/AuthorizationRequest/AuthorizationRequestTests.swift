@@ -358,19 +358,20 @@ final class AuthorizationRequestTests: XCTestCase {
 
     // MARK: - Unsupported client_id_prefix
 
-    func testUrlEncodedPathThrowsForUnsupportedClientIdPrefix() async {
-        // default branch: client_id with an unrecognised prefix throws
+    func testUrlEncodedPathHandledAsPreRegisteredClient() async {
+        // default branch: client_id with an unrecognised prefix is handled as pre-registered
         let unsupportedSchemeParams = mergeMaps(
             authorizationRequestParamsWithValue,
-            ["client_id": "x509_san_uri:https://mock-verifier.com"]
+            ["client_id": "https://mock-verifier.com"]
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: unsupportedSchemeParams,
             clientIdPrefix: .preRegistered,
-            applicableFields: authRequestWithPreRegisteredByValue
+            applicableFields: authRequestWithPreRegisteredByValue,
+            addEncryptionClientMetadataParams: false
         )
 
-        await XCTAssertAsyncThrowsError(
+        await XCTAssertAsyncNoThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncoded,
                 trustedVerifier: trustedVerifiers,
@@ -380,26 +381,16 @@ final class AuthorizationRequestTests: XCTestCase {
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
             )
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Given client_id_prefix is not supported",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
+        )
     }
 
-    func testDictionaryPathThrowsForUnsupportedClientIdScheme() async {
+    func testDictionaryPathDoesNotErrorOutForUnknownClientIDScheme() async {
         // default branch: same check via the dictionary path
-        let authRequest = createAuthorizationRequest(
-            paramList: authRequestWithPreRegisteredByValue,
-            requestParams: mergeMaps(
-                authorizationRequestParamsWithValue,
-                ["client_id": "x509_san_uri:https://mock-verifier.com"]
-            )
-        ) as [String: Any]
+        let authRequest: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+            AuthorizationRequestFieldConstants.clientId.rawValue: "https://mock-verifier.com"
+        ]), addEncryptionClientMetadataParams: false) as [String : Any]
 
-        await XCTAssertAsyncThrowsError(
+        await XCTAssertAsyncNoThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authRequest,
                 trustedVerifiers: trustedVerifiers,
@@ -409,12 +400,6 @@ final class AuthorizationRequestTests: XCTestCase {
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
             )
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Given client_id_prefix is not supported",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
+        )
     }
 }

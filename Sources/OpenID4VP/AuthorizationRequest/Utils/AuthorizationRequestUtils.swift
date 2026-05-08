@@ -109,7 +109,16 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                             walletNonce: walletNonce,
                                                             networkManager: networkManager)
     default:
-        throw InvalidData(message: "Given client_id_prefix is not supported" ,className: AuthorizationRequest.className)
+        // If the client ID prefix is unrecognized, fallback to pre-registered scheme handler
+        return PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId,
+                                                              specVersion: specVersion,
+                                                              trustedVerifiers: trustedVerifiers,
+                                                              authorizationRequestParameters: authorizationRequestParameters,
+                                                              walletMetadata: walletMetadata,
+                                                              shouldValidateClient: shouldValidateClient,
+                                                              setResponseUri: setResponseUri,
+                                                              walletNonce: walletNonce,
+                                                              networkManager: networkManager)
     }
 }
 
@@ -180,6 +189,11 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdPrefixAttached: String
         if(clientIdPrefix == ClientIdScheme.did.rawValue){
             return clientIdWithClientIdPrefixAttached
         }
+        if (ClientIdPrefix.fromValue(String(components[0])) == nil) {
+            // If client ID Prefix is unknown - handle it as pre-registered, and return the whole client ID as client ID part only
+            return clientIdWithClientIdPrefixAttached
+        }
+        
         return String(components[1])
     } else {
         // client_id_prefix is optional (Fallback client_id_prefix - pre-registered) i.e., a : character is not present in the Client Identifier
@@ -222,13 +236,20 @@ internal func findSpecVersion(clientId: String, clientIdPrefix: String, authoriz
         } else if clientIdPrefix == ClientIdPrefix.decentralizedIdentifier.rawValue {
             return .v1
         } else if clientIdPrefix == ClientIdPrefix.preRegistered.rawValue {
-            let trustedVerifier = trustedVerifiers.first { $0.clientId == clientId }
-            if let trustedVerifier = trustedVerifier {
-                return trustedVerifier.specVersion
-            }
-            return .v1
+            return getPreRegisteredVerifierSpecVersion(trustedVerifiers, clientId)
+        } else {
+            // If client ID Prefix is unknown - handle it as pre-registered, and return the spec version based on pre-registered verifiers
+            return getPreRegisteredVerifierSpecVersion(trustedVerifiers, clientId)
         }
     }
     
     return findSpecVersionUsingRequestParameters(authorizationRequestParameters)
+}
+
+fileprivate func getPreRegisteredVerifierSpecVersion(_ trustedVerifiers: [Verifier], _ clientId: String) -> SpecVersion {
+    let trustedVerifier = trustedVerifiers.first { $0.clientId == clientId }
+    if let trustedVerifier = trustedVerifier {
+        return trustedVerifier.specVersion
+    }
+    return .v1
 }
