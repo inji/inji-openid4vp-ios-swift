@@ -29,7 +29,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         assertUnsignedVPTokens(unsignedVPTokens, expected: [
             [
                 "format": FormatType.ldp_vc,
-                "signatureAlgorithm": SignatureAlgorithm.edDsA.rawValue,
+                "signatureAlgorithm": SignatureAlgorithm.edDsa.rawValue,
                 "holderKeyReference": didJwkKey,
                 "dataToSign": "canonicalized"
             ]
@@ -67,7 +67,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         assertUnsignedVPTokens(unsignedVPTokens, expected: [
             [
                 "format": FormatType.ldp_vc,
-                "signatureAlgorithm": SignatureAlgorithm.edDsA.rawValue,
+                "signatureAlgorithm": SignatureAlgorithm.edDsa.rawValue,
                 "holderKeyReference": didJwkKey,
                 "dataToSign": "canonicalized"
             ]
@@ -108,7 +108,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         assertUnsignedVPTokens(unsignedVPTokens, expected: [
             [
                 "format": FormatType.ldp_vc,
-                "signatureAlgorithm": SignatureAlgorithm.edDsA.rawValue,
+                "signatureAlgorithm": SignatureAlgorithm.edDsa.rawValue,
                 "holderKeyReference": didJwkKey,
                 "dataToSign": ["header": ["alg": "EdDSA", "crit": ["b64"], "b64": false] as [String: Any], "payload": "canonicalized"] as [String: Any]
             ]
@@ -342,7 +342,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         assertUnsignedVPTokens(unsignedVPTokens, expected: [
             [
                 "format": FormatType.ldp_vc,
-                "signatureAlgorithm": SignatureAlgorithm.edDsA.rawValue,
+                "signatureAlgorithm": SignatureAlgorithm.edDsa.rawValue,
                 "holderKeyReference": didJwkKey,
                 "dataToSign": ["header": ["alg": "EdDSA", "crit": ["b64"], "b64": false] as [String: Any], "payload": "canonicalized"] as [String: Any]
             ]
@@ -405,7 +405,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         assertUnsignedVPTokens(unsignedVPTokens, expected: [
             [
                 "format": FormatType.ldp_vc,
-                "signatureAlgorithm": SignatureAlgorithm.edDsA.rawValue,
+                "signatureAlgorithm": SignatureAlgorithm.edDsa.rawValue,
                 "holderKeyReference": didJwkKey,
                 "dataToSign": ["header": ["alg": "EdDSA", "crit": ["b64"], "b64": false] as [String: Any], "payload": "canonicalized"] as [String: Any]
             ]

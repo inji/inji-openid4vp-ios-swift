@@ -280,22 +280,22 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
     )
 }
 
-func createWalletMetadata(
+func createWalletConfig(
     vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
         .ldp_vc: LdpVcFormatSupported(),
         .mso_mdoc: MsoMdocVcFormatSupported(),
         .dc_sd_jwt: SdJwtVcFormatSupported()
     ],
     clientIdPrefixesSupported: [ClientIdPrefix] = [.preRegistered, .redirectUri, .decentralizedIdentifier],
-    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
-    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
-    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM],
+    requestObjectSigningAlgValuesSupported: [SignatureAlgorithm]? = [.edDsa],
+    authorizationEncryptionAlgValuesSupported: [EncryptionAlgorithm]? = [.ecdhES],
+    authorizationEncryptionEncValuesSupported: [EncryptionMethod]? = [.a256GCM],
     responseTypesSupported: [ResponseType] = [.vp_token],
     responseMode: ResponseMode = .directPost
-) throws -> WalletMetadata {
-    return WalletMetadata(
+) throws -> WalletConfig {
+    return WalletConfig(
         vpFormatsSupported: vpFormatsSupported,
-        clientIdPrefixesSupported: WalletMetadataDefaults.clientIdPrefixesSupported,
+        clientIdPrefixesSupported: WalletConfigDefaults.clientIdPrefixesSupported,
         requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,

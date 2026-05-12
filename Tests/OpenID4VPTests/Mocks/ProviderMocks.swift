@@ -49,11 +49,11 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     var expectedErrorResponse: [String: String] = [:]
 
     func validate(clientMetadata: ClientMetadataDraft23?,
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     
     func validate(clientMetadata: ClientMetadata?,
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     
     func sendAuthorizationResponse(
@@ -63,7 +63,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         networkManager: any NetworkManaging,
         producerInfo: String,
         recipientInfo: String,
-        walletMetadata: WalletMetadata?
+        walletConfig: WalletConfig
     ) async throws -> NetworkResponse {
         fatalError("Not needed for unit testing constructAuthorizationResponse")
     }
@@ -74,14 +74,14 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
         walletNonce: String,
-        walletMetadata: WalletMetadata?
+        walletConfig: WalletConfig
     ) throws -> [String: String] {
         return expectedSuccessResponse
     }
 
     func getVerifierPublicKeyForEncryption(
         authorizationRequest: AuthorizationRequest,
-        walletMetadata: WalletMetadata?
+                walletConfig: WalletConfig
     ) throws -> JWK? {
         return nil
     }

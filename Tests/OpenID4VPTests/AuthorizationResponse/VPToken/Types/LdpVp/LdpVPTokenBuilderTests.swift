@@ -9,7 +9,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
     private let unsignedVPToken = UnsignedVPToken(
         format: .ldp_vc,
         holderKeyReference: "did:example:holder",
-        signatureAlgorithm: SignatureAlgorithm.edDsA.rawValue,
+        signatureAlgorithm: SignatureAlgorithm.edDsa.rawValue,
         // "<base64url-JWS-header>.<payload>" — header decodes to {"alg":"EdDSA","crit":["b64"],"b64":false}
         dataToSign: Data("eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9.payload".utf8)
     )

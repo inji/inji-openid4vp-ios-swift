@@ -24,7 +24,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
             trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -43,7 +43,7 @@ final class AuthorizationRequestTests: XCTestCase {
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlWithoutClientId,
                 trustedVerifier: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -71,7 +71,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
             trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -93,7 +93,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
             trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -114,7 +114,7 @@ final class AuthorizationRequestTests: XCTestCase {
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authRequest,
                 trustedVerifiers: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -136,7 +136,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
             trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -153,7 +153,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
             trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -185,7 +185,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: urlEncoded,
             trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -214,7 +214,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: urlEncoded,
             trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -240,7 +240,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
             trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -270,7 +270,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
             trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -297,7 +297,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
             trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -322,7 +322,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
             trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -341,7 +341,7 @@ final class AuthorizationRequestTests: XCTestCase {
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: malformedUrl,
                 trustedVerifier: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -375,7 +375,7 @@ final class AuthorizationRequestTests: XCTestCase {
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncoded,
                 trustedVerifier: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -394,7 +394,7 @@ final class AuthorizationRequestTests: XCTestCase {
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authRequest,
                 trustedVerifiers: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",

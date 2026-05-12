@@ -8,7 +8,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     private let signatureSuite: String?
     public let specVersion: SpecVersion
     public let authorizationRequest: AuthorizationRequest
-    public let walletMetadata: WalletMetadata?
+    public let walletConfig: WalletConfig
     
     static let internalPath: String = "verifiableCredential"
     
@@ -18,14 +18,14 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         id: String,
         holder: String? = nil,
         signatureSuite: String? = nil,
-        walletMetadata: WalletMetadata? = nil
+        walletConfig: WalletConfig = WalletConfig()
     ) {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.id = id
         self.holder = holder
         self.signatureSuite = signatureSuite
-        self.walletMetadata = walletMetadata
+        self.walletConfig = walletConfig
     }
     
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {

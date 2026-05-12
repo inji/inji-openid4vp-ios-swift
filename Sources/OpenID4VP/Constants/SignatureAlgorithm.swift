@@ -12,7 +12,7 @@ public enum SignatureSuite: String, CaseIterable, Codable {
 }
 
 public enum SignatureAlgorithm: String, CaseIterable, Codable {
-    case edDsA = "EdDSA"
+    case edDsa = "EdDSA"
     case es256 = "ES256"
     case es256k1 = "ES256k1"
     case rs256 = "RS256"

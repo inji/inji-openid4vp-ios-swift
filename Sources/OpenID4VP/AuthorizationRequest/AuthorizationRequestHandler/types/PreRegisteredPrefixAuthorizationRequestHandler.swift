@@ -9,7 +9,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
          specVersion: SpecVersion,
          trustedVerifiers: [Verifier],
          authorizationRequestParameters: [String: Any],
-         walletMetadata: WalletMetadata?,
+         walletConfig: WalletConfig,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
@@ -19,7 +19,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadata: walletMetadata,
+                   walletConfig: walletConfig,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
@@ -39,9 +39,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
         }
     }
     
-    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
-        try validateRequestObjectSigningAlgSupported(walletMetadata, className: className)
-        return walletMetadata
+    func getWalletMetadata(walletConfig: WalletConfig) throws -> [String: Any] {
+        try validateRequestObjectSigningAlgSupported(walletConfig, className: className)
+        
+        return try walletConfig.toWalletMetadata(specVersion: specVersion)
     }
     
     func isSignedRequestSupported() -> Bool {

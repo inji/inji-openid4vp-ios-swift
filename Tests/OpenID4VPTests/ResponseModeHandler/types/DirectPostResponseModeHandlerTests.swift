@@ -9,16 +9,16 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     private let mockNetworkManager = MockNetworkManager()
     private let responseUri = "https://mock-verifier.com"
 
-    private var walletMetadata: WalletMetadata!
+    private var walletConfig: WalletConfig!
 
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletConfig = try createWalletConfig()
     }
 
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
         let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
 
-        XCTAssertNoThrow(try directPostAuthorizationResponseModeHandler.validate(clientMetadata: mockClientMetadataSpecVersionDraft23[.directPost], walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: true))
+        XCTAssertNoThrow(try directPostAuthorizationResponseModeHandler.validate(clientMetadata: mockClientMetadataSpecVersionDraft23[.directPost], walletConfig: walletConfig, shouldValidateWithWalletMetadata: true))
     }
 
     func testSendAuthorizationResponseForDirectPostResponseMode() async throws {
@@ -31,7 +31,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager,
                                                                                                         producerInfo: "mock-nonce",
                                                                                                         recipientInfo: "verifier-nonce",
-                                                                                                        walletMetadata: nil)
+                                                                                                        walletConfig: walletConfig)
 
             let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
             XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)
@@ -79,7 +79,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             XCTAssertThrowsError(
                 try handler.validate(
                     clientMetadata: clientMetadata,
-                    walletMetadata: walletMetadata,
+                    walletConfig: walletConfig,
                     shouldValidateWithWalletMetadata: false
                 )
             ) { error in
@@ -104,7 +104,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
             authorizationResponse: authorizationResponse,
             walletNonce: "mock-nonce",
-            walletMetadata: nil
+            walletConfig: walletConfig
         )
 
         XCTAssertEqual(result["state"], "sample-state")
@@ -152,7 +152,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             let json = "{ \(baseFields), \(encryptionField) }"
             let draft23ClientMetadata = try JSONDecoder().decode(ClientMetadataDraft23.self, from: Data(json.utf8))
             XCTAssertThrowsError(
-                try handler.validate(clientMetadata: draft23ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
+                try handler.validate(clientMetadata: draft23ClientMetadata, walletConfig: walletConfig, shouldValidateWithWalletMetadata: false)
             ) { error in
                 assertOpenID4VPException(error, expectedMessage: "encrypted_response_enc_values_supported or authorization_encrypted_response_alg SHOULD not be present for response mode 'direct_post'", expectedCode: OpenID4VPErrorCodes.invalidRequest)
             }
@@ -168,7 +168,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         """
         let v1ClientMetadata = try JSONDecoder().decode(ClientMetadata.self, from: Data(v1ClientMetadataStr.utf8))
         XCTAssertThrowsError(
-            try handler.validate(clientMetadata: v1ClientMetadata, walletMetadata: walletMetadata, shouldValidateWithWalletMetadata: false)
+            try handler.validate(clientMetadata: v1ClientMetadata, walletConfig: walletConfig, shouldValidateWithWalletMetadata: false)
         ) { error in
             assertOpenID4VPException(error, expectedMessage: "encrypted_response_enc_values_supported SHOULD not be present for response mode 'direct_post'", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
@@ -180,7 +180,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         for specVersion: SpecVersion in [.draft23, .v1] {
             let result = try handler.getVerifierPublicKeyForEncryption(
                 authorizationRequest: getMockAuthorizationRequest(responseMode: .directPost, specVersion: specVersion),
-                walletMetadata: walletMetadata
+                        walletConfig: walletConfig
             )
             XCTAssertNil(result)
         }
@@ -190,7 +190,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         let handler = DirectPostResponseModeHandler()
         let result = try handler.getVerifierPublicKeyForEncryption(
             authorizationRequest: getMockAuthorizationRequest(responseMode: .directPost, specVersion: .v1),
-            walletMetadata: nil
+                    walletConfig: WalletConfig()
         )
         XCTAssertNil(result)
     }

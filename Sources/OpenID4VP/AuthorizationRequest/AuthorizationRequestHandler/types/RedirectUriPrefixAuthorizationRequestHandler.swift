@@ -3,14 +3,14 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadata: walletMetadata,
+                   walletConfig: walletConfig,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
@@ -34,10 +34,8 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_prefix", className: className)
     }
     
-    func process(walletMetadata: WalletMetadata)  throws -> WalletMetadata {
-        var updatedWalletMetadata = walletMetadata
-        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
-        return updatedWalletMetadata
+    func getWalletMetadata(walletConfig: WalletConfig) throws -> [String: Any] {
+        return try walletConfig.toWalletMetadata(specVersion: specVersion, excludeSignedRequestConfig: true)
     }
 
     override func validateAndParseRequestFields()async throws {

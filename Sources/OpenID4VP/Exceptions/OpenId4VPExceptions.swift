@@ -93,6 +93,16 @@ class JsonEncodingFailed: OpenID4VPException {
     }
 }
 
+class EncodingFailed: OpenID4VPException {
+    init(fieldPath: Any? = nil, errorMessage: String, errorCode: String, className: String) {
+        super.init(
+            errorCode: errorCode,
+            message: "Encoding failed for \(fieldPath ?? "") due to this error: \(errorMessage)",
+            className: className
+        )
+    }
+}
+
 class DeserializationFailure: OpenID4VPException {
     init(fieldPath: Any, errorMessage: String, className: String) {
         super.init(

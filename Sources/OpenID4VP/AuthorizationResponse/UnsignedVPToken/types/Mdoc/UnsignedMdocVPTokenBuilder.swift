@@ -6,7 +6,7 @@ import SwiftCBOR
 struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     let authorizationRequest: AuthorizationRequest
     let specVersion: SpecVersion
-    let walletMetadata: WalletMetadata?
+    let walletConfig: WalletConfig
     private let responseUri: String
     private let mdocGeneratedNonce: String
     
@@ -16,11 +16,11 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         authorizationRequest: AuthorizationRequest,
         specVersion: SpecVersion,
         mdocGeneratedNonce: String,
-        walletMetadata: WalletMetadata? = nil
+        walletConfig: WalletConfig = WalletConfig()
     ) throws {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
-        self.walletMetadata = walletMetadata
+        self.walletConfig = walletConfig
         self.responseUri = try ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode).getResponseEndpoint(authorizationRequest: authorizationRequest)
         self.mdocGeneratedNonce = mdocGeneratedNonce
     }
@@ -116,7 +116,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             authorizationRequest: authorizationRequest,
             mdocGeneratedNonce: mdocGeneratedNonce,
             responseUri: responseUri,
-            walletMetadata: walletMetadata
+            walletConfig: walletConfig
         )
         let sessionTranscript = CBOR.array([.null, .null, openID4VPHandover])
         
@@ -178,7 +178,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             return specVersion == .v1 ? .specV1 : .draft23
         }
         
-        func buildOpenID4VPHandover(authorizationRequest: AuthorizationRequest, mdocGeneratedNonce: String, responseUri: String, walletMetadata: WalletMetadata?) throws -> CBOR {
+        func buildOpenID4VPHandover(authorizationRequest: AuthorizationRequest, mdocGeneratedNonce: String, responseUri: String, walletConfig: WalletConfig) throws -> CBOR {
             switch self {
             case .draft23:
                 let clientIdToHash = CBOR.array([.utf8String(authorizationRequest.clientId), .utf8String(mdocGeneratedNonce)])
@@ -190,8 +190,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
             case .specV1:
                 let responseHandler = try ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode)
                 let verifierPublicKey = try responseHandler.getVerifierPublicKeyForEncryption(
-                    authorizationRequest: authorizationRequest,
-                    walletMetadata: walletMetadata
+                    authorizationRequest: authorizationRequest, walletConfig: walletConfig
                 )
                 
                 let thumbprintCBOR: CBOR = try verifierPublicKey?.toJWKThumbprintBstr() ?? .null

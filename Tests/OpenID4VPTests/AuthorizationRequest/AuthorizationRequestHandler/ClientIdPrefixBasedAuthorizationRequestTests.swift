@@ -9,10 +9,10 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     var decodedClientMetadata: ClientMetadataDraft23?
     var decodedPresentationDefinition: PresentationDefinition?
     
-    private var walletMetadata: WalletMetadata!
+    private var walletConfig: WalletConfig!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletConfig = try createWalletConfig()
     }
     
     override func setUp() {
@@ -34,7 +34,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -64,7 +64,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -87,7 +87,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: false
         )
@@ -111,7 +111,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: false
         )
@@ -134,7 +134,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: false
         )
@@ -159,7 +159,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -181,7 +181,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: false,
             isUnsignedRequestSupported: true
         )
@@ -212,7 +212,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -229,7 +229,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: false,
             isUnsignedRequestSupported: true
         )
@@ -255,7 +255,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -284,7 +284,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -316,7 +316,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -346,7 +346,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -373,7 +373,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -401,7 +401,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -429,7 +429,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -457,7 +457,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -484,7 +484,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -512,7 +512,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -543,7 +543,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -572,7 +572,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -624,7 +624,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager,
                 clientId: "mock-client-id",
                 specVersion: .v1,
-                walletMetadata: walletMetadata,
+                walletConfig: walletConfig,
                 isSignedRequestSupported: true,
                 isUnsignedRequestSupported: true
             )
@@ -654,7 +654,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -684,7 +684,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -760,7 +760,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -786,7 +786,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -807,7 +807,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -872,7 +872,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -888,7 +888,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorWhenAuthRequestsAlgObtainedByReferenceDoesNotMatchWithWalletMetadata() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), specVersion: .v1) as [String : Any]
-        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: didUrl, specVersion: .v1, walletMetadata: walletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
+        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: didUrl, specVersion: .v1, walletConfig: walletConfig, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
         mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
         let requestUriResponse = createRequestUriResponse("ewogICJhbGciOiAiSFMyNTYiLAogICJ0eXAiOiAib2F1dGgtYXV0aHotcmVxK2p3dCIKfQ.eyJ10.SflK5c")
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
@@ -902,9 +902,9 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testThrowErrorWhenClientIdSchemeIsNotSupportedAsPerWalletMetadata() async {
-        let  minimalWalletMetadata = try! createWalletMetadata(clientIdPrefixesSupported: [.preRegistered, .redirectUri])
+        let  minimalWalletMetadata = try! createWalletConfig(clientIdPrefixesSupported: [.preRegistered, .redirectUri])
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "openid_federation:https://federation-verifier.example.com."], ["request_uri_method": "post"])) as [String : Any]
-        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: "", specVersion: .v1, walletMetadata: minimalWalletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
+        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: "", specVersion: .v1, walletConfig: minimalWalletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
         mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
         let requestUriResponse = createRequestUriResponse("ewogICJhbGciOiAiSFMyNTYiLAogICAgInR5cCI6ICJvYXV0aC1hdXRoei1yZXErand0Igp9.eyJ10.SflK5c")
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
@@ -949,7 +949,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager,
                 clientId: "mock-client-id",
                 specVersion: .v1,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 isSignedRequestSupported: true,
                 isUnsignedRequestSupported: true
             )
@@ -975,7 +975,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             expectation.fulfill()
         }
         
-        let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client", specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client", specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         try? clientIdPrefixBasedAuthorizationRequestHandler.setResponseUrl()
         
         wait(for: [expectation], timeout: 2.0)
@@ -999,7 +999,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             
             let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client", specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1030,7 +1030,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1073,7 +1073,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1101,7 +1101,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client",
                                                                                                      specVersion: .draft23,
                                                                                                      authorizationRequestParameters: authorizationRequestParameters,
-                                                                                                     walletMetadata: nil,
+                                                                                                     walletConfig: walletConfig,
                                                                                                      setResponseUri: mockSetResponseUri,
                                                                                                      walletNonce: "mock-nonce",
                                                                                                      networkManager: mockNetworkManager
@@ -1134,7 +1134,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1164,7 +1164,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1194,7 +1194,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1225,7 +1225,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1257,7 +1257,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     func testShouldThrowErrorWhenInvalidClientMetadataIsProvided() async{
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["client_metadata": "{}"])
         let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client",
-                                                                                                                     specVersion: .v1,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+                                                                                                                     specVersion: .v1,authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         
         clientIdPrefixBasedAuthorizationRequestHandler.setSpecVersionHandler(.v1)
         await XCTAssertAsyncThrowsError(try await clientIdPrefixBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
@@ -1293,7 +1293,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1331,7 +1331,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: didUrl,
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1371,7 +1371,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1404,7 +1404,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "redirect_uri:https://mock-verifier.com",
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1430,7 +1430,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1462,7 +1462,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1489,7 +1489,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1506,7 +1506,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .draft23,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1528,7 +1528,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager

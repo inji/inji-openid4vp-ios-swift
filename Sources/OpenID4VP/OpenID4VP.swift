@@ -6,17 +6,17 @@ public class OpenID4VP {
     var authorizationRequest: AuthorizationRequest!
     private var responseUri: String?
     private var authorizationResponseHandler: AuthorizationResponseHandler
-    private let walletMetadata: WalletMetadata?
+    private let walletConfig: WalletConfig
     private var walletNonce: String = ""
     private let nonceProvider: NonceProvider
 
     private let className = String(describing: type(of: OpenID4VP.self))
 
-    public init(traceabilityId: String, walletMetadata: WalletMetadata? = nil, jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil) {
+    public init(traceabilityId: String, walletConfig: WalletConfig = WalletConfig(), jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil) {
         self.traceabilityId = traceabilityId
         networkManager = NetworkManager.shared
-        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletMetadata: walletMetadata)
-        self.walletMetadata = walletMetadata
+        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletConfig: walletConfig)
+        self.walletConfig = walletConfig
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
         nonceProvider = NonceProvider()
         walletNonce = nonceProvider.generateNonce()
@@ -24,13 +24,13 @@ public class OpenID4VP {
         JsonLd.setCanonicalizer(jsonLdCanonicalizer)
     }
 
-    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletMetadata: WalletMetadata = WalletMetadata(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil, jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil) {
+    internal init(traceabilityId: String, networkManager: NetworkManaging? = nil, walletConfig: WalletConfig = WalletConfig(), nonceProvider: NonceProvider = NonceProvider(), authorizationResponseHandler: AuthorizationResponseHandler? = nil, jsonLdCanonicalizer: JsonLdCanonicalizerCallback? = nil) {
         self.networkManager = networkManager ?? NetworkManager.shared
         self.nonceProvider = nonceProvider
 
         self.traceabilityId = traceabilityId
-        self.authorizationResponseHandler = authorizationResponseHandler ?? AuthorizationResponseHandler(networkManager: networkManager ?? NetworkManager.shared, walletMetadata: walletMetadata)
-        self.walletMetadata = walletMetadata
+        self.authorizationResponseHandler = authorizationResponseHandler ?? AuthorizationResponseHandler(networkManager: networkManager ?? NetworkManager.shared, walletConfig: walletConfig)
+        self.walletConfig = walletConfig
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
 
@@ -47,13 +47,13 @@ public class OpenID4VP {
         walletNonce = nonceProvider.generateNonce()
         authorizationRequest = nil
         responseUri = nil
-        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletMetadata: walletMetadata)
+        authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletConfig: walletConfig)
 
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                 trustedVerifier: trustedVerifiers,
-                walletMetadata: walletMetadata,
+                walletConfig: walletConfig,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
                 walletNonce: walletNonce,
@@ -76,12 +76,12 @@ public class OpenID4VP {
             walletNonce = nonceProvider.generateNonce()
             self.authorizationRequest = nil
             responseUri = nil
-            authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletMetadata: walletMetadata)
+            authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletConfig: walletConfig)
 
             let validatedAuthorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authorizationRequest,
                 trustedVerifiers: trustedVerifiers,
-                walletMetadata: walletMetadata,
+                walletConfig: walletConfig,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,
                 walletNonce: walletNonce,

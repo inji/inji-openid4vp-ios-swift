@@ -16,7 +16,7 @@ class MockClientIdPrefixAuthRequestHandler: ClientIdPrefixBasedAuthorizationRequ
          networkManager: NetworkManaging,
          clientId: String = "mock-client",
          specVersion: SpecVersion = .v1,
-         walletMetadata: WalletMetadata? = nil,
+         walletConfig: WalletConfig = WalletConfig(),
          isSignedRequestSupported: Bool = true,
          isUnsignedRequestSupported: Bool = true) {
         self.isSignedRequestSupportedFlag = isSignedRequestSupported
@@ -30,7 +30,7 @@ class MockClientIdPrefixAuthRequestHandler: ClientIdPrefixBasedAuthorizationRequ
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadata: walletMetadata,
+                   walletConfig: walletConfig,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
@@ -75,11 +75,8 @@ class MockClientIdPrefixAuthRequestHandler: ClientIdPrefixBasedAuthorizationRequ
         return self.isSignedRequestSupportedFlag
     }
     
-    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
-        if(errorToBeThrown != nil) {
-            throw errorToBeThrown!
-        }
-        return WalletMetadata()
+    func getWalletMetadata(walletConfig: WalletConfig) throws -> [String : Any] {
+        return try walletConfig.toWalletMetadata(specVersion: super.specVersion)
     }
     
     var capturedRequestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?

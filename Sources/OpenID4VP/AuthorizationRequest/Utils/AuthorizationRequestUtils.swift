@@ -69,7 +69,7 @@ extension KeyedDecodingContainer {
 
 func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any],
                                     trustedVerifiers : [Verifier],
-                                    walletMetadata: WalletMetadata?,
+                                    walletConfig: WalletConfig,
                                     shouldValidateClient: Bool,
                                     setResponseUri: @escaping (String) -> Void,
                                     walletNonce: String,
@@ -87,7 +87,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               specVersion: specVersion,
                                                               trustedVerifiers: trustedVerifiers,
                                                               authorizationRequestParameters: authorizationRequestParameters,
-                                                              walletMetadata: walletMetadata,
+                                                              walletConfig: walletConfig,
                                                               shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
                                                               walletNonce: walletNonce,
@@ -96,7 +96,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
         return DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: clientId,
                                                     specVersion: specVersion,
                                                     authorizationRequestParameters: authorizationRequestParameters,
-                                                    walletMetadata: walletMetadata,
+                                                                        walletConfig: walletConfig,
                                                     setResponseUri: setResponseUri,
                                                     walletNonce: walletNonce,
                                                     networkManager: networkManager)
@@ -104,7 +104,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
         return RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,
                                                             specVersion: specVersion,
                                                             authorizationRequestParameters: authorizationRequestParameters,
-                                                            walletMetadata: walletMetadata,
+                                                            walletConfig: walletConfig,
                                                             setResponseUri: setResponseUri,
                                                             walletNonce: walletNonce,
                                                             networkManager: networkManager)
@@ -114,7 +114,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               specVersion: specVersion,
                                                               trustedVerifiers: trustedVerifiers,
                                                               authorizationRequestParameters: authorizationRequestParameters,
-                                                              walletMetadata: walletMetadata,
+                                                              walletConfig: walletConfig,
                                                               shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
                                                               walletNonce: walletNonce,
@@ -201,8 +201,8 @@ public func extractClientIdPartOnly(_ clientIdWithClientIdPrefixAttached: String
     }
 }
 
-func validateRequestObjectSigningAlgSupported(_ walletMetadata: WalletMetadata, className: String) throws {
-    guard walletMetadata.requestObjectSigningAlgValuesSupported != nil else {
+func validateRequestObjectSigningAlgSupported(_ walletConfig: WalletConfig, className: String) throws {
+    guard walletConfig.requestObjectSigningAlgValuesSupported != nil else {
         throw InvalidData(
             message: "request_object_signing_alg_values_supported is not present in wallet metadata.",
             className: className

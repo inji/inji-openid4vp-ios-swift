@@ -10,13 +10,13 @@ public class AuthorizationResponseHandler {
     
     private var unsignedVPTokenResults: [FormatType: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken])] = [:]
     private var specVersion: SpecVersion = .v1
-    private let walletMetadata: WalletMetadata?
+    private let walletConfig: WalletConfig
     
     public static let className = String(describing: AuthorizationResponseHandler.self)
     
-    public init(networkManager: NetworkManaging, walletMetadata: WalletMetadata? = nil) {
+    public init(networkManager: NetworkManaging, walletConfig: WalletConfig) {
         self.networkManager = networkManager
-        self.walletMetadata = walletMetadata
+        self.walletConfig = walletConfig
     }
     
     func constructUnsignedVPToken(
@@ -204,7 +204,7 @@ public class AuthorizationResponseHandler {
                     authorizationRequest: authorizationRequest,
                     specVersion: specVersion,
                     id: UUIDGenerator.generateUUID(),
-                    walletMetadata: walletMetadata
+                    walletConfig: walletConfig
                 ).build(credentialToCredentialQueryIdMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             case .mso_mdoc:
@@ -212,14 +212,14 @@ public class AuthorizationResponseHandler {
                     authorizationRequest: authorizationRequest,
                     specVersion: specVersion,
                     mdocGeneratedNonce: walletNonce,
-                    walletMetadata: walletMetadata
+                    walletConfig: walletConfig
                 ).build(credentialToCredentialQueryIdMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             case .dc_sd_jwt, .vc_sd_jwt:
                 let token = try await UnsignedSdJwtVPTokenBuilder(
                     authorizationRequest: authorizationRequest,
                     specVersion: specVersion,
-                    walletMetadata: walletMetadata
+                    walletConfig: walletConfig
                 ).build(credentialToCredentialQueryIdMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             }
@@ -250,7 +250,7 @@ public class AuthorizationResponseHandler {
                 authorizationRequest: authorizationRequest,
                 authorizationResponse: authorizationResponse,
                 walletNonce: walletNonce,
-                walletMetadata: walletMetadata
+                walletConfig: walletConfig
             )
     }
     
@@ -449,7 +449,7 @@ public class AuthorizationResponseHandler {
                 networkManager: networkManager,
                 producerInfo: walletNonce,
                 recipientInfo: authorizationRequest.nonce,
-                walletMetadata: walletMetadata
+                walletConfig: walletConfig
             )
     }
     
@@ -476,7 +476,7 @@ public class AuthorizationResponseHandler {
                     id: UUIDGenerator.generateUUID(),
                     holder: holderId ?? "",
                     signatureSuite: signatureSuite ?? "Ed25519Signature2020",
-                    walletMetadata: walletMetadata
+                    walletConfig: walletConfig
                 ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             case .mso_mdoc:
@@ -484,14 +484,14 @@ public class AuthorizationResponseHandler {
                     authorizationRequest: authorizationRequest,
                     specVersion: specVersion,
                     mdocGeneratedNonce: walletNonce,
-                    walletMetadata: walletMetadata
+                    walletConfig: walletConfig
                 ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             case .dc_sd_jwt, .vc_sd_jwt:
                 let token = try await UnsignedSdJwtVPTokenBuilder(
                     authorizationRequest: authorizationRequest,
                     specVersion: specVersion,
-                    walletMetadata: walletMetadata
+                    walletConfig: walletConfig
                 ).build(credentialInputDescriptorMappings: &credentialsArray)
                 unsignedVPTokenResults[format] = token
             }

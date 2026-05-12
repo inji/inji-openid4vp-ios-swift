@@ -9,7 +9,7 @@ enum ClientMetadataSpecVersionHandler {
         return specVersion == .draft23 ? .draft23 : .v1
     }
     
-    func parseAndValidate(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletMetadata: WalletMetadata?) throws -> [String: Any] {
+    func parseAndValidate(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletConfig: WalletConfig) throws -> [String: Any] {
         let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
         var mutableParams = authorizationRequest
         if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata.rawValue] {
@@ -51,13 +51,13 @@ enum ClientMetadataSpecVersionHandler {
         case .v1:
             try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).validate(
                 clientMetadata: (parsedClientMetadata as? ClientMetadata),
-                walletMetadata: walletMetadata,
+                walletConfig: walletConfig,
                 shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata
             )
         case .draft23:
             try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).validate(
                 clientMetadata: (parsedClientMetadata as? ClientMetadataDraft23),
-                walletMetadata: walletMetadata,
+                walletConfig: walletConfig,
                 shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata
             )
         }
