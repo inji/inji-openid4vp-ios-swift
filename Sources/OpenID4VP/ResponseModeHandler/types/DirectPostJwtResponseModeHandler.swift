@@ -198,7 +198,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                 guard let verifierJwks = clientMetadata.jwks else {
                     throw MissingInput(fieldPath: ["client_metadata", "jwks"], message: "", className: className)
                 }
-                return try getEncryptionKey(verifierJwks, walletConfig.authorizationEncryptionAlgValuesSupported?.compactMap { $0.rawValue } ?? [KeyManagementAlgorithm.ecdhEs.rawValue])
+                return try getEncryptionKey(verifierJwks, walletConfig.authorizationEncryptionAlgValuesSupported?.compactMap { $0.rawValue } ?? [EncryptionAlgorithm.ecdhES.rawValue])
             }
         }
 
@@ -218,7 +218,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                 guard let clientEncValues = clientMetadata.encryptedResponseEncValuesSupported, !clientEncValues.isEmpty else {
                     throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
                 }
-                let walletEncValues = walletConfig.authorizationEncryptionEncValuesSupported?.compactMap { $0.rawValue } ?? [ContentEncryptionAlgorithm.A256GCM.rawValue]
+                let walletEncValues = walletConfig.authorizationEncryptionEncValuesSupported?.compactMap { $0.rawValue } ?? [EncryptionMethod.a256GCM.rawValue]
                 guard let contentEncryptionAlgorithm = walletEncValues.first(where: { clientEncValues.contains($0) }) else {
                     throw InvalidData(message: "Unsupported content encryption algorithm", className: className)
                 }

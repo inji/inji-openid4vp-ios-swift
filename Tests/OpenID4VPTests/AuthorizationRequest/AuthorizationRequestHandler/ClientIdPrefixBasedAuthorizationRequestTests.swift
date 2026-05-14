@@ -45,7 +45,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     func testShouldFallbackToGetWhenWalletDoesNotSupportPostButRequestUriMethodIsPost() async {
         mockNetworkManager.clearResponses()
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!, ["request_uri_method": "post"]), specVersion: .v1) as [String : Any]
-        let walletConfigWithoutPost = try! WalletConfig(
+        let walletConfigWithoutPost = WalletConfig(
             vpFormatsSupported: walletConfig.vpFormatsSupported,
             clientIdPrefixesSupported: walletConfig.clientIdPrefixesSupported,
             requestObjectSigningAlgValuesSupported: walletConfig.requestObjectSigningAlgValuesSupported,

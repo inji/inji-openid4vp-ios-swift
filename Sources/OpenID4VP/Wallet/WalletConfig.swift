@@ -1,29 +1,5 @@
 import Foundation
 
-public enum RequestUriMethod: String, Codable {
-    case get = "get"
-    case post = "post"
-    
-    func toHttpMethod() -> HttpMethod {
-        switch self {
-        case .post:
-            return .post
-        case .get:
-            return .get
-        }
-    }
-}
-
-// Key Management Algorithms
-public enum EncryptionAlgorithm: String, Codable {
-    case ecdhES = "ECDH-ES"
-}
-
-// Content Encryption Algorithms
-public enum EncryptionMethod: String, Codable {
-    case a256GCM = "A256GCM"
-}
-
 public struct WalletConfig: Codable {
     static let className = "WalletConfig"
     
