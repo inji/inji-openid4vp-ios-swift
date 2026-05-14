@@ -341,7 +341,7 @@ func ldpVC(
     ]
     if(addHolderBinding) {
         data["credentialSubject"] = [
-            "id": "did:example:holder",
+            "id": didJwkKey,
             "given_name": "MockUser",
             "family_name": "Mockister",
             "birthdate": "1949-01-22"

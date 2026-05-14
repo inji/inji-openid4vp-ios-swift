@@ -27,67 +27,72 @@ public class AuthorizationResponseHandler {
         signatureSuite: String?,
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
-        if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
-            self.specVersion = .draft23
-        }
-        
-        let hasLdpVc = credentialsMap.values.contains { formatMap in
-            formatMap.keys.contains(.ldp_vc)
-        }
-        if hasLdpVc {
-            // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
-            if isNullOrEmpty(holderId) {
-                throw InvalidData(
-                    message: "Holder ID cannot be null or empty for LDP VC format",
-                    className: AuthorizationResponseHandler.className
-                )
+        do {
+            if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
+                self.specVersion = .draft23
             }
-            if isNullOrEmpty(signatureSuite) {
-                throw InvalidData(
-                    message: "Signature Suite cannot be null or empty for LDP VC format",
-                    className: AuthorizationResponseHandler.className
-                )
+            
+            let hasLdpVc = credentialsMap.values.contains { formatMap in
+                formatMap.keys.contains(.ldp_vc)
             }
+            if hasLdpVc {
+                // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
+                if isNullOrEmpty(holderId) {
+                    throw InvalidData(
+                        message: "Holder ID cannot be null or empty for LDP VC format",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+                if isNullOrEmpty(signatureSuite) {
+                    throw InvalidData(
+                        message: "Signature Suite cannot be null or empty for LDP VC format",
+                        className: AuthorizationResponseHandler.className
+                    )
+                }
+            }
+            self.signatureSuite = signatureSuite ?? self.signatureSuite
+            
+            return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
+        } catch {
+            throw VerifiablePresentationConstructionFailure(cause: error, className: Self.className)
         }
-        self.signatureSuite = signatureSuite ?? self.signatureSuite
-        
-        return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
     }
     
     func constructUnsignedVPToken(
         credentialsMap: [String: [Credential]],
         authorizationRequest: AuthorizationRequest,
-        responseUri: String,
-        holderId: String = "",
-        signatureSuite: String = "Ed25519Signature2020",
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
-        if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
-            self.specVersion = .draft23
+        do {
+            guard let authorizationRequest = authorizationRequest as? AuthorizationDcqlRequest else {
+                throw InvalidData(message: "Unexpected authorization request type", className: Self.className)
+            }
+            self.specVersion = .v1
+            
+            return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, walletNonce: walletNonce, handler: self)
+        } catch {
+            throw VerifiablePresentationConstructionFailure(cause: error, className: Self.className)
         }
-        
-        return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
     }
     
     func constructVPResponse(
         signingResults: [VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
-        //        do {
-        let reconstructed = try constructSigningResults(
-            unsignedVPTokenResults: unsignedVPTokenResults,
-            signingResults: signingResults,
-            signatureSuite: self.signatureSuite
-        )
-        
-        return try constructAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: reconstructed
-        )
-        //        } catch {
-        //            OpenID4VPException.error(error, className: Self.className)
-        //            throw InternalException(message: "The wallet encountered an internal error while preparing the presentation.", className: Self.className)
-        //        }
+        do {
+            let reconstructed = try constructSigningResults(
+                unsignedVPTokenResults: unsignedVPTokenResults,
+                signingResults: signingResults,
+                signatureSuite: self.signatureSuite
+            )
+            
+            return try constructAuthorizationResponse(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: reconstructed
+            )
+        } catch {
+            throw AuthorizationResponseConstructionFailure(cause: error, className: Self.className)
+        }
     }
     
     func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> VerifierResponse {
@@ -138,16 +143,20 @@ public class AuthorizationResponseHandler {
         responseUri: String
     ) async throws -> VerifierResponse {
         let authorizationResponse : AuthorizationResponse
-        let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
-            unsignedVPTokenResults: unsignedVPTokenResults,
-            signingResults: vpTokenSigningResults,
-            signatureSuite: self.signatureSuite
-        )
-        
-        authorizationResponse = try createAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: reconstructedVpTokenSigningResult
-        )
+        do {
+            let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
+                unsignedVPTokenResults: unsignedVPTokenResults,
+                signingResults: vpTokenSigningResults,
+                signatureSuite: self.signatureSuite
+            )
+            
+            authorizationResponse = try createAuthorizationResponse(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: reconstructedVpTokenSigningResult
+            )
+        } catch {
+            throw AuthorizationResponseConstructionFailure(cause: error, className: Self.className)
+        }
         
         let response: NetworkResponse = try await sendAuthorizationResponse(
             authorizationRequest: authorizationRequest,
@@ -589,8 +598,6 @@ public class AuthorizationResponseHandler {
         
         static func createUnsignedVPToken(credentialsMap: [String: [Credential]],
                                           authorizationRequest: AuthorizationRequest,
-                                          holderId: String?,
-                                          signatureSuite: String?,
                                           walletNonce: String,
                                           handler: AuthorizationResponseHandler) async throws -> [UnsignedVPToken] {
             return try await handler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, walletNonce: walletNonce)

@@ -4,20 +4,23 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     public let errorCode: String
     public let message: String
     public let className: String
+    // Underlying cause of the exception, if any.
+    public let cause: Error?
     // holds the response received from the Verifier if the error is sent to the Verifier
     public var verifierResponse: VerifierResponse?
     
     internal func setVerifierResponse(_ response: VerifierResponse) {
         self.verifierResponse = response
     }
-    
+
     private static var logTag = ""
     private static var traceabilityId: String?
 
-    public init(errorCode: String, message: String, className: String) {
+    public init(errorCode: String, message: String, cause: Error? = nil, className: String) {
         self.errorCode = errorCode
         self.message = message
         self.className = className
+        self.cause = cause
         print("ERROR [\(errorCode)] - \(message) | Class: \(className)")
     }
 
@@ -369,11 +372,23 @@ public class ErrorDispatchFailure : OpenID4VPException {
     }
 }
 
-public class InternalException: OpenID4VPException {
-    public init(message: String, className: String) {
+class VerifiablePresentationConstructionFailure : OpenID4VPException {
+    init(cause: Error, className: String) {
         super.init(
             errorCode: OpenID4VPErrorCodes.serverError,
-            message: "Internal error occurred: \(message)",
+            message: "The wallet encountered an internal error while preparing the presentation.",
+            cause: cause,
+            className: className
+        )
+    }
+}
+
+class AuthorizationResponseConstructionFailure : OpenID4VPException {
+    init(cause: Error, className: String) {
+        super.init(
+            errorCode: OpenID4VPErrorCodes.serverError,
+            message: "The wallet encountered an internal error while preparing the authorization response.",
+            cause: cause,
             className: className
         )
     }

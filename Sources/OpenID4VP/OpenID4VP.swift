@@ -147,7 +147,6 @@ public class OpenID4VP {
             return try await authorizationResponseHandler.constructUnsignedVPToken(
                 credentialsMap: selectedCredentials,
                 authorizationRequest: authorizationRequest,
-                responseUri: responseUri!,
                 walletNonce: walletNonce
             )
         } catch {

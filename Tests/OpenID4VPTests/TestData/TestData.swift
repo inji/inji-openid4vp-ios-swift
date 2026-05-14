@@ -270,7 +270,8 @@ let mockPresentationDefinitionObject = createInstance(presentationDefinition, as
 let dcqlQuery = [
     "credentials": [
         [ "id": "cred1", "format": "dc+sd-jwt", "meta": [:]],
-        [ "id": "cred2", "format": "mso_mdoc", "meta": [:]]
+        [ "id": "cred2", "format": "mso_mdoc", "meta": [:]],
+        [ "id": "cred3", "format": "ldp_vc", "meta": [:]]
     ]
 ]
 
