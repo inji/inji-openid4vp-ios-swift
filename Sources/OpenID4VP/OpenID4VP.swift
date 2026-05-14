@@ -40,7 +40,6 @@ public class OpenID4VP {
     
     public func authenticateVerifier(
         urlEncodedAuthorizationRequest: String,
-        trustedVerifiers: [Verifier],
         shouldValidateClient: Bool = true
     ) async throws -> AuthorizationRequest {
         // Create a new wallet nonce for each request
@@ -52,7 +51,7 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifier: trustedVerifiers,
+                trustedVerifier: walletConfig.trustedVerifiers,
                 walletConfig: walletConfig,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,

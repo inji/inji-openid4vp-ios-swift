@@ -42,9 +42,41 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
     }
 
-    // TODO: Add test case for If Wallet does not support post consider it as get and proceed for request uri call when request_uri_method is post in the authorization request parameters
-    // but wallet config has not mentioned post as supported method for request_uri call
-    
+    func testShouldFallbackToGetWhenWalletDoesNotSupportPostButRequestUriMethodIsPost() async {
+        mockNetworkManager.clearResponses()
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!, ["request_uri_method": "post"]), specVersion: .v1) as [String : Any]
+        let walletConfigWithoutPost = try! WalletConfig(
+            vpFormatsSupported: walletConfig.vpFormatsSupported,
+            clientIdPrefixesSupported: walletConfig.clientIdPrefixesSupported,
+            requestObjectSigningAlgValuesSupported: walletConfig.requestObjectSigningAlgValuesSupported,
+            authorizationEncryptionAlgValuesSupported: walletConfig.authorizationEncryptionAlgValuesSupported,
+            authorizationEncryptionEncValuesSupported: walletConfig.authorizationEncryptionEncValuesSupported,
+            responseTypesSupported: walletConfig.responseTypesSupported,
+            supportedRequestUriMethods: [.get]
+        )
+        let requestUriResponse = createRequestUriResponse(createAuthorizationRequestObject(clientIdPrefix: .decentralizedIdentifier, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), applicableFields: authRequestWithDidByValue) )
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParametersByReference,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfigWithoutPost,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: true
+        )
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
+        
+        mockNetworkManager.recordedRequests.forEach { (url, recordedRequest) in
+            if (url == requestUri.absoluteString) {
+                XCTAssertEqual(recordedRequest.requestMethod, HttpMethod.get, "Expected HTTP method to be GET when wallet does not support POST")
+            }
+        }
+    }
     
     func testThrowErrorWhenBothRequestAndRequestUriArePresentInAuthorizationRequest() async {
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
