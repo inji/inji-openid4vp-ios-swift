@@ -54,34 +54,7 @@ class UtilsTest : XCTestCase {
         XCTAssertFalse(invalidJwt)
         XCTAssertTrue(validJwt)
     }
-    
-    /// Test for string to HTTP method conversion
-    
-    func testDetermineHttpMethodToReturnHttpMethodIfInputIsValid(){
-        let getMethod1 = try? determineHttpMethod(method: "get")
-        let getMethod2 = try? determineHttpMethod(method: "GET")
-        let getMethod3 = try? determineHttpMethod(method: "Get")
-        let postMethod1 = try? determineHttpMethod(method: "post")
-        let postMethod2 = try? determineHttpMethod(method: "POST")
-        let postMethod3 = try? determineHttpMethod(method: "Post")
-        
-        XCTAssertEqual(getMethod1, .get)
-        XCTAssertEqual(getMethod2, .get)
-        XCTAssertEqual(getMethod3, .get)
-        XCTAssertEqual(postMethod1, .post)
-        XCTAssertEqual(postMethod2, .post)
-        XCTAssertEqual(postMethod3, .post)
-    }
-    
-    func testDetermineHttpMethodToThrowErrorIfInputIsNotValid(){
-        XCTAssertThrowsError(try determineHttpMethod(method: "head")) { error in
-            assertOpenID4VPException(error,
-                expectedMessage: "Unsupported HTTP method: head",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequestUriMethod
-            )
-        }
-    }
-    
+   
     /// Test for dictionary of [String: Any] to data conversion
     
     func testToDataConversionSuccess() throws {

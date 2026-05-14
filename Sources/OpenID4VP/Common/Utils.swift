@@ -29,17 +29,6 @@ func base64URLEscaped(_ base64String: String) -> String {
         .replacingOccurrences(of: "=", with: "")
 }
 
-func determineHttpMethod(method: String) throws -> HttpMethod {
-    let methodValue = method.lowercased()
-    if methodValue == "get" {
-        return .get
-    } else if methodValue == "post" {
-        return .post
-    } else {
-        throw UnsupportedHttpMethod(message: method, className: AuthorizationRequest.className)
-    }
-}
-
 func getStringValue(_ value: Any?) -> String? {
     return value as? String
 }

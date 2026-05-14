@@ -85,7 +85,6 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
 
     private func handleRequestObjectAsValue(_ request: String) async throws {
         try validate(request, fieldPath: AuthorizationRequestFieldConstants.request.rawValue, className: className)
-        // TODO: Signed request via request not support - error_code: request_not_supported
         guard (delegate.isSignedRequestSupported()) else {
             throw InvalidData(
                 message: "Signed request (via request) is not supported for given client_id_prefix - \(delegate.clientIdPrefix())",
@@ -102,7 +101,6 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     private func handleRequestObjectByReference(_ requestUri: String) async throws {
-        // TODO: Signed request via request not support - error_code: request_uri_not_supported
         guard (delegate.isSignedRequestSupported()) else {
             throw InvalidData(
                 message: "Signed request (via request_uri) is not supported for given client_id_prefix - \(delegate.clientIdPrefix())",
@@ -119,31 +117,36 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             )
         }
         
-        let httpMethod = try requestUriMethod()
+        var requestUriMethod : RequestUriMethod = try requestUriMethod()
         
         var body: [String: String]? = nil
         var headers: [String: String] = [Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
         
-        if httpMethod == .post {
+        if requestUriMethod == .post {
+            if(walletConfig.supportedRequestUriMethods.contains(.post) == false){
+                // If Wallet does not support post consider it as get and proceed
+                OpenID4VPException.warn("Wallet does not support POST method for request_uri. Proceeding with GET method.", className: className)
+                requestUriMethod = .get
+            }
             body = [AuthorizationRequestFieldConstants.walletNonce.rawValue: walletNonce]
             headers[Header.contentType.rawValue] = ContentTypes.applicationFormUrlEncoded.rawValue
             
-            
-            
             try isClientIdPrefixSupported(walletConfig: walletConfig)
             
-            // TODO: Handle any error in this getWalletMetadata call and throw generic error - "Error while creating wallet metadata: \(error.localizedDescription)"
-            let processedWalletMetadata = try delegate.getWalletMetadata(walletConfig: walletConfig)
-            let jsonData = try JSONSerialization.data(withJSONObject: processedWalletMetadata)
-            let jsonStringifiedWalletMetadata = String(data: jsonData, encoding: .utf8) ?? ""
-            // convert to JSON string
-            body?["wallet_metadata"] = jsonStringifiedWalletMetadata
-            shouldValidateWithWalletMetadata = true
-            
+            do {
+                let processedWalletMetadata = try delegate.getWalletMetadata(walletConfig: walletConfig)
+                let jsonData = try JSONSerialization.data(withJSONObject: processedWalletMetadata)
+                let jsonStringifiedWalletMetadata = String(data: jsonData, encoding: .utf8) ?? ""
+                
+                body?["wallet_metadata"] = jsonStringifiedWalletMetadata
+                shouldValidateWithWalletMetadata = true
+            } catch {
+                OpenID4VPException.warn("Error while creating wallet metadata: \(error.localizedDescription). Proceeding without passing Verifier.", className: className)
+            }
         }
         var response:  NetworkResponse
         do{
-            response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+            response = try await networkManager.sendHTTPRequest(url: requestUri, method: requestUriMethod.toHttpMethod(), bodyParams: body, headers: headers)
             if(!response.isOK){
                 throw InvalidData(message: "Error while fetching request_uri: HTTP status code \(response.statusCode) & body: \(response.body)", className: className)
             }
@@ -158,7 +161,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         } catch {
             throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
         }
-        self.authorizationRequestParameters = try await validateRequestUriResponse(response.body, httpMethod: httpMethod)
+        self.authorizationRequestParameters = try await validateRequestUriResponse(response.body, requestUriMethod: requestUriMethod)
     }
     
     private func handleUrlEncodedRequest() throws {
@@ -170,7 +173,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
     }
     
-    private func validateRequestUriResponse(_ requestUriResponse: String, httpMethod: HttpMethod) async throws -> [String: Any] {
+    private func validateRequestUriResponse(_ requestUriResponse: String, requestUriMethod: RequestUriMethod) async throws -> [String: Any] {
         guard isJWS(requestUriResponse) else {
             throw InvalidData(
                 message: "Authorization Request Object must be a signed JWT", className: className)
@@ -179,7 +182,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try await validateJWTRequest(requestUriResponse)
         
         let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: requestUriResponse, jwsPart: .payload)
-        if(httpMethod == .post){
+        if(requestUriMethod == .post){
             try validateWalletNonce(authorizationRequestObject, walletNonce)
         }
         
@@ -279,10 +282,16 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
     }
     
-    private func requestUriMethod() throws -> HttpMethod {
-        let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
-        let httpMethod = try determineHttpMethod(method: requestUriMethod)
-        return httpMethod
+    private func requestUriMethod() throws -> RequestUriMethod {
+        let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? RequestUriMethod.get.rawValue
+        let methodValue = requestUriMethod.lowercased()
+        if methodValue == "get" {
+            return .get
+        } else if methodValue == "post" {
+            return .post
+        } else {
+            throw UnsupportedHttpMethod(message: requestUriMethod, className: AuthorizationRequest.className)
+        }
     }
     
     private func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {

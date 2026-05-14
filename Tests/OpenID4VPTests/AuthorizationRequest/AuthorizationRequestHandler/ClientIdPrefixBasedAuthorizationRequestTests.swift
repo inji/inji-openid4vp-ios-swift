@@ -41,6 +41,9 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         
         await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
     }
+
+    // TODO: Add test case for If Wallet does not support post consider it as get and proceed for request uri call when request_uri_method is post in the authorization request parameters
+    // but wallet config has not mentioned post as supported method for request_uri call
     
     
     func testThrowErrorWhenBothRequestAndRequestUriArePresentInAuthorizationRequest() async {

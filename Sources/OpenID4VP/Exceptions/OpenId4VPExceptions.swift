@@ -57,6 +57,10 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
         print("\(logTag) | ERROR: \(exception.localizedDescription)")
     }
     
+    static func warn(_ message: String, className: String) {
+        print("\(logTag) | WARNING: \(message)")
+    }
+    
     static func error( _ exception: Error, className: String) {
         print("\(logTag) | ERROR: \(exception.localizedDescription)")
     }

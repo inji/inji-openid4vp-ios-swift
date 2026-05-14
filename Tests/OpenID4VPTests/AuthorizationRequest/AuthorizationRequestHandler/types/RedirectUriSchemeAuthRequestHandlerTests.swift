@@ -70,7 +70,6 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         }
     }
     
-    // TODO: Fix me :)
     func testProcessingWalletMetadataSuccessfully() async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
