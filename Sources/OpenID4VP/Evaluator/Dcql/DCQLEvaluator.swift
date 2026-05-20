@@ -268,8 +268,9 @@ internal struct DcqlEvaluator {
     // Builds CredentialSetRequirement array from dcqlQuery for the result
     private func buildCredentialSetRequirements(dcqlQuery: DCQLQuery) -> [CredentialSetQuery] {
         guard let credentialSets = dcqlQuery.credentialSets else {
-            // Populate the credential set stating all credential queries are required to be satisfied together if credential_sets is not present in the query
-            return [CredentialSetQuery(options: [dcqlQuery.credentials.map { $0.id }], required: true)]
+            // Populate the credential set stating all - each credential query is required
+            // Example - credentials: [{id: "id1"}, {id: "id2"}] -> credentialSets : [{options: ["id1"], required: true}, {options: ["id2"], required: true}]
+            return dcqlQuery.credentials.map { CredentialSetQuery(options: [[$0.id]], required: true) }
         }
         return credentialSets.map { CredentialSetQuery(options: $0.options, required: $0.required) }
     }

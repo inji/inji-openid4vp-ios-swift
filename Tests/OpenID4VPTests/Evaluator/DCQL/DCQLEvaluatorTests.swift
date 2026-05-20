@@ -517,9 +517,11 @@ final class DCQLEvaluatorTests: XCTestCase {
         
         let result = try await evaluator.evaluate(query, inputCredentials: [sdJwtCredential(id: "sd1"), mdocCredential(id: "md1")])
         
-        XCTAssertEqual(result.credentialSets.count, 1)
-        XCTAssertEqual(result.credentialSets.first?.options, [["q1", "q2"]])
+        XCTAssertEqual(result.credentialSets.count, 2)
+        XCTAssertEqual(result.credentialSets.first?.options, [["q1"]])
         XCTAssertEqual(result.credentialSets.first?.required, true)
+        XCTAssertEqual(result.credentialSets[1].options, [["q2"]])
+        XCTAssertEqual(result.credentialSets[1].required, true)
     }
     
     // MARK: - Multi-format / multi-query scenarios
