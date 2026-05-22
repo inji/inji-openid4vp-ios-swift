@@ -60,12 +60,12 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     func testGetAuthorizationRequestHandlerToGiveRespectiveClientIdBasedAuthorizationRequestHandler(){
         let mockSetResponseUri: (String) -> Void = { value in
         }
-        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientIdDraft23, trustedVerifiers: [], walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
-        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientIdParameters, trustedVerifiers: [], walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientIdDraft23, walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientIdParameters,  walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         let preRegisteredSchemeClientWithColonSeparatorAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters:  [
             "client_id": "https://mock-verifier.com",
-        ], trustedVerifiers: [], walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientIdParameter, trustedVerifiers: [], walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        ],  walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientIdParameter,  walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         
         XCTAssertTrue(didAuthRequestHandler is DecentralizedIdentifierPrefixAuthorizationRequestHandler)
@@ -87,7 +87,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         for testCase in testCases {
             let authorizationRequestParametersWithInvalidClientId: [String : Any] = testCase.input as [String : Any]
             
-            XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId, trustedVerifiers: [], walletConfig: WalletConfig(), shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)){ error in
+            XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId,  walletConfig: WalletConfig(), shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)){ error in
                 assertOpenID4VPException(error,
                                          expectedMessage: testCase.expectedError!,
                                          expectedCode: OpenID4VPErrorCodes.invalidRequest

@@ -248,7 +248,7 @@ func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? 
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1) -> AuthorizationRequest {
+func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1, dcqlQuery: DCQLQuery? = nil) -> AuthorizationRequest {
     let responseType = responseType ?? ResponseType.vp_token.rawValue
     
     if(specVersion == .draft23) {
@@ -275,7 +275,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
         nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
         walletNonce: nil,
         state: "state",
-        dcqlQuery: validDcqlQuery,
+        dcqlQuery: dcqlQuery ?? validDcqlQuery,
         clientMetadata: mockClientMetadataSpecVersion1[responseMode]
     )
 }
@@ -291,15 +291,17 @@ func createWalletConfig(
     authorizationEncryptionAlgValuesSupported: [EncryptionAlgorithm]? = [.ecdhES],
     authorizationEncryptionEncValuesSupported: [EncryptionMethod]? = [.a256GCM],
     responseTypesSupported: [ResponseType] = [.vp_token],
-    responseMode: ResponseMode = .directPost
-) throws -> WalletConfig {
+    responseMode: ResponseMode = .directPost,
+    trustedVerifiers: [Verifier] = preRegisteredVerifiers
+) -> WalletConfig {
     return WalletConfig(
         vpFormatsSupported: vpFormatsSupported,
         clientIdPrefixesSupported: WalletConfigDefaults.clientIdPrefixesSupported,
         requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,
-        responseTypesSupported: responseTypesSupported
+        responseTypesSupported: responseTypesSupported,
+        trustedVerifiers: trustedVerifiers
     )
 }
 

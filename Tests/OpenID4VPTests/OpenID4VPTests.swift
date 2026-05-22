@@ -413,11 +413,17 @@ class OpenID4VPTests: XCTestCase {
         let trustedVerifiers = [
             Verifier(clientId: "redirect-uri:https://example.com/callback", responseUris: ["https://example.com/callback"]),
         ]
+        openID4VP = OpenID4VP(
+            traceabilityId: "AXESWSAW123",
+            networkManager: mockNetworkManager,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
+            nonceProvider: MockNonceProvider(),
+            jsonLdCanonicalizer: { _ in "Y2Fub25pY2FsaXplZA" }
+        )
 
         do {
             _ = try await openID4VP.authenticateVerifier(
                 authorizationRequest: authorizationRequest,
-                trustedVerifiers: trustedVerifiers,
                 shouldValidateClient: true
             )
         } catch let error {

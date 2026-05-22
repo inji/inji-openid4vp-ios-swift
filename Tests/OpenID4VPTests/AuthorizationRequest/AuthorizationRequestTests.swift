@@ -70,8 +70,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -92,8 +91,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -113,8 +111,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authRequest,
-                trustedVerifiers: trustedVerifiers,
-                walletConfig: WalletConfig(),
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -239,8 +236,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -269,8 +265,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -296,8 +291,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -321,8 +315,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -393,8 +386,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncNoThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authRequest,
-                trustedVerifiers: trustedVerifiers,
-                walletConfig: WalletConfig(),
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",

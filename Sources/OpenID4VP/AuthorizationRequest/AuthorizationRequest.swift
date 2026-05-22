@@ -67,7 +67,6 @@ public class AuthorizationRequest: Encodable {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
         
         return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters,
-                                                 trustedVerifiers: trustedVerifier,
                                                  walletConfig: walletConfig,
                                                  setResponseUri: setResponseUri,
                                                  shouldValidateClient: shouldValidateClient,
@@ -78,7 +77,6 @@ public class AuthorizationRequest: Encodable {
     
     static func validateAndCreateAuthorizationRequest(
         authRequest: [String: Any],
-        trustedVerifiers: [Verifier],
         walletConfig: WalletConfig,
         setResponseUri: @escaping (String) -> Void,
         shouldValidateClient: Bool,
@@ -87,7 +85,6 @@ public class AuthorizationRequest: Encodable {
     ) async throws -> AuthorizationRequest {
         return try await getAuthorizationRequest(
             authorizationRequestParameters: authRequest,
-            trustedVerifiers: trustedVerifiers,
             walletConfig: walletConfig,
             setResponseUri: setResponseUri,
             shouldValidateClient: shouldValidateClient,
@@ -97,7 +94,6 @@ public class AuthorizationRequest: Encodable {
     }
     
     private static func getAuthorizationRequest(authorizationRequestParameters: [String: Any],
-                                                trustedVerifiers: [Verifier],
                                                 walletConfig: WalletConfig,
                                                 setResponseUri: @escaping (String) -> Void,
                                                 shouldValidateClient: Bool,
@@ -105,7 +101,6 @@ public class AuthorizationRequest: Encodable {
                                                 networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
         let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
-                                                                               trustedVerifiers: trustedVerifiers,
                                                                                walletConfig: walletConfig,
                                                                                shouldValidateClient: shouldValidateClient,
                                                                                setResponseUri: setResponseUri,

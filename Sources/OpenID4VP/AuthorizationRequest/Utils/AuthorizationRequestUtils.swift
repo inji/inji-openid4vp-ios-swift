@@ -68,7 +68,6 @@ extension KeyedDecodingContainer {
 }
 
 func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any],
-                                    trustedVerifiers : [Verifier],
                                     walletConfig: WalletConfig,
                                     shouldValidateClient: Bool,
                                     setResponseUri: @escaping (String) -> Void,
@@ -79,13 +78,12 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
     let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
     
     let clientIdPrefix = try extractClientIdPrefix(authorizationRequestParams: authorizationRequestParameters)
-    let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: trustedVerifiers)
+    let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: walletConfig.trustedVerifiers)
     
     switch clientIdPrefix {
     case ClientIdPrefix.preRegistered.rawValue:
         return PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId,
                                                               specVersion: specVersion,
-                                                              trustedVerifiers: trustedVerifiers,
                                                               authorizationRequestParameters: authorizationRequestParameters,
                                                               walletConfig: walletConfig,
                                                               shouldValidateClient: shouldValidateClient,
@@ -112,7 +110,6 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
         // If the client ID prefix is unrecognized, fallback to pre-registered scheme handler
         return PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId,
                                                               specVersion: specVersion,
-                                                              trustedVerifiers: trustedVerifiers,
                                                               authorizationRequestParameters: authorizationRequestParameters,
                                                               walletConfig: walletConfig,
                                                               shouldValidateClient: shouldValidateClient,

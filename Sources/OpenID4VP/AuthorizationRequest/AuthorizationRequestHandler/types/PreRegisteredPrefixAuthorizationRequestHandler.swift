@@ -2,19 +2,16 @@ import Foundation
 import JSONWebKey
 
 class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthorizationRequestHandler {
-    let trustedVerifiers: [Verifier]
     let shouldValidateClient: Bool
     
     init(clientId: String,
          specVersion: SpecVersion,
-         trustedVerifiers: [Verifier],
          authorizationRequestParameters: [String: Any],
          walletConfig: WalletConfig,
          shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging) {
-        self.trustedVerifiers = trustedVerifiers
         self.shouldValidateClient = shouldValidateClient
         super.init(clientId: clientId,
                    specVersion: specVersion,
@@ -33,7 +30,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     
     override func validateClientId() throws {
         if shouldValidateClient {
-            guard trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String }) else {
+            guard walletConfig.trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String }) else {
                 throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
             }
         }
@@ -121,7 +118,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     }
     
     private func verifier(clientId: String) throws -> Verifier {
-        if let found = trustedVerifiers.first(where: { $0.clientId == clientId }) {
+        if let found = walletConfig.trustedVerifiers.first(where: { $0.clientId == clientId }) {
             return found
         } else {
             throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
