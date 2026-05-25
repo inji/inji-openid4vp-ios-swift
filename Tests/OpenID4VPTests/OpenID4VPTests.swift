@@ -306,16 +306,12 @@ class OpenID4VPTests: XCTestCase {
                 shouldValidateClient: true
             )
 
-            let mockCredentials: [String: [FormatType: [AnyCodable]]] = [
-                "input_1": [
-                    .ldp_vc: [AnyCodable(ldpVC())],
-                ],
+            let mockCredentials: [String: [Credential]] = [
+                "cred3": [Credential(format: .ldp_vc, data: AnyCodable(ldpVC()), credentialId: "cred3")],
             ]
 
             received = try await openID4VP.constructUnsignedVPToken(
-                verifiableCredentials: mockCredentials,
-                holderId: didJwkKey,
-                signatureSuite: "JsonWebSignature2020"
+                selectedCredentials: mockCredentials
             )
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -485,9 +481,7 @@ class OpenID4VPTests: XCTestCase {
 
         do {
             let result = try await openIdVP.constructUnsignedVPToken(
-                verifiableCredentials: ["input_1": [.ldp_vc: [AnyCodable(ldpVC())]]],
-                holderId: "did:example:123",
-                signatureSuite: "JsonWebSignature2020"
+                selectedCredentials: ["input_1": [Credential(format: .ldp_vc, data: AnyCodable(ldpVC()), credentialId: "input_1")]]
             )
             XCTAssertEqual(result.count, 2)
             XCTAssertEqual(result[0].format, .ldp_vc)
@@ -501,19 +495,26 @@ class OpenID4VPTests: XCTestCase {
 
     func testConstructUnsignedVPTokenPropagatesAndSendsError() async {
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider())
-        openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostJwtResponseMode
+        // Use a PE request so the PE flow is exercised and holderId is extracted from the credential
+        openIdVP.authorizationRequest = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
 
         mockNetworkManager.setMockResponse(for: responseUri, responseBody: processedSuccessfullyMessage)
         openIdVP.setResponseUri(responseUri)
 
+        // Credential with no credentialSubject — extraction of holderId will fail
+        let credentialWithNoSubject: [String: Any] = ["type": ["VerifiableCredential"]]
+
         await XCTAssertAsyncThrowsError(
             try await openIdVP.constructUnsignedVPToken(
-                verifiableCredentials: ["input_1": [.ldp_vc: [AnyCodable(ldpVC())]]],
-                holderId: nil,
-                signatureSuite: nil
+                selectedCredentials: ["input_1": [Credential(format: .ldp_vc, data: AnyCodable(credentialWithNoSubject), credentialId: "input_1")]]
             )
         ) { error in
-            XCTAssertNotNil(error)
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "The wallet encountered an internal error while preparing the presentation.",
+                expectedCode: OpenID4VPErrorCodes.serverError,
+                expectedUnderlyingErrorMessage: "Holder ID not available in the credential"
+            )
         }
     }
 }

@@ -237,14 +237,10 @@ func readCoseInt(_ cbor: CBOR) throws -> Int {
     }
 }
 
-
-
-// MARK: - CONSTRUCT SIGNING RESULTS V2
-
 func constructSigningResults(
     unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])],
-    signingResults: [VPTokenSigningResult],
-    signatureSuite: String
+    signingResults: [VPTokenSigningResult]
+    
 ) throws -> [FormatType: [VPTokenSigningResult]] {
     
     var iterator = signingResults.makeIterator()

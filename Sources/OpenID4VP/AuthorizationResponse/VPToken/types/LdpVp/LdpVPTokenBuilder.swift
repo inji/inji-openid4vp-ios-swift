@@ -15,26 +15,41 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
-        let ldpVPToken = try buildVPToken(
-            getUnsignedLdpVPToken: unsignedVPTokenResult.vpTokenSigningPayload as? LdpVP,
-            addCryptographicHolderBinding: true,
-            getVPTokenSigningResult: vpTokenSigningResults.first,
-            getUnsignedVPToken: unsignedVPTokenResult.unsignedVPTokens.first
-        )
-        
-        let descriptorMaps = credentialInputDescriptorMappings.map { mapping in
-            DescriptorMap(
-                id: mapping.inputDescriptorId,
-                format: .ldp_vp,
-                path: createDescriptorMapPath(rootIndex),
-                pathNested: createNestedPath(
-                    id: mapping.inputDescriptorId,
-                    nestedPath: mapping.nestedPath,
-                    format: .ldp_vc
+        var vpTokenSigningResultsIterator = vpTokenSigningResults.makeIterator()
+        var unsignedVpTokenIterator = unsignedVPTokenResult.unsignedVPTokens.makeIterator()
+        guard let unsignedVpTokens = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {
+            throw InvalidData(message: "UnsignedVpToken result - signing payload is not of right type", className: className)
+        }
+        var descriptorMaps: [DescriptorMap] = []
+        var vpIndex = rootIndex
+        var ldpVPTokens: [VPToken] = []
+        for credentialInputDescriptorMapping in credentialInputDescriptorMappings {
+            let ldpVPToken = try buildVPToken(
+                getUnsignedLdpVPToken: unsignedVpTokens[credentialInputDescriptorMapping.identifier ?? ""],
+                addCryptographicHolderBinding: true,
+                getVPTokenSigningResult: vpTokenSigningResultsIterator.next(),
+                getUnsignedVPToken: unsignedVpTokenIterator.next()
+            )
+            
+            ldpVPTokens.append(ldpVPToken)
+            descriptorMaps.append(
+                DescriptorMap(
+                    id: credentialInputDescriptorMapping.inputDescriptorId,
+                    format: .ldp_vp,
+                    path: createDescriptorMapPath(rootIndex),
+                    pathNested: createNestedPath(
+                        id: credentialInputDescriptorMapping.inputDescriptorId,
+                        nestedPath: credentialInputDescriptorMapping.nestedPath,
+                        format: .ldp_vc
+                    )
                 )
             )
+            
+            vpIndex += 1
         }
-        return ([ldpVPToken], descriptorMaps, rootIndex + 1)
+        
+        
+        return (ldpVPTokens, descriptorMaps, vpIndex)
     }
     
     func build(
@@ -46,7 +61,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         var vpTokenResult : [String: [VPToken]] = [:]
         var unsignedVpTokenIterator = unsignedVPTokenResult.unsignedVPTokens.makeIterator()
         guard let unsignedVpTokens = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {
-            throw InvalidData(message: "Missing uuidToUnsignedKBT in payload", className: className)
+            throw InvalidData(message: "Missing data to sign", className: className)
         }
         for credentialToCredentialQueryIdMapping in credentialToCredentialQueryIdMappings {
             let credentialQuery = try matchingDCQLCredentialQuery(authorizationRequest, for: credentialToCredentialQueryIdMapping.credentialQueryId, className: className)
@@ -72,7 +87,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         getUnsignedVPToken: @autoclosure @escaping () -> UnsignedVPToken?
     ) throws -> VPToken {
         guard let unsignedLdpVPToken = getUnsignedLdpVPToken() else {
-            throw InvalidData(message: "payload is not available as LdpVPToken", className: className)
+            throw InvalidData(message: "Missing data to sign", className: className)
         }
         
         if(addCryptographicHolderBinding) {

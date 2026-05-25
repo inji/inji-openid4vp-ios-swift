@@ -4,8 +4,6 @@ private let className = "UnsignedLdpVPTokenBuilder"
 
 class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     private let id: String
-    private let holder: String?
-    private let signatureSuite: String?
     public let specVersion: SpecVersion
     public let authorizationRequest: AuthorizationRequest
     public let walletConfig: WalletConfig
@@ -16,32 +14,51 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         authorizationRequest: AuthorizationRequest,
         specVersion: SpecVersion,
         id: String,
-        holder: String? = nil,
-        signatureSuite: String? = nil,
         walletConfig: WalletConfig = WalletConfig()
     ) {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.id = id
-        self.holder = holder
-        self.signatureSuite = signatureSuite
         self.walletConfig = walletConfig
     }
     
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
-        var verifiableCredentials: [AnyCodable] = []
+        guard (authorizationRequest as? AuthorizationPresentationExchangeRequest) != nil else {
+            throw InvalidData(message: "Expected AuthorizationDcqlRequest for Presentation Exchange flow", className: className)
+        }
+        
+        var unsignedVPTokens: [UnsignedVPToken] = []
+        var vpTokenSigningPayloads : [String: LdpVP] = [:]
         
         for index in 0..<credentialInputDescriptorMappings.count {
-            let mapping = credentialInputDescriptorMappings[index]
-            verifiableCredentials.append(mapping.credential)
-            credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
-                format: mapping.format, credential: mapping.credential, inputDescriptorId: mapping.inputDescriptorId,
-                nestedPath: "$.\(Self.internalPath)[\(index)]"
+            var credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
+            let uuid = UUIDGenerator.generateUUID()
+            
+            credentialInputDescriptorMapping.identifier = uuid
+            credentialInputDescriptorMapping.nestedPath = "$.\(Self.internalPath)[0]"
+            credentialInputDescriptorMappings[index] = credentialInputDescriptorMapping
+            
+            let credential = credentialInputDescriptorMapping.credential
+            
+            let verifiableCredentials: [AnyCodable] = [credential]
+
+            
+            let result = try extractHolderAndSignatureSuite(credential)
+            
+            let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
+                with: verifiableCredentials,
+                signatureSuite: result.signatureSuite,
+                holder: sanitize(result.holder)
             )
+            
+            vpTokenSigningPayloads[uuid] = vpTokenSigningPayload
+            if let unsignedVPToken = unsignedVPToken {
+                unsignedVPTokens.append(unsignedVPToken)
+            }
+            
         }
-        let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(with: verifiableCredentials, signatureSuite: signatureSuite, holder: holder)
         
-        return (vpTokenSigningPayload, unsignedVPToken != nil ? [unsignedVPToken!] : [])
+        return (vpTokenSigningPayloads, unsignedVPTokens)
     }
     
     func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
@@ -195,9 +212,10 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         guard let holderId = holderId else {
             return nil
         }
-        return (holderId
+        let cleaned = holderId
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")) + "#0"
+            .replacingOccurrences(of: "=", with: "")
+        return cleaned.contains("#") ? cleaned : cleaned + "#0"
     }
 }

@@ -4,7 +4,6 @@ import Foundation
 public class AuthorizationResponseHandler {
     private let networkManager: NetworkManaging
     private var walletNonce: String = ""
-    private var signatureSuite: String = SignatureSuite.ed25519Signature2020.rawValue
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
     private var credentialToCredentialQueryIdMappingsGroupedByFormat: [FormatType: [CredentialToCredentialQueryIdMapping]] = [:]
     
@@ -20,56 +19,12 @@ public class AuthorizationResponseHandler {
     }
     
     func constructUnsignedVPToken(
-        credentialsMap: [String: [FormatType: [AnyCodable]]],
-        authorizationRequest: AuthorizationRequest,
-        responseUri: String,
-        holderId: String?,
-        signatureSuite: String?,
-        walletNonce: String
-    ) async throws -> [UnsignedVPToken] {
-        do {
-            if authorizationRequest as? AuthorizationPresentationExchangeRequest != nil {
-                self.specVersion = .draft23
-            }
-            
-            let hasLdpVc = credentialsMap.values.contains { formatMap in
-                formatMap.keys.contains(.ldp_vc)
-            }
-            if hasLdpVc {
-                // In case of ldp_vc, the Verifiable presentation created will have the info of holder and signature suite
-                if isNullOrEmpty(holderId) {
-                    throw InvalidData(
-                        message: "Holder ID cannot be null or empty for LDP VC format",
-                        className: AuthorizationResponseHandler.className
-                    )
-                }
-                if isNullOrEmpty(signatureSuite) {
-                    throw InvalidData(
-                        message: "Signature Suite cannot be null or empty for LDP VC format",
-                        className: AuthorizationResponseHandler.className
-                    )
-                }
-            }
-            self.signatureSuite = signatureSuite ?? self.signatureSuite
-            
-            return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, holderId: holderId, signatureSuite: signatureSuite, walletNonce: walletNonce, handler: self)
-        } catch {
-            throw VerifiablePresentationConstructionFailure(cause: error, className: Self.className)
-        }
-    }
-    
-    func constructUnsignedVPToken(
-        credentialsMap: [String: [Credential]],
+        selectedCredentials: [String: [Credential]],
         authorizationRequest: AuthorizationRequest,
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
         do {
-            guard let authorizationRequest = authorizationRequest as? AuthorizationDcqlRequest else {
-                throw InvalidData(message: "Unexpected authorization request type", className: Self.className)
-            }
-            self.specVersion = .v1
-            
-            return try await SpecVersionHandler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, walletNonce: walletNonce, handler: self)
+            return try await SpecVersionHandler.from(authorizationRequest).createUnsignedVPToken(credentialsMap: selectedCredentials, authorizationRequest: authorizationRequest, walletNonce: walletNonce, handler: self)
         } catch {
             throw VerifiablePresentationConstructionFailure(cause: error, className: Self.className)
         }
@@ -80,16 +35,22 @@ public class AuthorizationResponseHandler {
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
         do {
-            let reconstructed = try constructSigningResults(
-                unsignedVPTokenResults: unsignedVPTokenResults,
-                signingResults: signingResults,
-                signatureSuite: self.signatureSuite
+            let authorizationResponse = try createAuthorizationResponse(
+                authorizationRequest: authorizationRequest,
+                vpTokenSigningResults: try constructSigningResults(
+                    unsignedVPTokenResults: unsignedVPTokenResults,
+                    signingResults: signingResults
+                )
             )
             
-            return try constructAuthorizationResponse(
-                authorizationRequest: authorizationRequest,
-                vpTokenSigningResults: reconstructed
-            )
+            return try ResponseModeBasedHandlerFactory
+                .get(responseMode: authorizationRequest.responseMode)
+                .getAuthorizationResponse(
+                    authorizationRequest: authorizationRequest,
+                    authorizationResponse: authorizationResponse,
+                    walletNonce: walletNonce,
+                    walletConfig: walletConfig
+                )
         } catch {
             throw AuthorizationResponseConstructionFailure(cause: error, className: Self.className)
         }
@@ -146,8 +107,7 @@ public class AuthorizationResponseHandler {
         do {
             let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
                 unsignedVPTokenResults: unsignedVPTokenResults,
-                signingResults: vpTokenSigningResults,
-                signatureSuite: self.signatureSuite
+                signingResults: vpTokenSigningResults
             )
             
             authorizationResponse = try createAuthorizationResponse(
@@ -166,37 +126,7 @@ public class AuthorizationResponseHandler {
         return toVerifierResponse(response)
     }
     
-    private func createUnsignedVPToken(
-        credentialsMap: [String: [FormatType: [AnyCodable]]],
-        authorizationRequest: AuthorizationRequest,
-        walletNonce: String,
-        holderId: String?,
-        signatureSuite: String?
-    ) async throws -> [FormatType: [UnsignedVPToken]] {
-        if credentialsMap.isEmpty {
-            throw InvalidData(
-                message: "Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.",
-                className: AuthorizationResponseHandler.className
-            )
-        }
-        
-        self.walletNonce = walletNonce
-        
-        unsignedVPTokenResults = try await createUnsignedVPTokens(
-            credentialsMap: credentialsMap,
-            authorizationRequest: authorizationRequest,
-            holderId: holderId,
-            signatureSuite: signatureSuite
-        )
-        
-        let unsignedVPTokensExtracted: [FormatType: [UnsignedVPToken]] = unsignedVPTokenResults.mapValues { innerMap in
-            innerMap.1
-        }
-        
-        return unsignedVPTokensExtracted
-    }
-    
-    func createUnsignedVPToken(credentialsMap: [String: [Credential]],
+    func createUnsignedVPTokenForDcqlRequest(credentialsMap: [String: [Credential]],
                                authorizationRequest: AuthorizationRequest,
                                walletNonce: String) async throws -> [UnsignedVPToken] {
         self.createFormatToCredentialQueryIdMapping(matchingCredentials: credentialsMap)
@@ -244,23 +174,52 @@ public class AuthorizationResponseHandler {
         return unsignedVPTokensExtracted
     }
     
-    private func constructAuthorizationResponse(
+    private func createUnsignedVPTokenForPresentationExchange(
+        credentialsMap: [String: [Credential]],
         authorizationRequest: AuthorizationRequest,
-        vpTokenSigningResults: [FormatType: [VPTokenSigningResult]]
-    ) throws -> [String: String] {
-        let authorizationResponse = try createAuthorizationResponse(
-            authorizationRequest: authorizationRequest,
-            vpTokenSigningResults: vpTokenSigningResults
-        )
-        
-        return try ResponseModeBasedHandlerFactory
-            .get(responseMode: authorizationRequest.responseMode)
-            .getAuthorizationResponse(
-                authorizationRequest: authorizationRequest,
-                authorizationResponse: authorizationResponse,
-                walletNonce: walletNonce,
-                walletConfig: walletConfig
+        walletNonce: String
+    ) async throws -> [UnsignedVPToken] {
+        if credentialsMap.isEmpty {
+            throw InvalidData(
+                message: "Empty credentials list - The Wallet did not have the requested Credentials to satisfy the Authorization Request.",
+                className: AuthorizationResponseHandler.className
             )
+        }
+        
+        self.walletNonce = walletNonce
+        createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
+        
+        for format in formatToCredentialInputDescriptorMapping.keys {
+            guard var credentialsArray = formatToCredentialInputDescriptorMapping[format] else { continue }
+            switch format {
+            case .ldp_vc:
+                let token = try await UnsignedLdpVPTokenBuilder(
+                    authorizationRequest: authorizationRequest,
+                    specVersion: .draft23,
+                    id: UUIDGenerator.generateUUID(),
+                    walletConfig: walletConfig
+                ).build(credentialInputDescriptorMappings: &credentialsArray)
+                unsignedVPTokenResults[format] = token
+            case .mso_mdoc:
+                let token = try await UnsignedMdocVPTokenBuilder(
+                    authorizationRequest: authorizationRequest,
+                    specVersion: .draft23,
+                    mdocGeneratedNonce: walletNonce,
+                    walletConfig: walletConfig
+                ).build(credentialInputDescriptorMappings: &credentialsArray)
+                unsignedVPTokenResults[format] = token
+            case .dc_sd_jwt, .vc_sd_jwt:
+                let token = try await UnsignedSdJwtVPTokenBuilder(
+                    authorizationRequest: authorizationRequest,
+                    specVersion: .draft23,
+                    walletConfig: walletConfig
+                ).build(credentialInputDescriptorMappings: &credentialsArray)
+                unsignedVPTokenResults[format] = token
+            }
+            formatToCredentialInputDescriptorMapping[format] = credentialsArray
+        }
+        
+        return unsignedVPTokenResults.values.flatMap { $0.1 }
     }
     
     func constructAuthorizationErrorResponse(
@@ -462,69 +421,19 @@ public class AuthorizationResponseHandler {
             )
     }
     
-    private func createUnsignedVPTokens(
-        credentialsMap: [String: [FormatType: [AnyCodable]]],
-        authorizationRequest: AuthorizationRequest,
-        holderId: String?,
-        signatureSuite: String?
-    ) async throws -> [FormatType: (Any?, [UnsignedVPToken])] {
-        createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
-        
-        var unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])] = [:]
-        let specVersion: SpecVersion = authorizationRequest is AuthorizationPresentationExchangeRequest ? .draft23 : .v1
-        
-        for format in formatToCredentialInputDescriptorMapping.keys {
-            guard var credentialsArray = formatToCredentialInputDescriptorMapping[format] else {
-                continue
-            }
-            switch format {
-            case .ldp_vc:
-                let token = try await UnsignedLdpVPTokenBuilder(
-                    authorizationRequest: authorizationRequest,
-                    specVersion: specVersion,
-                    id: UUIDGenerator.generateUUID(),
-                    holder: holderId ?? "",
-                    signatureSuite: signatureSuite ?? "Ed25519Signature2020",
-                    walletConfig: walletConfig
-                ).build(credentialInputDescriptorMappings: &credentialsArray)
-                unsignedVPTokenResults[format] = token
-            case .mso_mdoc:
-                let token = try await UnsignedMdocVPTokenBuilder(
-                    authorizationRequest: authorizationRequest,
-                    specVersion: specVersion,
-                    mdocGeneratedNonce: walletNonce,
-                    walletConfig: walletConfig
-                ).build(credentialInputDescriptorMappings: &credentialsArray)
-                unsignedVPTokenResults[format] = token
-            case .dc_sd_jwt, .vc_sd_jwt:
-                let token = try await UnsignedSdJwtVPTokenBuilder(
-                    authorizationRequest: authorizationRequest,
-                    specVersion: specVersion,
-                    walletConfig: walletConfig
-                ).build(credentialInputDescriptorMappings: &credentialsArray)
-                unsignedVPTokenResults[format] = token
-            }
-            formatToCredentialInputDescriptorMapping[format] = credentialsArray
-        }
-        
-        return unsignedVPTokenResults
-    }
-    
     private func createFormatToCredentialInputDescriptorMapping(
-        matchingCredentials: [String: [FormatType: [AnyCodable]]]
+        matchingCredentials: [String: [Credential]]
     ) {
         var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
         
-        for (inputDescriptorId, formatCredentialMap) in matchingCredentials {
-            for (format, credentialsArray) in formatCredentialMap {
-                for credential in credentialsArray {
-                    let mapping = CredentialInputDescriptorMapping(
-                        format: format,
-                        credential: credential,
-                        inputDescriptorId: inputDescriptorId
-                    )
-                    formatToCredentialInputDescriptorMapping[format, default: []].append(mapping)
-                }
+        for (inputDescriptorId, credentials) in matchingCredentials {
+            for credential in credentials {
+                let mapping = CredentialInputDescriptorMapping(
+                    format: credential.format,
+                    credential: credential.data,
+                    inputDescriptorId: inputDescriptorId
+                )
+                formatToCredentialInputDescriptorMapping[credential.format, default: []].append(mapping)
             }
         }
         self.formatToCredentialInputDescriptorMapping = formatToCredentialInputDescriptorMapping
@@ -581,26 +490,21 @@ public class AuthorizationResponseHandler {
             return authorizationRequest is AuthorizationPresentationExchangeRequest ? .draft23 : .specV1
         }
         
-        static func createUnsignedVPToken(credentialsMap: [String: [FormatType: [AnyCodable]]],
-                                          authorizationRequest: AuthorizationRequest,
-                                          holderId: String?,
-                                          signatureSuite: String?,
-                                          walletNonce: String,
-                                          handler: AuthorizationResponseHandler) async throws -> [UnsignedVPToken] {
-            let results = try await handler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, walletNonce: walletNonce, holderId: holderId, signatureSuite: signatureSuite)
-            
-            var flattened: [UnsignedVPToken] = []
-            for format in results.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
-                flattened.append(contentsOf: results[format]!)
+        func createUnsignedVPToken(credentialsMap: [String: [Credential]],
+                                   authorizationRequest: AuthorizationRequest,
+                                   walletNonce: String,
+                                   handler: AuthorizationResponseHandler) async throws -> [UnsignedVPToken] {
+            switch self {
+            case .draft23:
+                return try await handler.createUnsignedVPTokenForPresentationExchange(
+                    credentialsMap: credentialsMap,
+                    authorizationRequest: authorizationRequest,
+                    walletNonce: walletNonce
+                )
+                
+            case .specV1:
+                return try await handler.createUnsignedVPTokenForDcqlRequest(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, walletNonce: walletNonce)
             }
-            return flattened
-        }
-        
-        static func createUnsignedVPToken(credentialsMap: [String: [Credential]],
-                                          authorizationRequest: AuthorizationRequest,
-                                          walletNonce: String,
-                                          handler: AuthorizationResponseHandler) async throws -> [UnsignedVPToken] {
-            return try await handler.createUnsignedVPToken(credentialsMap: credentialsMap, authorizationRequest: authorizationRequest, walletNonce: walletNonce)
         }
         
         func createVPTokenResponse(

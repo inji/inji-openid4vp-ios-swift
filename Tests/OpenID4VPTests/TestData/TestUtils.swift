@@ -248,7 +248,7 @@ func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? 
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1, dcqlQuery: DCQLQuery? = nil) -> AuthorizationRequest {
+func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1, dcqlQuery: DCQLQuery? = nil, presentationDefinition: PresentationDefinition? = nil) -> AuthorizationRequest {
     let responseType = responseType ?? ResponseType.vp_token.rawValue
     
     if(specVersion == .draft23) {
@@ -261,7 +261,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
             nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
             walletNonce: nil,
             state: "state",
-            presentationDefinition: mockPresentationDefinitionObject,
+            presentationDefinition: presentationDefinition ?? mockPresentationDefinitionObject,
             clientMetadata: mockClientMetadataSpecVersionDraft23[.directPostJwt]
         )
     }

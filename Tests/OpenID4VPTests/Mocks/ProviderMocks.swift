@@ -21,24 +21,13 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     ) -> [String: Any] {
         return expectedErrorResponse
     }
-
+    
     override func constructUnsignedVPToken(
-        credentialsMap: [String: [FormatType: [AnyCodable]]],
+        selectedCredentials: [String: [Credential]],
         authorizationRequest: AuthorizationRequest,
-        responseUri: String,
-        holderId: String?,
-        signatureSuite: String?,
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
         return expectedUnsignedVPTokens
-    }
-    
-    override func constructUnsignedVPToken(
-        credentialsMap: [String: [Credential]],
-        authorizationRequest: AuthorizationRequest,
-        walletNonce: String
-    ) async throws -> [UnsignedVPToken] {
-        return []
     }
 
     override func constructVPResponse(
