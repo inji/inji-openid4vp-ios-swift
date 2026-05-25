@@ -12,7 +12,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     private var walletConfig: WalletConfig!
     
     override func setUpWithError() throws {
-        walletConfig = try createWalletConfig()
+        walletConfig = createWalletConfig()
     }
     
     override func setUp() {
@@ -939,7 +939,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testThrowErrorWhenClientIdSchemeIsNotSupportedAsPerWalletMetadata() async {
-        let  minimalWalletMetadata = try! createWalletConfig(clientIdPrefixesSupported: [.preRegistered, .redirectUri])
+        let  minimalWalletMetadata = createWalletConfig(clientIdPrefixesSupported: [.preRegistered, .redirectUri])
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "openid_federation:https://federation-verifier.example.com."], ["request_uri_method": "post"])) as [String : Any]
         let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: "", specVersion: .v1, walletConfig: minimalWalletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
         mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true

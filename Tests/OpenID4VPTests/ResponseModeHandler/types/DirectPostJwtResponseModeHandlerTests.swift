@@ -12,7 +12,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     private var walletConfig: WalletConfig!
     
     override func setUpWithError() throws {
-        walletConfig = try createWalletConfig()
+        walletConfig = createWalletConfig()
     }
     
     /// client metadata validation tests
@@ -256,7 +256,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             ]
         ]
 
-        let mismatchingWalletMetadata = try createWalletConfig()
+        let mismatchingWalletMetadata = createWalletConfig()
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(invalidClientMetadataForDirectPostJwt, as: ClientMetadataDraft23.self), walletConfig: mismatchingWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             XCTAssertEqual("Authorization response encryption algorithm is not supported", error.localizedDescription)
@@ -326,7 +326,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
         ]
 
-        var invalidWalletMetadata = try createWalletConfig(authorizationEncryptionAlgValuesSupported: nil)
+        var invalidWalletMetadata = createWalletConfig(authorizationEncryptionAlgValuesSupported: nil)
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadataDraft23.self), walletConfig: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "authorization_encryption_alg_values_supported must be present in wallet_metadata", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
@@ -334,7 +334,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             assertOpenID4VPException(error, expectedMessage: "authorization_encryption_alg_values_supported must be present in wallet_metadata", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
 
-        invalidWalletMetadata = try createWalletConfig(authorizationEncryptionEncValuesSupported: nil)
+        invalidWalletMetadata = createWalletConfig(authorizationEncryptionEncValuesSupported: nil)
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.validate(clientMetadata: createInstance(validClientMetadataForDirectPostJwt, as: ClientMetadataDraft23.self), walletConfig: invalidWalletMetadata, shouldValidateWithWalletMetadata: true)) { error in
             assertOpenID4VPException(error, expectedMessage: "authorization_encryption_enc_values_supported must be present in wallet_metadata", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }

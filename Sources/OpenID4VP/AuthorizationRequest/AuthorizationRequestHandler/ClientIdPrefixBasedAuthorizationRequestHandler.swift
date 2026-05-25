@@ -123,7 +123,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         var headers: [String: String] = [Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
         
         if requestUriMethod == .post {
-            if(walletConfig.supportedRequestUriMethods.contains(.post) == false){
+            if(walletConfig.requestUriMethodsSupported.contains(.post) == false){
                 // If Wallet does not support post consider it as get and proceed
                 OpenID4VPException.warn("Wallet does not support POST method for request_uri. Proceeding with GET method.", className: className)
                 requestUriMethod = .get

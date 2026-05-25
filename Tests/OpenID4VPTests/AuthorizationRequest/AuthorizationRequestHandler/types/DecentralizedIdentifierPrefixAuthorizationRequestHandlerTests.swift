@@ -13,7 +13,7 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandlerTests : XCTestCase
     private var walletConfig: WalletConfig!
 
     override func setUpWithError() throws {
-        walletConfig = try createWalletConfig()
+        walletConfig = createWalletConfig()
     }
     
     // Support for Authorization request by reference or by value
@@ -95,7 +95,7 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandlerTests : XCTestCase
             AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
         ])) as [String : Any]
 
-        let walletConfig = try createWalletConfig(requestObjectSigningAlgValuesSupported: nil)
+        let walletConfig = createWalletConfig(requestObjectSigningAlgValuesSupported: nil)
 
         let didScheme = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
 

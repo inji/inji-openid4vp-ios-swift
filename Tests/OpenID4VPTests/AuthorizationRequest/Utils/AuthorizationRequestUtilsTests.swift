@@ -6,7 +6,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     private var walletConfig: WalletConfig!
     
     override func setUpWithError() throws {
-        walletConfig = try createWalletConfig()
+        walletConfig = createWalletConfig()
     }
     
     ///Test Decoding of url encoded paramters to Dictionary

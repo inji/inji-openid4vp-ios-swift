@@ -18,7 +18,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     private var walletConfig: WalletConfig!
     
     override func setUpWithError() throws {
-        walletConfig = try createWalletConfig()
+        walletConfig = createWalletConfig()
     }
     
     //     Validate client tests
@@ -191,7 +191,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     }
     
     func testShouldThrowErrorForWalletMetadataProcessingWhenRequestObjectSigningAlgValuesSupportedisNil() async throws {
-        let walletConfig = try createWalletConfig(requestObjectSigningAlgValuesSupported: nil)
+        let walletConfig = createWalletConfig(requestObjectSigningAlgValuesSupported: nil)
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
         ])) as [String : Any]

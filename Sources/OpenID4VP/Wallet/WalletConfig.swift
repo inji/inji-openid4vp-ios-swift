@@ -11,7 +11,7 @@ public struct WalletConfig: Codable {
     let authorizationEncryptionEncValuesSupported: [EncryptionMethod]?
     let responseTypesSupported: [ResponseType]
     let isPresentationDefinitionUriSupported: Bool
-    let supportedRequestUriMethods: [RequestUriMethod]
+    let requestUriMethodsSupported: [RequestUriMethod]
     let trustedVerifiers: [Verifier]
     
     enum CodingKeys: String, CodingKey {
@@ -22,7 +22,7 @@ public struct WalletConfig: Codable {
         case authorizationEncryptionEncValuesSupported = "authorization_encryption_enc_values_supported"
         case responseTypesSupported = "response_types_supported"
         case presentationDefinitionUriSupported = "presentation_definition_uri_supported"
-        case supportedRequestUriMethods = "supported_request_uri_methods"
+        case requestUriMethodsSupported = "request_uri_methods_supported"
         case trustedVerifiers = "trusted_verifiers"
     }
     
@@ -44,7 +44,7 @@ public struct WalletConfig: Codable {
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
         self.responseTypesSupported = responseTypesSupported
         self.isPresentationDefinitionUriSupported = isPresentationDefinitionUriSupported
-        self.supportedRequestUriMethods = supportedRequestUriMethods
+        self.requestUriMethodsSupported = supportedRequestUriMethods
         self.trustedVerifiers = trustedVerifiers
     }
     
@@ -57,7 +57,7 @@ public struct WalletConfig: Codable {
         self.authorizationEncryptionEncValuesSupported = try container.decodeIfPresent([EncryptionMethod].self, forKey: .authorizationEncryptionEncValuesSupported) ?? WalletConfigDefaults.authorizationEncryptionEncValuesSupported
         self.responseTypesSupported = try container.decodeIfPresent([ResponseType].self, forKey: .responseTypesSupported) ?? WalletConfigDefaults.responseTypesSupported
         self.isPresentationDefinitionUriSupported = try container.decodeIfPresent(Bool.self, forKey: .presentationDefinitionUriSupported) ?? WalletConfigDefaults.presentationDefinitionUriSupported
-        self.supportedRequestUriMethods = try container.decodeIfPresent([RequestUriMethod].self, forKey: .supportedRequestUriMethods) ?? WalletConfigDefaults.supportedRequestUriMethods
+        self.requestUriMethodsSupported = try container.decodeIfPresent([RequestUriMethod].self, forKey: .requestUriMethodsSupported) ?? WalletConfigDefaults.supportedRequestUriMethods
         self.trustedVerifiers = try container.decodeIfPresent([Verifier].self, forKey: .trustedVerifiers) ?? WalletConfigDefaults.trustedVerifiers
     }
     
@@ -165,7 +165,7 @@ public struct WalletConfig: Codable {
         try container.encode(authorizationEncryptionEncValuesSupported, forKey: .authorizationEncryptionEncValuesSupported)
         try container.encode(responseTypesSupported, forKey: .responseTypesSupported)
         try container.encode(isPresentationDefinitionUriSupported, forKey: .presentationDefinitionUriSupported)
-        try container.encode(supportedRequestUriMethods, forKey: .supportedRequestUriMethods)
+        try container.encode(requestUriMethodsSupported, forKey: .requestUriMethodsSupported)
         try container.encode(trustedVerifiers, forKey: .trustedVerifiers)
     }
 }

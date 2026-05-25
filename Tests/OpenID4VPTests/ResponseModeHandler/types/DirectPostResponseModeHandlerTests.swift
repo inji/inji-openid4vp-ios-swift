@@ -12,7 +12,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
     private var walletConfig: WalletConfig!
 
     override func setUpWithError() throws {
-        walletConfig = try createWalletConfig()
+        walletConfig = createWalletConfig()
     }
 
     func testValidationClientMetadatadaNotThrowErrorForDirectPost() throws {
