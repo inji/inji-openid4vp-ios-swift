@@ -36,7 +36,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
                 DescriptorMap(
                     id: credentialInputDescriptorMapping.inputDescriptorId,
                     format: .ldp_vp,
-                    path: createDescriptorMapPath(rootIndex),
+                    path: createDescriptorMapPath(vpIndex),
                     pathNested: createNestedPath(
                         id: credentialInputDescriptorMapping.inputDescriptorId,
                         nestedPath: credentialInputDescriptorMapping.nestedPath,

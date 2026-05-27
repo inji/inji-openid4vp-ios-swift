@@ -154,8 +154,8 @@ final class LdpVPTokenBuilderTests: XCTestCase {
     func testBuildDescriptorMapContainsAllMappings() throws {
         let ldpToken = makeLdpVPToken()
         let mappings = [
-            CredentialInputDescriptorMapping(format: .ldp_vc, credential: credential, inputDescriptorId: "desc-1", identifier: "uuid-1"),
-            CredentialInputDescriptorMapping(format: .ldp_vc, credential: credential, inputDescriptorId: "desc-2", identifier: "uuid-2"),
+            CredentialInputDescriptorMapping(format: .ldp_vc, credential: credential, inputDescriptorId: "desc-1", identifier: "uuid-1", nestedPath: "$.verifiableCredential[0]"),
+            CredentialInputDescriptorMapping(format: .ldp_vc, credential: credential, inputDescriptorId: "desc-2", identifier: "uuid-2", nestedPath: "$.verifiableCredential[0]"),
         ]
         let unsignedResult = (vpTokenSigningPayload: ["uuid-1" : ldpToken, "uuid-2": ldpToken] as Any?, unsignedVPTokens: [unsignedVPToken, unsignedVPToken])
 
@@ -172,10 +172,17 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         // 1 VP per VC is constructed -> 2 VCs = 2 VPs
         XCTAssertEqual(result.vpTokens.count, 2)
         XCTAssertEqual(result.DescriptorMaps.count, 2)
-        XCTAssertEqual(result.DescriptorMaps[0].id, "desc-1")
-        XCTAssertEqual(result.DescriptorMaps[1].id, "desc-2")
-        XCTAssertEqual(result.DescriptorMaps[0].format, .ldp_vp)
-        XCTAssertEqual(result.DescriptorMaps[1].format, .ldp_vp)
+        let descriptorMap1: DescriptorMap = result.DescriptorMaps[0]
+        let descriptorMap2: DescriptorMap = result.DescriptorMaps[1]
+        
+        XCTAssertEqual(descriptorMap1.id, "desc-1")
+        XCTAssertEqual(descriptorMap2.id, "desc-2")
+        XCTAssertEqual(descriptorMap1.format, .ldp_vp)
+        XCTAssertEqual(descriptorMap2.format, .ldp_vp)
+        XCTAssertEqual(descriptorMap1.path, "$[0]")
+        XCTAssertEqual(descriptorMap2.path, "$[1]")
+        XCTAssertEqual(descriptorMap1.pathNested?.path, "$.verifiableCredential[0]")
+        XCTAssertEqual(descriptorMap2.pathNested?.path, "$.verifiableCredential[0]")
     }
 
     func testBuildThrowsWhenPayloadIsNotLdpVPToken() {
