@@ -255,9 +255,9 @@ class InvalidResponseMode: OpenID4VPException {
 }
 
 public class GenericFailure: OpenID4VPException {
-    public init(message: String = "", className: String) {
+    public init(errorCode: String = OpenID4VPErrorCodes.serverError,message: String = "", className: String) {
         let message = "Unknown error occurred \(message)"
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+        super.init(errorCode: errorCode, message: message, className: className)
     }
 }
 

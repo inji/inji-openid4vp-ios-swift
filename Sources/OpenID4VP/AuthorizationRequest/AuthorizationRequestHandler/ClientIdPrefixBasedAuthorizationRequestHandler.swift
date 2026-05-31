@@ -156,9 +156,9 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                 throw InvalidData(
                     message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
             }
-            throw GenericFailure(message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
+            throw GenericFailure(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
         } catch {
-            throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
+            throw GenericFailure(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
         }
         self.authorizationRequestParameters = try await validateRequestUriResponse(response.body, requestUriMethod: requestUriMethod)
     }
@@ -246,7 +246,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         
         authorizationRequestParameters = try specVersionHandler.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
         
-        try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters, networkManager: networkManager)
+        try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters,walletConfig: walletConfig, networkManager: networkManager)
     }
     
     final func setResponseUrl() throws {
@@ -316,7 +316,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             return try clientMetadataHandler.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
         }
 
-        func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], networkManager: NetworkManaging) async throws {
+        func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], walletConfig: WalletConfig, networkManager: NetworkManaging) async throws {
             switch self {
             case .specV1:
                 authorizationRequestParameters = try parseAndValidateDcqlQuery(authorizationRequestParameters)
@@ -329,7 +329,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                 }
                 return
            case .draft23:
-                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, true, networkManager)
+                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, walletConfig.isPresentationDefinitionUriSupported, networkManager)
             }
         }
         

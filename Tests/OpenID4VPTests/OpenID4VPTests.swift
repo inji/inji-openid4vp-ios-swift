@@ -395,7 +395,13 @@ class OpenID4VPTests: XCTestCase {
                 error,
                 expectedMessage: "Missing Input: presentation_definition->id param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest,
-                expectedVerifierResponse: VerifierResponse(statusCode: 200, responseBody: "{\"message\":\"Some additional info\",\"redirect_uri\":\"https://mock-verifier.com/redirect#response_code=200\"}", redirectUri: "https://mock-verifier.com/redirect#response_code=200", additionalParams: "{\"message\":\"Some additional info\"}", headers: ["Content-Type": "application/json"])
+                expectedVerifierResponse: VerifierResponse(
+                    statusCode: 200,
+                    responseBody: "{\"message\":\"Some additional info\",\"redirect_uri\":\"https://mock-verifier.com/redirect#response_code=200\"}",
+                    redirectUri: "https://mock-verifier.com/redirect#response_code=200",
+                    additionalParams: "{\"message\":\"Some additional info\"}",
+                    headers: ["Content-Type": "application/json"]
+                )
             )
         }
     }

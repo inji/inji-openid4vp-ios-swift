@@ -68,7 +68,7 @@ public class AuthorizationResponseHandler {
             resolvedError = openidError
         } else {
             resolvedError = GenericFailure(
-                message: "\(error)",
+                message: error.localizedDescription.isEmpty ? "Unknown internal error" : error.localizedDescription,
                 className: String(describing: OpenID4VP.self)
             )
         }

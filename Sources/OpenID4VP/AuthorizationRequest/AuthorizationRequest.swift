@@ -57,7 +57,6 @@ public class AuthorizationRequest: Encodable {
     
     
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,
-                                                      trustedVerifier: [Verifier],
                                                       walletConfig: WalletConfig,
                                                       setResponseUri: @escaping (String) -> Void,
                                                       shouldValidateClient: Bool,

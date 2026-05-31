@@ -23,8 +23,7 @@ final class AuthorizationRequestTests: XCTestCase {
     func testUrlEncodedPathReturnsAuthorizationRequestOnSuccess() async throws {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
-            trustedVerifier: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -42,8 +41,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlWithoutClientId,
-                trustedVerifier: trustedVerifiers,
-                walletConfig: WalletConfig(),
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -132,8 +130,7 @@ final class AuthorizationRequestTests: XCTestCase {
         // draft23: presentation_definition present → AuthorizationPresentationExchangeRequest
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
-            trustedVerifier: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -149,8 +146,7 @@ final class AuthorizationRequestTests: XCTestCase {
         // draft23: verify all base fields are populated correctly
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
-            trustedVerifier: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -181,8 +177,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: urlEncoded,
-            trustedVerifier: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -210,8 +205,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: urlEncoded,
-            trustedVerifier: trustedVerifiers,
-            walletConfig: WalletConfig(),
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -333,8 +327,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: malformedUrl,
-                trustedVerifier: trustedVerifiers,
-                walletConfig: WalletConfig(),
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -367,8 +360,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncNoThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncoded,
-                trustedVerifier: trustedVerifiers,
-                walletConfig: WalletConfig(),
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",

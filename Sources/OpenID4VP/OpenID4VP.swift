@@ -51,7 +51,6 @@ public class OpenID4VP {
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
-                trustedVerifier: walletConfig.trustedVerifiers,
                 walletConfig: walletConfig,
                 setResponseUri: setResponseUri,
                 shouldValidateClient: shouldValidateClient,

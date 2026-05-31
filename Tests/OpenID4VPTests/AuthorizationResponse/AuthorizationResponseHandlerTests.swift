@@ -527,7 +527,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: "wallet-nonce"
         )
         
-        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertEqual(response["error"] as? String, "server_error")
         XCTAssertNotNil(response["error_description"])
         XCTAssertEqual(response["state"] as? String, state)
     }
@@ -755,7 +755,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             walletNonce: "wallet-nonce"
         )
 
-        XCTAssertEqual(response["error"] as? String, "invalid_request")
+        XCTAssertEqual(response["error"] as? String, "server_error")
         XCTAssertNotNil(response["error_description"])
         XCTAssertEqual(response["state"] as? String, state)
     }

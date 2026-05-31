@@ -22,6 +22,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
+        
         authorizationResponse: AuthorizationResponse,
         walletNonce: String,
         walletConfig: WalletConfig
