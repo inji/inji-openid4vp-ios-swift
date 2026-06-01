@@ -140,10 +140,13 @@ public class OpenID4VP {
         vpTokenSigningResults: [VPTokenSigningResult]
     ) async throws -> VerifierResponse {
         do {
+            guard let responseUri = responseUri else {
+                throw UnsupportedOperationException(message: "Response URI is not available to send any response to Verifier", className: className)
+            }
             return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults,
-                responseUri: responseUri!
+                responseUri: responseUri
             )
         } catch {
              await safeSendError(error: error)

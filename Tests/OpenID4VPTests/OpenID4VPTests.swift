@@ -523,6 +523,14 @@ class OpenID4VPTests: XCTestCase {
             )
         }
     }
+    
+    func testSendVPResponseToVerifierThrowsErrorWhenResponseUriIsNotPopulated() async {
+        let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider())
+        
+        await XCTAssertAsyncThrowsError(try await openIdVP.sendVPResponseToVerifier(vpTokenSigningResults: [VPTokenSigningResult(signedData: "signed".data(using: .utf8) ?? Data())])) { error in
+            XCTAssertEqual(error.localizedDescription, "Response URI is not available to send any response to Verifier", "error_dispatch_failure")
+        }
+    }
 }
 
 
