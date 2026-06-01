@@ -473,7 +473,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
 
         XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: requestWithKeyWithoutAlg, authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletConfig: walletConfig)) { error in
-            assertOpenID4VPException(error, expectedMessage: "No encryption key with alg [\"ECDH-ES\"] found in JWK Set", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            assertOpenID4VPException(error, expectedMessage: "No jwk matching the specified algorithm found for encryption", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
@@ -564,7 +564,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             authorizationRequest: requestWithSigOnlyJwks,         walletConfig: walletConfig
         )) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "No encryption key with alg [\"ECDH-ES\"] found in JWK Set",
+                expectedMessage: "No jwk matching the specified algorithm found for encryption",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -669,6 +669,51 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                )
            }
        }
+
+    func testThrowErrorWhenDraft23JwksHasMultipleKeysMatchingAlgorithm() throws {
+        // getEncryptionKey throws "Multiple jwks matching the specified algorithm found for encryption"
+        // when multiple keys share the same algorithm and no single enc-use key can be selected.
+        let cases: [(description: String, keys: [[String: Any]])] = [
+            (
+                "multiple enc keys with same alg",
+                [
+                    ["kty": "OKP", "crv": "X25519", "use": "enc", "alg": "ECDH-ES", "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4", "kid": "enc-key-1"],
+                    ["kty": "OKP", "crv": "X25519", "use": "enc", "alg": "ECDH-ES", "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA5", "kid": "enc-key-2"]
+                ]
+            ),
+            (
+                "multiple keys with same alg but no explicit use",
+                [
+                    ["kty": "OKP", "crv": "X25519", "alg": "ECDH-ES", "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4", "kid": "key-1"],
+                    ["kty": "OKP", "crv": "X25519", "alg": "ECDH-ES", "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA5", "kid": "key-2"]
+                ]
+            )
+        ]
+
+        for testCase in cases {
+            let clientMetadata: [String: Any] = [
+                "client_name": "Requester name",
+                "authorization_encrypted_response_alg": "ECDH-ES",
+                "authorization_encrypted_response_enc": "A256GCM",
+                "jwks": ["keys": testCase.keys],
+                "vp_formats": ["ldp_vp": ["proof_type": ["Ed25519Signature2018"]]]
+            ]
+            XCTAssertThrowsError(
+                try directPostJwtResponseModeHandler.validate(
+                    clientMetadata: createInstance(clientMetadata, as: ClientMetadataDraft23.self),
+                    walletConfig: walletConfig,
+                    shouldValidateWithWalletMetadata: false
+                ),
+                testCase.description
+            ) { error in
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: "Multiple jwks matching the specified algorithm found for encryption",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
+            }
+        }
+    }
 
     // MARK: - getResponseEndpoint
 

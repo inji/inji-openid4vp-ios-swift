@@ -41,55 +41,6 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             XCTAssertEqual("Response has been shared successfully here.", result.body)
         }
     }
-
-    func testShouldThrowErrorIfNoJwkMatchingUseKeyIsFound() throws {
-            
-            let clientMetadataStr = """
-            {
-                "client_name": "Requestername",
-                "logo_uri": "<logo_uri>",
-                "authorization_encrypted_response_alg": "ECDH-ES",
-                "authorization_encrypted_response_enc": "A256GCM",
-                "jwks": {
-                    "keys": [
-                        {
-                            "kty": "OKP",
-                            "crv": "X25519",
-                            "use": "sig",
-                            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-                            "alg": "ECDH-ES",
-                            "kid": "ed-key1"
-                        }
-                    ]
-                },
-                "vp_formats": {
-                    "mso_mdoc": {
-                        "alg": ["ES256"]
-                    }
-                }
-            }
-            """
-
-            let clientMetadata = try JSONDecoder().decode(ClientMetadataDraft23.self, from: Data(clientMetadataStr.utf8))
-            let handler = DirectPostJwtResponseModeHandler()
-
-            
-            let expectedMessage = "No jwk matching the specified algorithm found for encryption"
-
-            XCTAssertThrowsError(
-                try handler.validate(
-                    clientMetadata: clientMetadata,
-                    walletConfig: walletConfig,
-                    shouldValidateWithWalletMetadata: false
-                )
-            ) { error in
-                assertOpenID4VPException(
-                    error,
-                    expectedMessage: expectedMessage,
-                    expectedCode: OpenID4VPErrorCodes.invalidRequest
-                )
-            }
-        }
     
     func testShouldReturnGetAuthorizationSuccessResponseSuccesfully() throws {
         let handler = DirectPostResponseModeHandler()

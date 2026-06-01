@@ -32,13 +32,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
 
         try validateEncryption(verifierEncryptionAlg: [encryptedResponseAlgorithm], verifierEnc: enc, jwks: jwks, walletConfig: walletConfig, shouldValidate: shouldValidateWithWalletMetadata)
-        
-        if !jwks.keys.contains(where: { $0.algorithm == encryptedResponseAlgorithm && $0.publicKeyUse == .encryption}) {
-            throw InvalidData(
-                message: "No jwk matching the specified algorithm found for encryption",
-                className: className
-            )
-        }
+        _ = try getEncryptionKey(jwks, [encryptedResponseAlgorithm])
     }
     
     func validate(clientMetadata: ClientMetadata?,
@@ -72,6 +66,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         }
         let verifierEncrptionAlgorithms = encryptionKeys.compactMap { $0.algorithm }
         try validateEncryption(verifierEncryptionAlg: verifierEncrptionAlgorithms, verifierEnc: enc, jwks: jwks, walletConfig: walletConfig, shouldValidate: shouldValidateWithWalletMetadata)
+        _ = try getEncryptionKey(jwks, walletConfig.authorizationEncryptionAlgValuesSupported?.compactMap { $0.rawValue } ?? [EncryptionAlgorithm.ecdhES.rawValue])
     }
     
     private func validateEncryption(verifierEncryptionAlg: [String], verifierEnc: Any, jwks: JWKSet, walletConfig: WalletConfig, shouldValidate: Bool) throws {

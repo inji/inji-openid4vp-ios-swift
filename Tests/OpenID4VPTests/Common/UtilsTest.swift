@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+import JSONWebKey
 @testable import OpenID4VP
 
 struct MockDataClass: Codable {
@@ -226,6 +227,100 @@ class UtilsTest : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await resolveJwksFromUri(self.jwksUri, networkManager: self.mockNetworkManager, className: self.testClassName)) { error in
             assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Unable to fetch/parse jwks from https://example.com/jwks due to Network request failed with error response - Simulated network error", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
+
+    // MARK: - getEncryptionKey Tests
+
+    private func makeJWK(alg: String, use: String = "enc", kid: String = "key1") throws -> JWK {
+        let dict: [String: Any] = ["kty": "OKP", "crv": "X25519", "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4", "alg": alg, "use": use, "kid": kid]
+        return try JSONDecoder().decode(JWK.self, from: JSONSerialization.data(withJSONObject: dict))
+    }
+
+    private func makeJWKSet(_ jwks: [JWK]) -> JWKSet {
+        JWKSet(keys: jwks)
+    }
+
+    func testGetEncryptionKeyReturnsSingleMatchingKey() throws {
+        let encKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let jwks = makeJWKSet([encKey])
+
+        let result = try getEncryptionKey(jwks, ["ECDH-ES"])
+
+        XCTAssertEqual(result.keyID, "enc1")
+        XCTAssertEqual(result.algorithm, "ECDH-ES")
+    }
+
+    func testGetEncryptionKeyThrowsWhenNoKeyMatchesAlgorithm() throws {
+        let sigKey = try makeJWK(alg: "EdDSA", use: "sig", kid: "sig1")
+        let jwks = makeJWKSet([sigKey])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, ["ECDH-ES"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "No jwk matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetEncryptionKeyThrowsWhenJwksIsEmpty() throws {
+        let jwks = makeJWKSet([])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, ["ECDH-ES"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "No jwk matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetEncryptionKeyReturnsEncKeyWhenMultipleMatchingKeysExist() throws {
+        let sigKey = try makeJWK(alg: "ECDH-ES", use: "sig", kid: "sig1")
+        let encKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let jwks = makeJWKSet([sigKey, encKey])
+
+        let result = try getEncryptionKey(jwks, ["ECDH-ES"])
+
+        XCTAssertEqual(result.keyID, "enc1")
+        XCTAssertEqual(result.publicKeyUse, .encryption)
+    }
+
+    func testGetEncryptionKeyThrowsWhenMultipleEncKeysMatchAlgorithm() throws {
+        let encKey1 = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let encKey2 = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc2")
+        let jwks = makeJWKSet([encKey1, encKey2])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, ["ECDH-ES"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Multiple jwks matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetEncryptionKeyPicksFirstMatchingAlgorithmInPreferenceOrder() throws {
+        let ecdhKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "ecdh1")
+        let jwks = makeJWKSet([ecdhKey])
+
+        let result = try getEncryptionKey(jwks, ["ECDH-ES+A256KW", "ECDH-ES"])
+
+        XCTAssertEqual(result.keyID, "ecdh1")
+        XCTAssertEqual(result.algorithm, "ECDH-ES")
+    }
+
+    func testGetEncryptionKeyThrowsWhenNoAlgorithmsProvided() throws {
+        let encKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let jwks = makeJWKSet([encKey])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, [])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "No jwk matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }
