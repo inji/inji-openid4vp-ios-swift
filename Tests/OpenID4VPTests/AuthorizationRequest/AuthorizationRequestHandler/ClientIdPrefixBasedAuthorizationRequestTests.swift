@@ -1455,10 +1455,18 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         }
     }
 
-    func testSpecVersion1ThrowsErrorWhenDirectPostResponseModeHasNoState() async {
+    func testSpecVersion1ThrowsErrorWheAtleastOneCredentialQueryHasNoCryptographicBindingRequestButHasNoState() async {
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
             paramList: authRequestWithPreRegisteredByValue,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters, ["state": nil]),
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters, [
+                "state": nil,
+                "dcql_query": [
+                    "credentials": [
+                        [ "id": "cred1", "format": "dc+sd-jwt", "meta": [:], "require_cryptographic_holder_binding": false],
+                        [ "id": "cred2", "format": "mso_mdoc", "meta": [:]],
+                        [ "id": "cred3", "format": "ldp_vc", "meta": [:]]
+                    ]
+                ]]),
             specVersion: .v1,
             addEncryptionClientMetadataParams: false
         ) as [String: Any]
@@ -1476,7 +1484,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
 
         await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
-                expectedMessage: "state parameter must be available for direct_post",
+                expectedMessage: "Missing Input: state param is required",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

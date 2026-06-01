@@ -321,10 +321,9 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             case .specV1:
                 authorizationRequestParameters = try parseAndValidateDcqlQuery(authorizationRequestParameters)
                 
-                let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
-                if responseMode == ResponseMode.directPost.rawValue {
-                    guard let state = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]), isNeitherNullNorEmpty(field: state) else {
-                        throw InvalidData(message: "state parameter must be available for direct_post", className: "SpecVersionHandlerV1")
+                if let dcqlQuery = (authorizationRequestParameters[AuthorizationRequestFieldConstants.dcqlQuery.rawValue]) as? DCQLQuery {
+                    if dcqlQuery.credentials.contains(where: { !$0.requireCryptographicHolderBinding }) {
+                        try validateAttribute(AuthorizationRequestFieldConstants.state.rawValue, values: authorizationRequestParameters)
                     }
                 }
                 return
