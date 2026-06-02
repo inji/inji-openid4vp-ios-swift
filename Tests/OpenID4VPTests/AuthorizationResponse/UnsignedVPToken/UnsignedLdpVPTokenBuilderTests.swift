@@ -10,6 +10,27 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
 
     // MARK: - build(credentialInputDescriptorMappings:) tests
 
+    func testThrowsWhenAuthorizationRequestIsNotPresentationExchangeRequest() async throws {
+        let builder = UnsignedLdpVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .v1),
+            specVersion: .v1,
+            id: "vp-id"
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .ldp_vc, credential: AnyCodable(ldpVC()), inputDescriptorId: "cred-input-1")
+        ]
+
+        await XCTAssertAsyncThrowsError(
+            try await builder.build(credentialInputDescriptorMappings: &mappings)
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Expected AuthorizationPresentationExchangeRequest for Presentation Exchange flow",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     func testCreationOfUnsignedLdpVPToken() async throws {
         let builder = UnsignedLdpVPTokenBuilder(
             authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),

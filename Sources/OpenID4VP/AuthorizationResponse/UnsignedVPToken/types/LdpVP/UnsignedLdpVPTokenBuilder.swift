@@ -24,7 +24,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
     
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
         guard (authorizationRequest as? AuthorizationPresentationExchangeRequest) != nil else {
-            throw InvalidData(message: "Expected AuthorizationDcqlRequest for Presentation Exchange flow", className: className)
+            throw InvalidData(message: "Expected AuthorizationPresentationExchangeRequest for Presentation Exchange flow", className: className)
         }
         
         var unsignedVPTokens: [UnsignedVPToken] = []
@@ -83,17 +83,12 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 throw InvalidData(message: "No matching credential query found for credential query id: \(credentialQueryId)", className: className)
             }()
             
-            if(mappedCredentialQuery.requireCryptographicHolderBinding) {
-                vpTokenSigningPayloads[uuid] = .vc(LdpVCToken(verifiableCredential: credential))
-            }
-            
-            let result = mappedCredentialQuery.requireCryptographicHolderBinding ? try extractHolderAndSignatureSuite(credential) : nil
-            
-            if !mappedCredentialQuery.requireCryptographicHolderBinding {
+            if(!mappedCredentialQuery.requireCryptographicHolderBinding) {
                 vpTokenSigningPayloads[uuid] = .vc(LdpVCToken(verifiableCredential: credential))
                 continue
             }
             
+            let result = mappedCredentialQuery.requireCryptographicHolderBinding ? try extractHolderAndSignatureSuite(credential) : nil
             let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
                 with: verifiableCredentials,
                 signatureSuite: result?.signatureSuite,
@@ -212,10 +207,10 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         guard let holderId = holderId else {
             return nil
         }
-        let cleaned = holderId
+        let sanitizedHolderId = holderId
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "=", with: "")
-        return cleaned.contains("#") ? cleaned : cleaned + "#0"
+        return sanitizedHolderId.contains("#") ? sanitizedHolderId : sanitizedHolderId + "#0"
     }
 }
