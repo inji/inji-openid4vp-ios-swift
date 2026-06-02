@@ -310,13 +310,29 @@ func resolveSdJwtKeyAndAlg(_ sdJwtCredential: String) async throws -> (keyRef: S
 }
 
 func getEncryptionKey(_ jwks: JWKSet, _ supportedEncryptionAlgorithms: [String]) throws -> JWK {
-    for alg in supportedEncryptionAlgorithms {
-        if let key = jwks.keys.first(where: { $0.algorithm == alg && $0.publicKeyUse == .encryption }) {
-            return key
-        }
+    let matchingKeys = jwks.keys.filter { supportedEncryptionAlgorithms.contains($0.algorithm ?? "") }
+
+    guard !matchingKeys.isEmpty else {
+        throw InvalidData(
+            message: "No jwk matching the specified algorithm found for encryption",
+            className: "OpenID4VPUtils"
+        )
     }
-    
-    throw InvalidData(message: "No encryption key with alg \(supportedEncryptionAlgorithms) found in JWK Set", className: "OpenID4VPUtils")
+
+    if matchingKeys.count == 1 {
+        return matchingKeys[0]
+    }
+
+    let encryptionKeys = matchingKeys.filter { $0.publicKeyUse == .encryption }
+
+    if encryptionKeys.count == 1 {
+        return encryptionKeys[0]
+    }
+
+    throw InvalidData(
+        message: "Multiple jwks matching the specified algorithm found for encryption",
+        className: "OpenID4VPUtils"
+    )
 }
 
 func matchingDCQLCredentialQuery(_  authorizationRequest: AuthorizationRequest, for credentialQueryId: String, className: String) throws -> CredentialQuery {
