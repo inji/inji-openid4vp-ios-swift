@@ -10,9 +10,9 @@ enum ClientMetadataSpecVersionHandler {
     }
     
     func parseAndValidate(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletConfig: WalletConfig) throws -> [String: Any] {
-        let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
+        let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata
         var mutableParams = authorizationRequest
-        if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata.rawValue] {
+        if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata] {
             switch self {
             case .draft23:
                 if let clientMetadataInstance = clientMetadata as? ClientMetadataDraft23 {
@@ -45,7 +45,7 @@ enum ClientMetadataSpecVersionHandler {
             }
         }
         
-        let responseMode = authorizationRequest[AuthorizationRequestFieldConstants.responseMode.rawValue] as? String
+        let responseMode = authorizationRequest[AuthorizationRequestFieldConstants.responseMode] as? String
         let parsedClientMetadata = mutableParams[clientMetadataKey]
         switch self {
         case .v1:

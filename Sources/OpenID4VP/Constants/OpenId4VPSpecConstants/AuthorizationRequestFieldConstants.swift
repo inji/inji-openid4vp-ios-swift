@@ -1,26 +1,27 @@
-public enum AuthorizationRequestFieldConstants: String {
-    case clientId = "client_id"
+public struct AuthorizationRequestFieldConstants {
+    static let clientId = "client_id"
     
-    case responseType = "response_type"
-    case responseMode = "response_mode"
+    static let responseType = "response_type"
+    static let responseMode = "response_mode"
     
-    case presentationDefinition = "presentation_definition"
-    case presentationDefinitionUri = "presentation_definition_uri"
-    case dcqlQuery = "dcql_query"
-    case scope = "scope"
+    static let presentationDefinition = "presentation_definition"
+    static let presentationDefinitionUri = "presentation_definition_uri"
+    static let dcqlQuery = "dcql_query"
+    static let scope = "scope"
     
-    case responseUri = "response_uri"
-    case redirectUri = "redirect_uri"
+    static let responseUri = "response_uri"
+    static let redirectUri = "redirect_uri"
     
-    case requestUri = "request_uri"
-    case request = "request"
-    case requestUriMethod = "request_uri_method"
+    static let requestUri = "request_uri"
+    static let request = "request"
+    static let requestUriMethod = "request_uri_method"
     
-    case nonce = "nonce"
-    case walletNonce = "wallet_nonce"
-    case state = "state"
+    static let nonce = "nonce"
+    static let walletNonce = "wallet_nonce"
+    static let state = "state"
     
-    case clientMetadata = "client_metadata"
+    static let transactionData = "transaction_data"
     
-    case transactionData = "transaction_data"
+    static let clientMetadata = "client_metadata"
+    static let walletMetadata = "wallet_metadata"
 }

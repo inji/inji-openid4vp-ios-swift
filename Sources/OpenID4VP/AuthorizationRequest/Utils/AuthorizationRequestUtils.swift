@@ -25,7 +25,7 @@ func validateAttribute(
 }
 
 func validateAuthorizationRequestObjectAndParameters(params: [String: Any], requestObject: [String: Any]) throws {
-    guard params[AuthorizationRequestFieldConstants.clientId.rawValue] as? String == requestObject[AuthorizationRequestFieldConstants.clientId.rawValue] as? String else {
+    guard params[AuthorizationRequestFieldConstants.clientId] as? String == requestObject[AuthorizationRequestFieldConstants.clientId] as? String else {
         throw MismatchingClientIDInRequest(className: AuthorizationRequest.className)
     }
 }
@@ -74,8 +74,8 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                     walletNonce: String,
                                     networkManager: NetworkManaging
 ) throws -> ClientIdPrefixBasedAuthorizationRequestHandler {
-    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParameters)
-    let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
+    try validateAttribute(AuthorizationRequestFieldConstants.clientId, values: authorizationRequestParameters)
+    let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String ?? ""
     
     let clientIdPrefix = try extractClientIdPrefix(authorizationRequestParams: authorizationRequestParameters)
     let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: walletConfig.trustedVerifiers)
@@ -165,8 +165,8 @@ func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) t
 }
 
 func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> String {      
-    try validateAttribute(AuthorizationRequestFieldConstants.clientId.rawValue, values: authorizationRequestParams)
-    let clientId = authorizationRequestParams[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? ""
+    try validateAttribute(AuthorizationRequestFieldConstants.clientId, values: authorizationRequestParams)
+    let clientId = authorizationRequestParams[AuthorizationRequestFieldConstants.clientId] as? String ?? ""
     
     let components = clientId.split(separator: ":", maxSplits: 1)
         
@@ -218,16 +218,22 @@ func validateResponseTypeSupported(_ responseType: String) throws {
 
 internal func findSpecVersionUsingRequestParameters(_ authorizationRequestParameters: [String : Any]) -> SpecVersion {
     // In case of By value mode of Request - understand the spec version based on presence of `dcql_query`
-    if authorizationRequestParameters[AuthorizationRequestFieldConstants.dcqlQuery.rawValue] != nil {
+    if authorizationRequestParameters[AuthorizationRequestFieldConstants.dcqlQuery] != nil {
         return .v1
     }
     return .draft23
 }
 
+/**
+ 
+ 
+ 
+ */
+
 internal func findSpecVersion(clientId: String, clientIdPrefix: String, authorizationRequestParameters: [String: Any], trustedVerifiers: [Verifier]) -> SpecVersion {
     // In case of By reference mode of Request - get the client ID and understand the spec version
     // Client ID Prefix - redirect_uri is not supported for by reference request, since signed requests are not supported by that client ID prefix.
-    if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] != nil) {
+    if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri] != nil) {
         if clientIdPrefix == ClientIdScheme.did.rawValue {
             return .draft23
         } else if clientIdPrefix == ClientIdPrefix.decentralizedIdentifier.rawValue {

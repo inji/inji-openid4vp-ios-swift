@@ -78,9 +78,9 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     // Validate client tests
     func testThrowInvalidRequestFieldErrorForClientIdFieldWhenGettingAuthRequestHandler() {
         let testCases: [TestCase] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId: "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId: ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId: "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
             TestCase(input: [:], expectedError: "Missing Input: client_id param is required")
         ]
         
@@ -117,10 +117,10 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     ///Extraction of client identifier scheme from Authorization request client_id property
     
     func testExtractClientIdPrefixWithValidInput(){
-        let result1 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"mock-client"])
-        let result2 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"redirect_uri:https://mock-verifier.com"])
-        let result3 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"did:example#1"])
-        let result4 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"decentralized_identifier:did:example#1"])
+        let result1 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"mock-client"])
+        let result2 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"redirect_uri:https://mock-verifier.com"])
+        let result3 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"did:example#1"])
+        let result4 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"decentralized_identifier:did:example#1"])
         
         XCTAssertEqual(result1, "pre-registered")
         XCTAssertEqual(result2, "redirect_uri")
@@ -129,7 +129,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     }
     
     func testExtractClientidThrowErrorWhenClientIdIsEmpty(){
-        XCTAssertThrowsError(try extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:""])){ error in
+        XCTAssertThrowsError(try extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:""])){ error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Invalid Input: client_id value cannot be empty or null",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest

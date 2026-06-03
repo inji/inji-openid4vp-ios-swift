@@ -184,8 +184,8 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorWhenRequestValueIsInvalid() async {
         let authorizationRequestParametersByValue: [String : Any] = [
-            AuthorizationRequestFieldConstants.request.rawValue: "",
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client-id"
+            AuthorizationRequestFieldConstants.request: "",
+            AuthorizationRequestFieldConstants.clientId: "mock-client-id"
         ]
         let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
             authorizationRequestParameters: authorizationRequestParametersByValue,
@@ -780,7 +780,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchAuthorizationRequestByReferenceAndRequestUriMethodIsPostPassWalletMetadata() async{
         var authorizationRequestWithPostRequestUriMethod = authorizationRequestParamsWithValue
-        authorizationRequestWithPostRequestUriMethod[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] = "post"
+        authorizationRequestWithPostRequestUriMethod[AuthorizationRequestFieldConstants.requestUriMethod] = "post"
         
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdPrefix: .preRegistered,
@@ -813,7 +813,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!),
             applicableFields: authRequestWithRedirectUriByValue, specVersion: .v1
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: [AuthorizationRequestFieldConstants.clientId.rawValue, "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!)) as [String : Any]
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: [AuthorizationRequestFieldConstants.clientId, "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!)) as [String : Any]
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString, responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
             authorizationRequestParameters: authorizationRequestParameters,
@@ -1021,11 +1021,11 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
         let testCases: [TestCase<[String: String?], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -1155,10 +1155,10 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testInvalidRequestFieldThrowErrorForResponseTypeField() async {
         let testCases: [TestCase<[String: Any?], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -1216,9 +1216,9 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testInvalidRequestFieldErrorForResponseModeField() async {
         let testCases: [TestCase<[String: Any], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -1322,7 +1322,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenTransactionDataIsPresentInAuthorizationRequest() async {
-        let authorizationRequestParameters: [String: Any] = mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, [AuthorizationRequestFieldConstants.transactionData.rawValue: ["foo": "bar"]])
+        let authorizationRequestParameters: [String: Any] = mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, [AuthorizationRequestFieldConstants.transactionData: ["foo": "bar"]])
         let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
             authorizationRequestParameters: authorizationRequestParameters,
             setResponseUri: mockSetResponseUri,

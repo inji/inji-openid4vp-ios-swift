@@ -526,8 +526,8 @@ let authorizationRequestParamsWithRedirectUri: [String: Any] = [
 let urlEncodedAuthRequestWithPresentationDefinitionUri = createUrlEncodedAuthorizationRequest(
     requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters),
     clientIdPrefix: .preRegistered,
-    applicableFields: authRequestWithPreRegisteredByValue.map {
-        $0 == AuthorizationRequestFieldConstants.presentationDefinition.rawValue ? AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue : $0
+    applicableFields: authRequestWithPreRegisteredByValue.map { field in
+        field == "presentation_definition" ? "presentation_definition_uri" : field
     },
     addEncryptionClientMetadataParams: false
 )
@@ -536,7 +536,7 @@ let urlEncodedAuthRequestWithPresentationDefinitionUri = createUrlEncodedAuthori
 let testValidUrlEncodedVPRequestWithRedirectUri = createUrlEncodedAuthorizationRequest(
     requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
     clientIdPrefix: .redirectUri,
-    applicableFields: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 },
+    applicableFields: authRequestWithRedirectUriByValue.map { $0 == "redirect_uri" ? "response_uri" : $0 },
     addEncryptionClientMetadataParams: false
 )
 

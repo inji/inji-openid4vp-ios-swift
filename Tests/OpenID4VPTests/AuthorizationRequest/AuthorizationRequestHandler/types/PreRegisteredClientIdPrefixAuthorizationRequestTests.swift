@@ -11,7 +11,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     }
     
     let requestUriResponse: String = createAuthorizationRequestObject(clientIdPrefix: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue,[
-        AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
+        AuthorizationRequestFieldConstants.clientId: "mock-client",
     ]), applicableFields: authRequestWithPreRegisteredByValue)
     let requestUri: URL = URL(string: "https://mock-verifier.com/verifier/get-auth-request-obj")!
     
@@ -25,7 +25,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     func testThrowExceptionWhenClientIdIsNotAvailableAsTrustedVerifier(){
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "untrusted-mock-client",
+            AuthorizationRequestFieldConstants.clientId: "untrusted-mock-client",
         ])) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
@@ -40,7 +40,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     
     func testThrowExceptionWhenTrustedVerifiersListIsEmpty(){
-        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "other-mock-client","response_uri": "https://mock-verifier.com"]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId: "other-mock-client","response_uri": "https://mock-verifier.com"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.validateClientId()) { error in
@@ -63,13 +63,13 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     
     func testisUnsignedRequestSupported_shouldValidateClientFalse_returnsTrue() {
-        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         XCTAssertTrue(try preRegistered.isUnsignedRequestSupported(), "Should return true when shouldValidateClient is false")
     }
     
     func testisUnsignedRequestSupported_shouldValidateClientTrue_clientIdNotAvailable_throwsError() {
-        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "untrusted-client"]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId: "untrusted-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.isUnsignedRequestSupported()) { error in
@@ -79,14 +79,14 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     func testisUnsignedRequestSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedFalse_returnsFalse() {
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: false)]
-        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: createWalletConfig(trustedVerifiers: trustedVerifiers), shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         XCTAssertFalse(try preRegistered.isUnsignedRequestSupported(), "Should return false when allowUnsignedRequest is false")
     }
     
     func testisUnsignedRequestSupported_shouldValidateClientTrue_clientIdAvailable_allowUnsignedTrue_returnsTrue() {
         let trustedVerifiers = [Verifier(clientId: "mock-client", responseUris: ["https://mock-verifier.com"], allowUnsignedRequest: true)]
-        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client"]
+        let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId: "mock-client"]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: createWalletConfig(trustedVerifiers: trustedVerifiers), shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         XCTAssertTrue(try preRegistered.isUnsignedRequestSupported(), "Should return true when allowUnsignedRequest is true")
     }
@@ -166,7 +166,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     func testProcessingWalletMetadataSuccessfully()async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
+            AuthorizationRequestFieldConstants.clientId: "mock-client",
         ])) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
@@ -193,7 +193,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     func testShouldThrowErrorForWalletMetadataProcessingWhenRequestObjectSigningAlgValuesSupportedisNil() async throws {
         let walletConfig = createWalletConfig(requestObjectSigningAlgValuesSupported: nil)
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
+            AuthorizationRequestFieldConstants.clientId: "mock-client",
         ])) as [String : Any]
         
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)

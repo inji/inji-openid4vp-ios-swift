@@ -372,7 +372,7 @@ final class AuthorizationRequestTests: XCTestCase {
     func testDictionaryPathDoesNotErrorOutForUnknownClientIDScheme() async {
         // default branch: same check via the dictionary path
         let authRequest: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "https://mock-verifier.com"
+            AuthorizationRequestFieldConstants.clientId: "https://mock-verifier.com"
         ]), addEncryptionClientMetadataParams: false) as [String : Any]
 
         await XCTAssertAsyncNoThrowsError(

@@ -2,8 +2,8 @@ import XCTest
 @testable import OpenID4VP
 
 final class ClientMetadataUtilTests: XCTestCase {
-    private let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
-    private let responseModeKey = AuthorizationRequestFieldConstants.responseMode.rawValue
+    private let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata
+    private let responseModeKey = AuthorizationRequestFieldConstants.responseMode
     
     // Spec version Draft 23 client metadata parsing tests
     func testParsingOfClientMetadataAvailableAsString() throws {

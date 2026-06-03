@@ -2,13 +2,13 @@ import Foundation
 
 fileprivate let className = "DcqlQueryParser"
 
-fileprivate let dcqlQueryKey = AuthorizationRequestFieldConstants.dcqlQuery.rawValue
+fileprivate let dcqlQueryKey = AuthorizationRequestFieldConstants.dcqlQuery
 
 func parseAndValidateDcqlQuery(
     _ authorizationRequest: [String: Any]
 ) throws -> [String: Any] {
     if let dcqlQuery = authorizationRequest[dcqlQueryKey] {
-        if authorizationRequest[AuthorizationRequestFieldConstants.scope.rawValue] != nil {
+        if authorizationRequest[AuthorizationRequestFieldConstants.scope] != nil {
             throw InvalidData(
                 message: "The request contains both a dcql_query parameter and a scope parameter",
                 className: className

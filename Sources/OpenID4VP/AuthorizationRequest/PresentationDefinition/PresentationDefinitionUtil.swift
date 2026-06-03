@@ -37,7 +37,7 @@ func parseAndValidatePresentationDefinition(
                 )
             }
             
-            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition.rawValue], className: className)
+            finalPresentationDefinition = try convertToInstance(valueStr, as: PresentationDefinition.self, fieldPath: [AuthorizationRequestFieldConstants.presentationDefinition], className: className)
         } else if let presentationDefinitionJson = value as? [String: Any] {
             //Presentation Definition is of type Dictionary when auth request obtained by reference
             do {
@@ -56,7 +56,7 @@ func parseAndValidatePresentationDefinition(
                 code: OpenID4VPErrorCodes.invalidPresentationDefinitionReference
             )
         }
-    } else if hasPresentationDefinitionUri, let uriValue = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue] {
+    } else if hasPresentationDefinitionUri, let uriValue = authorizationRequest[AuthorizationRequestFieldConstants.presentationDefinitionUri] {
         
         if !isPresentationDefinitionUriSupported {
             throw InvalidData(
@@ -70,7 +70,7 @@ func parseAndValidatePresentationDefinition(
               isNeitherNullNorEmpty(field: uriString),
               uriString != "null" else {
             throw InvalidInput(
-                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue],
+                fieldPath: [AuthorizationRequestFieldConstants.presentationDefinitionUri],
                 className: className
             )
         }
@@ -128,11 +128,11 @@ func parseAndValidatePresentationDefinition(
         )
     }
     
-    let responseMode = getStringValue(authorizationRequest[AuthorizationRequestFieldConstants.responseMode.rawValue])
+    let responseMode = getStringValue(authorizationRequest[AuthorizationRequestFieldConstants.responseMode])
     try validateForCredentialFormat(finalPresentationDefinition, responseMode: responseMode)
     
     var mutableParams = authorizationRequest
-    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition.rawValue] = finalPresentationDefinition
+    mutableParams[AuthorizationRequestFieldConstants.presentationDefinition] = finalPresentationDefinition
     
     return mutableParams
 }

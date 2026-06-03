@@ -6,7 +6,7 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     var verifiers: [Verifier] = []
     
     for verifierData in verifierList {
-        if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId.rawValue] as? String,
+        if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId] as? String,
            let responseUris = verifierData["response_uris"] as? [String] {
             let jwksUri = verifierData["jwks_uri"] as? String
             
@@ -116,8 +116,8 @@ func createAuthorizationRequest(
     if(isSigned){
         let request = JWSUtil.create(payload: authorizationRequestParam as [String : Any])
         authorizationRequestParam = [
-            AuthorizationRequestFieldConstants.request.rawValue: request,
-            AuthorizationRequestFieldConstants.clientId.rawValue: requestParams[AuthorizationRequestFieldConstants.clientId.rawValue] ?? ""
+            AuthorizationRequestFieldConstants.request: request,
+            AuthorizationRequestFieldConstants.clientId: requestParams[AuthorizationRequestFieldConstants.clientId] ?? ""
         ]
     }
     return authorizationRequestParam
@@ -144,7 +144,7 @@ func createAuthorizationRequestObject(
         }
     }
     let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams, specVersion: specVersion, isPresentationExchangeByReference: isPresentationExchangeByReference, addEncryptionClientMetadataParams: addEncryptionClientMetadataParams)
-//        authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
+//        authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce] = "mock-nonce"
     
     return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
 }

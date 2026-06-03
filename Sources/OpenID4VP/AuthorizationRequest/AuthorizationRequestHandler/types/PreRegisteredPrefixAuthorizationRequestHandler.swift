@@ -30,7 +30,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     
     override func validateClientId() throws {
         if shouldValidateClient {
-            guard walletConfig.trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String }) else {
+            guard walletConfig.trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String }) else {
                 throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
             }
         }
@@ -49,7 +49,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     
     func isUnsignedRequestSupported() throws -> Bool {
         if shouldValidateClient {
-            let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue]) ?? ""
+            let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId]) ?? ""
             let preRegisteredVerifier = try verifier(clientId: clientId)
             return preRegisteredVerifier.allowUnsignedRequest
         }
@@ -57,7 +57,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     }
     
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType {
-        let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String
+        let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String
         
         let preRegisteredClient = try verifier(clientId: clientId ?? "")
         if let jwksUri = preRegisteredClient.jwksUri {
@@ -76,10 +76,10 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     
     override func validateAndParseRequestFields() async throws {
         if shouldValidateClient {
-            let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as! String
+            let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as! String
             let preRegisteredClient = try verifier(clientId: clientId)
             
-            let responseUri = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]) ?? "null"
+            let responseUri = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri]) ?? "null"
             guard preRegisteredClient.responseUris.contains(responseUri) else {
                 throw InvalidVerifier(
                     message: "response_uri trust cannot be established",

@@ -94,17 +94,17 @@ public struct WalletConfig: Codable {
                     }
                 }
                 walletMetadata[MetadataConstants.vpFormatsSupported] = vpFormatsEncoded
-                walletMetadata[MetadataConstants.clientIdPrefixesSupported] = clientIdPrefixesSupported.map { $0.rawValue }
+                walletMetadata[WalletMetadataConstants.clientIdPrefixesSupported] = clientIdPrefixesSupported.map { $0.rawValue }
                 if let requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported {
-                    walletMetadata[MetadataConstants.requestObjectSigningAlgValuesSupported] = requestObjectSigningAlgValuesSupported.map { $0.rawValue }
+                    walletMetadata[WalletMetadataConstants.requestObjectSigningAlgValuesSupported] = requestObjectSigningAlgValuesSupported.map { $0.rawValue }
                 }
                 if let authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported {
-                    walletMetadata[MetadataConstants.authorizationEncryptionAlgValuesSupported] = authorizationEncryptionAlgValuesSupported.map { $0.rawValue }
+                    walletMetadata[WalletMetadataConstants.authorizationEncryptionAlgValuesSupported] = authorizationEncryptionAlgValuesSupported.map { $0.rawValue }
                 }
                 if let authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported {
-                    walletMetadata[MetadataConstants.authorizationEncryptionEncValuesSupported] = authorizationEncryptionEncValuesSupported.map { $0.rawValue }
+                    walletMetadata[WalletMetadataConstants.authorizationEncryptionEncValuesSupported] = authorizationEncryptionEncValuesSupported.map { $0.rawValue }
                 }
-                walletMetadata[MetadataConstants.responseTypesSupported] = responseTypesSupported.map { $0.rawValue }
+                walletMetadata[WalletMetadataConstants.responseTypesSupported] = responseTypesSupported.map { $0.rawValue }
                 
             case .draft23:
                 let vpFormats: [String: Any] = vpFormatsSupported.reduce(into: [:]) { result, item in
@@ -115,23 +115,23 @@ public struct WalletConfig: Codable {
                         result[formatKey] = [String: Any]()
                     }
                 }
-                walletMetadata[MetadataConstants.presentationDefinitionUriSupported] = isPresentationDefinitionUriSupported
+                walletMetadata[WalletMetadataConstants.presentationDefinitionUriSupported] = isPresentationDefinitionUriSupported
                 walletMetadata[MetadataConstants.vpFormatsSupported] = vpFormats
-                walletMetadata[MetadataConstants.clientIdSchemesSupported] = clientIdPrefixesSupported.map { ClientIdPrefix.toClientIdScheme($0) }
+                walletMetadata[WalletMetadataConstants.clientIdSchemesSupported] = clientIdPrefixesSupported.map { ClientIdPrefix.toClientIdScheme($0) }
                 if let requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported {
-                    walletMetadata[MetadataConstants.requestObjectSigningAlgValuesSupported] = requestObjectSigningAlgValuesSupported.map { $0.rawValue }
+                    walletMetadata[WalletMetadataConstants.requestObjectSigningAlgValuesSupported] = requestObjectSigningAlgValuesSupported.map { $0.rawValue }
                 }
                 if let authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported {
-                    walletMetadata[MetadataConstants.authorizationEncryptionAlgValuesSupported] = authorizationEncryptionAlgValuesSupported.map { $0.rawValue }
+                    walletMetadata[WalletMetadataConstants.authorizationEncryptionAlgValuesSupported] = authorizationEncryptionAlgValuesSupported.map { $0.rawValue }
                 }
                 if let authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported {
-                    walletMetadata[MetadataConstants.authorizationEncryptionEncValuesSupported] = authorizationEncryptionEncValuesSupported.map { $0.rawValue }
+                    walletMetadata[WalletMetadataConstants.authorizationEncryptionEncValuesSupported] = authorizationEncryptionEncValuesSupported.map { $0.rawValue }
                 }
-                walletMetadata[MetadataConstants.responseTypesSupported] = responseTypesSupported.map { $0.rawValue }
+                walletMetadata[WalletMetadataConstants.responseTypesSupported] = responseTypesSupported.map { $0.rawValue }
             }
             
             if(excludeSignedRequestConfig) {
-                walletMetadata.removeValue(forKey: MetadataConstants.requestObjectSigningAlgValuesSupported)
+                walletMetadata.removeValue(forKey: WalletMetadataConstants.requestObjectSigningAlgValuesSupported)
             }
             
             return walletMetadata

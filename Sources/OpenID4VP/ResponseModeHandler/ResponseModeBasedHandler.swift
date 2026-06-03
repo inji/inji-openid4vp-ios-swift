@@ -46,10 +46,10 @@ extension ResponseModeBasedHandler {
     
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws {
         
-        try validateAttribute(AuthorizationRequestFieldConstants.responseUri.rawValue, values: authorizationRequestParameters)
+        try validateAttribute(AuthorizationRequestFieldConstants.responseUri, values: authorizationRequestParameters)
         
         let className = String(describing: ResponseModeBasedHandler.self)
-        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String
+        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as! String
         
         guard isValidUri(responseUriValue) else {
             throw InvalidData(

@@ -67,7 +67,7 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandlerTests : XCTestCase
 
     func testProcessingWalletMetadataSuccessfully() async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
+            AuthorizationRequestFieldConstants.clientId: "mock-client",
         ])) as [String : Any]
         let didScheme = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         let expectedWalletMetadata : [String: Any] = [
@@ -92,7 +92,7 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandlerTests : XCTestCase
 
     func testShouldThrowErrorForWalletMetadataProcessingWhenRequestObjectSigningAlgValuesSupportedisNil() async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client",
+            AuthorizationRequestFieldConstants.clientId: "mock-client",
         ])) as [String : Any]
 
         let walletConfig = createWalletConfig(requestObjectSigningAlgValuesSupported: nil)

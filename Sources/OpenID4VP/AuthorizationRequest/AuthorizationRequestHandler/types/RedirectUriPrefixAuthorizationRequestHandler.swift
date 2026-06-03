@@ -40,10 +40,10 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
 
     override func validateAndParseRequestFields()async throws {
         try await super.validateAndParseRequestFields()
-        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
+        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
         switch responseMode {
         case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
-            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri.rawValue, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri.rawValue)
+            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri)
             break
         case ResponseMode.iarPost.rawValue, ResponseMode.iarPostJwt.rawValue:
             print("IAR_POST or IAR_POST_JWT response_mode is used")
@@ -64,7 +64,7 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         }
         
         let validValue = authorizationRequestParameters[validAttribute]
-        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "")
+        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String ?? "")
         
         if validValue as? String != clientIdValue {
             throw InvalidData(

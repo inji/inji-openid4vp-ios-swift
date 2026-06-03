@@ -381,11 +381,11 @@ final class WalletConfigTests: XCTestCase {
     func testToWalletMetadataV1ContainsExpectedKeys() throws {
         let metadata = try makeConfig().toWalletMetadata(specVersion: .v1)
         XCTAssertEqual(metadata.keys.sorted(), [
-            MetadataConstants.authorizationEncryptionAlgValuesSupported,
-            MetadataConstants.authorizationEncryptionEncValuesSupported,
-            MetadataConstants.clientIdPrefixesSupported,
-            MetadataConstants.requestObjectSigningAlgValuesSupported,
-            MetadataConstants.responseTypesSupported,
+            WalletMetadataConstants.authorizationEncryptionAlgValuesSupported,
+            WalletMetadataConstants.authorizationEncryptionEncValuesSupported,
+            WalletMetadataConstants.clientIdPrefixesSupported,
+            WalletMetadataConstants.requestObjectSigningAlgValuesSupported,
+            WalletMetadataConstants.responseTypesSupported,
             MetadataConstants.vpFormatsSupported
         ].sorted())
     }
@@ -409,41 +409,41 @@ final class WalletConfigTests: XCTestCase {
             ),
             FieldTestCase(label: "clientIdPrefixes",
                 config: makeConfig(clientIdPrefixes: [.preRegistered, .decentralizedIdentifier]),
-                key: MetadataConstants.clientIdPrefixesSupported,
+                key: WalletMetadataConstants.clientIdPrefixesSupported,
                 validate: { metadata in
-                    let prefixes = try XCTUnwrap(metadata[MetadataConstants.clientIdPrefixesSupported] as? [String])
+                    let prefixes = try XCTUnwrap(metadata[WalletMetadataConstants.clientIdPrefixesSupported] as? [String])
                     XCTAssertEqual(prefixes.sorted(), ["decentralized_identifier", "pre-registered"])
                 }
             ),
             FieldTestCase(label: "requestAlgs",
                 config: makeConfig(requestAlgs: [.edDsa]),
-                key: MetadataConstants.requestObjectSigningAlgValuesSupported,
+                key: WalletMetadataConstants.requestObjectSigningAlgValuesSupported,
                 validate: { metadata in
-                    let algs = try XCTUnwrap(metadata[MetadataConstants.requestObjectSigningAlgValuesSupported] as? [String])
+                    let algs = try XCTUnwrap(metadata[WalletMetadataConstants.requestObjectSigningAlgValuesSupported] as? [String])
                     XCTAssertEqual(algs, ["EdDSA"])
                 }
             ),
             FieldTestCase(label: "encAlgs",
                 config: makeConfig(encAlgs: [.ecdhES]),
-                key: MetadataConstants.authorizationEncryptionAlgValuesSupported,
+                key: WalletMetadataConstants.authorizationEncryptionAlgValuesSupported,
                 validate: { metadata in
-                    let algs = try XCTUnwrap(metadata[MetadataConstants.authorizationEncryptionAlgValuesSupported] as? [String])
+                    let algs = try XCTUnwrap(metadata[WalletMetadataConstants.authorizationEncryptionAlgValuesSupported] as? [String])
                     XCTAssertEqual(algs, ["ECDH-ES"])
                 }
             ),
             FieldTestCase(label: "encMethods",
                 config: makeConfig(encMethods: [.a256GCM]),
-                key: MetadataConstants.authorizationEncryptionEncValuesSupported,
+                key: WalletMetadataConstants.authorizationEncryptionEncValuesSupported,
                 validate: { metadata in
-                    let methods = try XCTUnwrap(metadata[MetadataConstants.authorizationEncryptionEncValuesSupported] as? [String])
+                    let methods = try XCTUnwrap(metadata[WalletMetadataConstants.authorizationEncryptionEncValuesSupported] as? [String])
                     XCTAssertEqual(methods, ["A256GCM"])
                 }
             ),
             FieldTestCase(label: "responseTypes",
                 config: makeConfig(responseTypes: [.vp_token]),
-                key: MetadataConstants.responseTypesSupported,
+                key: WalletMetadataConstants.responseTypesSupported,
                 validate: { metadata in
-                    let types = try XCTUnwrap(metadata[MetadataConstants.responseTypesSupported] as? [String])
+                    let types = try XCTUnwrap(metadata[WalletMetadataConstants.responseTypesSupported] as? [String])
                     XCTAssertEqual(types, ["vp_token"])
                 }
             )
@@ -465,12 +465,12 @@ final class WalletConfigTests: XCTestCase {
         }
 
         let cases: [OmitTestCase] = [
-            OmitTestCase(label: "v1 requestAlgs nil",    config: makeConfig(requestAlgs: nil),  key: MetadataConstants.requestObjectSigningAlgValuesSupported),
-            OmitTestCase(label: "v1 encAlgs nil",        config: makeConfig(encAlgs: nil),       key: MetadataConstants.authorizationEncryptionAlgValuesSupported),
-            OmitTestCase(label: "v1 encMethods nil",     config: makeConfig(encMethods: nil),    key: MetadataConstants.authorizationEncryptionEncValuesSupported),
-            OmitTestCase(label: "draft23 requestAlgs nil", config: makeConfig(requestAlgs: nil), key: MetadataConstants.requestObjectSigningAlgValuesSupported),
-            OmitTestCase(label: "draft23 encAlgs nil",     config: makeConfig(encAlgs: nil),     key: MetadataConstants.authorizationEncryptionAlgValuesSupported),
-            OmitTestCase(label: "draft23 encMethods nil",  config: makeConfig(encMethods: nil),  key: MetadataConstants.authorizationEncryptionEncValuesSupported)
+            OmitTestCase(label: "v1 requestAlgs nil",    config: makeConfig(requestAlgs: nil),  key: WalletMetadataConstants.requestObjectSigningAlgValuesSupported),
+            OmitTestCase(label: "v1 encAlgs nil",        config: makeConfig(encAlgs: nil),       key: WalletMetadataConstants.authorizationEncryptionAlgValuesSupported),
+            OmitTestCase(label: "v1 encMethods nil",     config: makeConfig(encMethods: nil),    key: WalletMetadataConstants.authorizationEncryptionEncValuesSupported),
+            OmitTestCase(label: "draft23 requestAlgs nil", config: makeConfig(requestAlgs: nil), key: WalletMetadataConstants.requestObjectSigningAlgValuesSupported),
+            OmitTestCase(label: "draft23 encAlgs nil",     config: makeConfig(encAlgs: nil),     key: WalletMetadataConstants.authorizationEncryptionAlgValuesSupported),
+            OmitTestCase(label: "draft23 encMethods nil",  config: makeConfig(encMethods: nil),  key: WalletMetadataConstants.authorizationEncryptionEncValuesSupported)
         ]
 
         for (i, tc) in cases.enumerated() {
@@ -485,25 +485,25 @@ final class WalletConfigTests: XCTestCase {
     func testToWalletMetadataDraft23ContainsExpectedKeys() throws {
         let metadata = try makeConfig().toWalletMetadata(specVersion: .draft23)
         XCTAssertEqual(metadata.keys.sorted(), [
-            MetadataConstants.authorizationEncryptionAlgValuesSupported,
-            MetadataConstants.authorizationEncryptionEncValuesSupported,
-            MetadataConstants.clientIdSchemesSupported,
-            MetadataConstants.presentationDefinitionUriSupported,
-            MetadataConstants.requestObjectSigningAlgValuesSupported,
-            MetadataConstants.responseTypesSupported,
+            WalletMetadataConstants.authorizationEncryptionAlgValuesSupported,
+            WalletMetadataConstants.authorizationEncryptionEncValuesSupported,
+            WalletMetadataConstants.clientIdSchemesSupported,
+            WalletMetadataConstants.presentationDefinitionUriSupported,
+            WalletMetadataConstants.requestObjectSigningAlgValuesSupported,
+            WalletMetadataConstants.responseTypesSupported,
             MetadataConstants.vpFormatsSupported
         ].sorted())
     }
 
     func testToWalletMetadataDraft23PresentationDefinitionUriSupported() throws {
         let metadata = try makeConfig(presentationDefinitionUriSupported: true).toWalletMetadata(specVersion: .draft23)
-        let value = try XCTUnwrap(metadata[MetadataConstants.presentationDefinitionUriSupported] as? Bool)
+        let value = try XCTUnwrap(metadata[WalletMetadataConstants.presentationDefinitionUriSupported] as? Bool)
         XCTAssertEqual(value, true)
     }
 
     func testToWalletMetadataDraft23ClientIdSchemesUsesToClientIdSchemeMapping() throws {
         let metadata = try makeConfig(clientIdPrefixes: [.preRegistered, .decentralizedIdentifier]).toWalletMetadata(specVersion: .draft23)
-        let schemes = try XCTUnwrap(metadata[MetadataConstants.clientIdSchemesSupported] as? [String])
+        let schemes = try XCTUnwrap(metadata[WalletMetadataConstants.clientIdSchemesSupported] as? [String])
         XCTAssertEqual(schemes.sorted(), ["did", "pre-registered"])
     }
 
@@ -525,7 +525,7 @@ final class WalletConfigTests: XCTestCase {
 
     func testToWalletMetadataDraft23ResponseTypesEncoded() throws {
         let metadata = try makeConfig(responseTypes: [.vp_token]).toWalletMetadata(specVersion: .draft23)
-        let types = try XCTUnwrap(metadata[MetadataConstants.responseTypesSupported] as? [String])
+        let types = try XCTUnwrap(metadata[WalletMetadataConstants.responseTypesSupported] as? [String])
         XCTAssertEqual(types, ["vp_token"])
     }
 
@@ -548,10 +548,10 @@ final class WalletConfigTests: XCTestCase {
         for tc in cases {
             let metadata = try makeConfig(requestAlgs: [.edDsa]).toWalletMetadata(specVersion: tc.specVersion, excludeSignedRequestConfig: tc.exclude)
             if tc.expectNil {
-                XCTAssertNil(metadata[MetadataConstants.requestObjectSigningAlgValuesSupported],
+                XCTAssertNil(metadata[WalletMetadataConstants.requestObjectSigningAlgValuesSupported],
                     "Expected nil for specVersion=\(tc.specVersion) exclude=\(tc.exclude)")
             } else {
-                let algs = try XCTUnwrap(metadata[MetadataConstants.requestObjectSigningAlgValuesSupported] as? [String])
+                let algs = try XCTUnwrap(metadata[WalletMetadataConstants.requestObjectSigningAlgValuesSupported] as? [String])
                 XCTAssertEqual(algs, ["EdDSA"],
                     "Expected [EdDSA] for specVersion=\(tc.specVersion) exclude=\(tc.exclude)")
             }
