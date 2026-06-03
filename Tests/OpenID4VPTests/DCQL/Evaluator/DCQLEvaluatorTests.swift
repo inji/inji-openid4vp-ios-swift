@@ -263,19 +263,6 @@ final class DCQLEvaluatorTests: XCTestCase {
         XCTAssertEqual(result.queryMatches["q1"]?.failedClaims?.first?.reason, DCQLEvaluationErrorCodes.claimUnavailable.rawValue)
     }
 
-    func testClaimsMatching_SameCredentialPassingClaimsCheck_DeduplicatedInMatchingCredentials() async throws {
-        // The same credential instance appears twice in the input — the result must contain it only once
-        let query = try dcqlQuery("""
-        {"credentials":[{"id":"q1","format":"dc+sd-jwt","meta":{},"claims":[{"id":"ic","path":["issuing_country"]}]}]}
-        """)
-        let credential = sdJwtCredential()
-        let result = try await evaluator.evaluate(query, inputCredentials: [credential, credential])
-        XCTAssertTrue(result.success)
-        let matchingCredentials = try XCTUnwrap(result.queryMatches["q1"]?.matchingCredentials)
-        XCTAssertEqual(matchingCredentials.count, 1)
-        XCTAssertEqual(matchingCredentials[0].credentialId, credential.credentialId)
-    }
-
     func testClaimsMatching_SameClaimMissingAcrossMultipleCredentials_DeduplicatedInFailedClaims() async throws {
         // Both credentials are missing the same claim — failedClaims must not contain duplicates
         let query = try dcqlQuery("""

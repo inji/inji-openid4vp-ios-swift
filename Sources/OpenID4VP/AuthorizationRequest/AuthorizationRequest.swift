@@ -1,14 +1,14 @@
 import Foundation
 
 public class AuthorizationRequest: Encodable {
-    let clientId: String
-    let responseType: String
-    let responseMode: String?
-    let responseUri: String?
-    let redirectUri: String?
-    let nonce: String
-    let walletNonce: String?
-    let state: String?
+    public let clientId: String
+    public let responseType: String
+    public let responseMode: String?
+    public let responseUri: String?
+    public let redirectUri: String?
+    public let nonce: String
+    public let walletNonce: String?
+    public let state: String?
     
     static let className: String = String(describing: AuthorizationRequest.self)
     
@@ -111,8 +111,8 @@ public class AuthorizationRequest: Encodable {
 }
 
 public final class AuthorizationPresentationExchangeRequest: AuthorizationRequest {
-    let presentationDefinition: PresentationDefinition
-    let clientMetadata: ClientMetadataDraft23?
+    public let presentationDefinition: PresentationDefinition
+    public let clientMetadata: ClientMetadataDraft23?
     
     private enum SubCodingKeys: String, CodingKey {
         case presentationDefinition = "presentation_definition"
@@ -154,8 +154,8 @@ public final class AuthorizationPresentationExchangeRequest: AuthorizationReques
 }
 
 public final class AuthorizationDcqlRequest: AuthorizationRequest {
-    let dcqlQuery: DCQLQuery
-    let clientMetadata: ClientMetadata?
+    public let dcqlQuery: DCQLQuery
+    public let clientMetadata: ClientMetadata?
     
     private enum SubCodingKeys: String, CodingKey {
         case dcqlQuery = "dcql_query"
