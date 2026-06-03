@@ -76,10 +76,14 @@ internal struct DcqlEvaluator {
         
         return MatchingCredentialsResult(success: success, queryMatches: queryMatches, credentialSets: credentialSetRequirements)
     }
+    /**
+     
+     */
     
     /**
      * Processes missing credentials, caches them, and returns all credentials matching the provided IDs.
      */
+    // TODO: rename this - getProcessedCredentials
     func getOrProcessApplicableCredentials(
         matchingIds: [String],
         credentialIdToCredential: [String: Credential],
@@ -104,11 +108,14 @@ internal struct DcqlEvaluator {
         }
         
         var matchingCredentials: [MatchingCredential] = []
+        // TODO: Do we need this seenMatchingCredentialIds cache?
         var seenMatchingCredentialIds = Set<String>()
         var failedClaims: [ClaimFailure] = []
+        // TODO: failedClaimsKeys
         var seenClaimFailureKeys = Set<String>()
         var claimsCheckFailureReason: DCQLEvaluationErrorCodes? = nil
         
+        // TODO: change walletCredential to credential
         for walletCredential in walletCredentials {
             let (matchingClaims, claimFailures, failureReason) = try evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
             
@@ -272,7 +279,7 @@ internal struct DcqlEvaluator {
             // Example - credentials: [{id: "id1"}, {id: "id2"}] -> credentialSets : [{options: ["id1"], required: true}, {options: ["id2"], required: true}]
             return dcqlQuery.credentials.map { CredentialSetQuery(options: [[$0.id]], required: true) }
         }
-        return credentialSets.map { CredentialSetQuery(options: $0.options, required: $0.required) }
+        return credentialSets
     }
     
     private func isQuerySatisfied(queryMatches: [String: QueryMatchResult], credentialSets: [CredentialSetQuery], dcqlQuery: DCQLQuery) -> Bool {

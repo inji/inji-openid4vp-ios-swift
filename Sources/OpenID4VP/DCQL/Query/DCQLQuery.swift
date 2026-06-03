@@ -51,6 +51,7 @@ public struct DCQLQuery: Codable {
             )
         }
 
+        // TODO: rename it to credentialQuery
         for credential in credentials {
             try credential.validate()
         }

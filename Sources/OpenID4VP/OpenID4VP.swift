@@ -34,7 +34,7 @@ public class OpenID4VP {
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
 
-    public func setResponseUri(_ responseUri: String) {
+    internal func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
     }
     
