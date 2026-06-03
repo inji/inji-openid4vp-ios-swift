@@ -57,7 +57,7 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
                 claims: credentialData // TODO: recheck and rename it accordingly // credentialSubject, fullName
             ))
             
-        case .mso_mdoc: // [iso., fullName]
+        case .mso_mdoc:
             let (_, decodedMdocCredential) = try decodeMdoc(credential.data, className: className)
             
             var namespaces: [String: [String: Any]] = [:]

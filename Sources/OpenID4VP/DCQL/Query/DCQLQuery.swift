@@ -51,9 +51,8 @@ public struct DCQLQuery: Codable {
             )
         }
 
-        // TODO: rename it to credentialQuery
-        for credential in credentials {
-            try credential.validate()
+        for credentialQuery in credentials {
+            try credentialQuery.validate()
         }
 
         if let credentialSets = credentialSets {

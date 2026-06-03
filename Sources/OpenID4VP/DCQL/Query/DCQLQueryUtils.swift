@@ -4,13 +4,6 @@ fileprivate let className = "DcqlQueryParser"
 
 fileprivate let dcqlQueryKey = AuthorizationRequestFieldConstants.dcqlQuery.rawValue
 
-/**
- TODO: Change folder structure
- dcql/
-    - evaluator
-    - query
- */
-// TODO: Change file name to DCQLQueryUtils and DCQLEvaluatorUtils
 func parseAndValidateDcqlQuery(
     _ authorizationRequest: [String: Any]
 ) throws -> [String: Any] {

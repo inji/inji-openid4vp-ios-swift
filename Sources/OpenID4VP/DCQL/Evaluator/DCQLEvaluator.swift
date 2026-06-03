@@ -62,7 +62,7 @@ internal struct DcqlEvaluator {
             }
             
             // 3. Claims level check
-            let applicableInputCredentials = try getOrProcessApplicableCredentials(
+            let applicableInputCredentials = try getProcessedCredentials(
                 matchingIds: metaAndBindingMatchingIds,
                 credentialIdToCredential: credentialIdToCredential,
                 processedCache: &processedCredentialsCache
@@ -83,8 +83,7 @@ internal struct DcqlEvaluator {
     /**
      * Processes missing credentials, caches them, and returns all credentials matching the provided IDs.
      */
-    // TODO: rename this - getProcessedCredentials
-    func getOrProcessApplicableCredentials(
+    func getProcessedCredentials(
         matchingIds: [String],
         credentialIdToCredential: [String: Credential],
         processedCache: inout [String: any ProcessedCredential]
@@ -108,28 +107,22 @@ internal struct DcqlEvaluator {
         }
         
         var matchingCredentials: [MatchingCredential] = []
-        // TODO: Do we need this seenMatchingCredentialIds cache?
-        var seenMatchingCredentialIds = Set<String>()
         var failedClaims: [ClaimFailure] = []
-        // TODO: failedClaimsKeys
-        var seenClaimFailureKeys = Set<String>()
+        var failedClaimKeys = Set<String>()
         var claimsCheckFailureReason: DCQLEvaluationErrorCodes? = nil
         
-        // TODO: change walletCredential to credential
-        for walletCredential in walletCredentials {
-            let (matchingClaims, claimFailures, failureReason) = try evaluateClaims(credentialQuery: credentialQuery, walletCredential: walletCredential)
+        for credential in walletCredentials {
+            let (matchingClaims, claimFailures, failureReason) = try evaluateClaims(credentialQuery: credentialQuery, walletCredential: credential)
             
             if claimFailures.isEmpty {
-                if seenMatchingCredentialIds.insert(walletCredential.credentialId).inserted {
-                    matchingCredentials.append(MatchingCredential(credentialId: walletCredential.credentialId, matchingClaims: matchingClaims))
-                }
+                matchingCredentials.append(MatchingCredential(credentialId: credential.credentialId, matchingClaims: matchingClaims))
             } else {
                 if claimsCheckFailureReason == nil {
                     claimsCheckFailureReason = failureReason
                 }
                 for failure in claimFailures {
                     let deduplicationKey = "\(failure.reason):\(failure.claim.path.map { "\($0.value)" }.joined(separator: "."))"
-                    if seenClaimFailureKeys.insert(deduplicationKey).inserted {
+                    if failedClaimKeys.insert(deduplicationKey).inserted {
                         failedClaims.append(failure)
                     }
                 }
