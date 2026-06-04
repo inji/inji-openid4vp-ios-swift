@@ -29,7 +29,7 @@ final class WalletConfigTests: XCTestCase {
             authorizationEncryptionEncValuesSupported: encMethods,
             responseTypesSupported: responseTypes,
             isPresentationDefinitionUriSupported: presentationDefinitionUriSupported,
-            supportedRequestUriMethods: requestUriMethods,
+            requestUriMethodsSupported: requestUriMethods,
             trustedVerifiers: trustedVerifiers
         )
     }
@@ -82,7 +82,7 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(config.authorizationEncryptionEncValuesSupported, WalletConfigDefaults.authorizationEncryptionEncValuesSupported)
         XCTAssertEqual(config.responseTypesSupported, WalletConfigDefaults.responseTypesSupported)
         XCTAssertEqual(config.isPresentationDefinitionUriSupported, WalletConfigDefaults.presentationDefinitionUriSupported)
-        XCTAssertEqual(config.requestUriMethodsSupported, WalletConfigDefaults.supportedRequestUriMethods)
+        XCTAssertEqual(config.requestUriMethodsSupported, WalletConfigDefaults.requestUriMethodsSupported)
         XCTAssertEqual(config.trustedVerifiers.map { $0.clientId }, WalletConfigDefaults.trustedVerifiers.map { $0.clientId })
     }
 
@@ -95,7 +95,7 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(WalletConfigDefaults.authorizationEncryptionEncValuesSupported, [.a256GCM])
         XCTAssertEqual(WalletConfigDefaults.responseTypesSupported, [.vp_token])
         XCTAssertEqual(WalletConfigDefaults.presentationDefinitionUriSupported, true)
-        XCTAssertEqual(WalletConfigDefaults.supportedRequestUriMethods, [.get, .post])
+        XCTAssertEqual(WalletConfigDefaults.requestUriMethodsSupported, [.get, .post])
         XCTAssertEqual(WalletConfigDefaults.trustedVerifiers.map { $0.clientId }, [])
         XCTAssertEqual(WalletConfigDefaults.vpFormatsSupported.keys.map { $0.rawValue }.sorted(), ["dc+sd-jwt", "ldp_vc", "mso_mdoc"])
     }
@@ -142,7 +142,7 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(decoded.authorizationEncryptionEncValuesSupported, WalletConfigDefaults.authorizationEncryptionEncValuesSupported)
         XCTAssertEqual(decoded.responseTypesSupported, WalletConfigDefaults.responseTypesSupported)
         XCTAssertEqual(decoded.isPresentationDefinitionUriSupported, WalletConfigDefaults.presentationDefinitionUriSupported)
-        XCTAssertEqual(decoded.requestUriMethodsSupported, WalletConfigDefaults.supportedRequestUriMethods)
+        XCTAssertEqual(decoded.requestUriMethodsSupported, WalletConfigDefaults.requestUriMethodsSupported)
     }
 
     func testDecodeWithNoTrustedVerifiers() throws {

@@ -19,5 +19,5 @@ struct WalletMetadataConstants {
     static let presentationDefinitionUriSupported = "presentation_definition_uri_supported"
     
     /// Request URI
-    static let supportedRequestUriMethods = "supported_request_uri_methods"
+    static let requestUriMethodsSupported = "request_uri_methods_supported"
 }

@@ -52,7 +52,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             authorizationEncryptionAlgValuesSupported: walletConfig.authorizationEncryptionAlgValuesSupported,
             authorizationEncryptionEncValuesSupported: walletConfig.authorizationEncryptionEncValuesSupported,
             responseTypesSupported: walletConfig.responseTypesSupported,
-            supportedRequestUriMethods: [.get]
+            requestUriMethodsSupported: [.get]
         )
         let requestUriResponse = createRequestUriResponse(createAuthorizationRequestObject(clientIdPrefix: .decentralizedIdentifier, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), applicableFields: authRequestWithDidByValue) )
         mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))

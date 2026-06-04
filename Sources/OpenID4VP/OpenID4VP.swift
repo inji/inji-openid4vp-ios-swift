@@ -94,14 +94,13 @@ public class OpenID4VP {
     
     /**
      inputs
-         1. verifiableCredentials: Selected credentials in the form of a map of credential query ids to lists of verifiable credentials
+         1. verifiableCredentials: Selected credentials in the form of a map of credential query IDs for DCQL request OR Input descriptor IDs for Presentation Exchange Request  to lists of verifiable credentials
  
      Output
         - [UnsignedVPToken] : Array of unsigned VP tokens which includes the data to sign, signing algorithm and key reference along with VC format for which the data is to be signed
  
      Responsibility:
         - This method focuses on building the data to be signed (UnsignedVPToken) which is required for the eventual VP construction
-        - Supports only DCQL VP request as well as Presentation Exchange VP request
      */
     public func constructUnsignedVPToken(
         selectedCredentials: [String: [Credential]]
