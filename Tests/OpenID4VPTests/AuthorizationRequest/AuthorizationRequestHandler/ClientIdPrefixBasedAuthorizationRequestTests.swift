@@ -2,17 +2,17 @@ import Foundation
 import XCTest
 @testable import OpenID4VP
 
-class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
+final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     let mockNetworkManager: MockNetworkManager! = MockNetworkManager()
     let mockSetResponseUri: (String) -> Void = { value in
     }
     var decodedClientMetadata: ClientMetadataDraft23?
     var decodedPresentationDefinition: PresentationDefinition?
     
-    private var walletMetadata: WalletMetadata!
+    private var walletConfig: WalletConfig!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletConfig = createWalletConfig()
     }
     
     override func setUp() {
@@ -34,15 +34,85 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
         
         await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
     }
+
+    func testShouldFallbackToGetWhenWalletDoesNotSupportPostButRequestUriMethodIsPost() async {
+        mockNetworkManager.clearResponses()
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!, ["request_uri_method": "post"]), specVersion: .v1) as [String : Any]
+        let walletConfigWithoutPost = WalletConfig(
+            vpFormatsSupported: walletConfig.vpFormatsSupported,
+            clientIdPrefixesSupported: walletConfig.clientIdPrefixesSupported,
+            requestObjectSigningAlgValuesSupported: walletConfig.requestObjectSigningAlgValuesSupported,
+            authorizationEncryptionAlgValuesSupported: walletConfig.authorizationEncryptionAlgValuesSupported,
+            authorizationEncryptionEncValuesSupported: walletConfig.authorizationEncryptionEncValuesSupported,
+            responseTypesSupported: walletConfig.responseTypesSupported,
+            requestUriMethodsSupported: [.get]
+        )
+        let requestUriResponse = createRequestUriResponse(createAuthorizationRequestObject(clientIdPrefix: .decentralizedIdentifier, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), applicableFields: authRequestWithDidByValue) )
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParametersByReference,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfigWithoutPost,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: true
+        )
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
+        
+        mockNetworkManager.recordedRequests.forEach { (url, recordedRequest) in
+            if (url == requestUri.absoluteString) {
+                XCTAssertEqual(recordedRequest.requestMethod, HttpMethod.get, "Expected HTTP method to be GET when wallet does not support POST")
+            }
+        }
+    }
     
-    
+    func testThrowErrorWhenBothRequestAndRequestUriArePresentInAuthorizationRequest() async {
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
+            paramList: ["client_id", "request", "request_uri"],
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                preRegisteredSchemeClientIdParameters,
+                [
+                    "request": "some.signed.jwt",
+                    "request_uri": "https://mock-verifier.com/verifier/get-auth-request-obj"
+                ]
+            ),
+            specVersion: .v1
+        ) as [String: Any]
+
+        let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParameters,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfig,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: true
+        )
+
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Both 'request' and 'request_uri' cannot be present in same authorization request",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     func testShouldThrowErrorWhenAuthorizationRequestByValueIsNotSupported() async {
         let authorizationRequestParametersByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters)) as [String : Any]
         let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
@@ -52,7 +122,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: false
         )
@@ -76,7 +146,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: false
         )
@@ -99,7 +169,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: false
         )
@@ -114,8 +184,8 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorWhenRequestValueIsInvalid() async {
         let authorizationRequestParametersByValue: [String : Any] = [
-            AuthorizationRequestFieldConstants.request.rawValue: "",
-            AuthorizationRequestFieldConstants.clientId.rawValue: "mock-client-id"
+            AuthorizationRequestFieldConstants.request: "",
+            AuthorizationRequestFieldConstants.clientId: "mock-client-id"
         ]
         let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
             authorizationRequestParameters: authorizationRequestParametersByValue,
@@ -124,7 +194,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -146,7 +216,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: false,
             isUnsignedRequestSupported: true
         )
@@ -177,7 +247,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -194,7 +264,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: false,
             isUnsignedRequestSupported: true
         )
@@ -220,7 +290,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -249,7 +319,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -281,7 +351,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -311,7 +381,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -338,7 +408,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -366,7 +436,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -394,7 +464,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -422,7 +492,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -449,7 +519,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -477,7 +547,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -508,7 +578,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -537,7 +607,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -555,6 +625,55 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
+    func testThrowErrorWhenRequestUriResponseJWTHeaderHasInvalidTyp() async {
+        let invalidTypValues: [(typ: Any?, label: String)] = [
+            (typ: "jwt", label: "wrong typ value"),
+            (typ: nil,   label: "missing typ")
+        ]
+
+        for (typ, label) in invalidTypValues {
+            var jwsHeader: [String: Any] = ["alg": "EdDSA"]
+            if let typValue = typ { jwsHeader["typ"] = typValue }
+            let expectedTypInMessage = (typ as? String) ?? "nil"
+
+            let authorizationRequestObject = createAuthorizationRequestObject(
+                clientIdPrefix: .decentralizedIdentifier,
+                authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!),
+                jwsHeaderData: jwsHeader,
+                applicableFields: authRequestWithDidByValue,
+                specVersion: .v1,
+                addEncryptionClientMetadataParams: false
+            )
+            let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
+                paramList: authRequestParamsByReference,
+                requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!),
+                specVersion: .v1
+            ) as [String: Any]
+            mockNetworkManager.setMockResponse(for: requestUri.absoluteString, response: (responseBody: createRequestUriResponse(authorizationRequestObject).body, httpUrlResponse: createRequestUriResponse(authorizationRequestObject).httpUrlResponse))
+            mockNetworkManager.setMockResponse(for: didDocumentUrl, responseBody: didResponse)
+
+            let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
+                authorizationRequestParameters: authorizationRequestParameters,
+                setResponseUri: mockSetResponseUri,
+                walletNonce: "mock-nonce",
+                networkManager: mockNetworkManager,
+                clientId: "mock-client-id",
+                specVersion: .v1,
+                walletConfig: walletConfig,
+                isSignedRequestSupported: true,
+                isUnsignedRequestSupported: true
+            )
+
+            await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest(), label) { error in
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: "Request URI response validation failed - Invalid typ in JWS header. Expected 'oauth-authz-req+jwt', found '\(expectedTypInMessage)'",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequestObject
+                )
+            }
+        }
+    }
+
     func testThrowErrorWhenRequestUriReponseJWTHeaderDoesNotHaveAlgClaim() async throws {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), specVersion: .v1) as [String : Any]
         
@@ -570,7 +689,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -600,7 +719,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -610,7 +729,13 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         let expected: [String: Any] = [
             "client_id": "decentralized_identifier:did:web:inji-ovp:inji-mock-services:openid4vp-service:docs",
             "response_uri": "https://mock-verifier.com",
-            "dcql_query": ["credentials":"test-dummy"],
+            "dcql_query": [
+                "credentials": [
+                    [ "id": "cred1", "format": "dc+sd-jwt", "meta": [:]],
+                    [ "id": "cred2", "format": "mso_mdoc", "meta": [:]],
+                    [ "id": "cred3", "format": "ldp_vc", "meta": [:]]
+                ]
+            ],
             "client_metadata": [
                 "encrypted_response_enc_values_supported": ["A256GCM"],
                 "client_name": "Requester name",
@@ -655,7 +780,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchAuthorizationRequestByReferenceAndRequestUriMethodIsPostPassWalletMetadata() async{
         var authorizationRequestWithPostRequestUriMethod = authorizationRequestParamsWithValue
-        authorizationRequestWithPostRequestUriMethod[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] = "post"
+        authorizationRequestWithPostRequestUriMethod[AuthorizationRequestFieldConstants.requestUriMethod] = "post"
         
         let authorizationRequestObject = createAuthorizationRequestObject(
             clientIdPrefix: .preRegistered,
@@ -671,7 +796,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -688,7 +813,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!),
             applicableFields: authRequestWithRedirectUriByValue, specVersion: .v1
         )
-        let authorizationRequestParameters = createAuthorizationRequest(paramList: [AuthorizationRequestFieldConstants.clientId.rawValue, "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!)) as [String : Any]
+        let authorizationRequestParameters = createAuthorizationRequest(paramList: [AuthorizationRequestFieldConstants.clientId, "request_uri"] , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!)) as [String : Any]
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString, responseBody: authorizationRequestObject)
         let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
             authorizationRequestParameters: authorizationRequestParameters,
@@ -697,7 +822,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -718,7 +843,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -733,7 +858,13 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 "response_mode": "direct_post",
                 "nonce": "VbRRB/LTxLiXmVNZuyMO8A==",
                 "client_id": "redirect_uri:https://mock-verifier.com",
-                "dcql_query": ["credentials":"test-dummy"],
+                "dcql_query": [
+                    "credentials": [
+                        [ "id": "cred1", "format": "dc+sd-jwt", "meta": [:]],
+                        [ "id": "cred2", "format": "mso_mdoc", "meta": [:]],
+                        [ "id": "cred3", "format": "ldp_vc", "meta": [:]]
+                    ]
+                ],
                 "client_metadata": [
                     "client_name": "Requester name",
                     "encrypted_response_enc_values_supported": ["A256GCM"],
@@ -778,7 +909,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -794,7 +925,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testShouldThrowErrorWhenAuthRequestsAlgObtainedByReferenceDoesNotMatchWithWalletMetadata() async {
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), specVersion: .v1) as [String : Any]
-        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: didUrl, specVersion: .v1, walletMetadata: walletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
+        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: didUrl, specVersion: .v1, walletConfig: walletConfig, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
         mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
         let requestUriResponse = createRequestUriResponse("ewogICJhbGciOiAiSFMyNTYiLAogICJ0eXAiOiAib2F1dGgtYXV0aHotcmVxK2p3dCIKfQ.eyJ10.SflK5c")
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
@@ -808,9 +939,9 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testThrowErrorWhenClientIdSchemeIsNotSupportedAsPerWalletMetadata() async {
-        let  minimalWalletMetadata = try! createWalletMetadata(clientIdPrefixesSupported: [.preRegistered, .redirectUri])
+        let  minimalWalletMetadata = createWalletConfig(clientIdPrefixesSupported: [.preRegistered, .redirectUri])
         let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "openid_federation:https://federation-verifier.example.com."], ["request_uri_method": "post"])) as [String : Any]
-        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: "", specVersion: .v1, walletMetadata: minimalWalletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
+        let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: "", specVersion: .v1, walletConfig: minimalWalletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
         mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
         let requestUriResponse = createRequestUriResponse("ewogICJhbGciOiAiSFMyNTYiLAogICAgInR5cCI6ICJvYXV0aC1hdXRoei1yZXErand0Igp9.eyJ10.SflK5c")
         mockNetworkManager.setMockResponse(for: requestUri.absoluteString,response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
@@ -855,7 +986,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager,
                 clientId: "mock-client-id",
                 specVersion: .v1,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 isSignedRequestSupported: true,
                 isUnsignedRequestSupported: true
             )
@@ -881,7 +1012,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             expectation.fulfill()
         }
         
-        let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client", specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: nil, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client", specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         try? clientIdPrefixBasedAuthorizationRequestHandler.setResponseUrl()
         
         wait(for: [expectation], timeout: 2.0)
@@ -890,11 +1021,11 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
         let testCases: [TestCase<[String: String?], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -905,7 +1036,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             
             let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client", specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -936,7 +1067,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -979,7 +1110,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1007,7 +1138,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client",
                                                                                                      specVersion: .draft23,
                                                                                                      authorizationRequestParameters: authorizationRequestParameters,
-                                                                                                     walletMetadata: nil,
+                                                                                                     walletConfig: walletConfig,
                                                                                                      setResponseUri: mockSetResponseUri,
                                                                                                      walletNonce: "mock-nonce",
                                                                                                      networkManager: mockNetworkManager
@@ -1024,10 +1155,10 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testInvalidRequestFieldThrowErrorForResponseTypeField() async {
         let testCases: [TestCase<[String: Any?], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseType.rawValue: nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: "null"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: ""], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: "nil"], expectedError: "Invalid Input: response_type value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseType: nil], expectedError: "Missing Input: response_type param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -1040,7 +1171,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1070,7 +1201,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1085,9 +1216,9 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     func testInvalidRequestFieldErrorForResponseModeField() async {
         let testCases: [TestCase<[String: Any], Void>] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode.rawValue: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {
@@ -1100,7 +1231,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1131,7 +1262,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 clientId: "mock-client",
                 specVersion: .v1,
                 authorizationRequestParameters: authorizationRequestParameters,
-                walletMetadata: nil,
+                walletConfig: walletConfig,
                 setResponseUri: mockSetResponseUri,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
@@ -1163,7 +1294,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     func testShouldThrowErrorWhenInvalidClientMetadataIsProvided() async{
         let authorizationRequestParameters: [String : Any] = mergeMaps(resquestUriResponseData,["client_metadata": "{}"])
         let clientIdPrefixBasedAuthorizationRequestHandler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(clientId: "mock-client",
-                                                                                                                     specVersion: .v1,authorizationRequestParameters: authorizationRequestParameters, walletMetadata: walletMetadata, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+                                                                                                                     specVersion: .v1,authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
         
         clientIdPrefixBasedAuthorizationRequestHandler.setSpecVersionHandler(.v1)
         await XCTAssertAsyncThrowsError(try await clientIdPrefixBasedAuthorizationRequestHandler.validateAndParseRequestFields()) { error in
@@ -1191,7 +1322,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     func testShouldThrowErrorWhenTransactionDataIsPresentInAuthorizationRequest() async {
-        let authorizationRequestParameters: [String: Any] = mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, [AuthorizationRequestFieldConstants.transactionData.rawValue: ["foo": "bar"]])
+        let authorizationRequestParameters: [String: Any] = mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, [AuthorizationRequestFieldConstants.transactionData: ["foo": "bar"]])
         let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
             authorizationRequestParameters: authorizationRequestParameters,
             setResponseUri: mockSetResponseUri,
@@ -1199,7 +1330,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1237,7 +1368,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: didUrl,
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1277,7 +1408,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "mock-client-id",
             specVersion: .v1,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1310,7 +1441,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             networkManager: mockNetworkManager,
             clientId: "redirect_uri:https://mock-verifier.com",
             specVersion: .draft23,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             isSignedRequestSupported: true,
             isUnsignedRequestSupported: true
         )
@@ -1324,10 +1455,18 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         }
     }
 
-    func testSpecVersion1ThrowsErrorWhenDirectPostResponseModeHasNoState() async {
+    func testSpecVersion1ThrowsErrorWheAtleastOneCredentialQueryHasNoCryptographicBindingRequestButHasNoState() async {
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
             paramList: authRequestWithPreRegisteredByValue,
-            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters, ["state": nil]),
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters, [
+                "state": nil,
+                "dcql_query": [
+                    "credentials": [
+                        [ "id": "cred1", "format": "dc+sd-jwt", "meta": [:], "require_cryptographic_holder_binding": false],
+                        [ "id": "cred2", "format": "mso_mdoc", "meta": [:]],
+                        [ "id": "cred3", "format": "ldp_vc", "meta": [:]]
+                    ]
+                ]]),
             specVersion: .v1,
             addEncryptionClientMetadataParams: false
         ) as [String: Any]
@@ -1336,7 +1475,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1346,6 +1485,38 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
             assertOpenID4VPException(error,
                 expectedMessage: "Missing Input: state param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testSpecVersion1ThrowsErrorWhenDcqlQueryHasInvalidCredentialQueryId() async {
+        let invalidDcqlQuery: [String: Any] = [
+            "credentials": [
+                ["id": "invalid id!", "format": "dc+sd-jwt", "meta": [:]]
+            ]
+        ]
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
+            paramList: authRequestWithPreRegisteredByValue,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters, ["dcql_query": invalidDcqlQuery]),
+            specVersion: .v1,
+            addEncryptionClientMetadataParams: false
+        ) as [String: Any]
+
+        let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(
+            clientId: "mock-client",
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        handler.setSpecVersionHandler(.v1)
+
+        await XCTAssertAsyncThrowsError(try await handler.validateAndParseRequestFields()) { error in
+            assertOpenID4VPException(error,
+                expectedMessage: "Credential Query id must consist of alphanumeric, underscore or hyphen characters",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -1363,7 +1534,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: nil,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1380,7 +1551,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .draft23,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1402,7 +1573,7 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             clientId: "mock-client",
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -1417,4 +1588,3 @@ class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         }
     }
 }
-

@@ -9,10 +9,10 @@ enum ClientMetadataSpecVersionHandler {
         return specVersion == .draft23 ? .draft23 : .v1
     }
     
-    func parseAndValidate(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletMetadata: WalletMetadata?) throws -> [String: Any] {
-        let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata.rawValue
+    func parseAndValidate(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletConfig: WalletConfig) throws -> [String: Any] {
+        let clientMetadataKey = AuthorizationRequestFieldConstants.clientMetadata
         var mutableParams = authorizationRequest
-        if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata.rawValue] {
+        if let clientMetadata = authorizationRequest[AuthorizationRequestFieldConstants.clientMetadata] {
             switch self {
             case .draft23:
                 if let clientMetadataInstance = clientMetadata as? ClientMetadataDraft23 {
@@ -45,19 +45,19 @@ enum ClientMetadataSpecVersionHandler {
             }
         }
         
-        let responseMode = authorizationRequest[AuthorizationRequestFieldConstants.responseMode.rawValue] as? String
+        let responseMode = authorizationRequest[AuthorizationRequestFieldConstants.responseMode] as? String
         let parsedClientMetadata = mutableParams[clientMetadataKey]
         switch self {
         case .v1:
             try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).validate(
                 clientMetadata: (parsedClientMetadata as? ClientMetadata),
-                walletMetadata: walletMetadata,
+                walletConfig: walletConfig,
                 shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata
             )
         case .draft23:
             try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).validate(
                 clientMetadata: (parsedClientMetadata as? ClientMetadataDraft23),
-                walletMetadata: walletMetadata,
+                walletConfig: walletConfig,
                 shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata
             )
         }

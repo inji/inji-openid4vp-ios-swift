@@ -3,14 +3,14 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadata: walletMetadata,
+                   walletConfig: walletConfig,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
@@ -34,18 +34,16 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_prefix", className: className)
     }
     
-    func process(walletMetadata: WalletMetadata)  throws -> WalletMetadata {
-        var updatedWalletMetadata = walletMetadata
-        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
-        return updatedWalletMetadata
+    func getWalletMetadata(walletConfig: WalletConfig) throws -> [String: Any] {
+        return try walletConfig.toWalletMetadata(specVersion: specVersion, excludeSignedRequestConfig: true)
     }
 
     override func validateAndParseRequestFields()async throws {
         try await super.validateAndParseRequestFields()
-        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
+        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
         switch responseMode {
         case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
-            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri.rawValue, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri.rawValue)
+            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri)
             break
         case ResponseMode.iarPost.rawValue, ResponseMode.iarPostJwt.rawValue:
             print("IAR_POST or IAR_POST_JWT response_mode is used")
@@ -66,7 +64,7 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         }
         
         let validValue = authorizationRequestParameters[validAttribute]
-        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "")
+        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String ?? "")
         
         if validValue as? String != clientIdValue {
             throw InvalidData(

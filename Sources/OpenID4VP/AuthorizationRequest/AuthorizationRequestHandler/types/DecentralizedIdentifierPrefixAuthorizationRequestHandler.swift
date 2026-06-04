@@ -3,14 +3,14 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandler:  ClientIdPrefixB
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadata: walletMetadata,
+                   walletConfig: walletConfig,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
@@ -43,9 +43,9 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandler:  ClientIdPrefixB
         return try await keyResolver.resolve(uri: SpecVersionHandler.of(specVersion).didUrl(clientId: clientId), keyId: keyId)
     }
     
-    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata {
-        try validateRequestObjectSigningAlgSupported(walletMetadata, className: className)
-        return walletMetadata
+    func getWalletMetadata(walletConfig: WalletConfig) throws -> [String: Any] {
+        try validateRequestObjectSigningAlgSupported(walletConfig, className: className)
+        return try walletConfig.toWalletMetadata(specVersion: specVersion)
     }
     
     private enum SpecVersionHandler {

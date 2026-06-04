@@ -3,11 +3,11 @@ import JSONWebKey
 
 protocol ResponseModeBasedHandler {
     func validate(clientMetadata: ClientMetadata?,
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   shouldValidateWithWalletMetadata: Bool) throws
     
     func validate(clientMetadata: ClientMetadataDraft23?,
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   shouldValidateWithWalletMetadata: Bool) throws
     
     func sendAuthorizationResponse(authorizationRequest: AuthorizationRequest,
@@ -16,16 +16,18 @@ protocol ResponseModeBasedHandler {
                                    networkManager: NetworkManaging,
                                    producerInfo: String,
                                    recipientInfo: String,
-                                   walletMetadata: WalletMetadata?
+                                   walletConfig: WalletConfig
     ) async throws -> NetworkResponse
     
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws
+    
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String
     
     func getAuthorizationResponse(
             authorizationRequest: AuthorizationRequest,
             authorizationResponse: AuthorizationResponse,
             walletNonce: String,
-            walletMetadata: WalletMetadata?
+            walletConfig: WalletConfig
         ) throws -> [String: String]
 
         func getAuthorizationErrorResponse(
@@ -36,7 +38,7 @@ protocol ResponseModeBasedHandler {
 
     func getVerifierPublicKeyForEncryption(
         authorizationRequest: AuthorizationRequest,
-        walletMetadata: WalletMetadata?
+        walletConfig: WalletConfig
     ) throws -> JWK?
 }
 
@@ -44,10 +46,10 @@ extension ResponseModeBasedHandler {
     
     func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws {
         
-        try validateAttribute(AuthorizationRequestFieldConstants.responseUri.rawValue, values: authorizationRequestParameters)
+        try validateAttribute(AuthorizationRequestFieldConstants.responseUri, values: authorizationRequestParameters)
         
         let className = String(describing: ResponseModeBasedHandler.self)
-        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue] as! String
+        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as! String
         
         guard isValidUri(responseUriValue) else {
             throw InvalidData(

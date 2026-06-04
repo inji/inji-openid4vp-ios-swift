@@ -23,8 +23,7 @@ final class AuthorizationRequestTests: XCTestCase {
     func testUrlEncodedPathReturnsAuthorizationRequestOnSuccess() async throws {
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
-            trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -42,8 +41,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlWithoutClientId,
-                trustedVerifier: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -70,8 +68,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -92,8 +89,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -113,8 +109,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authRequest,
-                trustedVerifiers: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -135,8 +130,7 @@ final class AuthorizationRequestTests: XCTestCase {
         // draft23: presentation_definition present → AuthorizationPresentationExchangeRequest
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
-            trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -152,8 +146,7 @@ final class AuthorizationRequestTests: XCTestCase {
         // draft23: verify all base fields are populated correctly
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: testValidUrlEncodedVPRequestWithResponseUri,
-            trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -173,7 +166,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let v1Params = mergeMaps(
             authorizationRequestParamsWithValue,
             preRegisteredSchemeClientIdParameters,
-            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt", "meta": [:]]]]]
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: v1Params,
@@ -184,15 +177,13 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: urlEncoded,
-            trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
         )
 
-        //TODO: Add validation on DCQL here
         XCTAssertTrue(request is AuthorizationDcqlRequest)
         XCTAssertEqual(request.responseType, ResponseType.vp_token.rawValue)
         XCTAssertFalse(request.nonce.isEmpty)
@@ -203,7 +194,7 @@ final class AuthorizationRequestTests: XCTestCase {
         let v1Params = mergeMaps(
             authorizationRequestParamsWithValue,
             preRegisteredSchemeClientIdParameters,
-            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+            ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt", "meta": [:]]]]]
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: v1Params,
@@ -214,8 +205,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             urlEncodedAuthorizationRequest: urlEncoded,
-            trustedVerifier: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -240,8 +230,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -263,15 +252,14 @@ final class AuthorizationRequestTests: XCTestCase {
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
                 preRegisteredSchemeClientIdParameters,
-                ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+                ["dcql_query":  dcqlQuery]
             ),
             addEncryptionClientMetadataParams: false
         ) as [String: Any]
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -290,15 +278,14 @@ final class AuthorizationRequestTests: XCTestCase {
             requestParams: mergeMaps(
                 authorizationRequestParamsWithValue,
                 preRegisteredSchemeClientIdParameters,
-                ["dcql_query": ["credentials": [["id": "input_1", "format": "vc+sd-jwt"]]]]
+                ["dcql_query": dcqlQuery]
             ),
             addEncryptionClientMetadataParams: false
         ) as [String: Any]
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -322,8 +309,7 @@ final class AuthorizationRequestTests: XCTestCase {
 
         let request = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
             authRequest: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: nil,
+            walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
             setResponseUri: mockSetResponseUri,
             shouldValidateClient: false,
             walletNonce: "mock-nonce",
@@ -341,8 +327,7 @@ final class AuthorizationRequestTests: XCTestCase {
         await XCTAssertAsyncThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: malformedUrl,
-                trustedVerifier: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
@@ -359,63 +344,46 @@ final class AuthorizationRequestTests: XCTestCase {
 
     // MARK: - Unsupported client_id_prefix
 
-    func testUrlEncodedPathThrowsForUnsupportedClientIdPrefix() async {
-        // default branch: client_id with an unrecognised prefix throws
+    func testUrlEncodedPathHandledAsPreRegisteredClient() async {
+        // default branch: client_id with an unrecognised prefix is handled as pre-registered
         let unsupportedSchemeParams = mergeMaps(
             authorizationRequestParamsWithValue,
-            ["client_id": "x509_san_uri:https://mock-verifier.com"]
+            ["client_id": "https://mock-verifier.com"]
         )
         let urlEncoded = createUrlEncodedAuthorizationRequest(
             requestParams: unsupportedSchemeParams,
             clientIdPrefix: .preRegistered,
-            applicableFields: authRequestWithPreRegisteredByValue
+            applicableFields: authRequestWithPreRegisteredByValue,
+            addEncryptionClientMetadataParams: false
         )
 
-        await XCTAssertAsyncThrowsError(
+        await XCTAssertAsyncNoThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncoded,
-                trustedVerifier: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
             )
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Given client_id_prefix is not supported",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
+        )
     }
 
-    func testDictionaryPathThrowsForUnsupportedClientIdScheme() async {
+    func testDictionaryPathDoesNotErrorOutForUnknownClientIDScheme() async {
         // default branch: same check via the dictionary path
-        let authRequest = createAuthorizationRequest(
-            paramList: authRequestWithPreRegisteredByValue,
-            requestParams: mergeMaps(
-                authorizationRequestParamsWithValue,
-                ["client_id": "x509_san_uri:https://mock-verifier.com"]
-            )
-        ) as [String: Any]
+        let authRequest: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
+            AuthorizationRequestFieldConstants.clientId: "https://mock-verifier.com"
+        ]), addEncryptionClientMetadataParams: false) as [String : Any]
 
-        await XCTAssertAsyncThrowsError(
+        await XCTAssertAsyncNoThrowsError(
             try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authRequest,
-                trustedVerifiers: trustedVerifiers,
-                walletMetadata: nil,
+                walletConfig: WalletConfig(trustedVerifiers: trustedVerifiers),
                 setResponseUri: mockSetResponseUri,
                 shouldValidateClient: false,
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
             )
-        ) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Given client_id_prefix is not supported",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
+        )
     }
 }

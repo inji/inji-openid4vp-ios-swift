@@ -2,7 +2,7 @@ import Foundation
 
 
 protocol AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
-    func process(walletMetadata: WalletMetadata) throws -> WalletMetadata
+    func getWalletMetadata(walletConfig: WalletConfig) throws -> [String: Any]
     func isSignedRequestSupported() -> Bool
     func isUnsignedRequestSupported() throws -> Bool
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
@@ -13,7 +13,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     var delegate: AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler!
     let clientId: String
     var authorizationRequestParameters: [String: Any]
-    let walletMetadata: WalletMetadata?
+    let walletConfig: WalletConfig
     let setResponseUri: (String) -> Void
     let walletNonce: String
     let networkManager: NetworkManaging
@@ -27,14 +27,14 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     init(clientId: String,
          specVersion: SpecVersion,
          authorizationRequestParameters: [String: Any],
-         walletMetadata: WalletMetadata?,
+         walletConfig: WalletConfig,
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging = NetworkManager()) {
         self.authorizationRequestParameters = authorizationRequestParameters
         self.setResponseUri = setResponseUri
         self.networkManager = networkManager
-        self.walletMetadata = walletMetadata
+        self.walletConfig = walletConfig
         self.walletNonce = walletNonce
         self.clientId = clientId
         self.specVersion = specVersion
@@ -48,7 +48,6 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try self.validateClientId()
         try await self.fetchAuthorizationRequest()
         try self.setResponseUrl()
-        // TODO: Add validation for DCQL query in validateAndParseRequestFields
         try await self.validateAndParseRequestFields()
         return self.createAuthorizationRequest()
     }
@@ -58,8 +57,8 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func fetchAuthorizationRequest() async throws{
-        let request = authorizationRequestParameters[AuthorizationRequestFieldConstants.request.rawValue] as? String
-        let requestUri = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri.rawValue] as? String
+        let request = authorizationRequestParameters[AuthorizationRequestFieldConstants.request] as? String
+        let requestUri = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri] as? String
         
         if(request != nil && requestUri != nil){
             throw InvalidData(
@@ -84,7 +83,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     }
 
     private func handleRequestObjectAsValue(_ request: String) async throws {
-        try validate(request, fieldPath: AuthorizationRequestFieldConstants.request.rawValue, className: className)
+        try validate(request, fieldPath: AuthorizationRequestFieldConstants.request, className: className)
         guard (delegate.isSignedRequestSupported()) else {
             throw InvalidData(
                 message: "Signed request (via request) is not supported for given client_id_prefix - \(delegate.clientIdPrefix())",
@@ -108,7 +107,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             )
         }
         
-        try validate(requestUri, fieldPath: AuthorizationRequestFieldConstants.requestUri.rawValue, className: className)
+        try validate(requestUri, fieldPath: AuthorizationRequestFieldConstants.requestUri, className: className)
         guard isValidUri(requestUri)
         else {
             throw InvalidData(
@@ -117,27 +116,37 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             )
         }
         
-        let httpMethod = try requestUriMethod()
+        var requestUriMethod : RequestUriMethod = try requestUriMethod()
         
         var body: [String: String]? = nil
         var headers: [String: String] = [Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
         
-        if httpMethod == .post {
-            body = [AuthorizationRequestFieldConstants.walletNonce.rawValue: walletNonce]
+        if(requestUriMethod == .post && walletConfig.requestUriMethodsSupported.contains(.post) == false){
+            // If Wallet does not support post consider it as get and proceed
+            OpenID4VPException.warn("Wallet does not support POST method for request_uri. Proceeding with GET method.", className: className)
+            requestUriMethod = .get
+        }
+        
+        if requestUriMethod == .post {
+            body = [AuthorizationRequestFieldConstants.walletNonce: walletNonce]
             headers[Header.contentType.rawValue] = ContentTypes.applicationFormUrlEncoded.rawValue
             
+            try isClientIdPrefixSupported(walletConfig: walletConfig)
             
-            if let walletMetadata = walletMetadata {
-                try isClientIdPrefixSupported(walletMetadata: walletMetadata)
+            do {
+                let processedWalletMetadata = try delegate.getWalletMetadata(walletConfig: walletConfig)
+                let jsonData = try JSONSerialization.data(withJSONObject: processedWalletMetadata)
+                let jsonStringifiedWalletMetadata = String(data: jsonData, encoding: .utf8) ?? ""
                 
-                let processedWalletMetadata = try delegate.process(walletMetadata: walletMetadata)
-                body?["wallet_metadata"] = try processedWalletMetadata.encode(specVersion: specVersion)
+                body?["wallet_metadata"] = jsonStringifiedWalletMetadata
                 shouldValidateWithWalletMetadata = true
+            } catch {
+                OpenID4VPException.warn("Error while creating wallet metadata: \(error.localizedDescription). Proceeding without passing Verifier.", className: className)
             }
         }
         var response:  NetworkResponse
         do{
-            response = try await networkManager.sendHTTPRequest(url: requestUri, method: httpMethod, bodyParams: body, headers: headers)
+            response = try await networkManager.sendHTTPRequest(url: requestUri, method: requestUriMethod.toHttpMethod(), bodyParams: body, headers: headers)
             if(!response.isOK){
                 throw InvalidData(message: "Error while fetching request_uri: HTTP status code \(response.statusCode) & body: \(response.body)", className: className)
             }
@@ -148,11 +157,11 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                 throw InvalidData(
                     message: "Authorization Request Object must have content type 'application/oauth-authz-req+jwt'", className: className)
             }
-            throw GenericFailure(message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
+            throw GenericFailure(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "Network error while fetching request_uri: \(error.localizedDescription)", className: className)
         } catch {
-            throw GenericFailure(message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
+            throw GenericFailure(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "Error while fetching request_uri: \(error.localizedDescription)", className: className)
         }
-        self.authorizationRequestParameters = try await validateRequestUriResponse(response.body, httpMethod: httpMethod)
+        self.authorizationRequestParameters = try await validateRequestUriResponse(response.body, requestUriMethod: requestUriMethod)
     }
     
     private func handleUrlEncodedRequest() throws {
@@ -164,7 +173,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
     }
     
-    private func validateRequestUriResponse(_ requestUriResponse: String, httpMethod: HttpMethod) async throws -> [String: Any] {
+    private func validateRequestUriResponse(_ requestUriResponse: String, requestUriMethod: RequestUriMethod) async throws -> [String: Any] {
         guard isJWS(requestUriResponse) else {
             throw InvalidData(
                 message: "Authorization Request Object must be a signed JWT", className: className)
@@ -173,7 +182,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try await validateJWTRequest(requestUriResponse)
         
         let authorizationRequestObject =  try JWSHandler.extractDataJsonFromJws(jws: requestUriResponse, jwsPart: .payload)
-        if(httpMethod == .post){
+        if(requestUriMethod == .post){
             try validateWalletNonce(authorizationRequestObject, walletNonce)
         }
         
@@ -218,38 +227,38 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     func validateAndParseRequestFields() async throws {
-        if authorizationRequestParameters[AuthorizationRequestFieldConstants.transactionData.rawValue] != nil {
+        if authorizationRequestParameters[AuthorizationRequestFieldConstants.transactionData] != nil {
             throw InvalidTransactionData(message: "Invalid Request: transaction_data is not supported in the authorization request", className: className)
         }
-        let mandatoryFields = [AuthorizationRequestFieldConstants.responseType.rawValue,AuthorizationRequestFieldConstants.nonce.rawValue]
+        let mandatoryFields = [AuthorizationRequestFieldConstants.responseType,AuthorizationRequestFieldConstants.nonce]
         
         for field in mandatoryFields {
             try validateAttribute(field, values: authorizationRequestParameters)
         }
         
-        try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue] as? String)!)
+        try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType] as? String)!)
         
-        let optionalFields = [AuthorizationRequestFieldConstants.state.rawValue, AuthorizationRequestFieldConstants.responseMode.rawValue]
+        let optionalFields = [AuthorizationRequestFieldConstants.state, AuthorizationRequestFieldConstants.responseMode]
         for field in optionalFields {
             if (authorizationRequestParameters[field] != nil){
                 try validateAttribute(field, values: authorizationRequestParameters)
             }
         }
         
-        authorizationRequestParameters = try specVersionHandler.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
+        authorizationRequestParameters = try specVersionHandler.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
         
-        try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters, networkManager: networkManager)
+        try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters,walletConfig: walletConfig, networkManager: networkManager)
     }
     
     final func setResponseUrl() throws {
-        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
+        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
         
         try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
     }
     
-    private func isClientIdPrefixSupported(walletMetadata: WalletMetadata) throws {
+    private func isClientIdPrefixSupported(walletConfig: WalletConfig) throws {
         let clientIdPrefix = delegate.clientIdPrefix()
-        var walletSupportedClientIdPrefixes = walletMetadata.clientIdPrefixesSupported.compactMap { $0.rawValue }
+        var walletSupportedClientIdPrefixes = walletConfig.clientIdPrefixesSupported.compactMap { $0.rawValue }
         if walletSupportedClientIdPrefixes.contains(ClientIdPrefix.decentralizedIdentifier.rawValue) {
             walletSupportedClientIdPrefixes.append(ClientIdPrefix.toClientIdScheme(.decentralizedIdentifier))
         }
@@ -262,9 +271,9 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     }
     
     private func validateAuthorizationRequestSigningAlgorithm(_ algorithm: String) throws {
-        if shouldValidateWithWalletMetadata, let walletMetadata = walletMetadata {
-            if let supportedAlgs = walletMetadata.requestObjectSigningAlgValuesSupported?.compactMap({$0.rawValue}) ,
-               !supportedAlgs.contains(algorithm) {
+        if shouldValidateWithWalletMetadata {
+            let supportedAlgs = walletConfig.requestObjectSigningAlgValuesSupported?.compactMap({$0.rawValue}) ?? []
+            if !supportedAlgs.contains(algorithm) {
                 throw InvalidData(
                     message: "request_object_signing_alg is not supported by wallet",
                     className: className
@@ -273,14 +282,20 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
     }
     
-    private func requestUriMethod() throws -> HttpMethod {
-        let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod.rawValue] as? String ?? HttpMethod.get.rawValue
-        let httpMethod = try determineHttpMethod(method: requestUriMethod)
-        return httpMethod
+    private func requestUriMethod() throws -> RequestUriMethod {
+        let requestUriMethod = authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUriMethod] as? String ?? RequestUriMethod.get.rawValue
+        let methodValue = requestUriMethod.lowercased()
+        if methodValue == "get" {
+            return .get
+        } else if methodValue == "post" {
+            return .post
+        } else {
+            throw UnsupportedHttpMethod(message: requestUriMethod, className: AuthorizationRequest.className)
+        }
     }
     
     private func validateWalletNonce(_ authorizationRequestObject: [String : Any], _ walletNonce: String) throws {
-        let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce.rawValue] as? String
+        let walletNonceFromAuthorizationRequest = authorizationRequestObject[AuthorizationRequestFieldConstants.walletNonce] as? String
         if walletNonce != walletNonceFromAuthorizationRequest {
             throw InvalidData(message: "wallet_nonce provided in the authorization request is not the same as shared by wallet", className: self.className)
         }
@@ -297,24 +312,24 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             return specVersion == .v1 ? .specV1 : .draft23
         }
 
-        func parseAndValidateClientMetadata(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletMetadata: WalletMetadata?) throws -> [String: Any] {
+        func parseAndValidateClientMetadata(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletConfig: WalletConfig) throws -> [String: Any] {
             let clientMetadataHandler: ClientMetadataSpecVersionHandler = self == .draft23 ? .draft23 : .v1
-            return try clientMetadataHandler.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletMetadata: walletMetadata)
+            return try clientMetadataHandler.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
         }
 
-        func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], networkManager: NetworkManaging) async throws {
+        func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], walletConfig: WalletConfig, networkManager: NetworkManaging) async throws {
             switch self {
             case .specV1:
-                //                TODO: Parse and validate DCQL query
-                // require_cryptographic_holder_binding - is false in all credential queries and not direct post then, state can be optional else required
-                // TODO: add check for state parameter based on presence of require_cryptographic_holder_binding
-                let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
-                if responseMode == ResponseMode.directPost.rawValue {
-                    try validateAttribute(AuthorizationRequestFieldConstants.state.rawValue, values: authorizationRequestParameters)
+                authorizationRequestParameters = try parseAndValidateDcqlQuery(authorizationRequestParameters)
+                
+                if let dcqlQuery = (authorizationRequestParameters[AuthorizationRequestFieldConstants.dcqlQuery]) as? DCQLQuery {
+                    if dcqlQuery.credentials.contains(where: { !$0.requireCryptographicHolderBinding }) {
+                        try validateAttribute(AuthorizationRequestFieldConstants.state, values: authorizationRequestParameters)
+                    }
                 }
                 return
-            case .draft23:
-                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, true, networkManager)
+           case .draft23:
+                authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, walletConfig.isPresentationDefinitionUriSupported, networkManager)
             }
         }
         
@@ -322,28 +337,29 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             switch self {
             case .draft23:
                 return AuthorizationPresentationExchangeRequest(
-                    clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,
-                    responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue])!,
-                    responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue]),
-                    responseUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]),
-                    redirectUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri.rawValue]),
-                    nonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce.rawValue])!,
-                    walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue]),
-                    state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]),
-                    presentationDefinition: authorizationRequestParameters[AuthorizationRequestFieldConstants.presentationDefinition.rawValue]! as! PresentationDefinition,
-                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadataDraft23
+                    clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId])!,
+                    responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType])!,
+                    responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode]),
+                    responseUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri]),
+                    redirectUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri]),
+                    nonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce])!,
+                    walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce]),
+                    state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state]),
+                    presentationDefinition: authorizationRequestParameters[AuthorizationRequestFieldConstants.presentationDefinition]! as! PresentationDefinition,
+                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata] as? ClientMetadataDraft23
                 )
             case .specV1:
                 return AuthorizationDcqlRequest(
-                    clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue])!,
-                    responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType.rawValue])!,
-                    responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue]),
-                    responseUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri.rawValue]),
-                    redirectUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri.rawValue]),
-                    nonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce.rawValue])!,
-                    walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue]),
-                    state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state.rawValue]),
-                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata.rawValue] as? ClientMetadata
+                    clientId: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId])!,
+                    responseType: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType])!,
+                    responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode]),
+                    responseUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri]),
+                    redirectUri: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri]),
+                    nonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce])!,
+                    walletNonce: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.walletNonce]),
+                    state: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state]),
+                    dcqlQuery: authorizationRequestParameters[AuthorizationRequestFieldConstants.dcqlQuery] as! DCQLQuery,
+                    clientMetadata: authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata] as? ClientMetadata
                 )
             }
         }

@@ -20,6 +20,8 @@ let jwkSet = """
                 "kid": "ed-key1"}] }
 """
 
+let didJwkKey =  "did:jwk:eyJrdHkiOiAiT0tQIiwiY3J2IjogIkVkMjU1MTkiLCJ4IjogIlhtdDBlTnE1TWNtLUZvbV9tbTAteHUxZTEtLWpJcXUtcUpuZTlOU25LRkUifQ#0"
+
 let clientMetadataString = """
         {
             "client_name": "Valid Client",
@@ -117,7 +119,7 @@ let authorizationRequestParamsWithValue: [String: Any] = [
         SpecVersion.draft23: clientMetadataSpecVersionDraft23
     ],
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
-    "dcql_query": ["credentials": "test-dummy"]
+    "dcql_query": dcqlQuery,
 ]
 
 func baseAuthRequest(clientId: String,
@@ -264,6 +266,16 @@ let presentationDefinition: [String: Any] = [
 ]
 
 let mockPresentationDefinitionObject = createInstance(presentationDefinition, as: PresentationDefinition.self)
+
+let dcqlQuery = [
+    "credentials": [
+        [ "id": "cred1", "format": "dc+sd-jwt", "meta": [:]],
+        [ "id": "cred2", "format": "mso_mdoc", "meta": [:]],
+        [ "id": "cred3", "format": "ldp_vc", "meta": [:]]
+    ]
+]
+
+let validDcqlQuery = createInstance(dcqlQuery, as: DCQLQuery.self)
 
 let vpFormatsMap: [String: VPFormatSupported] = [
     "ldp_vc": LdpVcFormatSupported(proofTypeValues: [ .ed25519Signature2020])
@@ -495,14 +507,9 @@ let mockClientMetadataSpecVersion1 : [ResponseMode: ClientMetadata] = [
     ], as: ClientMetadata.self)
 ]
 
-let ldpVPTokenSigningResult = LdpVPTokenSigningResult(
-    jws: "validJWS", proofValue: "hdjbhdsjdshjv",
-    signatureAlgorithm: "JsonWebSignature2020"
-)
+let ldpVPTokenSigningResult = VPTokenSigningResult(signedData: Data("validJWS".utf8))
 
-let mdocSigningResult = MdocVPTokenSigningResult(
-    docTypeToDeviceAuthentication: ["docType": DeviceAuthentication(signature: "signature", algorithm: "ES256")]
-)
+let mdocSigningResult = VPTokenSigningResult(signedData: Data("signature".utf8))
 
 //  client_id_prefix = redirect_uri
 let authorizationRequestParamsWithRedirectUri: [String: Any] = [
@@ -519,8 +526,8 @@ let authorizationRequestParamsWithRedirectUri: [String: Any] = [
 let urlEncodedAuthRequestWithPresentationDefinitionUri = createUrlEncodedAuthorizationRequest(
     requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters),
     clientIdPrefix: .preRegistered,
-    applicableFields: authRequestWithPreRegisteredByValue.map {
-        $0 == AuthorizationRequestFieldConstants.presentationDefinition.rawValue ? AuthorizationRequestFieldConstants.presentationDefinitionUri.rawValue : $0
+    applicableFields: authRequestWithPreRegisteredByValue.map { field in
+        field == "presentation_definition" ? "presentation_definition_uri" : field
     },
     addEncryptionClientMetadataParams: false
 )
@@ -529,7 +536,7 @@ let urlEncodedAuthRequestWithPresentationDefinitionUri = createUrlEncodedAuthori
 let testValidUrlEncodedVPRequestWithRedirectUri = createUrlEncodedAuthorizationRequest(
     requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
     clientIdPrefix: .redirectUri,
-    applicableFields: authRequestWithRedirectUriByValue.map { $0 == AuthorizationRequestFieldConstants.redirectUri.rawValue ? AuthorizationRequestFieldConstants.responseUri.rawValue : $0 },
+    applicableFields: authRequestWithRedirectUriByValue.map { $0 == "redirect_uri" ? "response_uri" : $0 },
     addEncryptionClientMetadataParams: false
 )
 

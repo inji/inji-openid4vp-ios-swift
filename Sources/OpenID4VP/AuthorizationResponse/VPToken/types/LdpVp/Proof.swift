@@ -9,4 +9,5 @@ struct Proof: Encodable {
     var proofPurpose: ProofPurpose? = nil
     var verificationMethod: String
     var proofValue: String? = nil
+    var signatureValue: String? = nil
 }

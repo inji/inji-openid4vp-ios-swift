@@ -3,10 +3,10 @@ import XCTest
 
 class AuthorizationRequestUtilsTests : XCTestCase {
     let mockNetworkManager = MockNetworkManager()
-    private var walletMetadata: WalletMetadata!
+    private var walletConfig: WalletConfig!
     
     override func setUpWithError() throws {
-        walletMetadata = try createWalletMetadata()
+        walletConfig = createWalletConfig()
     }
     
     ///Test Decoding of url encoded paramters to Dictionary
@@ -60,12 +60,17 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     func testGetAuthorizationRequestHandlerToGiveRespectiveClientIdBasedAuthorizationRequestHandler(){
         let mockSetResponseUri: (String) -> Void = { value in
         }
-        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientIdDraft23, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
-        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientIdParameters, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
-        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientIdParameter, trustedVerifiers: [], walletMetadata: walletMetadata, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let didAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: DidSchemeClientIdDraft23, walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+        let preRegisteredSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: preRegisteredSchemeClientIdParameters,  walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+        let preRegisteredSchemeClientWithColonSeparatorAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters:  [
+            "client_id": "https://mock-verifier.com",
+        ],  walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let redirectUriSchemeAuthRequestHandler = try? getAuthorizationRequestHandler(authorizationRequestParameters: redirectUriSchemeClientIdParameter,  walletConfig: walletConfig, shouldValidateClient: true, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
         
         XCTAssertTrue(didAuthRequestHandler is DecentralizedIdentifierPrefixAuthorizationRequestHandler)
         XCTAssertTrue(preRegisteredSchemeAuthRequestHandler is PreRegisteredSchemeAuthorizationRequestHandler)
+        XCTAssertTrue(preRegisteredSchemeClientWithColonSeparatorAuthRequestHandler is PreRegisteredSchemeAuthorizationRequestHandler)
         XCTAssertTrue(redirectUriSchemeAuthRequestHandler is RedirectUriPrefixAuthorizationRequestHandler)
     }
     
@@ -73,16 +78,16 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     // Validate client tests
     func testThrowInvalidRequestFieldErrorForClientIdFieldWhenGettingAuthRequestHandler() {
         let testCases: [TestCase] = [
-            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
-            TestCase(input: [AuthorizationRequestFieldConstants.clientId.rawValue: "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId: "null"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId: ""], expectedError: "Invalid Input: client_id value cannot be empty or null"),
+            TestCase(input: [AuthorizationRequestFieldConstants.clientId: "nil"], expectedError: "Invalid Input: client_id value cannot be empty or null"),
             TestCase(input: [:], expectedError: "Missing Input: client_id param is required")
         ]
         
         for testCase in testCases {
             let authorizationRequestParametersWithInvalidClientId: [String : Any] = testCase.input as [String : Any]
             
-            XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId, trustedVerifiers: [], walletMetadata: nil, shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)){ error in
+            XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId,  walletConfig: WalletConfig(), shouldValidateClient: false, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)){ error in
                 assertOpenID4VPException(error,
                                          expectedMessage: testCase.expectedError!,
                                          expectedCode: OpenID4VPErrorCodes.invalidRequest
@@ -95,24 +100,27 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     func testExtractClientIdPartOnlyWithValidInput(){
         let redirectUriSchemeClientId = "redirect_uri:https://client.example.org/cb"
         let preRegisteredSchemeClientId = "example-client"
+        let preRegisteredSchemeClientIdWithColonSeparator = "https://client.example.org/cb"
         let didSchemeClientId = "did:example#1"
         
         let result1 = extractClientIdPartOnly(redirectUriSchemeClientId)
         let result2 = extractClientIdPartOnly(preRegisteredSchemeClientId)
-        let result3 = extractClientIdPartOnly(didSchemeClientId)
+        let result3 = extractClientIdPartOnly(preRegisteredSchemeClientIdWithColonSeparator)
+        let result4 = extractClientIdPartOnly(didSchemeClientId)
         
         XCTAssertEqual(result1, "https://client.example.org/cb")
         XCTAssertEqual(result2, preRegisteredSchemeClientId)
-        XCTAssertEqual(result3, didSchemeClientId)
+        XCTAssertEqual(result3, preRegisteredSchemeClientIdWithColonSeparator)
+        XCTAssertEqual(result4, didSchemeClientId)
     }
     
     ///Extraction of client identifier scheme from Authorization request client_id property
     
     func testExtractClientIdPrefixWithValidInput(){
-        let result1 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"mock-client"])
-        let result2 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"redirect_uri:https://mock-verifier.com"])
-        let result3 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"did:example#1"])
-        let result4 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:"decentralized_identifier:did:example#1"])
+        let result1 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"mock-client"])
+        let result2 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"redirect_uri:https://mock-verifier.com"])
+        let result3 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"did:example#1"])
+        let result4 = try! extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:"decentralized_identifier:did:example#1"])
         
         XCTAssertEqual(result1, "pre-registered")
         XCTAssertEqual(result2, "redirect_uri")
@@ -121,7 +129,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
     }
     
     func testExtractClientidThrowErrorWhenClientIdIsEmpty(){
-        XCTAssertThrowsError(try extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId.rawValue:""])){ error in
+        XCTAssertThrowsError(try extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:""])){ error in
             assertOpenID4VPException(error,
                                      expectedMessage: "Invalid Input: client_id value cannot be empty or null",
                                      expectedCode: OpenID4VPErrorCodes.invalidRequest

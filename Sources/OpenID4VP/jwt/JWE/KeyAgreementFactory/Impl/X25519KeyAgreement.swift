@@ -124,9 +124,9 @@ class X25519KeyAgreement: JWEKeyAgreement {
     }
     
     private func getKeyLength(algorithm: String) throws -> Int {
-        let algorithmValue = ContentEncryptionAlgorithm.fromValue(algorithm)
+        let algorithmValue = EncryptionMethod.fromValue(algorithm)
         switch algorithmValue {
-        case .A256GCM:
+        case .a256GCM:
             return 32 // 256-bit AES key
         default:
             throw UnsupportedOperationException(message: "Unsupported content encryption algorithm: \(algorithm)", className: X25519KeyAgreement.className)

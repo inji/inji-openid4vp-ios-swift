@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Verifier {
+public struct Verifier : Codable {
     public let clientId: String
     public let responseUris: [String]
     public let jwksUri: String?

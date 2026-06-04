@@ -4,20 +4,23 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     public let errorCode: String
     public let message: String
     public let className: String
+    // Underlying cause of the exception, if any.
+    public let cause: Error?
     // holds the response received from the Verifier if the error is sent to the Verifier
     public var verifierResponse: VerifierResponse?
     
     internal func setVerifierResponse(_ response: VerifierResponse) {
         self.verifierResponse = response
     }
-    
+
     private static var logTag = ""
     private static var traceabilityId: String?
 
-    public init(errorCode: String, message: String, className: String) {
+    public init(errorCode: String, message: String, cause: Error? = nil, className: String) {
         self.errorCode = errorCode
         self.message = message
         self.className = className
+        self.cause = cause
         print("ERROR [\(errorCode)] - \(message) | Class: \(className)")
     }
 
@@ -57,6 +60,10 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
         print("\(logTag) | ERROR: \(exception.localizedDescription)")
     }
     
+    static func warn(_ message: String, className: String) {
+        print("\(logTag) | WARNING: \(message)")
+    }
+    
     static func error( _ exception: Error, className: String) {
         print("\(logTag) | ERROR: \(exception.localizedDescription)")
     }
@@ -88,6 +95,16 @@ class JsonEncodingFailed: OpenID4VPException {
         super.init(
             errorCode: OpenID4VPErrorCodes.invalidRequest,
             message: "Json encoding failed for \(fieldPath ?? "") due to this error: \(errorMessage)",
+            className: className
+        )
+    }
+}
+
+class EncodingFailed: OpenID4VPException {
+    init(fieldPath: Any? = nil, errorMessage: String, errorCode: String, className: String) {
+        super.init(
+            errorCode: errorCode,
+            message: "Encoding failed for \(fieldPath ?? "") due to this error: \(errorMessage)",
             className: className
         )
     }
@@ -238,9 +255,9 @@ class InvalidResponseMode: OpenID4VPException {
 }
 
 public class GenericFailure: OpenID4VPException {
-    public init(message: String = "", className: String) {
+    public init(errorCode: String = OpenID4VPErrorCodes.serverError,message: String = "", className: String) {
         let message = "Unknown error occurred \(message)"
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+        super.init(errorCode: errorCode, message: message, className: className)
     }
 }
 
@@ -350,6 +367,28 @@ public class ErrorDispatchFailure : OpenID4VPException {
         super.init(
             errorCode: OpenID4VPErrorCodes.errorDispatchFailure,
             message: "Failed to send error to verifier: \(message)",
+            className: className
+        )
+    }
+}
+
+class VerifiablePresentationConstructionFailure : OpenID4VPException {
+    init(cause: Error, className: String) {
+        super.init(
+            errorCode: OpenID4VPErrorCodes.serverError,
+            message: "The wallet encountered an internal error while preparing the presentation.",
+            cause: cause,
+            className: className
+        )
+    }
+}
+
+class AuthorizationResponseConstructionFailure : OpenID4VPException {
+    init(cause: Error, className: String) {
+        super.init(
+            errorCode: OpenID4VPErrorCodes.serverError,
+            message: "The wallet encountered an internal error while preparing the authorization response.",
+            cause: cause,
             className: className
         )
     }

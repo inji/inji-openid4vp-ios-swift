@@ -1,14 +1,14 @@
 import Foundation
 
 public class AuthorizationRequest: Encodable {
-    let clientId: String
-    let responseType: String
-    let responseMode: String?
-    let responseUri: String?
-    let redirectUri: String?
-    let nonce: String
-    let walletNonce: String?
-    let state: String?
+    public let clientId: String
+    public let responseType: String
+    public let responseMode: String?
+    public let responseUri: String?
+    public let redirectUri: String?
+    public let nonce: String
+    public let walletNonce: String?
+    public let state: String?
     
     static let className: String = String(describing: AuthorizationRequest.self)
     
@@ -57,8 +57,7 @@ public class AuthorizationRequest: Encodable {
     
     
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,
-                                                      trustedVerifier: [Verifier],
-                                                      walletMetadata: WalletMetadata?,
+                                                      walletConfig: WalletConfig,
                                                       setResponseUri: @escaping (String) -> Void,
                                                       shouldValidateClient: Bool,
                                                       walletNonce: String,
@@ -67,8 +66,7 @@ public class AuthorizationRequest: Encodable {
         let extractedQueryParameters = try extractQueryParameters(urlEncodedAuthorizationRequest)
         
         return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters,
-                                                 trustedVerifiers: trustedVerifier,
-                                                 walletMetadata: walletMetadata,
+                                                 walletConfig: walletConfig,
                                                  setResponseUri: setResponseUri,
                                                  shouldValidateClient: shouldValidateClient,
                                                  walletNonce: walletNonce,
@@ -78,8 +76,7 @@ public class AuthorizationRequest: Encodable {
     
     static func validateAndCreateAuthorizationRequest(
         authRequest: [String: Any],
-        trustedVerifiers: [Verifier],
-        walletMetadata: WalletMetadata?,
+        walletConfig: WalletConfig,
         setResponseUri: @escaping (String) -> Void,
         shouldValidateClient: Bool,
         walletNonce: String,
@@ -87,8 +84,7 @@ public class AuthorizationRequest: Encodable {
     ) async throws -> AuthorizationRequest {
         return try await getAuthorizationRequest(
             authorizationRequestParameters: authRequest,
-            trustedVerifiers: trustedVerifiers,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: setResponseUri,
             shouldValidateClient: shouldValidateClient,
             walletNonce: walletNonce,
@@ -97,16 +93,14 @@ public class AuthorizationRequest: Encodable {
     }
     
     private static func getAuthorizationRequest(authorizationRequestParameters: [String: Any],
-                                                trustedVerifiers: [Verifier],
-                                                walletMetadata: WalletMetadata?,
+                                                walletConfig: WalletConfig,
                                                 setResponseUri: @escaping (String) -> Void,
                                                 shouldValidateClient: Bool,
                                                 walletNonce: String,
                                                 networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
         let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
-                                                                               trustedVerifiers: trustedVerifiers,
-                                                                               walletMetadata: walletMetadata,
+                                                                               walletConfig: walletConfig,
                                                                                shouldValidateClient: shouldValidateClient,
                                                                                setResponseUri: setResponseUri,
                                                                                walletNonce: walletNonce,
@@ -117,8 +111,8 @@ public class AuthorizationRequest: Encodable {
 }
 
 public final class AuthorizationPresentationExchangeRequest: AuthorizationRequest {
-    var presentationDefinition: PresentationDefinition
-    var clientMetadata: ClientMetadataDraft23?
+    public let presentationDefinition: PresentationDefinition
+    public let clientMetadata: ClientMetadataDraft23?
     
     private enum SubCodingKeys: String, CodingKey {
         case presentationDefinition = "presentation_definition"
@@ -159,10 +153,9 @@ public final class AuthorizationPresentationExchangeRequest: AuthorizationReques
     }
 }
 
-//TODO: Enable DCQL query when DCQL is supported
 public final class AuthorizationDcqlRequest: AuthorizationRequest {
-    //    var dcqlQuery: DCQLQuery
-    var clientMetadata: ClientMetadata?
+    public let dcqlQuery: DCQLQuery
+    public let clientMetadata: ClientMetadata?
     
     private enum SubCodingKeys: String, CodingKey {
         case dcqlQuery = "dcql_query"
@@ -178,10 +171,10 @@ public final class AuthorizationDcqlRequest: AuthorizationRequest {
         nonce: String,
         walletNonce: String?,
         state: String?,
-        //        dcqlQuery: DCQLQuery,
+        dcqlQuery: DCQLQuery,
         clientMetadata: ClientMetadata?
     ) {
-        //        self.dcqlQuery = dcqlQuery
+        self.dcqlQuery = dcqlQuery
         self.clientMetadata = clientMetadata
         super.init(
             clientId: clientId,
@@ -198,7 +191,7 @@ public final class AuthorizationDcqlRequest: AuthorizationRequest {
     public override func encode(to encoder: Encoder) throws {
         try super.encode(to: encoder)
         var container = encoder.container(keyedBy: SubCodingKeys.self)
-        //        try container.encode(dcqlQuery, forKey: .dcqlQuery)
+        try container.encode(dcqlQuery, forKey: .dcqlQuery)
         try container.encodeIfPresent(clientMetadata, forKey: .clientMetadata)
     }
 }
