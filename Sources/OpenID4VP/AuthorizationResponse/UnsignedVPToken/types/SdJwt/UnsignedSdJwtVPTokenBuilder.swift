@@ -103,11 +103,19 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             return nil
         }
         
-        guard let keyId = confirmationKeyClaim["kid"] as? String else {
-            throw UnsupportedOperationException(message: "Unsupported cnf format, only 'kid' is supported", className: Self.className)
+        let signingAlgorithm: String
+        let holderKeyReference: String
+        
+        if let jwk = confirmationKeyClaim["jwk"] as? [String: Any] {
+            signingAlgorithm = try resolveAlgFromJwk(jwk)
+            holderKeyReference = try serializeJwkToJson(jwk)
+        } else if let keyId = confirmationKeyClaim["kid"] as? String {
+            let didResolver = DidPublicKeyResolver(networkManager: networkManager)
+            signingAlgorithm = try await didResolver.getJWSAlgorithm(uri: keyId)
+            holderKeyReference = keyId
+        } else {
+            throw UnsupportedOperationException(message: "Unsupported cnf format, must contain 'kid' or 'jwk'", className: Self.className)
         }
-        let didResolver = DidPublicKeyResolver(networkManager: networkManager)
-        let signingAlgorithm = try await didResolver.getJWSAlgorithm(uri: keyId)
         
         let sdHashAlgorithm = sdJWTPayload["_sd_alg"] as? String ?? HashAlgorithm.sha256.rawValue
         let sdHash = try hashData(credential, hashAlgorithm: sdHashAlgorithm, className: Self.className).toBase64UrlEncoded()
@@ -124,7 +132,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         
         let vpToken = UnsignedVPToken(
             format: format,
-            holderKeyReference: keyId,
+            holderKeyReference: holderKeyReference,
             signatureAlgorithm: signingAlgorithm,
             dataToSign: Data(unsignedJWT.utf8)
         )

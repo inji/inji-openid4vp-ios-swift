@@ -359,4 +359,42 @@ func getJWSAlgorithm(from uri: String) async throws -> String {
     throw UnsupportedOperationException(message: "Unsupported identifier format for JWS algorithm resolution", className: "OpenID4VPUtils")
 }
 
+// MARK: - JWK Utility Functions
+
+private let jwkUtilsClassName = "JwkUtils"
+
+func resolveAlgFromJwk(_ jwk: [String: Any]) throws -> String {
+    if let explicitAlg = jwk["alg"] as? String {
+        return explicitAlg
+    }
+    
+    guard let kty = jwk["kty"] as? String else {
+        throw InvalidData(message: "JWK missing 'kty' field", className: jwkUtilsClassName)
+    }
+    let crv = jwk["crv"] as? String
+    
+    switch (kty.lowercased(), crv?.lowercased()) {
+    case ("okp", "ed25519"):
+        return "EdDSA"
+    case ("ec", "p-256"):
+        return "ES256"
+    case ("ec", "p-384"):
+        return "ES384"
+    case ("ec", "p-521"):
+        return "ES512"
+    case ("rsa", _):
+        return "RS256"
+    default:
+        throw InvalidData(message: "Cannot determine algorithm from JWK (kty=\(kty), crv=\(crv ?? "nil"))", className: jwkUtilsClassName)
+    }
+}
+
+func serializeJwkToJson(_ jwk: [String: Any]) throws -> String {
+    let data = try JSONSerialization.data(withJSONObject: jwk, options: [.sortedKeys])
+    guard let jsonString = String(data: data, encoding: .utf8) else {
+        throw InvalidData(message: "Failed to serialize JWK to JSON string", className: jwkUtilsClassName)
+    }
+    return jsonString
+}
+
 
