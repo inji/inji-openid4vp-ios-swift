@@ -264,7 +264,8 @@ final class WalletConfigTests: XCTestCase {
             "response_types_supported",
             "request_uri_methods_supported",
             "trusted_verifiers",
-            "vp_formats_supported"
+            "vp_formats_supported",
+            "validate_pre_registered_verifier"
         ].sorted())
     }
 

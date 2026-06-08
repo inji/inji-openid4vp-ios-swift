@@ -172,6 +172,7 @@ public struct WalletConfig: Codable {
         try container.encode(isPresentationDefinitionUriSupported, forKey: .presentationDefinitionUriSupported)
         try container.encode(requestUriMethodsSupported, forKey: .requestUriMethodsSupported)
         try container.encode(trustedVerifiers, forKey: .trustedVerifiers)
+        try container.encode(validatePreRegisteredVerifier, forKey: .validatePreRegisteredVerifier)
     }
 }
 
