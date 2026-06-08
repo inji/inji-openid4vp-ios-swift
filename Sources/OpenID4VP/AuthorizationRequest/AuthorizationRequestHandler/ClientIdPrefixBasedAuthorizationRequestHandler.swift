@@ -141,7 +141,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                 body?["wallet_metadata"] = jsonStringifiedWalletMetadata
                 shouldValidateWithWalletMetadata = true
             } catch {
-                OpenID4VPException.warn("Error while creating wallet metadata: \(error.localizedDescription). Proceeding without passing Verifier.", className: className)
+                OpenID4VPException.warn("Failed to process wallet metadata for POST request_uri: \(error.localizedDescription). Continuing without metadata.", className: className)
             }
         }
         var response:  NetworkResponse

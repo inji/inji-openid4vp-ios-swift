@@ -59,7 +59,6 @@ public class AuthorizationRequest: Encodable {
     static func validateAndCreateAuthorizationRequest(urlEncodedAuthorizationRequest: String,
                                                       walletConfig: WalletConfig,
                                                       setResponseUri: @escaping (String) -> Void,
-                                                      shouldValidateClient: Bool,
                                                       walletNonce: String,
                                                       networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
@@ -68,7 +67,6 @@ public class AuthorizationRequest: Encodable {
         return try await getAuthorizationRequest(authorizationRequestParameters: extractedQueryParameters,
                                                  walletConfig: walletConfig,
                                                  setResponseUri: setResponseUri,
-                                                 shouldValidateClient: shouldValidateClient,
                                                  walletNonce: walletNonce,
                                                  networkManager: networkManager)
     }
@@ -78,7 +76,6 @@ public class AuthorizationRequest: Encodable {
         authRequest: [String: Any],
         walletConfig: WalletConfig,
         setResponseUri: @escaping (String) -> Void,
-        shouldValidateClient: Bool,
         walletNonce: String,
         networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
@@ -86,7 +83,6 @@ public class AuthorizationRequest: Encodable {
             authorizationRequestParameters: authRequest,
             walletConfig: walletConfig,
             setResponseUri: setResponseUri,
-            shouldValidateClient: shouldValidateClient,
             walletNonce: walletNonce,
             networkManager: networkManager
         )
@@ -95,13 +91,11 @@ public class AuthorizationRequest: Encodable {
     private static func getAuthorizationRequest(authorizationRequestParameters: [String: Any],
                                                 walletConfig: WalletConfig,
                                                 setResponseUri: @escaping (String) -> Void,
-                                                shouldValidateClient: Bool,
                                                 walletNonce: String,
                                                 networkManager: NetworkManaging
     ) async throws -> AuthorizationRequest {
         let authorizationRequestHandler = try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParameters,
                                                                                walletConfig: walletConfig,
-                                                                               shouldValidateClient: shouldValidateClient,
                                                                                setResponseUri: setResponseUri,
                                                                                walletNonce: walletNonce,
                                                                                networkManager: networkManager)

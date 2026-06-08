@@ -292,7 +292,8 @@ func createWalletConfig(
     authorizationEncryptionEncValuesSupported: [EncryptionMethod]? = [.a256GCM],
     responseTypesSupported: [ResponseType] = [.vp_token],
     responseMode: ResponseMode = .directPost,
-    trustedVerifiers: [Verifier] = preRegisteredVerifiers
+    trustedVerifiers: [Verifier] = preRegisteredVerifiers,
+    validatePreregisteredVerifier: Bool = true
 ) -> WalletConfig {
     return WalletConfig(
         vpFormatsSupported: vpFormatsSupported,
@@ -301,7 +302,8 @@ func createWalletConfig(
         authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,
         responseTypesSupported: responseTypesSupported,
-        trustedVerifiers: trustedVerifiers
+        trustedVerifiers: trustedVerifiers,
+        validatePreRegisteredVerifier: validatePreregisteredVerifier
     )
 }
 

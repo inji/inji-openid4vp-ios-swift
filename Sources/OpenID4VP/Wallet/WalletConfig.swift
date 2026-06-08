@@ -13,6 +13,7 @@ public struct WalletConfig: Codable {
     let isPresentationDefinitionUriSupported: Bool
     let requestUriMethodsSupported: [RequestUriMethod]
     let trustedVerifiers: [Verifier]
+    let validatePreRegisteredVerifier: Bool
     
     enum CodingKeys: String, CodingKey {
         case vpFormatsSupported = "vp_formats_supported"
@@ -24,6 +25,7 @@ public struct WalletConfig: Codable {
         case presentationDefinitionUriSupported = "presentation_definition_uri_supported"
         case requestUriMethodsSupported = "request_uri_methods_supported"
         case trustedVerifiers = "trusted_verifiers"
+        case validatePreRegisteredVerifier = "validate_pre_registered_verifier"
     }
     
     public init(
@@ -35,7 +37,8 @@ public struct WalletConfig: Codable {
         responseTypesSupported: [ResponseType] = WalletConfigDefaults.responseTypesSupported,
         isPresentationDefinitionUriSupported: Bool = WalletConfigDefaults.presentationDefinitionUriSupported,
         requestUriMethodsSupported: [RequestUriMethod] = WalletConfigDefaults.requestUriMethodsSupported,
-        trustedVerifiers: [Verifier] = WalletConfigDefaults.trustedVerifiers
+        trustedVerifiers: [Verifier] = WalletConfigDefaults.trustedVerifiers,
+        validatePreRegisteredVerifier: Bool = WalletConfigDefaults.validatePreRegisteredVerifier
     ) {
         self.vpFormatsSupported = vpFormatsSupported
         self.clientIdPrefixesSupported = clientIdPrefixesSupported
@@ -46,6 +49,7 @@ public struct WalletConfig: Codable {
         self.isPresentationDefinitionUriSupported = isPresentationDefinitionUriSupported
         self.requestUriMethodsSupported = requestUriMethodsSupported
         self.trustedVerifiers = trustedVerifiers
+        self.validatePreRegisteredVerifier = validatePreRegisteredVerifier
     }
     
     public init(from decoder: Decoder) throws {
@@ -59,6 +63,7 @@ public struct WalletConfig: Codable {
         self.isPresentationDefinitionUriSupported = try container.decodeIfPresent(Bool.self, forKey: .presentationDefinitionUriSupported) ?? WalletConfigDefaults.presentationDefinitionUriSupported
         self.requestUriMethodsSupported = try container.decodeIfPresent([RequestUriMethod].self, forKey: .requestUriMethodsSupported) ?? WalletConfigDefaults.requestUriMethodsSupported
         self.trustedVerifiers = try container.decodeIfPresent([Verifier].self, forKey: .trustedVerifiers) ?? WalletConfigDefaults.trustedVerifiers
+        self.validatePreRegisteredVerifier = try container.decodeIfPresent(Bool.self, forKey: .validatePreRegisteredVerifier) ?? WalletConfigDefaults.validatePreRegisteredVerifier
     }
     
     private static func parseVPFormatsSupported(from container: KeyedDecodingContainer<CodingKeys>) throws -> [VPFormatType: VPFormatSupported] {
@@ -202,4 +207,7 @@ struct WalletConfigDefaults {
     
     @usableFromInline
     static let trustedVerifiers: [Verifier] = []
+    
+    @usableFromInline
+    static let validatePreRegisteredVerifier : Bool = true
 }
