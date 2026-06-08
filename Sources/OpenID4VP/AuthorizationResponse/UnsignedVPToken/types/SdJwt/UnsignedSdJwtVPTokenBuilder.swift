@@ -105,6 +105,10 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         
         let signingAlgorithm: String
         let holderKeyReference: String
+
+        if confirmationKeyClaim["jwk"] != nil && confirmationKeyClaim["kid"] != nil {
+            throw InvalidData(message: "Invalid cnf: provide exactly one of 'jwk' or 'kid'", className: Self.className)
+        }
         
         if let jwk = confirmationKeyClaim["jwk"] as? [String: Any] {
             signingAlgorithm = try resolveAlgFromJwk(jwk)

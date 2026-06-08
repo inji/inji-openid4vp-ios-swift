@@ -163,6 +163,58 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         assertKBJwtHeader(kbJwt, expectedHeader: ["alg": "ES256", "typ": "kb+jwt"])
     }
 
+    func testBuildThrowsWhenJwkContainsUnsupportedAlgorithm() async throws {
+        let credential = try makeSdJwt(cnf: [
+            "jwk": [
+                "kty": "EC",
+                "crv": "P-256",
+                "alg": "none"
+            ]
+        ])
+        let builder = UnsignedSdJwtVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(),
+            specVersion: .v1,
+            networkManager: MockNetworkManager()
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .vc_sd_jwt, credential: AnyCodable(credential), inputDescriptorId: "input1")
+        ]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialInputDescriptorMappings: &mappings)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported JWK alg 'none'",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testBuildThrowsWhenCnfContainsBothJwkAndKid() async throws {
+        let credential = try makeSdJwt(cnf: [
+            "jwk": [
+                "kty": "EC",
+                "crv": "P-256"
+            ],
+            "kid": expectedCnfKid
+        ])
+        let builder = UnsignedSdJwtVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(),
+            specVersion: .v1,
+            networkManager: MockNetworkManager()
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .vc_sd_jwt, credential: AnyCodable(credential), inputDescriptorId: "input1")
+        ]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialInputDescriptorMappings: &mappings)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid cnf: provide exactly one of 'jwk' or 'kid'",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     // MARK: - build(credentialToCredentialQueryIdMappings:) — error paths
 
     func testDcqlThrowsWhenAuthorizationRequestIsNotDcqlRequest() async {
@@ -383,6 +435,15 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeSdJwt(cnf: [String: Any]) throws -> String {
+        let header = try JSONSerialization.data(withJSONObject: ["alg": "ES256"]).toBase64UrlEncoded()
+        let payload = try JSONSerialization.data(withJSONObject: [
+            "cnf": cnf,
+            "_sd_alg": HashAlgorithm.sha256.rawValue
+        ]).toBase64UrlEncoded()
+        return "\(header).\(payload).signature"
+    }
 
     private func assertKBJwtHeader(_ kbJwt: String, expectedHeader: [String: Any], file: StaticString = #file, line: UInt = #line) {
         let parts = kbJwt.split(separator: ".")

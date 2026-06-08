@@ -365,7 +365,12 @@ private let jwkUtilsClassName = "JwkUtils"
 
 func resolveAlgFromJwk(_ jwk: [String: Any]) throws -> String {
     if let explicitAlg = jwk["alg"] as? String {
-        return explicitAlg
+        guard let supportedAlgorithm = SignatureAlgorithm.allCases.first(where: {
+            $0.rawValue.caseInsensitiveCompare(explicitAlg) == .orderedSame
+        }) else {
+            throw InvalidData(message: "Unsupported JWK alg '\(explicitAlg)'", className: jwkUtilsClassName)
+        }
+        return supportedAlgorithm.rawValue
     }
     
     guard let kty = jwk["kty"] as? String else {
@@ -396,5 +401,4 @@ func serializeJwkToJson(_ jwk: [String: Any]) throws -> String {
     }
     return jsonString
 }
-
 
