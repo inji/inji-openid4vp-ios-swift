@@ -364,34 +364,14 @@ func getJWSAlgorithm(from uri: String) async throws -> String {
 private let jwkUtilsClassName = "JwkUtils"
 
 func resolveAlgFromJwk(_ jwk: [String: Any]) throws -> String {
-    if let explicitAlg = jwk["alg"] as? String {
-        guard let supportedAlgorithm = SignatureAlgorithm.allCases.first(where: {
-            $0.rawValue.caseInsensitiveCompare(explicitAlg) == .orderedSame
-        }) else {
-            throw InvalidData(message: "Unsupported JWK alg '\(explicitAlg)'", className: jwkUtilsClassName)
-        }
-        return supportedAlgorithm.rawValue
+    let parsedJwk: JWK
+    do {
+        parsedJwk = try convertToInstance(jwk, as: JWK.self)
+    } catch {
+        throw InvalidData(message: "Failed to decode JWK: \(error.localizedDescription)", className: jwkUtilsClassName)
     }
-    
-    guard let kty = jwk["kty"] as? String else {
-        throw InvalidData(message: "JWK missing 'kty' field", className: jwkUtilsClassName)
-    }
-    let crv = jwk["crv"] as? String
-    
-    switch (kty.lowercased(), crv?.lowercased()) {
-    case ("okp", "ed25519"):
-        return "EdDSA"
-    case ("ec", "p-256"):
-        return "ES256"
-    case ("ec", "p-384"):
-        return "ES384"
-    case ("ec", "p-521"):
-        return "ES512"
-    case ("rsa", _):
-        return "RS256"
-    default:
-        throw InvalidData(message: "Cannot determine algorithm from JWK (kty=\(kty), crv=\(crv ?? "nil"))", className: jwkUtilsClassName)
-    }
+
+    return try parsedJwk.resolveJWSAlgorithm(className: jwkUtilsClassName)
 }
 
 func serializeJwkToJson(_ jwk: [String: Any]) throws -> String {

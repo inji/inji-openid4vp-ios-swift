@@ -215,6 +215,28 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         }
     }
 
+    func testBuildThrowsWhenCnfContainsNeitherJwkNorKid() async throws {
+        let credential = try makeSdJwt(cnf: [
+            "unsupported": "value"
+        ])
+        let builder = UnsignedSdJwtVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(),
+            specVersion: .v1,
+            networkManager: MockNetworkManager()
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .vc_sd_jwt, credential: AnyCodable(credential), inputDescriptorId: "input1")
+        ]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialInputDescriptorMappings: &mappings)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported cnf format, must contain 'kid' or 'jwk'",
+                expectedCode: "unsupported_operation"
+            )
+        }
+    }
+
     // MARK: - build(credentialToCredentialQueryIdMappings:) — error paths
 
     func testDcqlThrowsWhenAuthorizationRequestIsNotDcqlRequest() async {
@@ -302,6 +324,68 @@ final class UnsignedSdJwtVPTokenBuilderTests: XCTestCase {
         let holderKeyJson = try XCTUnwrap(try JSONSerialization.jsonObject(with: holderKeyData) as? [String: Any])
         XCTAssertEqual(holderKeyJson["kty"] as? String, "EC")
         XCTAssertEqual(holderKeyJson["crv"] as? String, "P-256")
+    }
+
+    func testDcqlThrowsWhenJwkContainsUnsupportedAlgorithm() async throws {
+        let credential = try makeSdJwt(cnf: [
+            "jwk": [
+                "kty": "EC",
+                "crv": "P-256",
+                "alg": "none"
+            ]
+        ])
+        let builder = sdJwtBuilderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .dc_sd_jwt, credential: AnyCodable(credential), credentialQueryId: "q1")
+        ]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialToCredentialQueryIdMappings: &mappings)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported JWK alg 'none'",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlThrowsWhenCnfContainsBothJwkAndKid() async throws {
+        let credential = try makeSdJwt(cnf: [
+            "jwk": [
+                "kty": "EC",
+                "crv": "P-256"
+            ],
+            "kid": expectedCnfKid
+        ])
+        let builder = sdJwtBuilderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .dc_sd_jwt, credential: AnyCodable(credential), credentialQueryId: "q1")
+        ]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialToCredentialQueryIdMappings: &mappings)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid cnf: provide exactly one of 'jwk' or 'kid'",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testDcqlThrowsWhenCnfContainsNeitherJwkNorKid() async throws {
+        let credential = try makeSdJwt(cnf: [
+            "unsupported": "value"
+        ])
+        let builder = sdJwtBuilderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
+        var mappings = [
+            CredentialToCredentialQueryIdMapping(format: .dc_sd_jwt, credential: AnyCodable(credential), credentialQueryId: "q1")
+        ]
+
+        await XCTAssertAsyncThrowsError(try await builder.build(credentialToCredentialQueryIdMappings: &mappings)) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported cnf format, must contain 'kid' or 'jwk'",
+                expectedCode: "unsupported_operation"
+            )
+        }
     }
 
     // MARK: - build(credentialToCredentialQueryIdMappings:) — requireCryptographicHolderBinding = false
