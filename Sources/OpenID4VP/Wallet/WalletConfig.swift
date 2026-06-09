@@ -70,11 +70,11 @@ public struct WalletConfig: Codable {
         for key in vpFormatsContainer.allKeys {
             switch key {
             case .ldp_vc, .ldp_vp:
-                decodedFormats[key] = try vpFormatsContainer.decode(LdpVcFormatSupported.self, forKey: key)
+                decodedFormats[key] = try vpFormatsContainer.decode(LdpVpFormatSupported.self, forKey: key)
             case .mso_mdoc:
-                decodedFormats[key] = try vpFormatsContainer.decode(MsoMdocVcFormatSupported.self, forKey: key)
+                decodedFormats[key] = try vpFormatsContainer.decode(MsoMdocVpFormatSupported.self, forKey: key)
             case .dc_sd_jwt, .vc_sd_jwt:
-                decodedFormats[key] = try vpFormatsContainer.decode(SdJwtVcFormatSupported.self, forKey: key)
+                decodedFormats[key] = try vpFormatsContainer.decode(SdJwtVpFormatSupported.self, forKey: key)
             }
         }
         return decodedFormats
@@ -146,15 +146,15 @@ public struct WalletConfig: Codable {
         for (key, value) in vpFormatsSupported {
             switch key {
             case .ldp_vc, .ldp_vp:
-                if let v = value as? LdpVcFormatSupported {
+                if let v = value as? LdpVpFormatSupported {
                     try vpFormatsContainer.encode(v, forKey: key)
                 }
             case .mso_mdoc:
-                if let v = value as? MsoMdocVcFormatSupported {
+                if let v = value as? MsoMdocVpFormatSupported {
                     try vpFormatsContainer.encode(v, forKey: key)
                 }
             case .dc_sd_jwt, .vc_sd_jwt:
-                if let v = value as? SdJwtVcFormatSupported {
+                if let v = value as? SdJwtVpFormatSupported {
                     try vpFormatsContainer.encode(v, forKey: key)
                 }
             }
@@ -174,9 +174,9 @@ public struct WalletConfig: Codable {
 struct WalletConfigDefaults {
     @usableFromInline
     static let vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
-        .ldp_vc: LdpVcFormatSupported(),
-        .mso_mdoc: MsoMdocVcFormatSupported(),
-        .dc_sd_jwt: SdJwtVcFormatSupported()
+        .ldp_vc: LdpVpFormatSupported(),
+        .mso_mdoc: MsoMdocVpFormatSupported(),
+        .dc_sd_jwt: SdJwtVpFormatSupported()
     ]
     
     @usableFromInline

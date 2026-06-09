@@ -278,7 +278,7 @@ let dcqlQuery = [
 let validDcqlQuery = createInstance(dcqlQuery, as: DCQLQuery.self)
 
 let vpFormatsMap: [String: VPFormatSupported] = [
-    "ldp_vc": LdpVcFormatSupported(proofTypeValues: [ .ed25519Signature2020])
+    "ldp_vc": LdpVpFormatSupported(proofTypeValues: [ .ed25519Signature2020])
 ]
 
 let clientMetadataSpecVersionDraft23: [String: Any] = [

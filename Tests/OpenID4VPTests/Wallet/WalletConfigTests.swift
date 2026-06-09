@@ -5,9 +5,9 @@ final class WalletConfigTests: XCTestCase {
 
     // MARK: - Fixtures
 
-    private let ldpVc = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: nil)
-    private let msoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
-    private let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["ES256"])
+    private let ldpVc = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: nil)
+    private let msoMdoc = MsoMdocVpFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
+    private let sdJwt = SdJwtVpFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["ES256"])
 
     private func makeConfig(
         vpFormats: [VPFormatType: VPFormatSupported]? = nil,
@@ -516,7 +516,7 @@ final class WalletConfigTests: XCTestCase {
     }
 
     func testToWalletMetadataDraft23VpFormatsEmptyDictWhenNoAlgValues() throws {
-        let emptyMsoMdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: nil, deviceAuthAlgValues: nil)
+        let emptyMsoMdoc = MsoMdocVpFormatSupported(issuerAuthAlgValues: nil, deviceAuthAlgValues: nil)
         let metadata = try makeConfig(vpFormats: [.mso_mdoc: emptyMsoMdoc]).toWalletMetadata(specVersion: .draft23)
         let vpFormats = try XCTUnwrap(metadata[MetadataConstants.vpFormatsSupported] as? [String: Any])
         let msoFormat = try XCTUnwrap(vpFormats["mso_mdoc"] as? [String: Any])

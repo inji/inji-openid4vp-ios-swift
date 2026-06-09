@@ -46,11 +46,11 @@ public struct ClientMetadata: Codable {
             for key in vpFormatsContainer.allKeys {
                 switch key {
                 case .ldp_vc, .ldp_vp:
-                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(LdpVcFormatSupported.self, forKey: key)
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(LdpVpFormatSupported.self, forKey: key)
                 case .mso_mdoc:
-                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(MsoMdocVcFormatSupported.self, forKey: key)
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(MsoMdocVpFormatSupported.self, forKey: key)
                 case .dc_sd_jwt, .vc_sd_jwt:
-                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(SdJwtVcFormatSupported.self, forKey: key)
+                    decodedFormats[key.rawValue] = try vpFormatsContainer.decode(SdJwtVpFormatSupported.self, forKey: key)
                 }
             }
             self.vpFormatsSupported = decodedFormats
@@ -77,15 +77,15 @@ public struct ClientMetadata: Codable {
             guard let formatType = VPFormatType(rawValue: key) else { continue }
             switch formatType {
             case .ldp_vc, .ldp_vp:
-                if let typed = value as? LdpVcFormatSupported {
+                if let typed = value as? LdpVpFormatSupported {
                     try vpFormatsContainer.encode(typed, forKey: formatType)
                 }
             case .mso_mdoc:
-                if let typed = value as? MsoMdocVcFormatSupported {
+                if let typed = value as? MsoMdocVpFormatSupported {
                     try vpFormatsContainer.encode(typed, forKey: formatType)
                 }
             case .dc_sd_jwt, .vc_sd_jwt:
-                if let typed = value as? SdJwtVcFormatSupported {
+                if let typed = value as? SdJwtVpFormatSupported {
                     try vpFormatsContainer.encode(typed, forKey: formatType)
                 }
             }

@@ -6,13 +6,13 @@ final class VPFormatSupportedTests: XCTestCase {
     // MARK: - LdpVcFormatSupported init
 
     func testLdpVcFormatSupportedDefaultInit() {
-        let ldp = LdpVcFormatSupported()
+        let ldp = LdpVpFormatSupported()
         XCTAssertEqual(ldp.proofTypeValues, [.ed25519Signature2020, .jsonWebSignature2020])
         XCTAssertNil(ldp.cryptoSuiteValues)
     }
 
     func testLdpVcFormatSupportedCustomInit() {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
+        let ldp = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
         XCTAssertEqual(ldp.proofTypeValues, [.ed25519Signature2020])
         XCTAssertEqual(ldp.cryptoSuiteValues, ["suite1"])
     }
@@ -23,7 +23,7 @@ final class VPFormatSupportedTests: XCTestCase {
         let json = """
         {"proof_type_values": ["Ed25519Signature2020", "JsonWebSignature2020"]}
         """.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(LdpVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(LdpVpFormatSupported.self, from: json)
         XCTAssertEqual(decoded.proofTypeValues, [.ed25519Signature2020, .jsonWebSignature2020])
     }
 
@@ -31,7 +31,7 @@ final class VPFormatSupportedTests: XCTestCase {
         let json = """
         {"proof_type_values": ["Ed25519Signature2020", "UnknownType", "JsonWebSignature2020"]}
         """.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(LdpVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(LdpVpFormatSupported.self, from: json)
         XCTAssertEqual(decoded.proofTypeValues, [.ed25519Signature2020, .jsonWebSignature2020])
     }
 
@@ -39,7 +39,7 @@ final class VPFormatSupportedTests: XCTestCase {
         let json = """
         {"proof_type_values": ["UnknownType1", "UnknownType2"]}
         """.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(LdpVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(LdpVpFormatSupported.self, from: json)
         XCTAssertNil(decoded.proofTypeValues)
     }
 
@@ -47,7 +47,7 @@ final class VPFormatSupportedTests: XCTestCase {
         let json = """
         {}
         """.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(LdpVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(LdpVpFormatSupported.self, from: json)
         XCTAssertNil(decoded.proofTypeValues)
     }
 
@@ -55,7 +55,7 @@ final class VPFormatSupportedTests: XCTestCase {
         let json = """
         {"proof_type_values": ["Ed25519Signature2020"], "cryptosuite_values": ["suite1", "suite2"]}
         """.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(LdpVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(LdpVpFormatSupported.self, from: json)
         XCTAssertEqual(decoded.cryptoSuiteValues, ["suite1", "suite2"])
     }
 
@@ -63,14 +63,14 @@ final class VPFormatSupportedTests: XCTestCase {
         let json = """
         {"proof_type_values": ["Ed25519Signature2020"]}
         """.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(LdpVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(LdpVpFormatSupported.self, from: json)
         XCTAssertNil(decoded.cryptoSuiteValues)
     }
 
     // MARK: - LdpVcFormatSupported encode
 
     func testLdpVcFormatSupportedEncodesProofTypeValues() throws {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020])
+        let ldp = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020])
         let data = try JSONEncoder().encode(ldp)
         let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         let proofTypes = json["proof_type_values"] as! [String]
@@ -78,14 +78,14 @@ final class VPFormatSupportedTests: XCTestCase {
     }
 
     func testLdpVcFormatSupportedEncodesCryptoSuiteValues() throws {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
+        let ldp = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: ["suite1"])
         let data = try JSONEncoder().encode(ldp)
         let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         XCTAssertEqual(json["cryptosuite_values"] as! [String], ["suite1"])
     }
 
     func testLdpVcFormatSupportedOmitsCryptoSuiteValuesWhenNil() throws {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: nil)
+        let ldp = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020], cryptoSuiteValues: nil)
         let data = try JSONEncoder().encode(ldp)
         let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         XCTAssertNil(json["cryptosuite_values"])
@@ -94,13 +94,13 @@ final class VPFormatSupportedTests: XCTestCase {
     // MARK: - LdpVcFormatSupported toAlgValuesSupported
 
     func testLdpVcFormatSupportedToAlgValuesSupportedReturnsRawValues() {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020, .jsonWebSignature2020])
+        let ldp = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020, .jsonWebSignature2020])
         XCTAssertEqual(ldp.toAlgValuesSupported(), ["Ed25519Signature2020", "JsonWebSignature2020"])
     }
 
     func testLdpVcFormatSupportedToAlgValuesSupportedReturnsNilWhenProofTypesNil() {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [], cryptoSuiteValues: nil)
-        let ldpWithNilProofTypes = LdpVcFormatSupported(proofTypeValues: nil)
+        let ldp = LdpVpFormatSupported(proofTypeValues: [], cryptoSuiteValues: nil)
+        let ldpWithNilProofTypes = LdpVpFormatSupported(proofTypeValues: nil)
         XCTAssertNil(ldpWithNilProofTypes.toAlgValuesSupported())
         _ = ldp
     }
@@ -108,13 +108,13 @@ final class VPFormatSupportedTests: XCTestCase {
     // MARK: - MsoMdocVcFormatSupported init
 
     func testMsoMdocVcFormatSupportedDefaultInit() {
-        let mdoc = MsoMdocVcFormatSupported()
+        let mdoc = MsoMdocVpFormatSupported()
         XCTAssertNil(mdoc.issuerAuthAlgValues)
         XCTAssertNil(mdoc.deviceAuthAlgValues)
     }
 
     func testMsoMdocVcFormatSupportedCustomInit() {
-        let mdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
+        let mdoc = MsoMdocVpFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
         XCTAssertEqual(mdoc.issuerAuthAlgValues, [-7])
         XCTAssertEqual(mdoc.deviceAuthAlgValues, [-9])
     }
@@ -122,38 +122,38 @@ final class VPFormatSupportedTests: XCTestCase {
     // MARK: - MsoMdocVcFormatSupported toAlgValuesSupported
 
     func testMsoMdocVcFormatSupportedToAlgValuesSupportedMapsKnownCoseAlgs() {
-        let mdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-7, -9])
+        let mdoc = MsoMdocVpFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-7, -9])
         XCTAssertEqual(mdoc.toAlgValuesSupported(), ["ES256", "ESP256"])
     }
 
     func testMsoMdocVcFormatSupportedToAlgValuesSupportedMapsUnknownCoseAlgToLabel() {
-        let mdoc = MsoMdocVcFormatSupported(deviceAuthAlgValues: [-99])
+        let mdoc = MsoMdocVpFormatSupported(deviceAuthAlgValues: [-99])
         XCTAssertEqual(mdoc.toAlgValuesSupported(), ["Unknown(-99)"])
     }
 
     func testMsoMdocVcFormatSupportedToAlgValuesSupportedReturnsNilWhenDeviceAuthNil() {
-        let mdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: nil)
+        let mdoc = MsoMdocVpFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: nil)
         XCTAssertNil(mdoc.toAlgValuesSupported())
     }
 
     func testMsoMdocVcFormatSupportedToAlgValuesSupportedReturnsNilWhenBothNil() {
-        let mdoc = MsoMdocVcFormatSupported()
+        let mdoc = MsoMdocVpFormatSupported()
         XCTAssertNil(mdoc.toAlgValuesSupported())
     }
 
     // MARK: - MsoMdocVcFormatSupported encode / decode
 
     func testMsoMdocVcFormatSupportedEncodesAndDecodes() throws {
-        let mdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
+        let mdoc = MsoMdocVpFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
         let data = try JSONEncoder().encode(mdoc)
-        let decoded = try JSONDecoder().decode(MsoMdocVcFormatSupported.self, from: data)
+        let decoded = try JSONDecoder().decode(MsoMdocVpFormatSupported.self, from: data)
         XCTAssertEqual(decoded.issuerAuthAlgValues, [-7])
         XCTAssertEqual(decoded.deviceAuthAlgValues, [-9])
     }
 
     func testMsoMdocVcFormatSupportedDecodesNilsWhenKeysAbsent() throws {
         let json = "{}".data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(MsoMdocVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(MsoMdocVpFormatSupported.self, from: json)
         XCTAssertNil(decoded.issuerAuthAlgValues)
         XCTAssertNil(decoded.deviceAuthAlgValues)
     }
@@ -161,13 +161,13 @@ final class VPFormatSupportedTests: XCTestCase {
     // MARK: - SdJwtVcFormatSupported init
 
     func testSdJwtVcFormatSupportedDefaultInit() {
-        let sdJwt = SdJwtVcFormatSupported()
+        let sdJwt = SdJwtVpFormatSupported()
         XCTAssertNil(sdJwt.sdJwtAlgValues)
         XCTAssertNil(sdJwt.kbJwtAlgValues)
     }
 
     func testSdJwtVcFormatSupportedCustomInit() {
-        let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
+        let sdJwt = SdJwtVpFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
         XCTAssertEqual(sdJwt.sdJwtAlgValues, ["ES256"])
         XCTAssertEqual(sdJwt.kbJwtAlgValues, ["EdDSA"])
     }
@@ -175,33 +175,33 @@ final class VPFormatSupportedTests: XCTestCase {
     // MARK: - SdJwtVcFormatSupported toAlgValuesSupported
 
     func testSdJwtVcFormatSupportedToAlgValuesSupportedReturnsKbJwtAlgValues() {
-        let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
+        let sdJwt = SdJwtVpFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
         XCTAssertEqual(sdJwt.toAlgValuesSupported(), ["EdDSA"])
     }
 
     func testSdJwtVcFormatSupportedToAlgValuesSupportedReturnsNilWhenKbJwtNil() {
-        let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: nil)
+        let sdJwt = SdJwtVpFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: nil)
         XCTAssertNil(sdJwt.toAlgValuesSupported())
     }
 
     func testSdJwtVcFormatSupportedToAlgValuesSupportedIgnoresSdJwtAlgValues() {
-        let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: nil)
+        let sdJwt = SdJwtVpFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: nil)
         XCTAssertNil(sdJwt.toAlgValuesSupported())
     }
 
     // MARK: - SdJwtVcFormatSupported encode / decode
 
     func testSdJwtVcFormatSupportedEncodesAndDecodes() throws {
-        let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
+        let sdJwt = SdJwtVpFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
         let data = try JSONEncoder().encode(sdJwt)
-        let decoded = try JSONDecoder().decode(SdJwtVcFormatSupported.self, from: data)
+        let decoded = try JSONDecoder().decode(SdJwtVpFormatSupported.self, from: data)
         XCTAssertEqual(decoded.sdJwtAlgValues, ["ES256"])
         XCTAssertEqual(decoded.kbJwtAlgValues, ["EdDSA"])
     }
 
     func testSdJwtVcFormatSupportedDecodesNilsWhenKeysAbsent() throws {
         let json = "{}".data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(SdJwtVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(SdJwtVpFormatSupported.self, from: json)
         XCTAssertNil(decoded.sdJwtAlgValues)
         XCTAssertNil(decoded.kbJwtAlgValues)
     }
@@ -210,7 +210,7 @@ final class VPFormatSupportedTests: XCTestCase {
         let json = """
         {"sd-jwt_alg_values": ["ES256"], "kb-jwt_alg_values": ["EdDSA"]}
         """.data(using: .utf8)!
-        let decoded = try JSONDecoder().decode(SdJwtVcFormatSupported.self, from: json)
+        let decoded = try JSONDecoder().decode(SdJwtVpFormatSupported.self, from: json)
         XCTAssertEqual(decoded.sdJwtAlgValues, ["ES256"])
         XCTAssertEqual(decoded.kbJwtAlgValues, ["EdDSA"])
     }
