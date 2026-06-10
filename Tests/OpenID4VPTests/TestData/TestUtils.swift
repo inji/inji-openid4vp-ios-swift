@@ -282,9 +282,9 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
 
 func createWalletConfig(
     vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
-        .ldp_vc: LdpVcFormatSupported(),
-        .mso_mdoc: MsoMdocVcFormatSupported(),
-        .dc_sd_jwt: SdJwtVcFormatSupported()
+        .ldp_vc: LdpVpFormatSupported(),
+        .mso_mdoc: MsoMdocVpFormatSupported(),
+        .dc_sd_jwt: SdJwtVpFormatSupported()
     ],
     clientIdPrefixesSupported: [ClientIdPrefix] = [.preRegistered, .redirectUri, .decentralizedIdentifier],
     requestObjectSigningAlgValuesSupported: [SignatureAlgorithm]? = [.edDsa],

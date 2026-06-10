@@ -108,7 +108,7 @@ final class ClientMetadataUtilTests: XCTestCase {
 
     func testV1ParsingOfClientMetadataWhenAlreadyClientMetadataSpecVersion1Instance() throws {
         let clientMetadataInstance = ClientMetadata(
-            vpFormatsSupported: ["ldp_vc": LdpVcFormatSupported()]
+            vpFormatsSupported: ["ldp_vc": LdpVpFormatSupported()]
         )
         let authorizationRequest = createAuthorizationRequest(clientMetadata: clientMetadataInstance)
 
