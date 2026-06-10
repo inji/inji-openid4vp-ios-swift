@@ -2,17 +2,14 @@ import Foundation
 import JSONWebKey
 
 class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthorizationRequestHandler {
-    let shouldValidateClient: Bool
     
-    init(clientId: String,
+    override init(clientId: String,
          specVersion: SpecVersion,
          authorizationRequestParameters: [String: Any],
          walletConfig: WalletConfig,
-         shouldValidateClient: Bool,
          setResponseUri: @escaping (String) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging) {
-        self.shouldValidateClient = shouldValidateClient
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
@@ -29,7 +26,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     }
     
     override func validateClientId() throws {
-        if shouldValidateClient {
+        if walletConfig.validatePreRegisteredVerifier {
             guard walletConfig.trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String }) else {
                 throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
             }
@@ -48,7 +45,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     
     
     func isUnsignedRequestSupported() throws -> Bool {
-        if shouldValidateClient {
+        if walletConfig.validatePreRegisteredVerifier {
             let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId]) ?? ""
             let preRegisteredVerifier = try verifier(clientId: clientId)
             return preRegisteredVerifier.allowUnsignedRequest
@@ -75,7 +72,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     }
     
     override func validateAndParseRequestFields() async throws {
-        if shouldValidateClient {
+        if walletConfig.validatePreRegisteredVerifier {
             let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as! String
             let preRegisteredClient = try verifier(clientId: clientId)
             

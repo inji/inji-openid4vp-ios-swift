@@ -549,7 +549,7 @@ let testVPRequestWithRedirectUriAndClientIdNotEqual = createUrlEncodedAuthorizat
 //client_id_prefix = pre-registered
 let testValidUrlEncodedVPRequestWithResponseUri = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters), clientIdPrefix: .preRegistered,specVersion: .draft23 , addEncryptionClientMetadataParams: false)
 
-let testUrlEncodedAuthRequestOfUntrustedVerifier = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted_client"]), verifierSentAuthRequestByReference: true, clientIdPrefix: .preRegistered)
+let testUrlEncodedAuthRequestOfUntrustedVerifier = createUrlEncodedAuthorizationRequest(requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted_client"]), verifierSentAuthRequestByReference: false, clientIdPrefix: .preRegistered, addEncryptionClientMetadataParams: false)
 
 
 // jwt -> client_id_prefix = did

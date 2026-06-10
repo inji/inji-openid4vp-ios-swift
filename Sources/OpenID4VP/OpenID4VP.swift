@@ -39,8 +39,7 @@ public class OpenID4VP {
     }
     
     public func authenticateVerifier(
-        urlEncodedAuthorizationRequest: String,
-        shouldValidateClient: Bool = true
+        urlEncodedAuthorizationRequest: String
     ) async throws -> AuthorizationRequest {
         // Create a new wallet nonce for each request
         walletNonce = nonceProvider.generateNonce()
@@ -53,7 +52,6 @@ public class OpenID4VP {
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                 walletConfig: walletConfig,
                 setResponseUri: setResponseUri,
-                shouldValidateClient: shouldValidateClient,
                 walletNonce: walletNonce,
                 networkManager: networkManager
             )
@@ -66,8 +64,7 @@ public class OpenID4VP {
 
 
     public func authenticateVerifier(
-        authorizationRequest: [String: Any],
-        shouldValidateClient: Bool = true
+        authorizationRequest: [String: Any]
     ) async throws -> AuthorizationRequest {
         do {
             walletNonce = nonceProvider.generateNonce()
@@ -79,7 +76,6 @@ public class OpenID4VP {
                 authRequest: authorizationRequest,
                 walletConfig: walletConfig,
                 setResponseUri: setResponseUri,
-                shouldValidateClient: shouldValidateClient,
                 walletNonce: walletNonce,
                 networkManager: networkManager
             )

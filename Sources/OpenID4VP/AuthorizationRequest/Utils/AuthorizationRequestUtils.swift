@@ -69,7 +69,6 @@ extension KeyedDecodingContainer {
 
 func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any],
                                     walletConfig: WalletConfig,
-                                    shouldValidateClient: Bool,
                                     setResponseUri: @escaping (String) -> Void,
                                     walletNonce: String,
                                     networkManager: NetworkManaging
@@ -86,7 +85,6 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               specVersion: specVersion,
                                                               authorizationRequestParameters: authorizationRequestParameters,
                                                               walletConfig: walletConfig,
-                                                              shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
                                                               walletNonce: walletNonce,
                                                               networkManager: networkManager)
@@ -112,7 +110,6 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
                                                               specVersion: specVersion,
                                                               authorizationRequestParameters: authorizationRequestParameters,
                                                               walletConfig: walletConfig,
-                                                              shouldValidateClient: shouldValidateClient,
                                                               setResponseUri: setResponseUri,
                                                               walletNonce: walletNonce,
                                                               networkManager: networkManager)

@@ -359,4 +359,26 @@ func getJWSAlgorithm(from uri: String) async throws -> String {
     throw UnsupportedOperationException(message: "Unsupported identifier format for JWS algorithm resolution", className: "OpenID4VPUtils")
 }
 
+// MARK: - JWK Utility Functions
+
+private let jwkUtilsClassName = "JwkUtils"
+
+func resolveAlgFromJwk(_ jwk: [String: Any]) throws -> String {
+    let parsedJwk: JWK
+    do {
+        parsedJwk = try convertToInstance(jwk, as: JWK.self)
+    } catch {
+        throw InvalidData(message: "Failed to decode JWK: \(error.localizedDescription)", className: jwkUtilsClassName)
+    }
+
+    return try parsedJwk.resolveJWSAlgorithm(className: jwkUtilsClassName)
+}
+
+func serializeJwkToJson(_ jwk: [String: Any]) throws -> String {
+    let data = try JSONSerialization.data(withJSONObject: jwk, options: [.sortedKeys])
+    guard let jsonString = String(data: data, encoding: .utf8) else {
+        throw InvalidData(message: "Failed to serialize JWK to JSON string", className: jwkUtilsClassName)
+    }
+    return jsonString
+}
 
