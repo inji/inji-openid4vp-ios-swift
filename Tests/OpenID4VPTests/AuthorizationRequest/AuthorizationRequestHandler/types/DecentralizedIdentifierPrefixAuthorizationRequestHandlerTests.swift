@@ -32,6 +32,39 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandlerTests : XCTestCase
         XCTAssertFalse(handler.isUnsignedRequestSupported(), "did client_id_prefix should not support request by value")
     }
     
+    // SpecVersion and VP request alignment
+    func testReturnFalseWhenVPRequestDoesNotAlignWithSpecVersion() {
+        // Spec Version 1.0 expects client ID decentralized_identifier:did:...
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let authorizationRequestParametersByReference1: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.draft23]!), specVersion: .v1) as [String : Any]
+        let didSchemeAuthRequestHandler1 = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: didUrl, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference1, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        XCTAssertFalse(didSchemeAuthRequestHandler1.confirmSpecVersionIdentifiedFromRequest(), "handler should return false when client_id does not align with spec version")
+        
+        // Spec version draft 23 expects Client ID did:...
+        let authorizationRequestParametersByReference2: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), specVersion: .draft23) as [String : Any]
+        let didSchemeAuthRequestHandler2 = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .draft23 ,authorizationRequestParameters: authorizationRequestParametersByReference2, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        XCTAssertFalse(didSchemeAuthRequestHandler2.confirmSpecVersionIdentifiedFromRequest(), "handler should return false when client_id does not align with spec version")
+    }
+    
+    func testReturnTrueWhenVPRequestDoesAlignWithSpecVersion() {
+        // Spec Version 1.0 expects client ID decentralized_identifier:did:...
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let authorizationRequestParametersByReference1: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), specVersion: .v1) as [String : Any]
+        let didSchemeAuthRequestHandler1 = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: decentralizedIdentifierClientId, specVersion: .v1 ,authorizationRequestParameters: authorizationRequestParametersByReference1, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        
+        XCTAssertTrue(didSchemeAuthRequestHandler1.confirmSpecVersionIdentifiedFromRequest(), "handler should return true when client_id does align with spec version")
+        
+        // Spec version draft 23 expects Client ID did:...
+        let authorizationRequestParametersByReference2: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.draft23]!), specVersion: .draft23) as [String : Any]
+        let didSchemeAuthRequestHandler2 = DecentralizedIdentifierPrefixAuthorizationRequestHandler(clientId: didUrl, specVersion: .draft23 ,authorizationRequestParameters: authorizationRequestParametersByReference2, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        
+        XCTAssertTrue(didSchemeAuthRequestHandler2.confirmSpecVersionIdentifiedFromRequest(), "handler should return true when client_id does align with spec version")
+    }
+    
     func testExtractionOfPublicKeyFromDidClientIdSuccess() async {
         // Spec Version 1.0
         mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)

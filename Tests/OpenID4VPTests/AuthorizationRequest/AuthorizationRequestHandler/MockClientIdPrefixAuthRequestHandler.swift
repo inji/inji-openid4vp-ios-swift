@@ -9,6 +9,7 @@ class MockClientIdPrefixAuthRequestHandler: ClientIdPrefixBasedAuthorizationRequ
     private let clientIdPrefixValue: String
     private var extractPublicKeyError: OpenID4VPException?
     private var errorToBeThrown: OpenID4VPException?
+    var specVersionAndVPRequestMatch: Bool = true
     
     init(authorizationRequestParameters: [String: Any],
          setResponseUri: @escaping (String) -> Void,
@@ -79,9 +80,17 @@ class MockClientIdPrefixAuthRequestHandler: ClientIdPrefixBasedAuthorizationRequ
         return try walletConfig.toWalletMetadata(specVersion: super.specVersion)
     }
     
+    func confirmSpecVersionIdentifiedFromRequest() -> Bool {
+        return specVersionAndVPRequestMatch
+    }
+    
     var capturedRequestUriResponse: (body: String, httpUrlResponse: HTTPURLResponse)?
     
     func setErrorToBeThrown(error: OpenID4VPException){
         self.errorToBeThrown = error
+    }
+    
+    func getSpecVersion() -> SpecVersion {
+        return super.specVersion
     }
 }

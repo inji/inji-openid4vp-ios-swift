@@ -128,6 +128,27 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         XCTAssertEqual(result4, "decentralized_identifier")
     }
     
+    func testFindSpecVersionUsingClientId(){
+        let result1 = findSpecVersionUsingClientId(clientId: "decentralized_identifier:did:example#1", clientIdPrefix: ClientIdPrefix.decentralizedIdentifier.rawValue,  trustedVerifiers: [], checkSpecVersionInPreRegisteredList: true)
+        let result3 = findSpecVersionUsingClientId(clientId: "did:example#1", clientIdPrefix: ClientIdScheme.did.rawValue, trustedVerifiers: [], checkSpecVersionInPreRegisteredList: true)
+        
+        XCTAssertEqual(result1, .v1)
+        XCTAssertEqual(result3, .draft23)
+        
+        let result5 = findSpecVersionUsingClientId(clientId: "foo:sample", clientIdPrefix:  ClientIdPrefix.preRegistered.rawValue, trustedVerifiers: [], checkSpecVersionInPreRegisteredList: true)
+        let result6 = findSpecVersionUsingClientId(clientId: "foo:sample", clientIdPrefix:  ClientIdPrefix.preRegistered.rawValue, trustedVerifiers: [Verifier(clientId: "foo:sample", responseUris: ["/response-uri"], specVersion: .draft23)], checkSpecVersionInPreRegisteredList: true)
+        let result7 = findSpecVersionUsingClientId(clientId: "foo:sample", clientIdPrefix:  ClientIdPrefix.preRegistered.rawValue, trustedVerifiers: [], checkSpecVersionInPreRegisteredList: false)
+        
+        XCTAssertEqual(result5, .v1)
+        XCTAssertEqual(result6, .draft23)
+        XCTAssertEqual(result7, .v1)
+        
+        // In case of  client ID prefix other than Decentralized identifier (or Did) / pre-registered , spec version is deafulted to v1
+        let result8 = findSpecVersionUsingClientId(clientId: "redirect_uri:foo:sample", clientIdPrefix:  ClientIdPrefix.redirectUri.rawValue, trustedVerifiers: [Verifier(clientId: "foo:sample", responseUris: ["/response-uri"], specVersion: .draft23)], checkSpecVersionInPreRegisteredList: false)
+        
+        XCTAssertEqual(result8, .v1)
+    }
+    
     func testExtractClientidThrowErrorWhenClientIdIsEmpty(){
         XCTAssertThrowsError(try extractClientIdPrefix(authorizationRequestParams: [AuthorizationRequestFieldConstants.clientId:""])){ error in
             assertOpenID4VPException(error,

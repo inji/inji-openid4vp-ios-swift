@@ -26,6 +26,13 @@ class DecentralizedIdentifierPrefixAuthorizationRequestHandler:  ClientIdPrefixB
         return true
     }
     
+    func confirmSpecVersionIdentifiedFromRequest() -> Bool {
+        if(specVersion == .draft23) {
+            return clientId.starts(with: ClientIdScheme.did.rawValue)
+        } else {
+            return clientId.starts(with: ClientIdPrefix.decentralizedIdentifier.rawValue)
+        }
+    }
     
     func isUnsignedRequestSupported() -> Bool {
         return false
