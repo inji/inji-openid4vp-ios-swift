@@ -7,6 +7,13 @@ protocol AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
     func isUnsignedRequestSupported() throws -> Bool
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
     func clientIdPrefix() -> String
+    func confirmSpecVersionIdentifiedFromRequest() -> Bool
+}
+
+extension AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
+    func confirmSpecVersionIdentifiedFromRequest() -> Bool {
+        return true
+    }
 }
 
 class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
@@ -69,8 +76,6 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         
         if let request = request {
             try await handleRequestObjectAsValue(request)
-            specVersion = findSpecVersionUsingRequestParameters(authorizationRequestParameters)
-            
         }
         else if let requestUri = requestUri {
             try await handleRequestObjectByReference(requestUri)
@@ -78,6 +83,13 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             try handleUrlEncodedRequest()
         }
         
+        specVersion = findSpecVersionUsingRequestParameters(authorizationRequestParameters)
+        if(!delegate.confirmSpecVersionIdentifiedFromRequest()) {
+            throw InvalidData(
+                message: "Spec version identification from request parameters failed",
+                className: className
+            )
+        }
         // After fetching the VP request, populate version logic
         specVersionHandler = SpecVersionHandler.from(specVersion)
     }

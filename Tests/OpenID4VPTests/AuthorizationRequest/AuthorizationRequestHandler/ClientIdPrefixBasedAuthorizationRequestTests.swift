@@ -22,6 +22,112 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     
     ///    Fetch authorization request tests
     
+    /**fetchAuthorizationRequest and spec version identification**/
+    func testShouldUpdateSpecversionAsPerFullyResolvedVPRequestFor_ByValueUnsignedRequest() async {
+        let authorizationRequestParametersByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters), specVersion: .draft23) as [String : Any]
+        let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParametersByValue,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfig,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: true
+        )
+        XCTAssertEqual(mockAuthHandler.getSpecVersion(), .v1)
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
+        XCTAssertEqual(mockAuthHandler.getSpecVersion(), .draft23)
+    }
+    
+    func testShouldUpdateSpecversionAsPerFullyResolvedVPRequestFor_ByValueSignedRequest() async {
+        let authorizationRequestParametersByValue1: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), isSigned: true, specVersion: .v1) as [String : Any]
+        let mockAuthHandler1 = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParametersByValue1,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfig,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: false
+        )
+        XCTAssertEqual(mockAuthHandler1.getSpecVersion(), .v1)
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler1.fetchAuthorizationRequest())
+        XCTAssertEqual(mockAuthHandler1.getSpecVersion(), .v1)
+        
+        let authorizationRequestParametersByValue2: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), isSigned: true, specVersion: .draft23) as [String : Any]
+        let mockAuthHandler2 = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParametersByValue2,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfig,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: false
+        )
+        XCTAssertEqual(mockAuthHandler2.getSpecVersion(), .v1)
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler2.fetchAuthorizationRequest())
+        XCTAssertEqual(mockAuthHandler2.getSpecVersion(), .draft23)
+    }
+    
+    func testShouldUpdateSpecversionAsPerFullyResolvedVPRequestFor_ByReferenceSignedRequest() async {
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!, ["request_uri_method": "post"]), specVersion: .v1) as [String : Any]
+        let walletConfigWithoutPost = WalletConfig(
+            vpFormatsSupported: walletConfig.vpFormatsSupported,
+            clientIdPrefixesSupported: walletConfig.clientIdPrefixesSupported,
+            requestObjectSigningAlgValuesSupported: walletConfig.requestObjectSigningAlgValuesSupported,
+            authorizationEncryptionAlgValuesSupported: walletConfig.authorizationEncryptionAlgValuesSupported,
+            authorizationEncryptionEncValuesSupported: walletConfig.authorizationEncryptionEncValuesSupported,
+            responseTypesSupported: walletConfig.responseTypesSupported,
+            requestUriMethodsSupported: [.get]
+        )
+        let requestUriResponse = createRequestUriResponse(createAuthorizationRequestObject(clientIdPrefix: .decentralizedIdentifier, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, DidSchemeClientIdParameters[.v1]!), applicableFields: authRequestWithDidByValue, specVersion: .draft23) )
+        mockNetworkManager.setMockResponse(for: "https://mock-verifier.com/verifier/get-auth-request-obj",response: (responseBody: requestUriResponse.body, httpUrlResponse: requestUriResponse.httpUrlResponse))
+        mockNetworkManager.setMockResponse(for: didDocumentUrl,responseBody: didResponse)
+        let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParametersByReference,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfigWithoutPost,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: true
+        )
+        XCTAssertEqual(mockAuthHandler.getSpecVersion(), .v1)
+        
+        await XCTAssertAsyncNoThrowsError(try await mockAuthHandler.fetchAuthorizationRequest())
+        XCTAssertEqual(mockAuthHandler.getSpecVersion(), .draft23)
+    }
+    
+    func testFetchAuthoriozationRequestThrowErrorWhenSpecVersionAndRequestConformanceFails() async {
+        let authorizationRequestParametersByValue: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters), specVersion: .draft23) as [String : Any]
+        let mockAuthHandler = MockClientIdPrefixAuthRequestHandler(
+            authorizationRequestParameters: authorizationRequestParametersByValue,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager,
+            clientId: "mock-client-id",
+            specVersion: .v1,
+            walletConfig: walletConfig,
+            isSignedRequestSupported: true,
+            isUnsignedRequestSupported: true
+        )
+        mockAuthHandler.specVersionAndVPRequestMatch = false
+        
+        await XCTAssertAsyncThrowsError(try await mockAuthHandler.fetchAuthorizationRequest()) { error in
+            assertOpenID4VPException(error, expectedMessage: "Spec version identification from request parameters failed", expectedCode: "invalid_request")
+        }
+    }
     
     /** Authorization Request passed as URL with encoded params */
     
@@ -938,9 +1044,9 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         }
     }
     
-    func testThrowErrorWhenClientIdSchemeIsNotSupportedAsPerWalletMetadata() async {
-        let  minimalWalletMetadata = createWalletConfig(clientIdPrefixesSupported: [.preRegistered, .redirectUri])
-        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "openid_federation:https://federation-verifier.example.com."], ["request_uri_method": "post"])) as [String : Any]
+    func testThrowErrorWhenClientIdSchemeIsNotSupportedAsPerWalletConfig() async {
+        let  minimalWalletMetadata = createWalletConfig(clientIdPrefixesSupported: [.preRegistered])
+        let authorizationRequestParametersByReference: [String : Any] = createAuthorizationRequest(paramList: authRequestParamsByReference , requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "redirect_uri:https://federation-verifier.example.com."], ["request_uri_method": "post"])) as [String : Any]
         let mockSchemeAuthRequestHandler = MockClientIdPrefixAuthRequestHandler(authorizationRequestParameters: authorizationRequestParametersByReference, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager, clientId: "", specVersion: .v1, walletConfig: minimalWalletMetadata, isSignedRequestSupported: true, isUnsignedRequestSupported: true)
         mockSchemeAuthRequestHandler.shouldValidateWithWalletMetadata = true
         let requestUriResponse = createRequestUriResponse("ewogICJhbGciOiAiSFMyNTYiLAogICAgInR5cCI6ICJvYXV0aC1hdXRoei1yZXErand0Igp9.eyJ10.SflK5c")

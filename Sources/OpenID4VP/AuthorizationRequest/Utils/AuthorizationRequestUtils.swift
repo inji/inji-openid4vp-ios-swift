@@ -77,7 +77,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
     let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String ?? ""
     
     let clientIdPrefix = try extractClientIdPrefix(authorizationRequestParams: authorizationRequestParameters)
-    let specVersion = findSpecVersion(clientId: clientId, clientIdPrefix: clientIdPrefix, authorizationRequestParameters: authorizationRequestParameters, trustedVerifiers: walletConfig.trustedVerifiers)
+    let specVersion = findSpecVersionUsingClientId(clientId: clientId, clientIdPrefix: clientIdPrefix, trustedVerifiers: walletConfig.trustedVerifiers, checkSpecVersionInPreRegisteredList: walletConfig.validatePreRegisteredVerifier)
     
     switch clientIdPrefix {
     case ClientIdPrefix.preRegistered.rawValue:
@@ -168,10 +168,14 @@ func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> S
     let components = clientId.split(separator: ":", maxSplits: 1)
         
     if components.count > 1 {
-         return String(components[0])
+        let prefix = String(components[0])
+        if(ClientIdPrefix.fromValue(prefix) != nil || prefix == ClientIdScheme.did.rawValue){
+            return prefix
+        }
+        return ClientIdPrefix.preRegistered.rawValue
     } else {
         // Fallback client_id_prefix pre-registered; pre-registered clients MUST NOT contain a : character in their Client Identifier
-        return ClientIdScheme.preRegistered.rawValue
+        return ClientIdPrefix.preRegistered.rawValue
     }
 }
 
@@ -221,29 +225,18 @@ internal func findSpecVersionUsingRequestParameters(_ authorizationRequestParame
     return .draft23
 }
 
-/**
- 
- 
- 
- */
-
-internal func findSpecVersion(clientId: String, clientIdPrefix: String, authorizationRequestParameters: [String: Any], trustedVerifiers: [Verifier]) -> SpecVersion {
-    // In case of By reference mode of Request - get the client ID and understand the spec version
-    // Client ID Prefix - redirect_uri is not supported for by reference request, since signed requests are not supported by that client ID prefix.
-    if(authorizationRequestParameters[AuthorizationRequestFieldConstants.requestUri] != nil) {
-        if clientIdPrefix == ClientIdScheme.did.rawValue {
-            return .draft23
-        } else if clientIdPrefix == ClientIdPrefix.decentralizedIdentifier.rawValue {
-            return .v1
-        } else if clientIdPrefix == ClientIdPrefix.preRegistered.rawValue {
-            return getPreRegisteredVerifierSpecVersion(trustedVerifiers, clientId)
-        } else {
-            // If client ID Prefix is unknown - handle it as pre-registered, and return the spec version based on pre-registered verifiers
+internal func findSpecVersionUsingClientId(clientId: String, clientIdPrefix: String, trustedVerifiers: [Verifier], checkSpecVersionInPreRegisteredList: Bool) -> SpecVersion {
+    if clientIdPrefix == ClientIdScheme.did.rawValue {
+        return .draft23
+    } else if clientIdPrefix == ClientIdPrefix.decentralizedIdentifier.rawValue {
+        return .v1
+    } else if clientIdPrefix == ClientIdPrefix.preRegistered.rawValue {
+        if(checkSpecVersionInPreRegisteredList) {
             return getPreRegisteredVerifierSpecVersion(trustedVerifiers, clientId)
         }
+        return .v1
     }
-    
-    return findSpecVersionUsingRequestParameters(authorizationRequestParameters)
+    return .v1
 }
 
 fileprivate func getPreRegisteredVerifierSpecVersion(_ trustedVerifiers: [Verifier], _ clientId: String) -> SpecVersion {

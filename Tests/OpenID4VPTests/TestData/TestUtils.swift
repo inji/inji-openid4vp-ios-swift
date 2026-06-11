@@ -297,7 +297,7 @@ func createWalletConfig(
 ) -> WalletConfig {
     return WalletConfig(
         vpFormatsSupported: vpFormatsSupported,
-        clientIdPrefixesSupported: WalletConfigDefaults.clientIdPrefixesSupported,
+        clientIdPrefixesSupported: clientIdPrefixesSupported,
         requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,
