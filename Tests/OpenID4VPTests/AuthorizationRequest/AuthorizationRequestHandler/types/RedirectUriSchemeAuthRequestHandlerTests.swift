@@ -58,6 +58,19 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         }
     }
     
+    func testThrowErrorWhenBothResponseUriAndRedirectUriPresentForDirectPost() {
+        var authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter), addEncryptionClientMetadataParams: false) as [String : Any]
+        authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri] = "https://mock-verifier.com"
+        let redirectUriSchemeAuthRequestHandler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)
+
+        XCTAssertThrowsError(try redirectUriSchemeAuthRequestHandler.setResponseUrl()) { error in
+            assertOpenID4VPException(error,
+                                     expectedMessage: "redirect_uri should not be present for given response_mode",
+                                     expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     func testThrowErrorWhenAuthorizationRequestObjectClientIdIsNotMatchingWithRequestParameterClientIdInDirectPostResponseMode() async {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter, [AuthorizationRequestFieldConstants.responseMode: "fragment","redirect_uri": "http://invalid-mock-verifier.com"])) as [String : Any]
         let redirectUriSchemeAuthRequestHandler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)

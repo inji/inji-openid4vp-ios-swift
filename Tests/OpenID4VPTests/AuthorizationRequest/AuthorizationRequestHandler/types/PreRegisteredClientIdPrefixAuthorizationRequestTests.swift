@@ -52,8 +52,22 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
         }
     }
     
+    func testThrowErrorWhenBothResponseUriAndRedirectUriPresentForDirectPost() {
+        var authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters)) as [String : Any]
+        authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri] = "https://mock-verifier.com"
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+
+        XCTAssertThrowsError(try preRegistered.setResponseUrl()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "redirect_uri should not be present for given response_mode",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     // Support for Authorization request by reference or by value
-    
+
     func testReturnTrueForAuthorizationRequestByReferenceSupport() {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters)) as [String : Any]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)

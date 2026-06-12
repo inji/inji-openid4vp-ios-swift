@@ -264,7 +264,17 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     
     final func setResponseUrl() throws {
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
-        
+
+        // redirect_uri must not be present for direct_post / direct_post.jwt
+        if responseMode == ResponseMode.directPost.rawValue || responseMode == ResponseMode.directPostJwt.rawValue {
+            if authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.redirectUri) {
+                throw InvalidData(
+                    message: "\(AuthorizationRequestFieldConstants.redirectUri) should not be present for given response_mode",
+                    className: className
+                )
+            }
+        }
+
         try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
     }
     
