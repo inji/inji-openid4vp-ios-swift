@@ -23,27 +23,40 @@ class UtilsTest : XCTestCase {
     /// Validate url tests
     
     func testInvalidUrl() {
-        let testCases: [TestCase] = [
-            TestCase(input: "www.example.com"),
-            TestCase(input: "http://example.com/space here"),
-            TestCase(input: "http://"),
-            TestCase(input: "https://example"),
-            TestCase(input: "http://example.com/file%/name"),
-            TestCase(input: "http://example.com:99999"),
-            TestCase(input: "http:///example.com"),
-            TestCase(input: "http://example.com/search?q=hello%20world#@fragment"),
-            TestCase(input: "http://:8080"),
-            TestCase(input: ""),
-            TestCase(input: "https://example.com/invalid|character")
+        let invalidUrls: [String] = [
+            "www.example.com",
+            "http://example.com/space here",
+            "http://",
+            "https://example",
+            "http://example.com/file%/name",
+            "http://example.com:99999",
+            "http:///example.com",
+            "http://example.com/search?q=hello%20world#@fragment",
+            "http://:8080",
+            "",
+            "https://example.com/invalid|character",
+            "foo://example.com:8042/over/there?name=ferret#nose",
+            "https://example.com/file%/name",
+            "https://example.com/space here",
+            "https://example.com/path\n"
         ]
-        
-        for testCase in testCases {
-            XCTAssertFalse(isValidUri(testCase.input))
+
+        for url in invalidUrls {
+            XCTAssertFalse(isValidUri(url), "expected invalid: \(url)")
         }
     }
-    
+
     func testValidUrl(){
-        XCTAssertTrue(isValidUri("https://609e-122-178-244-112.ngrok-free.app/verifier/get-auth-request-obj/did?draft=version-1.0&response_mode=direct_post"))
+        let validUrls: [String] = [
+            "https://609e-122-178-244-112.ngrok-free.app/verifier/get-auth-request-obj/did?draft=version-1.0&response_mode=direct_post",
+            "https://example.com:8042/over/there?name=ferret#nose",
+            "https://example.com/a%20b?q=hello%20world",
+            "https://example.com//empty/seg",
+            "https://example.com/p?a=1/2&b=x?y#f/g?h"
+        ]
+        for url in validUrls {
+            XCTAssertTrue(isValidUri(url), "expected valid: \(url)")
+        }
     }
     
     /// Check if input is JWT tests

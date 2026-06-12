@@ -33,10 +33,18 @@ func getStringValue(_ value: Any?) -> String? {
     return value as? String
 }
 
+// RFC 3986 (https://www.rfc-editor.org/rfc/rfc3986#section-3) https URI, compiled once
+private let urlValidationRegex: NSRegularExpression? = {
+    let pattern = #"^https://(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:/(?:[\w\-.~!$&'()*+,;=:@]|%[0-9A-Fa-f]{2})*)*(?:\?(?:[\w\-.~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*)?(?:#(?:[\w\-.~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*)?$"#
+    return try? NSRegularExpression(pattern: pattern)
+}()
+
 public func isValidUri(_ urlString: String) -> Bool {
-    let urlRegex = #"^https:\/\/(?:[\w-]+\.)+[\w-]+(?:\/[\w\-.~!$&'()*+,;=:@%]+)*\/?(?:\?[^#\s]*)?(?:#.*)?$"#
-    
-    return urlString.range(of: urlRegex, options: .regularExpression) != nil
+    guard let regex = urlValidationRegex else { return false }
+    let range = NSRange(urlString.startIndex..., in: urlString)
+    guard let match = regex.firstMatch(in: urlString, options: [], range: range) else { return false }
+    // require the match to span the whole string (ICU's `$` allows a trailing newline)
+    return match.range == range
 }
 
 func convertToInstance<T: Decodable>(_ dictionary: [String: Any], as type: T.Type) throws -> T {
