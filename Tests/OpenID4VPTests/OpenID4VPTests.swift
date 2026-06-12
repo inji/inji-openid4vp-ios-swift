@@ -107,6 +107,37 @@ class OpenID4VPTests: XCTestCase {
         }
     }
 
+    // Missing nonce must NOT trigger a verifier notification
+    func testAuthenticateVerifierDoesNotNotifyVerifierWhenNonceIsMissing() async {
+        let requestWithoutNonce = createUrlEncodedAuthorizationRequest(
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter),
+            clientIdPrefix: .redirectUri,
+            applicableFields: authRequestWithRedirectUriByValue.filter { $0 != "nonce" },
+            addEncryptionClientMetadataParams: false
+        )
+
+        let result = await Task {
+            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: requestWithoutNonce)
+        }.result
+
+        switch result {
+        case let .failure(error):
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: nonce param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        case .success:
+            XCTFail("Expected error for missing nonce but got success")
+        }
+
+        // No error POST should have been dispatched to the verifier's response_uri
+        XCTAssertTrue(
+            mockNetworkManager.recordedRequests.isEmpty,
+            "Verifier should not be notified when nonce is missing"
+        )
+    }
+
     // client_id_prefix = pre-registered
     func testReturnDataForValidRequestWithResponseUri() async {
         let requestUriResponse = createAuthorizationRequestObject(clientIdPrefix: .preRegistered, authorizationRequestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters), applicableFields: authRequestWithPreRegisteredByValue)

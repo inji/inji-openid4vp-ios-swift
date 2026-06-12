@@ -154,6 +154,7 @@ public class OpenID4VP {
     }
 
     private func safeSendError(error: Error) async {
+        if let exception = error as? OpenID4VPException, !exception.notifyVerifier { return }
         do {
             let verifierResponse = try await sendErrorInfoToVerifier(error: error)
             (error as? OpenID4VPException)?.setVerifierResponse(verifierResponse)

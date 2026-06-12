@@ -3,22 +3,25 @@ import CryptoKit
 
 func validateAttribute(
     _ attribute: String,
-    values: [String: Any]
+    values: [String: Any],
+    notifyVerifier: Bool = true
 ) throws {
     guard let value = values[attribute] else {
         throw MissingInput(
             fieldPath: [attribute],
-            className: AuthorizationRequest.className
+            className: AuthorizationRequest.className,
+            notifyVerifier: notifyVerifier
         )
     }
-    
+
     if let stringValue = value as? String {
         if stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
             stringValue.lowercased() == "nil" ||
             stringValue.lowercased() == "null" {
             throw InvalidInput(
                 fieldPath: [attribute],
-                className: AuthorizationRequest.className
+                className: AuthorizationRequest.className,
+                notifyVerifier: notifyVerifier
             )
         }
     }
