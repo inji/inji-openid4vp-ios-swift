@@ -43,7 +43,7 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
         switch responseMode {
         case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
-            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri)
+            try validateResponseUriMatchesClientId(authorizationRequestParameters: authorizationRequestParameters)
             break
         case ResponseMode.iarPost.rawValue, ResponseMode.iarPostJwt.rawValue:
             print("IAR_POST or IAR_POST_JWT response_mode is used")
@@ -53,22 +53,18 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
                 className: className
             )
         }
-        
+
     }
-    
-    private func validateUriCombinations(authorizationRequestParameters: [String: Any], validAttribute: String, inValidAttribute: String) throws {
-        if authorizationRequestParameters.keys.contains(inValidAttribute) {
-            throw InvalidData(message: "\(inValidAttribute) should not be present for given response_mode", className: className)
-        } else {
-            try validateAttribute(validAttribute, values: self.authorizationRequestParameters)
-        }
-        
-        let validValue = authorizationRequestParameters[validAttribute]
+
+    private func validateResponseUriMatchesClientId(authorizationRequestParameters: [String: Any]) throws {
+        try validateAttribute(AuthorizationRequestFieldConstants.responseUri, values: self.authorizationRequestParameters)
+
+        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri]
         let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String ?? "")
-        
-        if validValue as? String != clientIdValue {
+
+        if responseUriValue as? String != clientIdValue {
             throw InvalidData(
-                message: "\(validAttribute) should be equal to client_id for given client_id_prefix",
+                message: "\(AuthorizationRequestFieldConstants.responseUri) should be equal to client_id for given client_id_prefix",
                 className: className
             )
         }

@@ -8,7 +8,9 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     public let cause: Error?
     // holds the response received from the Verifier if the error is sent to the Verifier
     public var verifierResponse: VerifierResponse?
-    
+    // whether this error should be dispatched to the Verifier; defaults to true
+    public let notifyVerifier: Bool
+
     internal func setVerifierResponse(_ response: VerifierResponse) {
         self.verifierResponse = response
     }
@@ -16,11 +18,12 @@ public class OpenID4VPException: Error, CustomStringConvertible, LocalizedError 
     private static var logTag = ""
     private static var traceabilityId: String?
 
-    public init(errorCode: String, message: String, cause: Error? = nil, className: String) {
+    public init(errorCode: String, message: String, cause: Error? = nil, className: String, notifyVerifier: Bool = true) {
         self.errorCode = errorCode
         self.message = message
         self.className = className
         self.cause = cause
+        self.notifyVerifier = notifyVerifier
         print("ERROR [\(errorCode)] - \(message) | Class: \(className)")
     }
 
@@ -139,7 +142,7 @@ class InvalidData: OpenID4VPException {
 }
 
 class MissingInput: OpenID4VPException {
-    init(fieldPath: Any, message: String? = "", className: String) {
+    init(fieldPath: Any, message: String? = "", className: String, notifyVerifier: Bool = true) {
         let resolvedMessage: String
         if let field = fieldPath as? String, !field.isEmpty {
             resolvedMessage = "Missing Input: \(field) param is required"
@@ -148,12 +151,12 @@ class MissingInput: OpenID4VPException {
         } else {
             resolvedMessage = message ?? ""
         }
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: resolvedMessage, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: resolvedMessage, className: className, notifyVerifier: notifyVerifier)
     }
 }
 
 class InvalidInput: OpenID4VPException {
-    init(fieldPath: Any, value: Any? = nil, className: String) {
+    init(fieldPath: Any, value: Any? = nil, className: String, notifyVerifier: Bool = true) {
         let path = (fieldPath as? [String])?.joined(separator: "->") ?? "\(fieldPath)"
         let message: String
 
@@ -167,7 +170,7 @@ class InvalidInput: OpenID4VPException {
             message = "Invalid Input: \(path) value is invalid"
         }
 
-        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className, notifyVerifier: notifyVerifier)
     }
 }
 

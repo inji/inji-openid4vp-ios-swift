@@ -242,12 +242,11 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         if authorizationRequestParameters[AuthorizationRequestFieldConstants.transactionData] != nil {
             throw InvalidTransactionData(message: "Invalid Request: transaction_data is not supported in the authorization request", className: className)
         }
-        let mandatoryFields = [AuthorizationRequestFieldConstants.responseType,AuthorizationRequestFieldConstants.nonce]
-        
-        for field in mandatoryFields {
-            try validateAttribute(field, values: authorizationRequestParameters)
-        }
-        
+        try validateAttribute(AuthorizationRequestFieldConstants.responseType, values: authorizationRequestParameters)
+
+        // missing nonce is not notified to the verifier
+        try validateAttribute(AuthorizationRequestFieldConstants.nonce, values: authorizationRequestParameters, notifyVerifier: false)
+
         try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType] as? String)!)
         
         let optionalFields = [AuthorizationRequestFieldConstants.state, AuthorizationRequestFieldConstants.responseMode]
@@ -264,7 +263,17 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     
     final func setResponseUrl() throws {
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
-        
+
+        // redirect_uri must not be present for direct_post / direct_post.jwt
+        if responseMode == ResponseMode.directPost.rawValue || responseMode == ResponseMode.directPostJwt.rawValue {
+            if authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.redirectUri) {
+                throw InvalidData(
+                    message: "\(AuthorizationRequestFieldConstants.redirectUri) should not be present for given response_mode",
+                    className: className
+                )
+            }
+        }
+
         try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
     }
     
