@@ -343,11 +343,52 @@ final class WalletConfigTests: XCTestCase {
     }
 
     func testEncodeTrustedVerifiers() throws {
-        let verifier = Verifier(clientId: "v1", responseUris: ["https://v.example.com"])
-        let data = try JSONEncoder().encode(makeConfig(trustedVerifiers: [verifier]))
-        let decoded = try JSONDecoder().decode(WalletConfig.self, from: data)
-        XCTAssertEqual(decoded.trustedVerifiers.map { $0.clientId }, ["v1"])
-        XCTAssertEqual(decoded.trustedVerifiers.map { $0.responseUris }, [["https://v.example.com"]])
+        struct VerifierTestCase {
+            let label: String
+            let verifier: Verifier
+            let validate: (Verifier) -> Void
+        }
+
+        let cases: [VerifierTestCase] = [
+            VerifierTestCase(
+                label: "minimal — required fields only",
+                verifier: Verifier(
+                    clientId: "v1",
+                    responseUris: ["https://v.example.com"]
+                ),
+                validate: { v in
+                    XCTAssertEqual(v.clientId, "v1")
+                    XCTAssertEqual(v.responseUris, ["https://v.example.com"])
+                    XCTAssertNil(v.jwksUri)
+                    XCTAssertFalse(v.allowUnsignedRequest)
+                    XCTAssertEqual(v.specVersion, .v1)
+                }
+            ),
+            VerifierTestCase(
+                label: "full config — all fields set",
+                verifier: Verifier(
+                    clientId: "https://verifier.example.com",
+                    responseUris: ["https://verifier.example.com/cb", "https://verifier.example.com/response"],
+                    jwksUri: "https://verifier.example.com/.well-known/jwks.json",
+                    allowUnsignedRequest: true,
+                    specVersion: .draft23
+                ),
+                validate: { v in
+                    XCTAssertEqual(v.clientId, "https://verifier.example.com")
+                    XCTAssertEqual(v.responseUris, ["https://verifier.example.com/cb", "https://verifier.example.com/response"])
+                    XCTAssertEqual(v.jwksUri, "https://verifier.example.com/.well-known/jwks.json")
+                    XCTAssertTrue(v.allowUnsignedRequest)
+                    XCTAssertEqual(v.specVersion, .draft23)
+                }
+            )
+        ]
+
+        for tc in cases {
+            let data = try JSONEncoder().encode(makeConfig(trustedVerifiers: [tc.verifier]))
+            let decoded = try JSONDecoder().decode(WalletConfig.self, from: data)
+            let result = try XCTUnwrap(decoded.trustedVerifiers.first, "\(tc.label): expected one trusted verifier")
+            tc.validate(result)
+        }
     }
 
     func testEncodeVpFormatsSupported() throws {
