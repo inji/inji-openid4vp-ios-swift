@@ -23,6 +23,7 @@ public class AuthorizationResponseHandler {
         authorizationRequest: AuthorizationRequest,
         walletNonce: String
     ) async throws -> [UnsignedVPToken] {
+        self.walletNonce = walletNonce
         do {
             return try await SpecVersionHandler.from(authorizationRequest).createUnsignedVPToken(credentialsMap: selectedCredentials, authorizationRequest: authorizationRequest, walletNonce: walletNonce, handler: self)
         } catch {
@@ -185,8 +186,6 @@ public class AuthorizationResponseHandler {
                 className: AuthorizationResponseHandler.className
             )
         }
-        
-        self.walletNonce = walletNonce
         createFormatToCredentialInputDescriptorMapping(matchingCredentials: credentialsMap)
         
         for format in formatToCredentialInputDescriptorMapping.keys {
