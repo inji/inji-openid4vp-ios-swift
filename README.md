@@ -2,48 +2,66 @@
 
 A Swift package for **wallet-side** processing of [OpenID for Verifiable Presentations](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html) (OpenID4VP). This library validates incoming authorization requests, helps build verifiable presentations (with signing delegated to your app), and sends responses to the verifier.
 
-## Overview
+---
 
-The library handles:
-- Validation of incoming VP authorization requests from verifiers
-- Construction of unsigned VP tokens for wallet signing
-- Assembly and delivery of VP responses (including error responses) to verifiers
+## Table of Contents
 
-## Key Concepts
-
-- **Verifier**: An entity that requests a Verifiable Presentation from the Holder (Wallet).
-
-- **Wallet**: An application that holds Verifiable Credentials and creates Verifiable Presentations to share with Verifiers. This library provides the OpenID4VP handling for the Wallet.
-
-- **Authorization Request**: A request sent by the Verifier to the Wallet asking for specific Verifiable Presentations. It includes credential requirements, response type, client ID, and other parameters.
-
-- **Presentation**: A structured format containing Verifiable Credentials selected by the user in response to an Authorization Request. Created by the Wallet and sent back to the Verifier.
-
-- **Cryptographic Holder Binding**: A mechanism that binds the Verifiable Presentation to the holder (credential owner) to prevent misuse. 
-
-**Table of Contents**
-
-- [OpenID4VP specification draft versions supported](#openid4vp-specification-versions-supported)
-- [Supported features](#supported-features)
-- [Specifications supported](#specifications-supported)
-- [Functionalities](#functionalities)
+- [Requirements](#requirements)
 - [Installation](#installation)
-- [APIs](#apis)
-  - [authenticateVerifier](#authenticateverifier)
-  - [constructUnsignedVPToken](#constructunsignedvptoken)
-  - [constructVPResponse](#constructvpresponse)
-  - [sendVPResponseToVerifier](#sendvpresponsetoverifier)
-  - [constructErrorInfo](#constructerrorinfo)
-  - [sendErrorInfoToVerifier](#senderrorinfotoverifier)
+- [Which Spec Version Am I On?](#which-spec-version-am-i-on)
+- [Supported Features](#supported-features)
+- [Architecture Overview](#architecture-overview)
+- [Getting Started](#getting-started)
+- [Configuring Your Wallet](#configuring-your-wallet-walletconfig)
+- [Integration Workflows](#integration-workflows)
+  - [1. Resolve and Validate Authorization Request](#1-resolve-and-validate-authorization-request-uri)
+  - [2. User Selection of Credentials and Consent](#2-user-selection-of-credentials-and-consent)
+  - [3. Construction of Verifiable Presentation](#3-construction-of-a-verifiable-presentation-and-submission-to-the-verifier)
+  - [4. Error Handling](#4-dispatch-error-to-verifier)
+- [Minimal Working Example](#minimal-working-swift-example)
+- [Migration Guides](#migration-guides)
+- [Limitations](#limitations)
+- [Glossary](#glossary)
 
-## OpenID4VP specification versions supported
+---
 
-- OpenID for Verifiable Presentations - Draft 23
-- OpenID for Verifiable Presentations - Version 1.0
+## Requirements
 
-**Spec version detection:**
+- **Swift** 5.9 or later (see `Package.swift`)
+- **iOS** 14.0 or later
+- **macOS** 12.0 or later
 
-- Presence of `DCQL query` or `presentation_definition`/`presentation_definition_uri` → Version 1.0 or Draft 23 respectively
+---
+
+## Installation
+
+1. In your Swift application, go to **File > Add Package Dependency**
+2. Add the GitHub repository: `https://github.com/inji/inji-openid4vp-ios-swift.git`
+3. Select the version and add the package to your target
+4. Import the library to use it
+
+---
+
+## Which Spec Version Am I On?
+
+**Supported Spec Versions:**
+- OpenID for Verifiable Presentations - **Draft 23** (uses `presentation_definition` / `presentation_definition_uri`)
+- OpenID for Verifiable Presentations - **Version 1.0** (uses `dcql_query`)
+
+### Quick Version Identification
+
+When your wallet receives an authorization request, check for these parameters to identify the spec version:
+
+| Parameter Present | Spec Version |
+|---|---|
+| `dcql_query` | **OpenID4VP 1.0** |
+| `presentation_definition` or `presentation_definition_uri` | **Draft 23** |
+
+> **The library automatically detects the spec version after receiving the request.** You don't need to manually check—just understand which path your incoming requests will follow.
+
+**Important:** A valid request must have exactly one of these parameters—never both:
+- ❌ Both `dcql_query` AND `presentation_definition` = Error
+- ❌ Both `dcql_query` AND `scope` = Error
 
 ## Callout
 
@@ -52,6 +70,8 @@ The library handles:
 ## Supported features
 
 ### Feature Matrix by Specification Version
+
+**Legend:** ✅ = Supported | ❌ = Not Implemented | N/A = Not Applicable
 
 | Feature                                       | Draft 23  | Version 1.0 | Notes                                                                                                                                                        |
 |-----------------------------------------------|:---------:|:-----------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -93,6 +113,8 @@ The library handles:
 | — vc+sd-jwt / dc+sd-jwt                       |     ✅     |      ✅      |                                                                                                                                                              |
 
 ### Client ID Prefixes and Signed / Unsigned request support matrix
+
+**Table: Client ID Scheme Support** - Shows how each client identifier scheme supports signed and unsigned authorization requests
 
 | Client Id Scheme                      | Supports Unsigned request             | Supports Signed request | Notes                                                                                                                                                                                                                                                                    |
 |---------------------------------------|---------------------------------------|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -253,103 +275,229 @@ The holder key is identified using the `deviceKey` available in the `mso_mdoc` c
 
 > **Note:** `vc+sd-jwt` credentials and presentations are currently supported for backward compatibility. Support for this format will be deprecated in a future release.
 
+---
 
-## INJI-OpenID4VP-ios-swift - Usage 
+## Architecture Overview
 
-## Installation
+The wallet app remains responsible for **user consent**, **credential selection**, and **cryptographic signing** of VP material. The library focuses on request validation, VP token assembly, response shaping, and HTTP submission.
 
-1. In your Swift application, go to **File > Add Package Dependency**
-2. Add the GitHub repository: `https://github.com/inji/inji-openid4vp-ios-swift.git`
-3. Select the version and add the package to your target
-4. Import the library to use it
+**Key Responsibilities:**
+- **Wallet App:** User consent, credential selection, cryptographic signing
+- **OpenID4VP Library:** Authorization request validation, VP construction, response generation, Verifier communication
 
-## Instantiation
+---
 
-`OpenID4VP` is the entry point class that accepts:
+## Getting Started
 
-- `traceabilityId`: Unique identifier for tracing requests.
-- `walletConfig`: Your wallet's configuration and capabilities (optional, defaults are available).
-- `jsonLdCanonicalizer`: Callback for JSON-LD canonicalization (optional, required for `ldp_vc` support).
+This section provides a minimal working example to help you get started with the library.
 
-### Wallet Configuration (`WalletConfig`)
+### Quick Start Example
 
-`WalletConfig` defines the capabilities, supported protocols, cryptographic algorithms, and trusted verifier settings for the Wallet. The SDK uses this configuration to determine how Authorization Requests are validated, how Verifiers are authenticated, which credential formats can be presented, and how responses are generated.
-
-#### WalletConfig Parameters
-
-| Name                                        | Type                                | Required |                       Default Value                        | Description                                                                                                                 |
-|---------------------------------------------|-------------------------------------|:--------:|:----------------------------------------------------------:|-----------------------------------------------------------------------------------------------------------------------------|
-| `vpFormatsSupported`                        | `[VPFormatType: VPFormatSupported]` |    No    |             `ldp_vc`, `mso_mdoc`, `dc_sd_jwt`              | Defines the Verifiable Presentation formats supported by the Wallet along with their cryptographic capabilities.            |
-| `clientIdPrefixesSupported`                 | `[ClientIdPrefix]`                  |    No    | `[.preRegistered, .redirectUri, .decentralizedIdentifier]` | Specifies the Client ID prefix types that the Wallet can authenticate and process.                                          |
-| `requestObjectSigningAlgValuesSupported`    | `[SignatureAlgorithm]?`             |    No    |                         `[.edDsa]`                         | Signature algorithms accepted by the Wallet when validating signed Authorization Requests.                                  |
-| `authorizationEncryptionAlgValuesSupported` | `[EncryptionAlgorithm]?`            |    No    |                        `[.ecdhES]`                         | Supported key management algorithms for decrypting encrypted Authorization Requests.                                        |
-| `authorizationEncryptionEncValuesSupported` | `[EncryptionMethod]?`               |    No    |                        `[.a256GCM]`                        | Supported content encryption methods for encrypted Authorization Requests.                                                  |
-| `responseTypesSupported`                    | `[ResponseType]`                    |    No    |                       `[.vp_token]`                        | OpenID4VP response types that can be generated by the Wallet.                                                               |
-| `isPresentationDefinitionUriSupported`      | `Bool`                              |    No    |                           `true`                           | Indicates whether the Wallet supports resolving Presentation Definitions using the `presentation_definition_uri` parameter. |
-| `requestUriMethodsSupported`                | `[RequestUriMethod]`                |    No    |                      `[.get, .post]`                       | Supported methods for retrieving Request Objects via `request_uri`.                                                         |
-| `trustedVerifiers`                          | `[Verifier]`                        |    No    |                            `[]`                            | List of pre-configured trusted Verifiers known to the Wallet.                                                               |
-| `validatePreRegisteredVerifier`             | `Bool`                              |    No    |                           `true`                           | Indicates whether pre-registered Verifiers should be validated against the configured trusted Verifier list.                |
-
-#### Verifier Parameters
-
-| Name                   | Type       | Required | Default Value | Description                                                                                        |
-|------------------------|------------|:--------:|:-------------:|----------------------------------------------------------------------------------------------------|
-| `clientId`             | `String`   |   Yes    |      N/A      | Unique identifier of the Verifier.                                                                 |
-| `responseUris`         | `[String]` |   Yes    |      N/A      | List of permitted response endpoints to which the Wallet can send Authorization Responses.         |
-| `jwksUri`              | `String?`  |    No    |     `nil`     | URI containing the Verifier's public keys used for signature verification and trust establishment. |
-| `allowUnsignedRequest` | `Bool`     |    No    |    `false`    | Indicates whether unsigned Authorization Requests are accepted from the Verifier.                  |
-
-#### Example
+**Scenario:** Basic OpenID4VP flow with DCQL or Presentation Exchange request
 
 ```swift
+import Foundation
+import OpenID4VP
+
+// 1. Configure your wallet
 let walletConfig = WalletConfig(
-    isPresentationDefinitionUriSupported: true,
-    vpFormatsSupported: [...],
-    clientIdPrefixesSupported: [
-        .preRegistered,
-        .redirectUri,
-        .decentralizedIdentifier
-    ],
+    vpFormatsSupported: [.ldp_vc, .mso_mdoc, .dc_sd_jwt],
+    clientIdPrefixesSupported: [.preRegistered, .redirectUri, .decentralizedIdentifier],
+    trustedVerifiers: [
+        Verifier(
+            clientId: "trusted-verifier",
+            responseUris: ["https://verifier.example/response"],
+            jwksUri: "https://verifier.example/keys.json"
+        )
+    ]
+)
+
+// 2. Initialize the library
+let openID4VP = OpenID4VP(
+    traceabilityId: UUID().uuidString,
+    walletConfig: walletConfig
+)
+
+// 3. Receive and authenticate an authorization request
+let authRequest = try await openID4VP.authenticateVerifier(
+    urlEncodedAuthorizationRequest: deepLinkFromQRCode
+)
+
+// 4. Get matching credentials (for DCQL-based requests)
+// ... your credential selection logic ...
+
+// 5. Prepare VP data to sign
+let unsignedVPTokens = try await openID4VP.constructUnsignedVPToken(
+    selectedCredentials: selectedCredentials
+)
+
+// 6. Sign the tokens (using your secure key storage)
+let signingResults = unsignedVPTokens.map { token in
+    VPTokenSigningResult(signedData: signWithYourKey(token.dataToSign))
+}
+
+// 7. Send VP response to verifier
+let response = try await openID4VP.sendVPResponseToVerifier(
+    vpTokenSigningResults: signingResults
+)
+print("VP submitted successfully, status: \(response.statusCode)")
+```
+
+For a complete, detailed example, see the [Minimal working Example](#minimal-working-swift-example) section below.
+
+---
+
+## Configuring Your Wallet (`WalletConfig`)
+
+### What is WalletConfig?
+
+`WalletConfig` tells the OpenID4VP library which features your wallet supports, which verifiers you trust, and how to validate incoming requests. It defines capabilities, cryptographic algorithms, and trusted verifier settings. You create this once during app initialization.
+
+### Quick Example
+
+**Scenario:** Configuring a wallet with trusted verifiers and credential format support
+
+```swift
+let trustedVerifiers = [
+    Verifier(
+        clientId: "trusted-bank",
+        responseUris: ["https://bank.example/vp-response"],
+        jwksUri: "https://bank.example/keys.json",
+        allowUnsignedRequest: false
+    )
+]
+
+let walletConfig = WalletConfig(
+    vpFormatsSupported: [.ldp_vc, .mso_mdoc, .dc_sd_jwt],
+    clientIdPrefixesSupported: [.preRegistered, .redirectUri, .decentralizedIdentifier],
     requestObjectSigningAlgValuesSupported: [.edDsa],
     authorizationEncryptionAlgValuesSupported: [.ecdhES],
     authorizationEncryptionEncValuesSupported: [.a256GCM],
     responseTypesSupported: [.vp_token],
-    trustedVerifiers: [...]
+    isPresentationDefinitionUriSupported: true,
+    requestUriMethodsSupported: [.get, .post],
+    trustedVerifiers: trustedVerifiers,
+    validatePreRegisteredVerifier: true
+)
+
+let openID4VP = OpenID4VP(
+    traceabilityId: UUID().uuidString,
+    walletConfig: walletConfig,
+    jsonLdCanonicalizer: myJsonLdCanonicalizerFunction  // Optional, required for ldp_vc support
 )
 ```
 
-### Wallet Metadata Generation
+### WalletConfig Parameters
 
-When the Verifier uses the `request_uri` flow with the `POST` method, the SDK automatically derives Wallet Metadata from the configured `WalletConfig` and sends it to the Verifier. This allows the Verifier to generate an Authorization Request that is compatible with the Wallet's declared capabilities.
+**Table: WalletConfig Parameter Reference** - Configuration options for declaring wallet capabilities
 
-| Wallet Metadata Property                                                                                                             | Derived From                                                                                                             |
-|--------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `vp_formats_supported`                                                                                                               | `vpFormatsSupported`                                                                                                     |
-| `client_id_prefixes_supported` for OpenID4VP Spec Version 1.0 (or) `client_id_schemes_supported` for OpenID4VP Spec Version Draft 23 | `clientIdPrefixesSupported`                                                                                              |
-| `request_object_signing_alg_values_supported`                                                                                        | `requestObjectSigningAlgValuesSupported`                                                                                 |
-| `authorization_encryption_alg_values_supported`                                                                                      | `authorizationEncryptionAlgValuesSupported`                                                                              |
-| `authorization_encryption_enc_values_supported`                                                                                      | `authorizationEncryptionEncValuesSupported`                                                                              |
-| `response_types_supported`                                                                                                           | `responseTypesSupported`                                                                                                 |
-| `presentation_definition_uri_supported`                                                                                              | `isPresentationDefinitionUriSupported` (Only applicable while communicating to Verifier following Spev version draft 23) |
+| Parameter                                   | Type                     | Default                                                    | Purpose                                                       |
+|---------------------------------------------|--------------------------|------------------------------------------------------------|---------------------------------------------------------------|
+| `vpFormatsSupported`                        | `[VPFormatType]`         | `[ldp_vc, mso_mdoc, dc_sd_jwt]`                            | Verifiable Presentation formats your wallet supports          |
+| `clientIdPrefixesSupported`                 | `[ClientIdPrefix]`       | `[.preRegistered, .redirectUri, .decentralizedIdentifier]` | Client ID prefix types your wallet can authenticate           |
+| `requestObjectSigningAlgValuesSupported`    | `[SignatureAlgorithm]?`  | `[.edDsa]`                                                 | Signature algorithms accepted when validating signed requests |
+| `authorizationEncryptionAlgValuesSupported` | `[EncryptionAlgorithm]?` | `[.ecdhES]`                                                | Supported key management algorithms for encryption            |
+| `authorizationEncryptionEncValuesSupported` | `[EncryptionMethod]?`    | `[.a256GCM]`                                               | Supported content encryption methods                          |
+| `responseTypesSupported`                    | `[ResponseType]`         | `[.vp_token]`                                              | OpenID4VP response types your wallet can generate             |
+| `isPresentationDefinitionUriSupported`      | `Bool`                   | `true`                                                     | Whether wallet can resolve presentation definitions from URIs |
+| `requestUriMethodsSupported`                | `[RequestUriMethod]`     | `[.get, .post]`                                            | HTTP methods for retrieving requests by reference             |
+| `trustedVerifiers`                          | `[Verifier]`             | `[]`                                                       | Pre-configured trusted verifiers                              |
+| `validatePreRegisteredVerifier`             | `Bool`                   | `true`                                                     | Whether to validate pre-registered verifiers                  |
 
+### Configuring Trusted Verifiers
 
-#### Wallet Metadata Communication
+For pre-registered clients, configure each verifier you trust:
 
-When the Verifier uses the `request_uri` flow with the `POST` method, the SDK automatically derives Wallet Metadata from the configured `WalletConfig` and includes it in the request made to the Verifier.
+| Parameter | Required | Purpose | Example |
+|---|:---:|---|---|
+| `clientId` | Yes | Unique identifier of the Verifier | `"trusted-bank"` |
+| `responseUris` | Yes | Permitted response endpoint(s) for Authorization Responses | `["https://bank.example/vp-response"]` |
+| `jwksUri` | No | URI with public keys for signature verification | `"https://bank.example/keys.json"` |
+| `allowUnsignedRequest` | No | Whether to accept unsigned Authorization Requests | `false` (default: require signatures) |
 
-This allows the Verifier to understand the Wallet's capabilities before generating the final Authorization Request. The communicated Wallet Metadata typically includes:
+**Example Verifier Configuration:**
+```swift
+Verifier(
+    clientId: "my-trusted-verifier",
+    responseUris: ["https://verifier.example/receive-vp"],
+    jwksUri: "https://verifier.example/jwks.json",
+    allowUnsignedRequest: false
+)
+```
 
-| Wallet Metadata Property                      | Derived From                                |
-|-----------------------------------------------|---------------------------------------------|
-| Supported VP formats                          | `vpFormatsSupported`                        |
-| Supported Client ID prefixes                  | `clientIdPrefixesSupported`                 |
-| Supported request object signing algorithms   | `requestObjectSigningAlgValuesSupported`    |
-| Supported authorization encryption algorithms | `authorizationEncryptionAlgValuesSupported` |
-| Supported authorization encryption methods    | `authorizationEncryptionEncValuesSupported` |
-| Supported response types                      | `responseTypesSupported`                    |
-| Presentation Definition URI support           | `isPresentationDefinitionUriSupported`      |
+### About Wallet Metadata
 
-As a result, the Verifier can tailor the Authorization Request to the capabilities advertised by the Wallet, ensuring compatibility between the Wallet and Verifier implementations.
+When a Verifier uses the `request_uri` flow with `POST`, the SDK automatically generates `WalletMetadata` from your `WalletConfig` and sends it to the Verifier. This tells the verifier which capabilities your wallet supports, allowing them to generate compatible Authorization Requests.
+
+**Properties automatically communicated:**
+- Supported VP formats → `vpFormatsSupported`
+- Supported Client ID prefixes → `clientIdPrefixesSupported`
+- Supported signing algorithms → `requestObjectSigningAlgValuesSupported`
+- Supported encryption algorithms → `authorizationEncryptionAlgValuesSupported`
+- Supported encryption methods → `authorizationEncryptionEncValuesSupported`
+- Supported response types → `responseTypesSupported`
+- URI support → `isPresentationDefinitionUriSupported`
+
+You **do not** configure metadata manually—the library handles serialization automatically (different format for Draft 23 vs. OpenID4VP 1.0).
+
+---
+
+## Initializing OpenID4VP
+
+After configuring your wallet, instantiate the `OpenID4VP` class. This creates a library instance that handles request validation, VP construction, and verifier communication.
+
+### Basic Instantiation
+
+```swift
+let openID4VP = OpenID4VP(
+    traceabilityId: UUID().uuidString,
+    walletConfig: walletConfig
+)
+```
+
+### Initialization Parameters
+
+| Parameter | Type | Required | Purpose |
+|---|---|:---:|---|
+| `traceabilityId` | `String` | ✅ Yes | Unique identifier for tracing and debugging (e.g., UUID, user session ID). Included in all error logs and responses. |
+| `walletConfig` | `WalletConfig` | ❌ No | Your wallet's configuration (defaults to empty `WalletConfig()` if omitted). Defines capabilities, trusted verifiers, and format support. |
+| `jsonLdCanonicalizer` | `JsonLdCanonicalizerCallback?` | ❌ No | **Required only if supporting `ldp_vc` format** to canonicalize JSON-LD data for proof generation. |
+
+### Common Initialization Patterns
+
+**Pattern 1: Minimal Setup (no ldp_vc support)**
+
+Use this if your wallet only handles mso_mdoc or sd-jwt formats:
+
+```swift
+let openID4VP = OpenID4VP(
+    traceabilityId: UUID().uuidString,
+    walletConfig: walletConfig
+)
+```
+
+**Pattern 2: With ldp_vc Support**
+
+Use this if your wallet needs to support `ldp_vc` Verifiable Presentations:
+
+```swift
+let openID4VP = OpenID4VP(
+    traceabilityId: UUID().uuidString,
+    walletConfig: walletConfig,
+    jsonLdCanonicalizer: myJsonLdCanonicalizerFunction  // Your custom canonicalizer
+)
+```
+
+### When to Provide `jsonLdCanonicalizer`
+
+The `jsonLdCanonicalizer` callback is **only needed** if:
+
+✅ Your wallet config includes `.ldp_vc` in `vpFormatsSupported`  
+✅ You expect to receive DCQL or Presentation Exchange requests containing `ldp_vc` credentials
+
+If you omit it but receive an `ldp_vc` request, the library will throw an exception.
+
+---
 
 ## 1. Resolve and Validate Authorization Request URI
 
@@ -386,6 +534,8 @@ let authorizationRequest: AuthorizationRequest = try await openID4VP.authenticat
 
 
 ###### Example usage
+
+**Scenario:** Authenticating a verifier from a QR code deeplink
 
 ```swift
  let authorizationRequest : AuthorizationRequest = try await openID4VP.authenticateVerifier(
@@ -811,6 +961,8 @@ let verifierResponse: VerifierResponse = try await openID4VP.sendErrorInfoToVeri
 
 ## Minimal working Swift example
 
+**Scenario:** Complete end-to-end OpenID4VP flow handling both DCQL and Presentation Exchange requests
+
 ```swift
 import Foundation
 import OpenID4VP
@@ -1036,3 +1188,45 @@ This library is also available in the following languages
 
    For example, in the case of DCQL-based requests, if a credential query ID does not support multiple credentials but the Wallet provides multiple credentials for that query ID, the SDK does not validate or reject this condition. Ensuring that the provided credential selection is valid according to the presentation request is the responsibility of the Wallet.
 
+
+---
+
+## Glossary
+
+**Authorization Request:** A request sent by the Verifier to the Wallet asking for specific Verifiable Presentations. Includes credential requirements, response type, client ID, and other parameters.
+
+**Authorization Response:** The Wallet's response to an Authorization Request, containing the Verifiable Presentation(s) and related data.
+
+**Credential:** A verifiable piece of information, typically issued by a trusted issuer, that can be presented to a verifier.
+
+**Cryptographic Holder Binding:** A mechanism that cryptographically binds a Verifiable Presentation to the holder (credential owner) to prevent misuse or unauthorized sharing.
+
+**DCQL:** Decentralized Credentials Query Language. OpenID4VP 1.0 standard format for expressing complex credential queries using a JSON-based query language.
+
+**Holder:** The entity that owns, controls, and can present Verifiable Credentials. In this library's context, the Wallet serves as the Holder.
+
+**JWT:** JSON Web Token. A digitally signed token format used for secure transmission of claims.
+
+**LD-VP (Linked Data Verifiable Presentation):** A Verifiable Presentation format based on JSON-LD and W3C Verifiable Credentials specifications.
+
+**mso_mdoc:** Mobile Security Object as specified in ISO/IEC 18013-5. Used for mobile document credentials like mobile driver's licenses.
+
+**OpenID4VP:** OpenID for Verifiable Presentations. A standard protocol for secure presentation of verifiable credentials.
+
+**Presentation:** A structured format containing Verifiable Credentials selected by the user in response to an Authorization Request. Created by the Wallet and sent to the Verifier.
+
+**Presentation Definition:** DIF Presentation Exchange format (Draft 23) for expressing credential requirements as a structured JSON object.
+
+**Presentation Exchange:** Draft 23 OpenID4VP approach using `presentation_definition` or `presentation_definition_uri` for credential queries.
+
+**SD-JWT:** Selective Disclosure JSON Web Token. A credential format allowing selective disclosure of claims.
+
+**SpecVersion:** Internal enum distinguishing between spec versions (`.draft23` for Draft 23/Presentation Exchange, `.v1` for OpenID4VP 1.0/DCQL).
+
+**Verifiable Credential (VC):** A tamper-evident credential that includes cryptographic proofs of its authenticity and integrity.
+
+**Verifiable Presentation (VP):** A verifiable credential that includes proof of authorization from the Holder. Created in response to a Verifier's request.
+
+**Verifier:** An external entity that requests Verifiable Presentations from a Holder (Wallet). Examples: banks, government agencies, identity verification services.
+
+**Wallet:** An application that holds Verifiable Credentials and creates Verifiable Presentations to share with Verifiers. This library provides the OpenID4VP handling for Wallet applications.
