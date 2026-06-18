@@ -1,6 +1,6 @@
-# Migration Guide: inji-openid4vp-ios-swift 0.7.0 -> 0.8.0
+# Migration Guide: inji-openid4vp-ios-swift 0.7.0 → 1.0.0
 
-This guide helps Swift developers upgrade from **`inji-openid4vp-ios-swift` 0.7.0** to **0.8.0**.
+This guide helps Swift developers upgrade from **`inji-openid4vp-ios-swift` 0.7.0** to **1.0.0**.
 
 Scope: **breaking changes in the Swift entry point(s)** - OpenID4VP class and its public API. 
 
@@ -22,9 +22,9 @@ Note:
 
 1. 0.7.0
    1. Supported OpenID4VP draft 21 and draft 23, mainly Presentation Definition flows.
-2. 0.8.0
+2. 1.0.0
    1. Supports OpenID4VP draft 23 (Presentation Definition) and 1.0 (DCQL).
-   2. Removes draft 21 support.
+   2. Removed draft 21 support.
    3. Improves integration by:
       - returning structured signing units (`UnsignedVPToken`) instead of opaque encoded blocks
       - centralizing capability and verifier settings in `WalletConfig`
@@ -35,11 +35,11 @@ Note:
 
 1. `OpenID4VP` construction changed:
    - **0.7.0**: `OpenID4VP(traceabilityId:walletMetadata:)`
-   - **0.8.0**: `OpenID4VP(traceabilityId:walletConfig:jsonLdCanonicalizer:)` (`walletConfig` has defaults)
+   - **1.0.0**: `OpenID4VP(traceabilityId:walletConfig:jsonLdCanonicalizer:)` (`walletConfig` has defaults)
 
 2. `constructUnsignedVPToken(...)` changed significantly:
    - **0.7.0**: `constructUnsignedVPToken(verifiableCredentials:holderId:signatureSuite:)` accepted `[String: [FormatType: [AnyCodable]]]` and returned `[FormatType: UnsignedVPToken]`
-   - **0.8.0**: `constructUnsignedVPToken(selectedCredentials:)` accepts `[String: [Credential]]` and returns `[UnsignedVPToken]`; `holderId` / `signatureSuite` are no longer inputs
+   - **1.0.0**: `constructUnsignedVPToken(selectedCredentials:)` accepts `[String: [Credential]]` and returns `[UnsignedVPToken]`; `holderId` / `signatureSuite` are no longer inputs
 
 3. VP response construction/sending changed:
    - `constructVPResponse(vpTokenSigningResults:)` accepts `[VPTokenSigningResult]`
@@ -47,7 +47,7 @@ Note:
 
 4. For DCQL request processing, use `DCQLHelper.getMatchingCredentials(inputCredentials:dcqlQuery:)` to match wallet's available credentials against incoming VP request before building `selectedCredentials`.
 
-5. Deprecated and legacy V1/V2 0.7.0 entry-point methods are removed in 0.8.0, while the core methods remain with updated signatures.
+5. Deprecated and legacy V1/V2 0.7.0 entry-point methods are removed in 1.0.0, while the core methods remain with updated signatures.
 
 ---
 
@@ -63,13 +63,14 @@ let openID4VP = OpenID4VP(
 )
 ```
 
-### 0.8.0 (new)
+### 1.0.0 (new)
 
 ```swift
 import OpenID4VP
 
 let walletConfig = WalletConfig(
     trustedVerifiers: trustedVerifiers,
+    validateTrustedVerifier: true,
     // Optional: override defaults such as
     // vpFormatsSupported, clientIdPrefixesSupported,
     // requestObjectSigningAlgValuesSupported, etc.
@@ -78,7 +79,7 @@ let walletConfig = WalletConfig(
 let openID4VP = OpenID4VP(
     traceabilityId: "trace-id",
     walletConfig: walletConfig,
-    jsonLdCanonicalizer: nil // Optional callback for JSON-LD canonicalization
+    jsonLdCanonicalizer: nil // Optional callback; required when processing W3C credentials that need JSON-LD canonicalization.
 )
 ```
 
@@ -113,7 +114,7 @@ then migrate it to `WalletConfig` like this:
 | `responseTypesSupported`                    | `responseTypesSupported`                    | Same capability - Response Types supported by the Wallet      |
 | `presentationDefinitionURISupported`        | `isPresentationDefinitionUriSupported`      | Same capability  - Supports `presentation_definition_uri`     |
 
-Additional fields now configured on `WalletConfig` in 0.8.0:
+Additional fields now configured on `WalletConfig` in 1.0.0:
 
 | `WalletConfig`-only field              | Purpose                                        | Migration note                                                             |
 |----------------------------------------|------------------------------------------------|----------------------------------------------------------------------------|
@@ -166,15 +167,23 @@ Notes:
 
 ### What stays conceptually the same
 - You still validate verifier authorization requests and receive `AuthorizationRequest`.
-- `shouldValidateClient` still exists and defaults to `true`.
 
 ### What changes in practice
 
-1. **Trusted verifier handling is now in `WalletConfig`**
-   - Configure verifier trust once via `walletConfig.trustedVerifiers`.
-   - Do not pass trusted verifiers into `authenticateVerifier(...)`.
+1. **Trusted verifier configuration is now part of `WalletConfig`**
 
-2. 0.7.0 overloads that accepted old metadata/trust parameters at call-time are removed.
+    * Configure trusted verifiers once via `walletConfig.trustedVerifiers`.
+    * Do not pass trusted verifiers to `authenticateVerifier(...)`.
+
+2. **Validation of pre-registered VP request clients is now configured through `WalletConfig`**
+
+    * Configure the validation flag via `walletConfig.validateTrustedVerifier`.
+    * Do not pass `shouldValidateClient` to `authenticateVerifier(...)`.
+
+3. **Deprecated 0.7.0 overloads have been removed**
+
+    * Overloads that accepted metadata or trust-related parameters at call time are no longer supported.
+
 
 ### 0.7.0 call signatures (old)
 
@@ -194,21 +203,19 @@ let authorizationRequest = try await openID4VP.authenticateVerifier(
 )
 ```
 
-### 0.8.0 call (URL-encoded)
+### 1.0.0 call (URL-encoded)
 
 ```swift
 let authorizationRequest = try await openID4VP.authenticateVerifier(
-    urlEncodedAuthorizationRequest: encodedAuthorizationRequest,
-    shouldValidateClient: true
+    urlEncodedAuthorizationRequest: encodedAuthorizationRequest
 )
 ```
 
-### 0.8.0 call (dictionary input)
+### 1.0.0 call (dictionary input)
 
 ```swift
 let authorizationRequest = try await openID4VP.authenticateVerifier(
-    authorizationRequest: authorizationRequestMap,
-    shouldValidateClient: true
+    authorizationRequest: authorizationRequestMap
 )
 ```
 
@@ -235,11 +242,11 @@ Where:
 - the return type was `[FormatType: UnsignedVPToken]`
 - `holderId` and `signatureSuite` were optional inputs used by older LDP VP construction flows
 
-0.7.0 also exposed `constructUnsignedVPTokenV2(...) -> [UnsignedVPTokenV2]`, which is removed in 0.8.0.
+0.7.0 also exposed `constructUnsignedVPTokenV2(...) -> [UnsignedVPTokenV2]`, which is removed in 1.0.0.
 
-### New behavior (0.8.0)
+### New behavior (1.0.0)
 
-In 0.8.0, `constructUnsignedVPToken(selectedCredentials:)` returns **typed list of signing work units**:
+In 1.0.0, `constructUnsignedVPToken(selectedCredentials:)` returns **typed list of signing work units**:
 
 ```swift
 let unsignedVPTokens: [UnsignedVPToken] = try await openID4VP.constructUnsignedVPToken(
@@ -284,7 +291,7 @@ let selectedCredentials: [String: [Credential]] = [
 // Note: The credentials shown here are for illustrative purposes.
 ```
 
-`holderId` and `signatureSuite` are removed from this API. 0.8.0 resolves signing requirements inside the SDK and returns them via `UnsignedVPToken`.
+`holderId` and `signatureSuite` are removed from this API. 1.0.0 resolves signing requirements inside the SDK and returns them via `UnsignedVPToken`.
 
 Each `UnsignedVPToken` provides:
 - `format: FormatType`
@@ -295,14 +302,14 @@ Each `UnsignedVPToken` provides:
 Wallet signing step:
 
 ```swift
-let vpTokenSigningResults: [VPTokenSigningResult] = try unsignedVPTokens.map { token in
+let vpTokenSigningResults: [VPTokenSigningResult] = try unsignedVPTokens.map { unsignedVPToken in
     let signature: Data = try walletKeyManager.sign(
-        data: token.dataToSign,
-        keyReference: token.holderKeyReference,
-        algorithm: token.signatureAlgorithm
+        data: unsignedVPToken.dataToSign,
+        keyReference: unsignedVPToken.holderKeyReference,
+        algorithm: unsignedVPToken.signatureAlgorithm
     )
 
-    return VPTokenSigningResult(signedData: signature)
+    return VPTokenSigningResult(id: unsignedVPToken.id, signedData: signature)
 }
 ```
 
@@ -326,7 +333,7 @@ let response: [String: Any] = openID4VP.constructVPResponse(
 Signature:
 - `constructVPResponse(vpTokenSigningResults: [FormatType: VPTokenSigningResult]) -> [String: Any]`
 
-### 0.8.0 usage
+### 1.0.0 usage
 
 ```swift
 let response: [String: Any] = openID4VP.constructVPResponse(
@@ -344,7 +351,7 @@ Behavior note:
 
 ## DCQL helper: `getMatchingCredentials(...)` from `DCQLHelper`
 
-In 0.8.0, DCQL credential matching is available via `DCQLHelper`:
+In 1.0.0, DCQL credential matching is available via `DCQLHelper`:
 
 ```swift
 import OpenID4VP
@@ -380,7 +387,7 @@ let verifierResponse: VerifierResponse = try await openID4VP.sendVPResponseToVer
 Signature:
 - `sendVPResponseToVerifier(vpTokenSigningResults: [FormatType: VPTokenSigningResult]) async throws -> VerifierResponse`
 
-### 0.8.0 usage
+### 1.0.0 usage
 
 ```swift
 let verifierResponse: VerifierResponse = try await openID4VP.sendVPResponseToVerifier(
@@ -395,11 +402,11 @@ Signature:
 
 ## Removed and changed entry-point methods from 0.7.0 (update your call sites)
 
-> Notice
+> **Notice**
 >
-> 0.8.0 keeps the core entry point class, but several 0.7.0 methods were removed and some existing methods changed signatures.
+> 1.0.0 keeps the core entry point class, but several 0.7.0 methods were removed and some existing methods changed signatures.
 
-Current public methods in `OpenID4VP` 0.8.0:
+Current public methods in `OpenID4VP` 1.0.0:
 - `authenticateVerifier(urlEncodedAuthorizationRequest:shouldValidateClient:)`
 - `authenticateVerifier(authorizationRequest:shouldValidateClient:)`
 - `constructUnsignedVPToken(selectedCredentials:)`
@@ -411,23 +418,39 @@ Current public methods in `OpenID4VP` 0.8.0:
 For DCQL matching, use `DCQLHelper`:
 - `getMatchingCredentials(inputCredentials:dcqlQuery:) async throws -> MatchingCredentialsResult`
 
-0.7.0 methods that remain but changed signatures:
-- `authenticateVerifier(urlEncodedAuthorizationRequest:trustedVerifiers:shouldValidateClient:)`
-  -> `authenticateVerifier(urlEncodedAuthorizationRequest:shouldValidateClient:)`
-- `authenticateVerifier(authorizationRequest:trustedVerifiers:shouldValidateClient:)`
-  -> `authenticateVerifier(authorizationRequest:shouldValidateClient:)`
-- `constructUnsignedVPToken(verifiableCredentials:holderId:signatureSuite:)`
-  -> `constructUnsignedVPToken(selectedCredentials:)`
-- `constructVPResponse(vpTokenSigningResults: [FormatType: VPTokenSigningResult])`
-  -> `constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult])`
-- `sendVPResponseToVerifier(vpTokenSigningResults: [FormatType: VPTokenSigningResult])`
-  -> `sendVPResponseToVerifier(vpTokenSigningResults: [VPTokenSigningResult])`
+For detailed usage refer the [latest integration guide](../integration-guide.md)
 
-0.7.0 methods retained without signature change:
-- `constructErrorInfo(exception:)`
-- `sendErrorInfoToVerifier(error:)`
+### API Signature Changes
 
-0.7.0 methods removed in 0.8.0:
+The following APIs have updated signatures in 1.0.0:
+
+* `authenticateVerifier(urlEncodedAuthorizationRequest:shouldValidateClient:)`
+
+    * Trusted verifier configuration is now sourced from `WalletConfig` and is no longer passed at call time.
+
+* `authenticateVerifier(authorizationRequest:shouldValidateClient:)`
+
+    * Trusted verifier configuration is now sourced from `WalletConfig` and is no longer passed at call time.
+
+* `constructUnsignedVPToken(selectedCredentials:)`
+
+    * VP construction now operates on selected credentials directly, removing the need to provide holder identifiers and signature suites at call time.
+
+* `constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult])`
+
+    * The signing result collection no longer requires a `FormatType` mapping.
+
+* `sendVPResponseToVerifier(vpTokenSigningResults: [VPTokenSigningResult])`
+
+    * The signing result collection no longer requires a `FormatType` mapping.
+
+The following APIs are unchanged in 1.0.0:
+
+* `constructErrorInfo(exception:)`
+* `sendErrorInfoToVerifier(error:)`
+
+
+0.7.0 methods removed in 1.0.0:
 - `constructUnsignedVPTokenV2(...)`
 - `constructVPResponseV2(...)`
 - `shareVerifiablePresentation(vpTokenSigningResults:)`
@@ -439,7 +462,7 @@ For DCQL matching, use `DCQLHelper`:
 
 ---
 
-## Minimal working Swift example in 0.8.0
+## Minimal working Swift example in 1.0.0
 
 ```swift
 import Foundation
@@ -466,8 +489,7 @@ func handleOVPFlow(
 
     do {
         let validatedVPRequest = try await openID4VP.authenticateVerifier(
-            urlEncodedAuthorizationRequest: encodedAuthorizationRequest,
-            shouldValidateClient: true
+            urlEncodedAuthorizationRequest: encodedAuthorizationRequest
         )
 
         var selectedCredentials: [String: [Credential]] = [:]
@@ -505,13 +527,13 @@ func handleOVPFlow(
             selectedCredentials: selectedCredentials
         )
         
-        let signingResults = try unsignedVpTokens.map { token in
+        let signingResults = try unsignedVpTokens.map { unsignedVPToken in
             let signature = try signData(
-                token.dataToSign,
-                keyReference: token.holderKeyReference,
-                algorithm: token.signatureAlgorithm
+                unsignedVPToken.dataToSign,
+                keyReference: unsignedVPToken.holderKeyReference,
+                algorithm: unsignedVPToken.signatureAlgorithm
             )
-            return VPTokenSigningResult(signedData: signature)
+            return VPTokenSigningResult(id: unsignedVPToken, signedData: signature)
         }
 
         let vpSubmissionVerifierResponse = try await openID4VP.sendVPResponseToVerifier(
@@ -631,17 +653,20 @@ Notes:
 
 ---
 
-## Appendix: where to look for updated Swift types
+## Appendix: Key Swift Types and Entry Points
 
-- Entry point:
-  - `Sources/OpenID4VP/OpenID4VP.swift`
-- Wallet config and credentials:
-  - `Sources/OpenID4VP/Wallet/WalletConfig.swift`
-  - `Sources/OpenID4VP/Wallet/Credential.swift`
-- DCQL helper:
-  - `Sources/OpenID4VP/Helpers/DCQLHelper.swift`
-- Signing work units:
-  - `Sources/OpenID4VP/AuthorizationResponse/UnsignedVPToken/UnsignedVPToken.swift`
-  - `Sources/OpenID4VP/AuthorizationResponse/VPTokenSigningResult/VpTokenSigningResult.swift`
-- Optional callback typealiases:
-  - `Sources/OpenID4VP/Constants/CallbackTypes.swift`
+The following files contain the primary types and APIs used throughout the SDK:
+
+* **Entry point**
+    * `Sources/OpenID4VP/OpenID4VP.swift`
+* **Wallet configuration and credential models**
+    * `Sources/OpenID4VP/Wallet/WalletConfig.swift`
+    * `Sources/OpenID4VP/Wallet/Credential.swift`
+* **DCQL utilities**
+    * `Sources/OpenID4VP/Helpers/DCQLHelper.swift`
+* **Signing work units**
+    * `Sources/OpenID4VP/AuthorizationResponse/UnsignedVPToken/UnsignedVPToken.swift`
+    * `Sources/OpenID4VP/AuthorizationResponse/VPTokenSigningResult/VPTokenSigningResult.swift`
+* **Callback type definitions**
+    * `Sources/OpenID4VP/Constants/CallbackTypes.swift`
+
