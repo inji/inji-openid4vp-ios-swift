@@ -1,5 +1,10 @@
 import Foundation
 
-public protocol VPTokenSigningResult {
+public struct VPTokenSigningResult: Codable {
 
+    public let signedData: Data
+
+    public init(signedData: Data) {
+        self.signedData = signedData
+    }
 }

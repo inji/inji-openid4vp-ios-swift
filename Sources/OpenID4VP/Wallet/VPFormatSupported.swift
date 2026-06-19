@@ -2,7 +2,7 @@ public protocol VPFormatSupported: Codable {
     func toAlgValuesSupported() -> [String]?
 }
 
-public struct LdpVcFormatSupported: VPFormatSupported, Codable {
+public struct LdpVpFormatSupported: VPFormatSupported, Codable {
     let proofTypeValues: [ProofType]?
     let cryptoSuiteValues: [String]?
     
@@ -52,7 +52,7 @@ public struct LdpVcFormatSupported: VPFormatSupported, Codable {
     }
 }
 
-public struct MsoMdocVcFormatSupported: VPFormatSupported, Codable {
+public struct MsoMdocVpFormatSupported: VPFormatSupported, Codable {
     let issuerAuthAlgValues: [Int]?
     let deviceAuthAlgValues: [Int]?
     private let algorithmValueNameMap: [Int: String] = [
@@ -79,7 +79,7 @@ public struct MsoMdocVcFormatSupported: VPFormatSupported, Codable {
 }
 
 
-public struct SdJwtVcFormatSupported: VPFormatSupported, Codable {
+public struct SdJwtVpFormatSupported: VPFormatSupported, Codable {
     let sdJwtAlgValues: [String]?
     let kbJwtAlgValues: [String]?
     

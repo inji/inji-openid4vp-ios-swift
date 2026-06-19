@@ -6,7 +6,7 @@ func createVerifiers(from verifierList: [[String: Any]]) -> [Verifier] {
     var verifiers: [Verifier] = []
     
     for verifierData in verifierList {
-        if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId.rawValue] as? String,
+        if let clientId = verifierData[AuthorizationRequestFieldConstants.clientId] as? String,
            let responseUris = verifierData["response_uris"] as? [String] {
             let jwksUri = verifierData["jwks_uri"] as? String
             
@@ -116,8 +116,8 @@ func createAuthorizationRequest(
     if(isSigned){
         let request = JWSUtil.create(payload: authorizationRequestParam as [String : Any])
         authorizationRequestParam = [
-            AuthorizationRequestFieldConstants.request.rawValue: request,
-            AuthorizationRequestFieldConstants.clientId.rawValue: requestParams[AuthorizationRequestFieldConstants.clientId.rawValue] ?? ""
+            AuthorizationRequestFieldConstants.request: request,
+            AuthorizationRequestFieldConstants.clientId: requestParams[AuthorizationRequestFieldConstants.clientId] ?? ""
         ]
     }
     return authorizationRequestParam
@@ -144,7 +144,7 @@ func createAuthorizationRequestObject(
         }
     }
     let authorizaitonRequestParameters = createAuthorizationRequest(paramList: parametersList, requestParams: authorizationRequestParams, specVersion: specVersion, isPresentationExchangeByReference: isPresentationExchangeByReference, addEncryptionClientMetadataParams: addEncryptionClientMetadataParams)
-//        authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce.rawValue] = "mock-nonce"
+//        authorizaitonRequestParameters[AuthorizationRequestFieldConstants.walletNonce] = "mock-nonce"
     
     return JWSUtil.create(header: jwsHeaderData, payload: authorizaitonRequestParameters as [String : Any], addValidSignature: addValidSignature)
 }
@@ -174,7 +174,7 @@ func convertToJsonString<T: Encodable>(_ object: T) -> String {
         return String(data: jsonData, encoding: .utf8) ?? ""
     } catch {
         print("Error converting object to JSON string: \(error)")
-        return ""
+        return "{}"
     }
 }
 
@@ -233,7 +233,12 @@ func jsonString(_ any: Any, prettyPrinted: Bool = false) -> String? {
 func createInstance<T: Decodable>(_ json: [String: Any], as type: T.Type) -> T {
     let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [])
     let decoder = JSONDecoder()
-    return (try? decoder.decode(T.self, from: jsonData!))!
+    do {
+        return try decoder.decode(T.self, from: jsonData!)
+    } catch {
+        print("Error decoding JSON: \(error)")
+        return (try? decoder.decode(T.self, from: jsonData!))!
+    }
 }
 
 func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? = nil, specVersion: SpecVersion = .v1) -> (body: String, httpUrlResponse: HTTPURLResponse) {
@@ -243,7 +248,7 @@ func createRequestUriResponse(_ body: String, httpUrlResponse: HTTPURLResponse? 
     return (body: body, httpUrlResponse: modifiedResponse)
 }
 
-func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1) -> AuthorizationRequest {
+func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, responseType: String? = nil, responseModeValue: String? = nil, specVersion: SpecVersion = .v1, dcqlQuery: DCQLQuery? = nil, presentationDefinition: PresentationDefinition? = nil) -> AuthorizationRequest {
     let responseType = responseType ?? ResponseType.vp_token.rawValue
     
     if(specVersion == .draft23) {
@@ -256,7 +261,7 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
             nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
             walletNonce: nil,
             state: "state",
-            presentationDefinition: mockPresentationDefinitionObject,
+            presentationDefinition: presentationDefinition ?? mockPresentationDefinitionObject,
             clientMetadata: mockClientMetadataSpecVersionDraft23[.directPostJwt]
         )
     }
@@ -270,42 +275,50 @@ func getMockAuthorizationRequest(responseMode: ResponseMode = .directPost, respo
         nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
         walletNonce: nil,
         state: "state",
+        dcqlQuery: dcqlQuery ?? validDcqlQuery,
         clientMetadata: mockClientMetadataSpecVersion1[responseMode]
     )
 }
 
-func createWalletMetadata(
+func createWalletConfig(
     vpFormatsSupported: [VPFormatType: VPFormatSupported] = [
-        .ldp_vc: LdpVcFormatSupported(),
-        .mso_mdoc: MsoMdocVcFormatSupported(),
-        .dc_sd_jwt: SdJwtVcFormatSupported()
+        .ldp_vc: LdpVpFormatSupported(),
+        .mso_mdoc: MsoMdocVpFormatSupported(),
+        .dc_sd_jwt: SdJwtVpFormatSupported()
     ],
     clientIdPrefixesSupported: [ClientIdPrefix] = [.preRegistered, .redirectUri, .decentralizedIdentifier],
-    requestObjectSigningAlgValuesSupported: [RequestSigningAlgorithm]? = [.edDsa],
-    authorizationEncryptionAlgValuesSupported: [KeyManagementAlgorithm]? = [.ecdhEs],
-    authorizationEncryptionEncValuesSupported: [ContentEncryptionAlgorithm]? = [.A256GCM],
+    requestObjectSigningAlgValuesSupported: [SignatureAlgorithm]? = [.edDsa],
+    authorizationEncryptionAlgValuesSupported: [EncryptionAlgorithm]? = [.ecdhES],
+    authorizationEncryptionEncValuesSupported: [EncryptionMethod]? = [.a256GCM],
     responseTypesSupported: [ResponseType] = [.vp_token],
-    responseMode: ResponseMode = .directPost
-) throws -> WalletMetadata {
-    return WalletMetadata(
+    responseMode: ResponseMode = .directPost,
+    trustedVerifiers: [Verifier] = preRegisteredVerifiers,
+    validatePreregisteredVerifier: Bool = true
+) -> WalletConfig {
+    return WalletConfig(
         vpFormatsSupported: vpFormatsSupported,
-        clientIdPrefixesSupported: WalletMetadataDefaults.clientIdPrefixesSupported,
+        clientIdPrefixesSupported: clientIdPrefixesSupported,
         requestObjectSigningAlgValuesSupported: requestObjectSigningAlgValuesSupported,
         authorizationEncryptionAlgValuesSupported: authorizationEncryptionAlgValuesSupported,
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,
-        responseTypesSupported: responseTypesSupported
+        responseTypesSupported: responseTypesSupported,
+        trustedVerifiers: trustedVerifiers,
+        validatePreRegisteredVerifier: validatePreregisteredVerifier
     )
 }
 
-func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://www.w3.org/2018/credentials/examples/v1",
-    [
-        "sec": "https://w3id.org/security#"
-    ]
-    
-]) -> [String: Any] {
-    let data : [String: Any] = [
+func ldpVC(
+    credentialType : String = "IDCardCredential",
+    context: [Any] = [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1",
+        [
+            "sec": "https://w3id.org/security#"
+        ],
+    ],
+    addHolderBinding: Bool = true
+) -> [String: Any] {
+    var data : [String: Any] = [
         "@context": context,
         "id": "https://example.com/credentials/1872",
         "type": [
@@ -317,6 +330,7 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
         ],
         "issuanceDate": "2010-01-01T19:23:24Z",
         "credentialSubject": [
+            "id": didJwkKey,
             "given_name": "MockUser",
             "family_name": "Mockister",
             "birthdate": "1949-01-22"
@@ -329,6 +343,20 @@ func ldpVC(credentialType : String = "IDCardCredential", context: [Any] = [
             "verificationMethod": "did:example:issuer#keys-1"
         ]
     ]
+    if(addHolderBinding) {
+        data["credentialSubject"] = [
+            "id": didJwkKey,
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ]
+    } else {
+        data["credentialSubject"] = [
+            "given_name": "MockUser",
+            "family_name": "Mockister",
+            "birthdate": "1949-01-22"
+        ]
+    }
     return data
 }
 

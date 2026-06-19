@@ -10,7 +10,7 @@ final class ClientMetadataTests: XCTestCase {
     // MARK: - init (memberwise)
 
     func testInitStoresAllFields() {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020])
+        let ldp = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020])
         let metadata = ClientMetadata(
             clientName: "Client",
             logoUri: "https://example.com/logo.png",
@@ -46,7 +46,7 @@ final class ClientMetadataTests: XCTestCase {
         XCTAssertEqual(decoded.encryptedResponseEncValuesSupported, ["A256GCM"])
         XCTAssertNotNil(decoded.jwks)
         XCTAssertEqual(decoded.vpFormatsSupported.count, 1)
-        XCTAssertNotNil(decoded.vpFormatsSupported["ldp_vc"] as? LdpVcFormatSupported)
+        XCTAssertNotNil(decoded.vpFormatsSupported["ldp_vc"] as? LdpVpFormatSupported)
     }
 
     func testDecodeOptionalFieldsAbsent() throws {
@@ -61,7 +61,7 @@ final class ClientMetadataTests: XCTestCase {
     func testDecodeVpFormatsSupportedLdpVc() throws {
         let data = json()
         let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
-        let ldp = decoded.vpFormatsSupported["ldp_vc"] as? LdpVcFormatSupported
+        let ldp = decoded.vpFormatsSupported["ldp_vc"] as? LdpVpFormatSupported
         XCTAssertNotNil(ldp)
         XCTAssertEqual(ldp?.proofTypeValues, [.ed25519Signature2020])
     }
@@ -71,7 +71,7 @@ final class ClientMetadataTests: XCTestCase {
         {"ldp_vp": {"proof_type_values": ["JsonWebSignature2020"]}}
         """)
         let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
-        XCTAssertNotNil(decoded.vpFormatsSupported["ldp_vp"] as? LdpVcFormatSupported)
+        XCTAssertNotNil(decoded.vpFormatsSupported["ldp_vp"] as? LdpVpFormatSupported)
     }
 
     func testDecodeVpFormatsSupportedMsoMdoc() throws {
@@ -79,7 +79,7 @@ final class ClientMetadataTests: XCTestCase {
         {"mso_mdoc": {"issuerauth_alg_values": [-7], "deviceauth_alg_values": [-9]}}
         """)
         let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
-        let mdoc = decoded.vpFormatsSupported["mso_mdoc"] as? MsoMdocVcFormatSupported
+        let mdoc = decoded.vpFormatsSupported["mso_mdoc"] as? MsoMdocVpFormatSupported
         XCTAssertNotNil(mdoc)
         XCTAssertEqual(mdoc?.issuerAuthAlgValues, [-7])
         XCTAssertEqual(mdoc?.deviceAuthAlgValues, [-9])
@@ -90,7 +90,7 @@ final class ClientMetadataTests: XCTestCase {
         {"dc+sd-jwt": {"sd-jwt_alg_values": ["ES256"], "kb-jwt_alg_values": ["EdDSA"]}}
         """)
         let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
-        let sdJwt = decoded.vpFormatsSupported["dc+sd-jwt"] as? SdJwtVcFormatSupported
+        let sdJwt = decoded.vpFormatsSupported["dc+sd-jwt"] as? SdJwtVpFormatSupported
         XCTAssertNotNil(sdJwt)
         XCTAssertEqual(sdJwt?.sdJwtAlgValues, ["ES256"])
         XCTAssertEqual(sdJwt?.kbJwtAlgValues, ["EdDSA"])
@@ -101,13 +101,13 @@ final class ClientMetadataTests: XCTestCase {
         {"vc+sd-jwt": {"sd-jwt_alg_values": ["ES256"]}}
         """)
         let decoded = try JSONDecoder().decode(ClientMetadata.self, from: data)
-        XCTAssertNotNil(decoded.vpFormatsSupported["vc+sd-jwt"] as? SdJwtVcFormatSupported)
+        XCTAssertNotNil(decoded.vpFormatsSupported["vc+sd-jwt"] as? SdJwtVpFormatSupported)
     }
 
     // MARK: - encode(to encoder)
 
     func testEncodeAndDecode() throws {
-        let ldp = LdpVcFormatSupported(proofTypeValues: [.ed25519Signature2020])
+        let ldp = LdpVpFormatSupported(proofTypeValues: [.ed25519Signature2020])
         let original = ClientMetadata(
             clientName: "Client",
             logoUri: "https://example.com/logo.png",
@@ -125,7 +125,7 @@ final class ClientMetadataTests: XCTestCase {
 
     func testEncodeOmitsNilOptionalFields() throws {
         let metadata = ClientMetadata(
-            vpFormatsSupported: ["ldp_vc": LdpVcFormatSupported()]
+            vpFormatsSupported: ["ldp_vc": LdpVpFormatSupported()]
         )
         let data = try JSONEncoder().encode(metadata)
         let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
@@ -138,7 +138,7 @@ final class ClientMetadataTests: XCTestCase {
 
     func testEncodeVpFormatsSupportedSkipsUnknownFormatType() throws {
         let metadata = ClientMetadata(
-            vpFormatsSupported: ["unknown_format": LdpVcFormatSupported()]
+            vpFormatsSupported: ["unknown_format": LdpVpFormatSupported()]
         )
         let data = try JSONEncoder().encode(metadata)
         let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
@@ -147,7 +147,7 @@ final class ClientMetadataTests: XCTestCase {
     }
 
     func testEncodeVpFormatsSupportedMsoMdoc() throws {
-        let mdoc = MsoMdocVcFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
+        let mdoc = MsoMdocVpFormatSupported(issuerAuthAlgValues: [-7], deviceAuthAlgValues: [-9])
         let metadata = ClientMetadata(
             vpFormatsSupported: ["mso_mdoc": mdoc]
         )
@@ -158,7 +158,7 @@ final class ClientMetadataTests: XCTestCase {
     }
 
     func testEncodeVpFormatsSupportedSdJwt() throws {
-        let sdJwt = SdJwtVcFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
+        let sdJwt = SdJwtVpFormatSupported(sdJwtAlgValues: ["ES256"], kbJwtAlgValues: ["EdDSA"])
         let metadata = ClientMetadata(
             vpFormatsSupported: ["dc+sd-jwt": sdJwt]
         )

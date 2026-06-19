@@ -11,8 +11,8 @@ final class MockNonceProvider: NonceProvider {
 final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
-    var expectedUnsignedVPTokensV2: [UnsignedVPTokenV2] = []
-    var expectedVPResponseV2: [String: String] = [:]
+    var expectedUnsignedVPTokens: [UnsignedVPToken] = []
+    var expectedVPResponse: [String: String] = [:]
 
     override func constructAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
@@ -21,26 +21,23 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     ) -> [String: Any] {
         return expectedErrorResponse
     }
-
+    
     override func constructUnsignedVPToken(
-        credentialsMap: [String: [FormatType: [AnyCodable]]],
+        selectedCredentials: [String: [Credential]],
         authorizationRequest: AuthorizationRequest,
-        responseUri: String,
-        holderId: String?,
-        signatureSuite: String?,
         walletNonce: String
-    ) async throws -> [UnsignedVPTokenV2] {
-        return expectedUnsignedVPTokensV2
+    ) async throws -> [UnsignedVPToken] {
+        return expectedUnsignedVPTokens
     }
 
     override func constructVPResponse(
-        signingResults: [VPTokenSigningResultV2],
+        signingResults: [VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
         if(!expectedErrorResponse.isEmpty) {
             return expectedErrorResponse
         }
-        return expectedVPResponseV2
+        return expectedVPResponse
     }
 }
 
@@ -49,11 +46,11 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     var expectedErrorResponse: [String: String] = [:]
 
     func validate(clientMetadata: ClientMetadataDraft23?,
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     
     func validate(clientMetadata: ClientMetadata?,
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   shouldValidateWithWalletMetadata: Bool) throws {}
     
     func sendAuthorizationResponse(
@@ -63,7 +60,7 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         networkManager: any NetworkManaging,
         producerInfo: String,
         recipientInfo: String,
-        walletMetadata: WalletMetadata?
+        walletConfig: WalletConfig
     ) async throws -> NetworkResponse {
         fatalError("Not needed for unit testing constructAuthorizationResponse")
     }
@@ -74,16 +71,20 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         authorizationRequest: AuthorizationRequest,
         authorizationResponse: AuthorizationResponse,
         walletNonce: String,
-        walletMetadata: WalletMetadata?
+        walletConfig: WalletConfig
     ) throws -> [String: String] {
         return expectedSuccessResponse
     }
 
     func getVerifierPublicKeyForEncryption(
         authorizationRequest: AuthorizationRequest,
-        walletMetadata: WalletMetadata?
+                walletConfig: WalletConfig
     ) throws -> JWK? {
         return nil
+    }
+    
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String {
+        return authorizationRequest.responseUri ?? "https://example.com/callback"
     }
 
     func getAuthorizationErrorResponse(

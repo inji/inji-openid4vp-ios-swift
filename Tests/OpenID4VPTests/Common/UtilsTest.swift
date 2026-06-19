@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+import JSONWebKey
 @testable import OpenID4VP
 
 struct MockDataClass: Codable {
@@ -22,27 +23,40 @@ class UtilsTest : XCTestCase {
     /// Validate url tests
     
     func testInvalidUrl() {
-        let testCases: [TestCase] = [
-            TestCase(input: "www.example.com"),
-            TestCase(input: "http://example.com/space here"),
-            TestCase(input: "http://"),
-            TestCase(input: "https://example"),
-            TestCase(input: "http://example.com/file%/name"),
-            TestCase(input: "http://example.com:99999"),
-            TestCase(input: "http:///example.com"),
-            TestCase(input: "http://example.com/search?q=hello%20world#@fragment"),
-            TestCase(input: "http://:8080"),
-            TestCase(input: ""),
-            TestCase(input: "https://example.com/invalid|character")
+        let invalidUrls: [String] = [
+            "www.example.com",
+            "http://example.com/space here",
+            "http://",
+            "https://example",
+            "http://example.com/file%/name",
+            "http://example.com:99999",
+            "http:///example.com",
+            "http://example.com/search?q=hello%20world#@fragment",
+            "http://:8080",
+            "",
+            "https://example.com/invalid|character",
+            "foo://example.com:8042/over/there?name=ferret#nose",
+            "https://example.com/file%/name",
+            "https://example.com/space here",
+            "https://example.com/path\n"
         ]
-        
-        for testCase in testCases {
-            XCTAssertFalse(isValidUri(testCase.input))
+
+        for url in invalidUrls {
+            XCTAssertFalse(isValidUri(url), "expected invalid: \(url)")
         }
     }
-    
+
     func testValidUrl(){
-        XCTAssertTrue(isValidUri("https://example.com"))
+        let validUrls: [String] = [
+            "https://609e-122-178-244-112.ngrok-free.app/verifier/get-auth-request-obj/did?draft=version-1.0&response_mode=direct_post",
+            "https://example.com:8042/over/there?name=ferret#nose",
+            "https://example.com/a%20b?q=hello%20world",
+            "https://example.com//empty/seg",
+            "https://example.com/p?a=1/2&b=x?y#f/g?h"
+        ]
+        for url in validUrls {
+            XCTAssertTrue(isValidUri(url), "expected valid: \(url)")
+        }
     }
     
     /// Check if input is JWT tests
@@ -54,34 +68,7 @@ class UtilsTest : XCTestCase {
         XCTAssertFalse(invalidJwt)
         XCTAssertTrue(validJwt)
     }
-    
-    /// Test for string to HTTP method conversion
-    
-    func testDetermineHttpMethodToReturnHttpMethodIfInputIsValid(){
-        let getMethod1 = try? determineHttpMethod(method: "get")
-        let getMethod2 = try? determineHttpMethod(method: "GET")
-        let getMethod3 = try? determineHttpMethod(method: "Get")
-        let postMethod1 = try? determineHttpMethod(method: "post")
-        let postMethod2 = try? determineHttpMethod(method: "POST")
-        let postMethod3 = try? determineHttpMethod(method: "Post")
-        
-        XCTAssertEqual(getMethod1, .get)
-        XCTAssertEqual(getMethod2, .get)
-        XCTAssertEqual(getMethod3, .get)
-        XCTAssertEqual(postMethod1, .post)
-        XCTAssertEqual(postMethod2, .post)
-        XCTAssertEqual(postMethod3, .post)
-    }
-    
-    func testDetermineHttpMethodToThrowErrorIfInputIsNotValid(){
-        XCTAssertThrowsError(try determineHttpMethod(method: "head")) { error in
-            assertOpenID4VPException(error,
-                expectedMessage: "Unsupported HTTP method: head",
-                                     expectedCode: OpenID4VPErrorCodes.invalidRequestUriMethod
-            )
-        }
-    }
-    
+   
     /// Test for dictionary of [String: Any] to data conversion
     
     func testToDataConversionSuccess() throws {
@@ -253,6 +240,100 @@ class UtilsTest : XCTestCase {
         
         await XCTAssertAsyncThrowsError(try await resolveJwksFromUri(self.jwksUri, networkManager: self.mockNetworkManager, className: self.testClassName)) { error in
             assertOpenID4VPException(error, expectedMessage: "Public key extraction failed - Unable to fetch/parse jwks from https://example.com/jwks due to Network request failed with error response - Simulated network error", expectedCode: OpenID4VPErrorCodes.invalidRequestObject)
+        }
+    }
+
+    // MARK: - getEncryptionKey Tests
+
+    private func makeJWK(alg: String, use: String = "enc", kid: String = "key1") throws -> JWK {
+        let dict: [String: Any] = ["kty": "OKP", "crv": "X25519", "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4", "alg": alg, "use": use, "kid": kid]
+        return try JSONDecoder().decode(JWK.self, from: JSONSerialization.data(withJSONObject: dict))
+    }
+
+    private func makeJWKSet(_ jwks: [JWK]) -> JWKSet {
+        JWKSet(keys: jwks)
+    }
+
+    func testGetEncryptionKeyReturnsSingleMatchingKey() throws {
+        let encKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let jwks = makeJWKSet([encKey])
+
+        let result = try getEncryptionKey(jwks, ["ECDH-ES"])
+
+        XCTAssertEqual(result.keyID, "enc1")
+        XCTAssertEqual(result.algorithm, "ECDH-ES")
+    }
+
+    func testGetEncryptionKeyThrowsWhenNoKeyMatchesAlgorithm() throws {
+        let sigKey = try makeJWK(alg: "EdDSA", use: "sig", kid: "sig1")
+        let jwks = makeJWKSet([sigKey])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, ["ECDH-ES"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "No jwk matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetEncryptionKeyThrowsWhenJwksIsEmpty() throws {
+        let jwks = makeJWKSet([])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, ["ECDH-ES"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "No jwk matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetEncryptionKeyReturnsEncKeyWhenMultipleMatchingKeysExist() throws {
+        let sigKey = try makeJWK(alg: "ECDH-ES", use: "sig", kid: "sig1")
+        let encKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let jwks = makeJWKSet([sigKey, encKey])
+
+        let result = try getEncryptionKey(jwks, ["ECDH-ES"])
+
+        XCTAssertEqual(result.keyID, "enc1")
+        XCTAssertEqual(result.publicKeyUse, .encryption)
+    }
+
+    func testGetEncryptionKeyThrowsWhenMultipleEncKeysMatchAlgorithm() throws {
+        let encKey1 = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let encKey2 = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc2")
+        let jwks = makeJWKSet([encKey1, encKey2])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, ["ECDH-ES"])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Multiple jwks matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testGetEncryptionKeyPicksFirstMatchingAlgorithmInPreferenceOrder() throws {
+        let ecdhKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "ecdh1")
+        let jwks = makeJWKSet([ecdhKey])
+
+        let result = try getEncryptionKey(jwks, ["ECDH-ES+A256KW", "ECDH-ES"])
+
+        XCTAssertEqual(result.keyID, "ecdh1")
+        XCTAssertEqual(result.algorithm, "ECDH-ES")
+    }
+
+    func testGetEncryptionKeyThrowsWhenNoAlgorithmsProvided() throws {
+        let encKey = try makeJWK(alg: "ECDH-ES", use: "enc", kid: "enc1")
+        let jwks = makeJWKSet([encKey])
+
+        XCTAssertThrowsError(try getEncryptionKey(jwks, [])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "No jwk matching the specified algorithm found for encryption",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
 }

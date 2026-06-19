@@ -4,7 +4,7 @@ fileprivate let className = String(describing: AuthorizationResponse.self)
 
 enum AuthorizationResponse {
     // Spec v1.0 compliant : DCQL structure
-    case dcql(vpToken: [String: Any], state: String?)
+    case dcql(vpToken: [String: [VPToken]], state: String?)
     
     // Draft 23 compliant: DIF Presentation Exchange structure
     case presentationExchange(vpToken: VPTokenType, presentationSubmission: PresentationSubmission, state: String?)
@@ -14,8 +14,8 @@ enum AuthorizationResponse {
         
         switch self {
         case .dcql(let vpToken, let state):
-            let vpData = try JSONSerialization.data(withJSONObject: vpToken)
-            jsonEncodedAuthorizationResponse["vp_token"] = String(data: vpData, encoding: .utf8)
+            let encodableMap = vpToken.mapValues { tokens in tokens.map { AnyEncodable($0) } }
+            jsonEncodedAuthorizationResponse["vp_token"] = try encode(encodableMap, fieldName: "vp_token", className: className)
             if let state = state { jsonEncodedAuthorizationResponse["state"] = state }
             
         case .presentationExchange(let vpToken, let presentationSubmission, let state):

@@ -3,14 +3,14 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
     override init(clientId: String,
                   specVersion: SpecVersion,
                   authorizationRequestParameters: [String: Any],
-                  walletMetadata: WalletMetadata?,
+                  walletConfig: WalletConfig,
                   setResponseUri: @escaping (String) -> Void,
                   walletNonce: String,
                   networkManager: NetworkManaging) {
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
-                   walletMetadata: walletMetadata,
+                   walletConfig: walletConfig,
                    setResponseUri: setResponseUri,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
@@ -34,18 +34,16 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         throw UnsupportedOperationException(message: "Public key extraction is not supported for redirect_uri client_id_prefix", className: className)
     }
     
-    func process(walletMetadata: WalletMetadata)  throws -> WalletMetadata {
-        var updatedWalletMetadata = walletMetadata
-        updatedWalletMetadata.requestObjectSigningAlgValuesSupported = nil
-        return updatedWalletMetadata
+    func getWalletMetadata(walletConfig: WalletConfig) throws -> [String: Any] {
+        return try walletConfig.toWalletMetadata(specVersion: specVersion, excludeSignedRequestConfig: true)
     }
 
     override func validateAndParseRequestFields()async throws {
         try await super.validateAndParseRequestFields()
-        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode.rawValue])
+        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
         switch responseMode {
         case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
-            try validateUriCombinations(authorizationRequestParameters: authorizationRequestParameters, validAttribute: AuthorizationRequestFieldConstants.responseUri.rawValue, inValidAttribute: AuthorizationRequestFieldConstants.redirectUri.rawValue)
+            try validateResponseUriMatchesClientId(authorizationRequestParameters: authorizationRequestParameters)
             break
             
         case ResponseMode.iarPost.rawValue,
@@ -60,22 +58,18 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
                 className: className
             )
         }
-        
+
     }
-    
-    private func validateUriCombinations(authorizationRequestParameters: [String: Any], validAttribute: String, inValidAttribute: String) throws {
-        if authorizationRequestParameters.keys.contains(inValidAttribute) {
-            throw InvalidData(message: "\(inValidAttribute) should not be present for given response_mode", className: className)
-        } else {
-            try validateAttribute(validAttribute, values: self.authorizationRequestParameters)
-        }
-        
-        let validValue = authorizationRequestParameters[validAttribute]
-        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId.rawValue] as? String ?? "")
-        
-        if validValue as? String != clientIdValue {
+
+    private func validateResponseUriMatchesClientId(authorizationRequestParameters: [String: Any]) throws {
+        try validateAttribute(AuthorizationRequestFieldConstants.responseUri, values: self.authorizationRequestParameters)
+
+        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri]
+        let clientIdValue = extractClientIdPartOnly(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String ?? "")
+
+        if responseUriValue as? String != clientIdValue {
             throw InvalidData(
-                message: "\(validAttribute) should be equal to client_id for given client_id_prefix",
+                message: "\(AuthorizationRequestFieldConstants.responseUri) should be equal to client_id for given client_id_prefix",
                 className: className
             )
         }

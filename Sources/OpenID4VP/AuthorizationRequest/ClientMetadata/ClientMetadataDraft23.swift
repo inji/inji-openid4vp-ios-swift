@@ -26,7 +26,7 @@ public struct ClientMetadataDraft23: Codable {
             self .clientName = try container.decodeRequired(
                 String.self,
                 forKey: .clientName,
-                fieldPath: ["client_metadata", "client_name"],
+                fieldPath: [AuthorizationRequestFieldConstants.clientMetadata, "client_name"],
                 className: ClientMetadataDraft23.className,
                 isMandatory: false
             )
@@ -34,7 +34,7 @@ public struct ClientMetadataDraft23: Codable {
             self .logoUri = try container.decodeRequired(
                 String.self,
                 forKey: .logoUri,
-                fieldPath: ["client_metadata", "logo_uri"],
+                fieldPath: [AuthorizationRequestFieldConstants.clientMetadata, "logo_uri"],
                 className: ClientMetadataDraft23.className,
                 isMandatory: false
             )
@@ -42,7 +42,7 @@ public struct ClientMetadataDraft23: Codable {
             self .authorizationEncryptedResponseAlg = try container.decodeRequired(
                 String.self,
                 forKey: .authorizationEncryptedResponseAlg,
-                fieldPath: ["client_metadata", "authorization_encrypted_response_alg"],
+                fieldPath: [AuthorizationRequestFieldConstants.clientMetadata, "authorization_encrypted_response_alg"],
                 className: ClientMetadataDraft23.className,
                 isMandatory: false
             )
@@ -50,7 +50,7 @@ public struct ClientMetadataDraft23: Codable {
             self .authorizationEncryptedResponseEnc = try container.decodeRequired(
                 String.self,
                 forKey: .authorizationEncryptedResponseEnc,
-                fieldPath: ["client_metadata", "authorization_encrypted_response_enc"],
+                fieldPath: [AuthorizationRequestFieldConstants.clientMetadata, VerifierMetadataConstants.authorizationEncryptedResponseEnc],
                 className: ClientMetadataDraft23.className,
                 isMandatory: false
             )
@@ -58,7 +58,7 @@ public struct ClientMetadataDraft23: Codable {
             self .vpFormats = try container.decodeRequired(
                 [String: [String: [String]]].self,
                 forKey: .vpFormats,
-                fieldPath: ["client_metadata", "vp_formats"],
+                fieldPath: [AuthorizationRequestFieldConstants.clientMetadata, "vp_formats"],
                 className: ClientMetadataDraft23.className,
                 isMandatory: true
             )!
@@ -66,7 +66,7 @@ public struct ClientMetadataDraft23: Codable {
             self .jwks = try container.decodeRequired(
                 JWKSet.self,
                 forKey: .jwks,
-                fieldPath: ["client_metadata", "jwks"],
+                fieldPath: [AuthorizationRequestFieldConstants.clientMetadata, "jwks"],
                 className: ClientMetadataDraft23.className,
                 isMandatory: false
             )
@@ -81,11 +81,11 @@ public struct ClientMetadataDraft23: Codable {
             return try toClientMetadata(encodedData)
         } else if let data = clientMetadata as? String {
             guard let encodedData = data.data(using: .utf8) else {
-                throw UTF8EncodingFailed( fieldPath: ["client_metadata"], className: ClientMetadataDraft23.className)
+                throw UTF8EncodingFailed( fieldPath: [AuthorizationRequestFieldConstants.clientMetadata], className: ClientMetadataDraft23.className)
             }
             return try toClientMetadata(encodedData)
         } else {
-            throw InvalidInput(fieldPath: ["client_metadata"], className: ClientMetadataDraft23.className)
+            throw InvalidInput(fieldPath: [AuthorizationRequestFieldConstants.clientMetadata], className: ClientMetadataDraft23.className)
         }
     }
     
@@ -95,10 +95,10 @@ public struct ClientMetadataDraft23: Codable {
     
     private func validate(_ decodedClientMetadata: ClientMetadataDraft23) throws{
         
-        try validateField(decodedClientMetadata.clientName, ["client_metadata", "client_name"], ClientMetadataDraft23.className)
-        try validateField(decodedClientMetadata.logoUri, ["client_metadata", "logo_uri"], ClientMetadataDraft23.className)
-        try validateField(decodedClientMetadata.authorizationEncryptedResponseAlg, ["client_metadata", "authorization_encrypted_response_alg"], ClientMetadataDraft23.className)
-        try validateField(decodedClientMetadata.authorizationEncryptedResponseEnc, ["client_metadata", "authorization_encrypted_response_enc"], ClientMetadataDraft23.className)
-        try validateField(decodedClientMetadata.vpFormats, ["client_metadata", "vp_formats"], ClientMetadataDraft23.className)
+        try validateField(decodedClientMetadata.clientName, [AuthorizationRequestFieldConstants.clientMetadata, "client_name"], ClientMetadataDraft23.className)
+        try validateField(decodedClientMetadata.logoUri, [AuthorizationRequestFieldConstants.clientMetadata, "logo_uri"], ClientMetadataDraft23.className)
+        try validateField(decodedClientMetadata.authorizationEncryptedResponseAlg, [AuthorizationRequestFieldConstants.clientMetadata, "authorization_encrypted_response_alg"], ClientMetadataDraft23.className)
+        try validateField(decodedClientMetadata.authorizationEncryptedResponseEnc, [AuthorizationRequestFieldConstants.clientMetadata, VerifierMetadataConstants.authorizationEncryptedResponseEnc], ClientMetadataDraft23.className)
+        try validateField(decodedClientMetadata.vpFormats, [AuthorizationRequestFieldConstants.clientMetadata, "vp_formats"], ClientMetadataDraft23.className)
     }
 }

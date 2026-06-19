@@ -67,7 +67,6 @@ public struct NetworkManager: NetworkManaging {
                         continuation.resume(throwing: exception)
                     }
                     if let statusCode = response.response?.statusCode {
-                        let message = HTTPURLResponse.localizedString(forStatusCode: statusCode)
                         let response = NetworkResponse(
                             statusCode: statusCode,
                             body: response.data.flatMap { String(data: $0, encoding: .utf8) } ?? "",
