@@ -294,7 +294,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         ]
 
         let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
-
+        
         XCTAssertEqual(unsignedVPTokens.count, 0)
         assertLdpVPTokenPayload(payload, expectedCredentialsInPresentation: convertToJsonString([ldpVC()]), tokenType: .vc)
     }
@@ -567,7 +567,8 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
                 XCTFail("Expected [String: LdpVP] payload with LdpVP.vc entries for VC type", file: file, line: line)
                 return
             }
-            assertJsonString(expected: expectedCredentialsInPresentation, actual: convertToJsonString([ldpVCToken.verifiableCredential]), file: file, line: line)
+            let credential = ldpVCToken.verifiableCredential.value
+            assertJsonString(expected: expectedCredentialsInPresentation, actual: convertToJsonString([ldpVCToken.verifiableCredential.value]), file: file, line: line)
         }
     }
 

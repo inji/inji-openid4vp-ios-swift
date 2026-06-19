@@ -202,7 +202,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
             authorizationRequestParameters: params,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -250,7 +250,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
             authorizationRequestParameters: params,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -294,7 +294,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
             authorizationRequestParameters: params,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -338,7 +338,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
             authorizationRequestParameters: params,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -389,7 +389,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
             authorizationRequestParameters: params,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
@@ -438,7 +438,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
             authorizationRequestParameters: params,
-            walletMetadata: walletMetadata,
+            walletConfig: walletConfig,
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
