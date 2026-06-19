@@ -51,7 +51,7 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
              ResponseMode.iarPostJwt.rawValue,
              ResponseMode.iaePost.rawValue,
              ResponseMode.iaePostJwt.rawValue:
-            print("IAR_POST/IAE_POST response_mode is used")
+           
         default:
             throw InvalidResponseMode(
                 message : "Given response_mode \(String(describing: responseMode)) is not supported",

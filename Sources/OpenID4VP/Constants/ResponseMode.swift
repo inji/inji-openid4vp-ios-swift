@@ -4,7 +4,7 @@ public enum ResponseMode: String {
     case directPost = "direct_post"
     case directPostJwt = "direct_post.jwt"
 
-    // OpenID4VCI 1.0
+    // Backward compatible response modes
     case iarPost = "iar-post"
     case iarPostJwt = "iar-post.jwt"
 
