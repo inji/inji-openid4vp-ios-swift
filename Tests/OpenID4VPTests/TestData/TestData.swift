@@ -120,6 +120,7 @@ let authorizationRequestParamsWithValue: [String: Any] = [
     ],
     "presentation_definition_uri": "https://mock-verifier.com/presentation-definition",
     "dcql_query": dcqlQuery,
+    "wallet_nonce": "mock-nonce"
 ]
 
 func baseAuthRequest(clientId: String,

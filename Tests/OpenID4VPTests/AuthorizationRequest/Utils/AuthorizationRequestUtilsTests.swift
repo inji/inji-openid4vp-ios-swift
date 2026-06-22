@@ -87,7 +87,7 @@ class AuthorizationRequestUtilsTests : XCTestCase {
         for testCase in testCases {
             let authorizationRequestParametersWithInvalidClientId: [String : Any] = testCase.input as [String : Any]
             
-            XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId,  walletConfig: WalletConfig(validatePreRegisteredVerifier: false), setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)){ error in
+            XCTAssertThrowsError(try getAuthorizationRequestHandler(authorizationRequestParameters: authorizationRequestParametersWithInvalidClientId,  walletConfig: WalletConfig(validateTrustedVerifier: false), setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce",networkManager: mockNetworkManager)){ error in
                 assertOpenID4VPException(error,
                                          expectedMessage: testCase.expectedError!,
                                          expectedCode: OpenID4VPErrorCodes.invalidRequest

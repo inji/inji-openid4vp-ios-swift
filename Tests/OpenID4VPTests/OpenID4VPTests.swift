@@ -158,7 +158,7 @@ class OpenID4VPTests: XCTestCase {
         openID4VP = OpenID4VP(
             traceabilityId: "AXESWSAW123",
             networkManager: mockNetworkManager,
-            walletConfig: WalletConfig(trustedVerifiers: preRegisteredVerifiers, validatePreRegisteredVerifier: false),
+            walletConfig: WalletConfig(trustedVerifiers: preRegisteredVerifiers, validateTrustedVerifier: false),
             nonceProvider: MockNonceProvider(),
             jsonLdCanonicalizer: { _ in "Y2Fub25pY2FsaXplZA" }
         )
@@ -304,7 +304,7 @@ class OpenID4VPTests: XCTestCase {
         openID4VP = OpenID4VP(
             traceabilityId: "AXESWSAW123",
             networkManager: mockNetworkManager,
-            walletConfig: WalletConfig(trustedVerifiers: preRegisteredVerifiers, validatePreRegisteredVerifier: false),
+            walletConfig: WalletConfig(trustedVerifiers: preRegisteredVerifiers, validateTrustedVerifier: false),
             nonceProvider: MockNonceProvider(),
             jsonLdCanonicalizer: { _ in "Y2Fub25pY2FsaXplZA" }
         )
