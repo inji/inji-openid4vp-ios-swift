@@ -143,7 +143,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     ) throws -> [String: String] {
         let specVersionHandler = SpecVersionHandler.from(authorizationRequest)
         let jweHandler = try specVersionHandler.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, walletConfig: walletConfig, className: className)
-        let encryptedBody = try jweHandler.generateEncryptedResponse(payload: responseParams)
+        let encryptedBody = try jweHandler.encrypt(responseParams)
         return ["response": encryptedBody]
     }
 

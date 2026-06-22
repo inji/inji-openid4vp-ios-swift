@@ -1,6 +1,8 @@
 import Foundation
 import JSONWebKey
 import CryptoKit
+import JSONWebEncryption
+import JSONWebAlgorithms
 
 public struct JWEHandler {
     let contentEncryptionAlgorithm: String
@@ -10,8 +12,21 @@ public struct JWEHandler {
     let recipientInfo: String
     
     static let className = String(describing: JWEHandler.self)
+    
+    func encrypt(_ payload: [String: Any]) throws -> String {
+        let recipientKey: JWK = publicKey
+        try validateRecipientKey(
+            recipientKey,
+            for: KeyManagementAlgorithm.ecdhES
+        )
+        
+        var header = DefaultJWEHeaderImpl()
+        header.keyManagementAlgorithm = .ecdhES
+        header.encodingAlgorithm = .a256GCM
+        header.agreementPartyUInfo = Data(base64UrlEncoded: producerInfo)
+        header.agreementPartyVInfo = Data(base64UrlEncoded: recipientInfo)
+        header.keyID = recipientKey.keyID
 
-    func generateEncryptedResponse(payload: [String:Any]) throws -> String {
         var payloadData: Data
         do {
             payloadData = try toData(payload)
@@ -19,67 +34,57 @@ public struct JWEHandler {
             throw PayloadConversionFailed(className: JWEHandler.className)
         }
 
-        let encrypter = try EncryptionProvider.getEncrypter(contentEncryptionAlgorithm)
-        let keyAgreement = try KeyAgreementFactory.createKeyAgreement(for: publicKey)
+        let jwe = try JWE(payload: payloadData, protectedHeader: header, recipientKey: recipientKey)
         
-        guard let publicKeyXCoordinate = publicKey.x else {
-            throw PublicKeyResolutionFailed(message: "Public key is missing 'x' coordinate", className: Self.className)
-        }
-        
-        guard let encryptionAlgorithm = publicKey.algorithm else {
-            throw PublicKeyResolutionFailed(message: "Public key is missing 'algorithm' property", className: Self.className)
-        }
-
-        
-        let sharedKey = try keyAgreement.deriveKey(publicKey: publicKeyXCoordinate, algorithm: contentEncryptionAlgorithm, apu: producerInfo, apv: recipientInfo)
-
-        var header = keyAgreement.getJWEHeader(alg: encryptionAlgorithm, enc: contentEncryptionAlgorithm, jwk: publicKey, producerInfo: producerInfo, recipientInfo: recipientInfo)
-        if let epk = keyAgreement.getEphemeralPublicKey() {
-            header["epk"] = epk
-        }
-
-        let encodedHeader = try encodeHeader(header)
-        let aad = encodedHeader.data(using: .utf8)
-        
-        let (ciphertext, nonce, tag) = try encrypter.encrypt(payloadData, with: sharedKey, aad: aad)
-
-        return try encodeJWEComponents(
-            encodedHeader: encodedHeader,
-            encryptedKey: keyAgreement.getEncyptionKey(),
-            nonce: nonce,
-            ciphertext: ciphertext,
-            tag: tag
-        )
+        return jwe.compactSerialization()
     }
-    
-    private func encodeHeader(_ header: [String: Any]) throws -> String {
-        do {
-            let headerData = try JSONSerialization.data(withJSONObject: header)
-            return headerData.toBase64UrlEncoded()
-        } catch {
-            throw JsonEncodingFailed(errorMessage: "Failure occurred while encoding the JWE header - \(error)", className: Self.className)
+
+    private func validateRecipientKey(
+        _ jwk: JWK,
+        for algorithm: KeyManagementAlgorithm?
+    ) throws {
+
+        let supportedAlgorithms: Set<KeyManagementAlgorithm> = [
+            .ecdhES
+        ]
+
+        guard let algorithm,
+              supportedAlgorithms.contains(algorithm) else {
+            throw JweEncryptionFailure(
+                message: "Unsupported JWE algorithm: \(String(describing: algorithm))",
+                className: Self.className
+            )
         }
-    }
-            
-    private func encodeJWEComponents(
-        encodedHeader: String,
-        encryptedKey: String,
-        nonce: Data,
-        ciphertext: Data,
-        tag: Data
-    ) throws -> String {
-      
-        let encodedEncryptedKey = encryptedKey
-        let encodedIV = nonce.toBase64UrlEncoded()
-        let encodedCiphertext = ciphertext.toBase64UrlEncoded()
-        let encodedAuthTag = tag.toBase64UrlEncoded()
         
-        return [
-            encodedHeader,
-            encodedEncryptedKey,
-            encodedIV,
-            encodedCiphertext,
-            encodedAuthTag
-        ].joined(separator: ".")
+        let kty = jwk.keyType
+
+        switch kty {
+
+        case .octetKeyPair:
+            let crv = jwk.curve
+
+            guard crv == .x25519 else {
+                throw JweEncryptionFailure(
+                    message: "Unsupported OKP curve for ECDH-ES: \(crv?.rawValue ?? "nil"). Only X25519 is supported.",
+                    className: Self.className
+                )
+            }
+
+        case .ellipticCurve:
+            let crv = jwk.curve
+
+            guard [.p256, .p384, .p521].contains(crv) else {
+                throw JweEncryptionFailure(
+                    message: "Unsupported EC curve for ECDH-ES: \(crv?.rawValue ?? "nil")",
+                    className: Self.className
+                )
+            }
+
+        default:
+            throw JweEncryptionFailure(
+                message: "Unsupported recipient key type: \(kty)",
+                className: Self.className
+            )
+        }
     }
 }

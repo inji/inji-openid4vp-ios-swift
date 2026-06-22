@@ -224,6 +224,12 @@ class JsonDecodingFailed: OpenID4VPException {
 // MARK: - JWE
 
 
+class JweEncryptionFailure: OpenID4VPException {
+    init(message: String, className: String) {
+        super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    }
+}
+
 class UnsupportedEncryptionAlgorithm: OpenID4VPException {
     init(className: String) {
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: "Required Encryption algorithm is not supported", className: className)
