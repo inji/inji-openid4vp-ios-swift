@@ -133,7 +133,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
-    
+
     func testValidateAndParseRequestFieldsSucceedsWithIaeResponseModes() async {
 
         let testCases = [
@@ -195,7 +195,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
 
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
-    
+
     func testValidateAndParseRequestFieldsSucceedsWithIarPostWithoutResponseUri() async {
         let params = createAuthorizationRequest(
             paramList: authRequestWithRedirectUriByValue,
@@ -240,7 +240,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
 
-    
+
     func testValidateAndParseRequestFieldsSucceedsWithIaeResponseModesWithoutResponseUri() async {
 
         let testCases: [(responseMode: String, addEncryptionMetadata: Bool)] = [
@@ -326,7 +326,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
 
-    
+
     func testValidateClientAuthenticity_responseUriValidationModes_responseUriMissing_throwsMissingField() {
         let responseUriValidationModes = ["direct_post", "direct_post.jwt"]
         for responseMode in responseUriValidationModes {
