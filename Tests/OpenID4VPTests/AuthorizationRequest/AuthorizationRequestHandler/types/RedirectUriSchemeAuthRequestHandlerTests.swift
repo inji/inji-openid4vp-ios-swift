@@ -186,29 +186,42 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
     
-    func testValidateAndParseRequestFieldsSucceedsWithIaePostResponseMode() async {
-        let params = createAuthorizationRequest(
-            paramList: authRequestWithRedirectUriByValue,
-            requestParams: mergeMaps(
-                authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdParameter,
-                [
-                    "response_mode": "iae_post",
-                    "response_uri": "https://mock-verifier.com/redirect"
-                ]
-            ),
-            addEncryptionClientMetadataParams: false
-        ) as [String : Any]
+    func testValidateAndParseRequestFieldsSucceedsWithIaeResponseModes() async {
 
-        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
-            authorizationRequestParameters: params,
-            walletConfig: walletConfig,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager
-        )
+        let testCases = [
+            ("iae_post", false),
+            ("iae_post.jwt", true)
+        ]
 
-        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+        for (responseMode, addEncryptionMetadata) in testCases {
+
+            let params = createAuthorizationRequest(
+                paramList: authRequestWithRedirectUriByValue,
+                requestParams: mergeMaps(
+                    authorizationRequestParamsWithValue,
+                    redirectUriSchemeClientIdParameter,
+                    [
+                        "response_mode": responseMode,
+                        "response_uri": "https://mock-verifier.com/redirect"
+                    ]
+                ),
+                addEncryptionClientMetadataParams: addEncryptionMetadata
+            ) as [String : Any]
+
+            let handler = RedirectUriPrefixAuthorizationRequestHandler(
+                clientId: clientId,
+                specVersion: .v1,
+                authorizationRequestParameters: params,
+                walletConfig: walletConfig,
+                setResponseUri: mockSetResponseUri,
+                walletNonce: "mock-nonce",
+                networkManager: mockNetworkManager
+            )
+
+            await XCTAssertAsyncNoThrowsError(
+                try await handler.validateAndParseRequestFields()
+            )
+        }
     }
 
     func testValidateAndParseRequestFieldsSucceedsWithIarPostJwtResponseMode() async {
@@ -235,30 +248,6 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
     
-    func testValidateAndParseRequestFieldsSucceedsWithIaePostJwtResponseMode() async {
-        let params = createAuthorizationRequest(
-            paramList: authRequestWithRedirectUriByValue,
-            requestParams: mergeMaps(
-                authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdParameter,
-                [
-                    "response_mode": "iae_post.jwt",
-                    "response_uri": "https://mock-verifier.com/redirect"
-                ]
-            )
-        ) as [String : Any]
-
-        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
-            authorizationRequestParameters: params,
-            walletConfig: walletConfig,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager
-        )
-
-        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
-    }
-
     func testValidateAndParseRequestFieldsSucceedsWithIarPostWithoutResponseUri() async {
         let params = createAuthorizationRequest(
             paramList: authRequestWithRedirectUriByValue,
