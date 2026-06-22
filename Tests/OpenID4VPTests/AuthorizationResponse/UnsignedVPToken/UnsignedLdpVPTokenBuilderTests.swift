@@ -567,7 +567,6 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
                 XCTFail("Expected [String: LdpVP] payload with LdpVP.vc entries for VC type", file: file, line: line)
                 return
             }
-            let credential = ldpVCToken.verifiableCredential.value
             assertJsonString(expected: expectedCredentialsInPresentation, actual: convertToJsonString([ldpVCToken.verifiableCredential.value]), file: file, line: line)
         }
     }

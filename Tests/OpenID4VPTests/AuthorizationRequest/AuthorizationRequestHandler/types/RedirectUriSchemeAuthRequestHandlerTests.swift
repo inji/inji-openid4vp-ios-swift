@@ -361,31 +361,6 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
     }
 
-    
-    func testValidateAndParseRequestFieldsSucceedsWithIaePostMismatchedResponseUri() async {
-        let params = createAuthorizationRequest(
-            paramList: authRequestWithRedirectUriByValue,
-            requestParams: mergeMaps(
-                authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdParameter,
-                [
-                    "response_mode": "iae_post",
-                    "response_uri": "https://different.com/response"
-                ]
-            ),
-            addEncryptionClientMetadataParams: false
-        ) as [String : Any]
-
-        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
-            authorizationRequestParameters: params,
-            walletConfig: walletConfig,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager
-        )
-
-        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
-    }
 
     func testValidateAndParseRequestFieldsSucceedsWithIarPostJwtMismatchedResponseUri() async {
         let params = createAuthorizationRequest(
@@ -412,27 +387,41 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
     }
 
     
-    func testValidateAndParseRequestFieldsSucceedsWithIaePostJwtMismatchedResponseUri() async {
-        let params = createAuthorizationRequest(
-            paramList: authRequestWithRedirectUriByValue,
-            requestParams: mergeMaps(
-                authorizationRequestParamsWithValue,
-                redirectUriSchemeClientIdParameter,
-                [
-                    "response_mode": "iae_post.jwt",
-                    "response_uri": "https://different.com/response"
-                ]
+    func testValidateAndParseRequestFieldsSucceedsWithIaeMismatchedResponseUri() async {
+
+        let testCases: [(responseMode: String, addEncryptionMetadata: Bool)] = [
+            ("iae_post", false),
+            ("iae_post.jwt", true)
+        ]
+
+        for testCase in testCases {
+
+            let params = createAuthorizationRequest(
+                paramList: authRequestWithRedirectUriByValue,
+                requestParams: mergeMaps(
+                    authorizationRequestParamsWithValue,
+                    redirectUriSchemeClientIdParameter,
+                    [
+                        "response_mode": testCase.responseMode,
+                        "response_uri": "https://different.com/response"
+                    ]
+                ),
+                addEncryptionClientMetadataParams: testCase.addEncryptionMetadata
+            ) as [String : Any]
+
+            let handler = RedirectUriPrefixAuthorizationRequestHandler(
+                clientId: clientId,
+                specVersion: .v1,
+                authorizationRequestParameters: params,
+                walletConfig: walletConfig,
+                setResponseUri: mockSetResponseUri,
+                walletNonce: "mock-nonce",
+                networkManager: mockNetworkManager
             )
-        ) as [String : Any]
 
-        let handler = RedirectUriPrefixAuthorizationRequestHandler(clientId: clientId,specVersion: .v1,
-            authorizationRequestParameters: params,
-            walletConfig: walletConfig,
-            setResponseUri: mockSetResponseUri,
-            walletNonce: "mock-nonce",
-            networkManager: mockNetworkManager
-        )
-
-        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+            await XCTAssertAsyncNoThrowsError(
+                try await handler.validateAndParseRequestFields()
+            )
+        }
     }
 }
