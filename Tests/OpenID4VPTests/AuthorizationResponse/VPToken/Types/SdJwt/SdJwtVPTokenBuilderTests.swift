@@ -373,7 +373,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         )) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Missing uuidToUnsignedKBT in payload",
+                expectedMessage: "Missing identifierToUnsignedKBT in payload",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -714,7 +714,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         )) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Missing uuidToUnsignedKBT in payload",
+                expectedMessage: "Missing identifierToUnsignedKBT in payload",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

@@ -18,7 +18,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
     }
     
     func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) {
-        var uuidToUnsignedKBJWT = [String: String]()
+        var identifierToUnsignedKBJWT = [String: String]()
         var unsignedVPTokens: [UnsignedVPToken] = []
         
         for index in 0..<credentialInputDescriptorMappings.count {
@@ -31,12 +31,12 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
                 clientId: authorizationRequest.clientId,
                 nonce: authorizationRequest.nonce,
                 shouldAddCryptographicHolderBinding: { cnf in cnf.isEmpty == false },
-                uuidToUnsignedKBJWT: &uuidToUnsignedKBJWT,
+                identifierToUnsignedKBJWT: &identifierToUnsignedKBJWT,
                 unsignedVPTokens: &unsignedVPTokens
             )
         }
         
-        return (vpTokenSigningPayload: uuidToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
+        return (vpTokenSigningPayload: identifierToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
     }
     
     func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) {
@@ -44,7 +44,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             throw InvalidData(message: "Expected AuthorizationDcqlRequest for DCQL flow", className: Self.className)
         }
         
-        var uuidToUnsignedKBJWT = [String: String]()
+        var identifierToUnsignedKBJWT = [String: String]()
         var unsignedVPTokens: [UnsignedVPToken] = []
         
         for index in 0..<credentialToCredentialQueryIdMappings.count {
@@ -71,12 +71,12 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
                     }
                     return false
                 },
-                uuidToUnsignedKBJWT: &uuidToUnsignedKBJWT,
+                identifierToUnsignedKBJWT: &identifierToUnsignedKBJWT,
                 unsignedVPTokens: &unsignedVPTokens
             )
         }
         
-        return (vpTokenSigningPayload: uuidToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
+        return (vpTokenSigningPayload: identifierToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
     }
     
     private func prepareUnsignedKeyBinding(
@@ -86,21 +86,21 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         clientId: String,
         nonce: String,
         shouldAddCryptographicHolderBinding: ([String : Any]) throws -> Bool,
-        uuidToUnsignedKBJWT: inout [String: String],
+        identifierToUnsignedKBJWT: inout [String: String],
         unsignedVPTokens: inout [UnsignedVPToken]
     ) async throws  {
         let (credential, sdJWTPayload, _) = try extractSdJwtPayload(credentialData, className: Self.className)
         let confirmationKeyClaim = sdJWTPayload["cnf"] as? [String: Any] ?? [:]
         let identifier = UUIDGenerator.generateUUID()
         setIdentifier(identifier)
-
+        
         guard try shouldAddCryptographicHolderBinding(confirmationKeyClaim) else {
             return
         }
         
         let signingAlgorithm: String
         let holderKeyReference: String
-
+        
         if confirmationKeyClaim["jwk"] != nil && confirmationKeyClaim["kid"] != nil {
             throw InvalidData(message: "Invalid cnf: provide exactly one of 'jwk' or 'kid'", className: Self.className)
         }
@@ -118,7 +118,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         
         let sdHashAlgorithm = sdJWTPayload["_sd_alg"] as? String ?? HashAlgorithm.sha256.rawValue
         let sdHash = try hashData(credential, hashAlgorithm: sdHashAlgorithm, className: Self.className).toBase64UrlEncoded()
-
+        
         let jwtHeader = ["alg": signingAlgorithm, "typ": keyBindingJWT]
         let jwtPayload: [String: Any] = [
             "iat": Int(Date().timeIntervalSince1970),
@@ -126,7 +126,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             "nonce": nonce,
             "sd_hash": sdHash
         ]
-
+        
         let unsignedJWT = try JWSHandler.createUnsignedJWS(header: jwtHeader, payload: jwtPayload)
         
         unsignedVPTokens.append(UnsignedVPToken(
@@ -136,6 +136,6 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             signatureAlgorithm: signingAlgorithm,
             dataToSign: Data(unsignedJWT.utf8)
         ))
-        uuidToUnsignedKBJWT[identifier] = unsignedJWT
+        identifierToUnsignedKBJWT[identifier] = unsignedJWT
     }
 }

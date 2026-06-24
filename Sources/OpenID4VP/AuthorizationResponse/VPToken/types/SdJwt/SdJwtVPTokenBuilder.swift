@@ -16,14 +16,14 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
         var vpIndex = rootIndex
-        let uuidToUnsignedKBT = try extractUuidToUnsignedKBT(from: unsignedVPTokenResult)
+        let identifierToUnsignedKBT = try extractIdentifierToUnsignedKBT(from: unsignedVPTokenResult)
         var vpTokens: [VPToken] = []
         var descriptorMaps: [DescriptorMap] = []
 
         for mapping in credentialInputDescriptorMappings {
             let identifier = try extractIdentifier(from: mapping.identifier)
             let sdJwtCredential = try extractSDJwtString(from: mapping.credential, className: className)
-            let unsignedKBJwt = uuidToUnsignedKBT[identifier]
+            let unsignedKBJwt = identifierToUnsignedKBT[identifier]
             let finalVPToken = try buildFinalToken(
                 identifier: identifier,
                 sdJwtCredential: sdJwtCredential,
@@ -50,13 +50,13 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
         unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
-        let uuidToUnsignedKBT = try extractUuidToUnsignedKBT(from: unsignedVPTokenResult)
+        let identifierToUnsignedKBT = try extractIdentifierToUnsignedKBT(from: unsignedVPTokenResult)
         var vpTokenResult: [String: [VPToken]] = [:]
         
         for mapping in credentialToCredentialQueryIdMappings {
             let identifier = try extractIdentifier(from: mapping.identifier)
             let sdJwtCredential = try extractSDJwtString(from: mapping.credential, className: className)
-            let unsignedKBJwt = uuidToUnsignedKBT[identifier]
+            let unsignedKBJwt = identifierToUnsignedKBT[identifier]
             
             let finalVPToken: String = try buildFinalToken(
                 identifier: identifier,
@@ -71,13 +71,13 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
         return vpTokenResult
     }
 
-    private func extractUuidToUnsignedKBT(
+    private func extractIdentifierToUnsignedKBT(
         from unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken])
     ) throws -> [String: String] {
-        guard let uuidToUnsignedKBT = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
-            throw InvalidData(message: "Missing uuidToUnsignedKBT in payload", className: className)
+        guard let identifierToUnsignedKBT = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
+            throw InvalidData(message: "Missing identifierToUnsignedKBT in payload", className: className)
         }
-        return uuidToUnsignedKBT
+        return identifierToUnsignedKBT
     }
 
     private func extractIdentifier(from identifier: String?) throws -> String {
