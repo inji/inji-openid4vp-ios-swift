@@ -11,7 +11,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
     
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
@@ -25,10 +25,6 @@ class LdpVPTokenBuilder: VPTokenBuilder {
             throw InvalidData(message: "Expected List<LdpVPToken> as payload", className: className)
         }
         let unsignedVPTokens = unsignedVPTokenResult.unsignedVPTokens
-        guard payloadMap.count == credentialInputDescriptorMappings.count,
-              unsignedVPTokens.count == credentialInputDescriptorMappings.count else {
-            throw InvalidData(message: "LDP unsigned VP token count does not match selected credentials count", className: className)
-        }
         
         var descriptorMaps: [DescriptorMap] = []
         var ldpVPTokens: [VPToken] = []
@@ -67,7 +63,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
     
     func build(
         credentialToCredentialQueryIdMappings: [CredentialToCredentialQueryIdMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
         guard let payloadMap = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {

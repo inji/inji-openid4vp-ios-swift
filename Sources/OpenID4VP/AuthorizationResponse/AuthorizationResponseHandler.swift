@@ -285,31 +285,12 @@ public class AuthorizationResponseHandler {
         unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])],
         formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]]
     ) throws -> (VPTokenType, PresentationSubmission) {
-        
-        if Set(unsignedVPTokenResults.keys) != Set(vpTokenSigningResults.keys) {
-            throw InvalidData(
-                message: "VPTokenSigningResult not provided for the required formats",
-                className: Self.className
-            )
-        }
-        
         var finalVpTokens: [VPToken] = []
         var finalDescriptorMappings: [DescriptorMap] = []
         var rootIndex = 0
         
         for (credentialFormat, credentialInputDescriptorMappings) in formatToCredentialInputDescriptorMapping {
-            guard let vpTokenSigningResultsForFormat = vpTokenSigningResults[credentialFormat] else {
-                throw InvalidData(
-                    message: "unable to find the related credential format - \(credentialFormat) in the vpTokenSigningResults map",
-                    className: Self.className
-                )
-            }
-            guard let unsignedVPTokenResult = unsignedVPTokenResults[credentialFormat] else {
-                throw InvalidData(
-                    message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokenResults map",
-                    className: Self.className
-                )
-            }
+            let (vpTokenSigningResultsForFormat, unsignedVPTokenResult) = try getData(vpTokenSigningResults, credentialFormat: credentialFormat)
             
             let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(authorizationRequest: authorizationRequest, credentialFormat: credentialFormat)
             
@@ -343,29 +324,10 @@ public class AuthorizationResponseHandler {
         unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])],
         credentialToCredentialQueryIdMappingsGroupedByFormat: [FormatType: [CredentialToCredentialQueryIdMapping]]
     ) throws -> [String: [VPToken]] {
-        
-        if Set(unsignedVPTokenResults.keys) != Set(vpTokenSigningResults.keys) {
-            throw InvalidData(
-                message: "VPTokenSigningResult not provided for the required formats",
-                className: Self.className
-            )
-        }
-        
         var finalVpTokens: [String: [VPToken]] = [:]
         
         for (credentialFormat, credentialToCredentialQueryIdMappings) in credentialToCredentialQueryIdMappingsGroupedByFormat {
-            guard let vpTokenSigningResultsForFormat = vpTokenSigningResults[credentialFormat] else {
-                throw InvalidData(
-                    message: "unable to find the related credential format - \(credentialFormat) in the vpTokenSigningResults map",
-                    className: Self.className
-                )
-            }
-            guard let unsignedVPTokenResult = unsignedVPTokenResults[credentialFormat] else {
-                throw InvalidData(
-                    message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokenResults map",
-                    className: Self.className
-                )
-            }
+            let (vpTokenSigningResultsForFormat, unsignedVPTokenResult) = try getData(vpTokenSigningResults, credentialFormat: credentialFormat)
             
             let vpTokenBuilder = try VPTokenFactory.getVPTokenBuilder(authorizationRequest: authorizationRequest, credentialFormat: credentialFormat)
             
@@ -454,6 +416,18 @@ public class AuthorizationResponseHandler {
             }
         }
         self.credentialToCredentialQueryIdMappingsGroupedByFormat = credentialToCredentialQueryIdMappings
+    }
+    
+    private func getData(_ vpTokenSigningResults: [FormatType: [VPTokenSigningResult]], credentialFormat: FormatType) throws -> (vpTokenSigningResultsForFormat : [VPTokenSigningResult], unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken])) {
+        let vpTokenSigningResultsForFormat = vpTokenSigningResults[credentialFormat] ?? []
+        guard let unsignedVPTokenResult = unsignedVPTokenResults[credentialFormat] else {
+            throw InvalidData(
+                message: "unable to find the related credential format - \(credentialFormat) in the unsignedVPTokenResults map",
+                className: Self.className
+            )
+        }
+        
+        return (vpTokenSigningResultsForFormat, unsignedVPTokenResult)
     }
     
     private func toVerifierResponse(_ networkResponse: NetworkResponse) -> VerifierResponse {

@@ -5,15 +5,28 @@ func getVPTokenSigningResult(
     identifier: String?,
     className: String
 ) throws -> VPTokenSigningResult {
+    guard let identifier = identifier else {
+        throw InvalidData(
+            message: "Missing identifier",
+            className: className
+        )
+    }
     let matchingSigningResults = vpTokenSigningResults.filter { $0.id == identifier }
     guard matchingSigningResults.count == 1 else {
         throw MissingInput(
             fieldPath: "",
-            message: "Missing VP token signing result for credential identifier \(identifier ?? "nil")",
+            message: "Missing VP token signing result for credential identifier \(identifier)",
             className: className
         )
     }
-    return matchingSigningResults[0]
+    
+    let vpTokenSigningResult = matchingSigningResults[0]
+    
+    guard !vpTokenSigningResult.signedData.isEmpty else {
+        throw MissingInput(fieldPath: "", message: "Invalid signature for identifier \(identifier)", className: className)
+    }
+    
+    return vpTokenSigningResult
 }
 
 func getUnsignedVPToken(

@@ -12,7 +12,7 @@ class MdocVPTokenBuilder : VPTokenBuilder {
     
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
@@ -53,7 +53,7 @@ class MdocVPTokenBuilder : VPTokenBuilder {
     
     func build(
         credentialToCredentialQueryIdMappings: [CredentialToCredentialQueryIdMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
         guard let payloadMap = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {

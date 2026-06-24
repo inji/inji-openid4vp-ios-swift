@@ -14,7 +14,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let mappings = [
             CredentialInputDescriptorMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), inputDescriptorId: "id-1", identifier: "uuid1")
         ]
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -41,8 +41,8 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let mappings = [
             CredentialInputDescriptorMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), inputDescriptorId: "id-1", identifier: "uuid1")
         ]
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
-            vpTokenSigningPayload: nil,
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [:],
             unsignedVPTokens: []
         )
 
@@ -52,7 +52,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             vpTokenSigningResults: [],
             rootIndex: 0
         )) { error in
-            assertOpenID4VPException(error, expectedMessage: "Missing docTypeToDeviceAuthenticationBytes in payload", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            assertOpenID4VPException(error, expectedMessage: "Missing payload for identifier: uuid1", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
@@ -60,7 +60,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let mappings = [
             CredentialInputDescriptorMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), inputDescriptorId: "id-1", identifier: "uuid1")
         ]
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -80,7 +80,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         let mappings = [
             CredentialInputDescriptorMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), inputDescriptorId: "id-1", identifier: "uuid1")
         ]
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -107,7 +107,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         var mapping = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
         mapping.identifier = "uuid1"
         let mappings = [mapping]
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -133,7 +133,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         var mapping2 = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q2")
         mapping2.identifier = "uuid2"
         let mappings = [mapping1, mapping2]
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes, "uuid2": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -160,7 +160,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         var mapping2 = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
         mapping2.identifier = "uuid2"
         let mappings = [mapping1, mapping2]
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes, "uuid2": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -180,8 +180,8 @@ final class MdocVPTokenBuilderTests: XCTestCase {
     func testDcqlBuildThrowsWhenPayloadMissing() {
         var mapping = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
         mapping.identifier = "uuid1"
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
-            vpTokenSigningPayload: nil,
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
+            vpTokenSigningPayload: [:],
             unsignedVPTokens: []
         )
 
@@ -190,14 +190,14 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             unsignedVPTokenResult: unsignedResult,
             vpTokenSigningResults: []
         )) { error in
-            assertOpenID4VPException(error, expectedMessage: "Missing uuidToDeviceAuthenticationBytes in payload", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            assertOpenID4VPException(error, expectedMessage: "Missing payload for identifier: uuid1", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
     func testDcqlBuildThrowsWhenSigningResultMissing() {
         var mapping = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
         mapping.identifier = "uuid1"
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -214,7 +214,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
     // With identifier-based lookup we iterate over mappings, so empty mappings
     // produces an empty result rather than throwing.
     func testDcqlBuildWithEmptyMappingsReturnsEmptyResult() throws {
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -230,7 +230,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
     func testDcqlBuildThrowsWhenCredentialIsNotString() {
         var mapping = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(12345), credentialQueryId: "q1")
         mapping.identifier = "uuid1"
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -247,7 +247,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
     func testDcqlBuildThrowsWhenCredentialIsInvalidCBOR() {
         var mapping = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable("invalidCBOR"), credentialQueryId: "q1")
         mapping.identifier = "uuid1"
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -265,7 +265,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         var mapping = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
         mapping.identifier = "uuid1"
         let signature = Data("mock-signature".utf8)
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
@@ -281,7 +281,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
     }
 
     func testDcqlBuildEmptyMappingsReturnsEmptyResult() throws {
-        let unsignedResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) = (
+        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
             vpTokenSigningPayload: [String: String]() as [String: String],
             unsignedVPTokens: []
         )

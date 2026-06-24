@@ -262,14 +262,16 @@ func constructSigningResults(
 
     for (format, unsignedVPTokenResultByFormat) in unsignedVPTokenResults {
         let unsignedTokens = unsignedVPTokenResultByFormat.1
-
+        
         var resultsForFormat: [VPTokenSigningResult] = []
         for unsignedToken in unsignedTokens {
             let identifier = unsignedToken.id
             let vpTokenSigningResult = try getVPTokenSigningResult(vpTokenSigningResults: signingResults, identifier: identifier, className: "Openid4VPUtils")
             resultsForFormat.append(vpTokenSigningResult)
         }
-        vpTokenSigningResultsByFormat[format] = resultsForFormat
+        if(!resultsForFormat.isEmpty){
+            vpTokenSigningResultsByFormat[format] = resultsForFormat
+        }
     }
 
     return vpTokenSigningResultsByFormat
