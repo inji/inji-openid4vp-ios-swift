@@ -22,7 +22,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         self.walletConfig = walletConfig
     }
     
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) {
         guard (authorizationRequest as? AuthorizationPresentationExchangeRequest) != nil else {
             throw InvalidData(message: "Expected AuthorizationPresentationExchangeRequest for Presentation Exchange flow", className: className)
         }
@@ -32,9 +32,9 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         
         for index in 0..<credentialInputDescriptorMappings.count {
             var credentialInputDescriptorMapping = credentialInputDescriptorMappings[index]
-            let uuid = UUIDGenerator.generateUUID()
+            let identifier = UUIDGenerator.generateUUID()
             
-            credentialInputDescriptorMapping.identifier = uuid
+            credentialInputDescriptorMapping.identifier = identifier
             credentialInputDescriptorMapping.nestedPath = "$.\(Self.internalPath)[0]"
             credentialInputDescriptorMappings[index] = credentialInputDescriptorMapping
             
@@ -46,12 +46,13 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             let result = try extractHolderAndSignatureSuite(credential)
             
             let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
+                identifier: identifier,
                 with: verifiableCredentials,
                 signatureSuite: result.signatureSuite,
                 holder: sanitize(result.holder)
             )
             
-            vpTokenSigningPayloads[uuid] = vpTokenSigningPayload
+            vpTokenSigningPayloads[identifier] = vpTokenSigningPayload
             if let unsignedVPToken = unsignedVPToken {
                 unsignedVPTokens.append(unsignedVPToken)
             }
@@ -61,7 +62,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         return (vpTokenSigningPayloads, unsignedVPTokens)
     }
     
-    func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
+    func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) {
         guard let authorizationRequest = authorizationRequest as? AuthorizationDcqlRequest else {
             throw InvalidData(message: "Expected AuthorizationDcqlRequest for DCQL flow", className: className)
         }
@@ -70,9 +71,9 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         
         for index in 0..<credentialToCredentialQueryIdMappings.count {
             var credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
-            let uuid = UUIDGenerator.generateUUID()
+            let identifier = UUIDGenerator.generateUUID()
             
-            credentialToCredentialQueryIdMapping.identifier = uuid
+            credentialToCredentialQueryIdMapping.identifier = identifier
             credentialToCredentialQueryIdMappings[index] = credentialToCredentialQueryIdMapping
             
             let (credential, credentialQueryId) = (credentialToCredentialQueryIdMapping.credential, credentialToCredentialQueryIdMapping.credentialQueryId)
@@ -84,18 +85,19 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
             }()
             
             if(!mappedCredentialQuery.requireCryptographicHolderBinding) {
-                vpTokenSigningPayloads[uuid] = .vc(LdpVCToken(verifiableCredential: credential))
+                vpTokenSigningPayloads[identifier] = .vc(LdpVCToken(verifiableCredential: credential))
                 continue
             }
             
-            let result = mappedCredentialQuery.requireCryptographicHolderBinding ? try extractHolderAndSignatureSuite(credential) : nil
+            let result = try extractHolderAndSignatureSuite(credential)
             let (vpTokenSigningPayload, unsignedVPToken) = try await buildPayloadAndUnsignedVPToken(
+                identifier: identifier,
                 with: verifiableCredentials,
-                signatureSuite: result?.signatureSuite,
-                holder: sanitize(result?.holder)
+                signatureSuite: result.signatureSuite,
+                holder: sanitize(result.holder)
             )
             
-            vpTokenSigningPayloads[uuid] = vpTokenSigningPayload
+            vpTokenSigningPayloads[identifier] = vpTokenSigningPayload
             if let unsignedVPToken = unsignedVPToken {
                 unsignedVPTokens.append(unsignedVPToken)
             }
@@ -105,7 +107,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         return (vpTokenSigningPayloads, unsignedVPTokens)
     }
     
-    private func buildPayloadAndUnsignedVPToken(with credentials: [AnyCodable], signatureSuite: String?, holder: String?) async throws -> (vpTokenSigningPayload: LdpVP, unsignedVPToken: UnsignedVPToken?) {
+    private func buildPayloadAndUnsignedVPToken(identifier: String, with credentials: [AnyCodable], signatureSuite: String?, holder: String?) async throws -> (vpTokenSigningPayload: LdpVP, unsignedVPToken: UnsignedVPToken?) {
         var context: [String] = ["https://www.w3.org/2018/credentials/v1"]
         if signatureSuite == SignatureSuite.ed25519Signature2020.rawValue {
             context.append("https://w3id.org/security/suites/ed25519-2020/v1")
@@ -180,6 +182,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         
         
         let unsignedVPToken = UnsignedVPToken(
+            id: identifier,
             format: .ldp_vc,
             holderKeyReference: holder,
             signatureAlgorithm: signatureAlgorithm,

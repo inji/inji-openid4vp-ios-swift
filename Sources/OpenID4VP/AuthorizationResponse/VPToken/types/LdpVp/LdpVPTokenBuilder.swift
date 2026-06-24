@@ -15,20 +15,36 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
-        var vpTokenSigningResultsIterator = vpTokenSigningResults.makeIterator()
-        var unsignedVpTokenIterator = unsignedVPTokenResult.unsignedVPTokens.makeIterator()
-        guard let unsignedVpTokens = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {
-            throw InvalidData(message: "UnsignedVpToken result - signing payload is not of right type", className: className)
+        guard !vpTokenSigningResults.isEmpty else {
+            throw InvalidData(message: "Missing LDP signature", className: className)
         }
+        guard vpTokenSigningResults.count == credentialInputDescriptorMappings.count else {
+            throw InvalidData(message: "LDP signing results count does not match selected credentials count", className: className)
+        }
+        guard let payloadMap = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {
+            throw InvalidData(message: "Expected List<LdpVPToken> as payload", className: className)
+        }
+        let unsignedVPTokens = unsignedVPTokenResult.unsignedVPTokens
+        guard payloadMap.count == credentialInputDescriptorMappings.count,
+              unsignedVPTokens.count == credentialInputDescriptorMappings.count else {
+            throw InvalidData(message: "LDP unsigned VP token count does not match selected credentials count", className: className)
+        }
+        
         var descriptorMaps: [DescriptorMap] = []
-        var vpIndex = rootIndex
         var ldpVPTokens: [VPToken] = []
-        for credentialInputDescriptorMapping in credentialInputDescriptorMappings {
+        
+        for (index, credentialInputDescriptorMapping) in credentialInputDescriptorMappings.enumerated() {
+            guard let identifier = credentialInputDescriptorMapping.identifier else {
+                throw InvalidData(message: "Identifier is expected in the credential request id mapping", className: className)
+            }
+            guard case .vp(let ldpVPTokenPayload) = payloadMap[identifier] else {
+                throw InvalidData(message: "Expected LdpVPToken as payload", className: className)
+            }
             let ldpVPToken = try buildVPToken(
-                getUnsignedLdpVPToken: unsignedVpTokens[credentialInputDescriptorMapping.identifier ?? ""],
-                addCryptographicHolderBinding: true,
-                getVPTokenSigningResult: vpTokenSigningResultsIterator.next(),
-                getUnsignedVPToken: unsignedVpTokenIterator.next()
+                ldpVPTokenPayload: ldpVPTokenPayload,
+                vpTokenSigningResults: vpTokenSigningResults,
+                unsignedVPTokens: unsignedVPTokens,
+                identifier: identifier
             )
             
             ldpVPTokens.append(ldpVPToken)
@@ -36,7 +52,7 @@ class LdpVPTokenBuilder: VPTokenBuilder {
                 DescriptorMap(
                     id: credentialInputDescriptorMapping.inputDescriptorId,
                     format: .ldp_vp,
-                    path: createDescriptorMapPath(vpIndex),
+                    path: createDescriptorMapPath(rootIndex + index),
                     pathNested: createNestedPath(
                         id: credentialInputDescriptorMapping.inputDescriptorId,
                         nestedPath: credentialInputDescriptorMapping.nestedPath,
@@ -44,12 +60,9 @@ class LdpVPTokenBuilder: VPTokenBuilder {
                     )
                 )
             )
-            
-            vpIndex += 1
         }
         
-        
-        return (ldpVPTokens, descriptorMaps, vpIndex)
+        return (ldpVPTokens, descriptorMaps, rootIndex + ldpVPTokens.count)
     }
     
     func build(
@@ -57,90 +70,67 @@ class LdpVPTokenBuilder: VPTokenBuilder {
         unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
-        var vpTokenSigningResultsIterator = vpTokenSigningResults.makeIterator()
-        var vpTokenResult : [String: [VPToken]] = [:]
-        var unsignedVpTokenIterator = unsignedVPTokenResult.unsignedVPTokens.makeIterator()
-        guard let unsignedVpTokens = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {
-            throw InvalidData(message: "Missing data to sign", className: className)
+        guard let payloadMap = unsignedVPTokenResult.vpTokenSigningPayload as? [String: LdpVP] else {
+            throw InvalidData(message: "Expected Map<String, Any> as payload for DCQL LDP flow", className: className)
         }
-        for credentialToCredentialQueryIdMapping in credentialToCredentialQueryIdMappings {
-            let credentialQuery = try matchingDCQLCredentialQuery(authorizationRequest, for: credentialToCredentialQueryIdMapping.credentialQueryId, className: className)
-            
-            let ldpVPToken = try buildVPToken(
-                getUnsignedLdpVPToken: unsignedVpTokens[credentialToCredentialQueryIdMapping.identifier ?? ""],
-                addCryptographicHolderBinding: credentialQuery.requireCryptographicHolderBinding,
-                getVPTokenSigningResult: vpTokenSigningResultsIterator.next(),
-                getUnsignedVPToken: unsignedVpTokenIterator.next()
-            )
-            
-            vpTokenResult[credentialQuery.id, default: []].append(ldpVPToken)
-        }
+        let unsignedVPTokens = unsignedVPTokenResult.unsignedVPTokens
+        var vpTokenResult: [String: [VPToken]] = [:]
         
+        for credentialToCredentialQueryIdMapping in credentialToCredentialQueryIdMappings {
+            guard let identifier = credentialToCredentialQueryIdMapping.identifier else {
+                throw InvalidData(message: "Missing identifier in credential mapping", className: className)
+            }
+            guard let payload = payloadMap[identifier] else {
+                throw InvalidData(message: "No payload found for identifier: \(identifier)", className: className)
+            }
+            let vpToken: VPToken
+            switch payload {
+            case .vp(let ldpVPToken):
+                vpToken = try buildVPToken(
+                    ldpVPTokenPayload: ldpVPToken,
+                    vpTokenSigningResults: vpTokenSigningResults,
+                    unsignedVPTokens: unsignedVPTokens,
+                    identifier: identifier
+                )
+            case .vc:
+                vpToken = payload
+            }
+            vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId, default: []].append(vpToken)
+        }
         
         return vpTokenResult
     }
     
     private func buildVPToken(
-        getUnsignedLdpVPToken: @autoclosure @escaping () -> LdpVP?,
-        addCryptographicHolderBinding: Bool = true,
-        getVPTokenSigningResult: @autoclosure @escaping () -> VPTokenSigningResult?,
-        getUnsignedVPToken: @autoclosure @escaping () -> UnsignedVPToken?
-    ) throws -> VPToken {
-        guard let unsignedLdpVPToken = getUnsignedLdpVPToken() else {
-            throw InvalidData(message: "Missing data to sign", className: className)
+        ldpVPTokenPayload: LdpVPToken,
+        vpTokenSigningResults: [VPTokenSigningResult],
+        unsignedVPTokens: [UnsignedVPToken],
+        identifier: String
+    ) throws -> LdpVPToken {
+        var proof = ldpVPTokenPayload.proof
+        let proofType = proof?.type ?? ""
+
+        let unsignedVPToken = try getUnsignedVPToken(unsignedVPTokens: unsignedVPTokens, identifier: identifier, className: className)
+        let vpTokenSigningResult = try getVPTokenSigningResult(vpTokenSigningResults: vpTokenSigningResults, identifier: identifier, className: className)
+        
+        switch proofType {
+        case SignatureSuite.jsonWebSignature2020.rawValue,
+            SignatureSuite.ed25519Signature2018.rawValue:
+            proof?.jws = getHeader(unsignedVPToken) + ".." + vpTokenSigningResult.signedData.toBase64UrlEncoded()
+        case SignatureSuite.rsaSignature2018.rawValue:
+            proof?.signatureValue = vpTokenSigningResult.signedData.toBase64UrlEncoded()
+        default:
+            proof?.proofValue = BaseEncoding.base58BtcEncode(vpTokenSigningResult.signedData)
         }
         
-        if(addCryptographicHolderBinding) {
-            guard case .vp(let unsignedLdpVPToken) = unsignedLdpVPToken else {
-                throw InvalidData(message: "unsignedLdpVPToken is not of type vp", className: className)
-            }
-            var proof = unsignedLdpVPToken.proof
-            
-            let signatureSuite = proof?.type ?? ""
-            
-            guard let vpTokenSigningResult = getVPTokenSigningResult() else {
-                throw InvalidData(message: "vpTokenSigningResult is missing", className: className)
-            }
-            
-            if(vpTokenSigningResult.signedData.isEmpty) {
-                throw InvalidInput(fieldPath: ["VPTokenSigningResult", "signedData"], className: className)
-            }
-            
-            guard let unsignedVPToken = getUnsignedVPToken() else {
-                throw InvalidData(message: "Missing data to sign", className: className)
-            }
-            
-            switch signatureSuite {
-            case SignatureSuite.jsonWebSignature2020.rawValue,
-                SignatureSuite.ed25519Signature2018.rawValue:
-                proof?.jws = getHeader(unsignedVPToken) + ".." + vpTokenSigningResult.signedData.toBase64UrlEncoded()
-                
-            case SignatureSuite.rsaSignature2018.rawValue:
-                proof?.signatureValue = vpTokenSigningResult.signedData.toBase64UrlEncoded()
-                
-            case SignatureSuite.ed25519Signature2020.rawValue:
-                proof?.proofValue = BaseEncoding.base58BtcEncode(vpTokenSigningResult.signedData)
-                
-            default:
-                throw UnsupportedSignatureAlgorithm(
-                    message: "Unsupported algorithm: \(signatureSuite)",
-                    className: className
-                )
-            }
-            
-            let ldpVPToken = LdpVPToken(
-                context: unsignedLdpVPToken.context,
-                type: unsignedLdpVPToken.type,
-                verifiableCredential: unsignedLdpVPToken.verifiableCredential,
-                id: unsignedLdpVPToken.id,
-                holder: unsignedLdpVPToken.holder,
-                proof: proof
-            )
-            
-            return ldpVPToken
-        } else {
-            return unsignedLdpVPToken
-        }
+        return LdpVPToken(
+            context: ldpVPTokenPayload.context,
+            type: ldpVPTokenPayload.type,
+            verifiableCredential: ldpVPTokenPayload.verifiableCredential,
+            id: ldpVPTokenPayload.id,
+            holder: ldpVPTokenPayload.holder,
+            proof: proof
+        )
     }
     
     private func getHeader(_ unsignedVPToken: UnsignedVPToken) -> String {

@@ -1,4 +1,4 @@
-@testable import OpenID4VP
+ @testable import OpenID4VP
 import XCTest
 
 class OpenID4VPTests: XCTestCase {
@@ -479,7 +479,7 @@ class OpenID4VPTests: XCTestCase {
 
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
-        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult(signedData: Data("signed-data".utf8))])
+        let result = openIdVP.constructVPResponse(vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("signed-data".utf8))])
 
         XCTAssertEqual(result["vp_token"] as! String, "jwt-token")
     }
@@ -493,7 +493,7 @@ class OpenID4VPTests: XCTestCase {
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider(), authorizationResponseHandler: handler)
         openIdVP.authorizationRequest = mockAuthorizationRequestObjectWithDirectPostResponseMode
 
-        let signingResults = [VPTokenSigningResult(signedData: Data("signed-token".utf8))]
+        let signingResults = [VPTokenSigningResult(id: "uuid1", signedData: Data("signed-token".utf8))]
         let result = openIdVP.constructVPResponse(vpTokenSigningResults: signingResults)
 
         XCTAssertEqual(result["vp_token"] as? String, "signed-token")
@@ -514,8 +514,8 @@ class OpenID4VPTests: XCTestCase {
 
     func testConstructUnsignedVPTokenReturnsTokenList() async {
         let expectedTokens = [
-            UnsignedVPToken(format: .ldp_vc, holderKeyReference: "did:example:123", signatureAlgorithm: "JsonWebSignature2020", dataToSign: Data("data1".utf8)),
-            UnsignedVPToken(format: .mso_mdoc, holderKeyReference: "key-ref", signatureAlgorithm: "ES256", dataToSign: Data("data2".utf8))
+            UnsignedVPToken(id: "uuid1", format: .ldp_vc, holderKeyReference: "did:example:123", signatureAlgorithm: "JsonWebSignature2020", dataToSign: Data("data1".utf8)),
+            UnsignedVPToken(id: "uuid2", format: .mso_mdoc, holderKeyReference: "key-ref", signatureAlgorithm: "ES256", dataToSign: Data("data2".utf8))
         ]
         let handler = MockAuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
         handler.expectedUnsignedVPTokens = expectedTokens
@@ -566,7 +566,7 @@ class OpenID4VPTests: XCTestCase {
     func testSendVPResponseToVerifierThrowsErrorWhenResponseUriIsNotPopulated() async {
         let openIdVP = OpenID4VP(traceabilityId: "AXESWSAW123", networkManager: mockNetworkManager, nonceProvider: MockNonceProvider())
         
-        await XCTAssertAsyncThrowsError(try await openIdVP.sendVPResponseToVerifier(vpTokenSigningResults: [VPTokenSigningResult(signedData: "signed".data(using: .utf8) ?? Data())])) { error in
+        await XCTAssertAsyncThrowsError(try await openIdVP.sendVPResponseToVerifier(vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: "signed".data(using: .utf8) ?? Data())])) { error in
             XCTAssertEqual(error.localizedDescription, "Response URI is not available to send any response to Verifier", "error_dispatch_failure")
         }
     }

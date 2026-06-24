@@ -7,7 +7,7 @@ public class AuthorizationResponseHandler {
     private var formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]] = [:]
     private var credentialToCredentialQueryIdMappingsGroupedByFormat: [FormatType: [CredentialToCredentialQueryIdMapping]] = [:]
     
-    private var unsignedVPTokenResults: [FormatType: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken])] = [:]
+    private var unsignedVPTokenResults: [FormatType: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken])] = [:]
     private var specVersion: SpecVersion = .v1
     private let walletConfig: WalletConfig
     
