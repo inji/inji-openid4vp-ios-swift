@@ -40,7 +40,7 @@ class OpenID4VPTests: XCTestCase {
         openID4VP.authorizationRequest = authorizationRequest
         
         JsonLd.setCanonicalizer { _ in "Y2Fub25pY2FsaXplZA" }
-        walletConfig = try! createWalletConfig()
+        walletConfig = createWalletConfig()
     }
 
     override func tearDown() {

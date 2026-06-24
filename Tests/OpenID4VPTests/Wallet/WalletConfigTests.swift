@@ -107,7 +107,7 @@ final class WalletConfigTests: XCTestCase {
             encAlgs: [.ecdhES],
             encMethods: [.a256GCM],
             responseTypes: [.vp_token],
-            presentationDefinitionUriSupported: true,
+            presentationDefinitionUriSupported: true
         )
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(WalletConfig.self, from: data)

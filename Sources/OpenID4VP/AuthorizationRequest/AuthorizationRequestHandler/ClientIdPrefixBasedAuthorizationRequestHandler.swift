@@ -128,7 +128,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             )
         }
         
-        var requestUriMethod : RequestUriMethod = try requestUriMethod()
+        let requestUriMethod : RequestUriMethod = try requestUriMethod()
         
         var body: [String: String]? = nil
         var headers: [String: String] = [Header.accept.rawValue: ContentTypes.applicationJwt.rawValue]
