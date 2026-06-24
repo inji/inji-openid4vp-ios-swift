@@ -27,7 +27,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             vpTokenSigningPayload: [uuid: unsignedKBJwt] as [String: String],
             unsignedVPTokens: []
         )
-        let signingResults = [VPTokenSigningResult(id: "uuid1", signedData: signature)]
+        let signingResults = [VPTokenSigningResult(id: uuid, signedData: signature)]
 
         let result = try builder.build(
             credentialInputDescriptorMappings: mappings,
@@ -107,7 +107,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             vpTokenSigningPayload: [uuidWithBinding: unsignedKBJwt] as [String: String],
             unsignedVPTokens: []
         )
-        let signingResults = [VPTokenSigningResult(id: "uuid1", signedData: signature)]
+        let signingResults = [VPTokenSigningResult(id: uuidWithBinding, signedData: signature)]
 
         let result = try builder.build(
             credentialInputDescriptorMappings: mappings,
@@ -155,7 +155,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             vpTokenSigningPayload: [uuidWithBinding: unsignedKBJwt] as [String: String],
             unsignedVPTokens: []
         )
-        let signingResults = [VPTokenSigningResult(id: "uuid1", signedData: signature)]
+        let signingResults = [VPTokenSigningResult(id: uuidWithBinding, signedData: signature)]
 
         let result = try builder.build(
             credentialInputDescriptorMappings: mappings,
@@ -208,8 +208,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             unsignedVPTokens: []
         )
         let signingResults = [
-            VPTokenSigningResult(id: "uuid1", signedData: sig1),
-            VPTokenSigningResult(id: "uuid1", signedData: sig2)
+            VPTokenSigningResult(id: uuid1, signedData: sig1),
+            VPTokenSigningResult(id: uuid2, signedData: sig2)
         ]
 
         let result = try builder.build(
@@ -428,7 +428,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try builder.build(
             credentialInputDescriptorMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("unexpected".utf8))],
+            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid-1", signedData: Data("unexpected".utf8))],
             rootIndex: 0
         )) { error in
             assertOpenID4VPException(
@@ -494,7 +494,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try builder.build(
             credentialInputDescriptorMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("".utf8))],
+            vpTokenSigningResults: [VPTokenSigningResult(id: uuid, signedData: Data("".utf8))],
             rootIndex: 0
         )) { error in
             assertOpenID4VPException(
@@ -541,8 +541,8 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             unsignedVPTokens: []
         )
         let signingResults = [
-            VPTokenSigningResult(id: "uuid1", signedData: sig1),
-            VPTokenSigningResult(id: "uuid1", signedData: sig2)
+            VPTokenSigningResult(id: uuid1, signedData: sig1),
+            VPTokenSigningResult(id: uuid3, signedData: sig2)
         ]
 
         let result = try builder.build(
@@ -614,7 +614,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let result = try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: signature)]
+            vpTokenSigningResults: [VPTokenSigningResult(id: uuid, signedData: signature)]
         )
 
         XCTAssertEqual(result.keys.sorted(), ["q1"])
@@ -667,7 +667,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let result = try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: sig1), VPTokenSigningResult(id: "uuid1", signedData: sig2)]
+            vpTokenSigningResults: [VPTokenSigningResult(id: uuid1, signedData: sig1), VPTokenSigningResult(id: uuid2, signedData: sig2)]
         )
 
         XCTAssertEqual(result.keys.sorted(), ["q1"])
@@ -699,7 +699,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         let result = try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: sig1)]
+            vpTokenSigningResults: [VPTokenSigningResult(id: uuid1, signedData: sig1)]
         )
 
         XCTAssertEqual(result.keys.sorted(), ["q1", "q2"])
@@ -833,7 +833,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("sig".utf8))]
+            vpTokenSigningResults: [VPTokenSigningResult(id: uuid, signedData: Data("sig".utf8))]
         )) { error in
             assertOpenID4VPException(
                 error,
@@ -881,7 +881,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("".utf8))]
+            vpTokenSigningResults: [VPTokenSigningResult(id: uuid, signedData: Data("".utf8))]
         )) { error in
             assertOpenID4VPException(
                 error,
@@ -928,7 +928,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         XCTAssertThrowsError(try dcqlBuilder.build(
             credentialToCredentialQueryIdMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("unexpected".utf8))]
+            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid-1", signedData: Data("unexpected".utf8))]
         )) { error in
             assertOpenID4VPException(
                 error,

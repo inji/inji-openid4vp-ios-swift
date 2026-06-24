@@ -82,8 +82,12 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         ).build(credentialInputDescriptorMappings: &mappingsV1)
 
         // Each payload map has exactly one UUID-keyed entry; compare the byte values
-        let draft23Bytes = try XCTUnwrap((draft23Payload as? [String: String])?.values.first)
-        let v1Bytes = try XCTUnwrap((v1Payload as? [String: String])?.values.first)
+        let draft23Map = try XCTUnwrap(draft23Payload as? [String: String])
+        let v1Map = try XCTUnwrap(v1Payload as? [String: String])
+        XCTAssertEqual(draft23Map.count, 1)
+        XCTAssertEqual(v1Map.count, 1)
+        let draft23Bytes = try XCTUnwrap(draft23Map.values.first)
+        let v1Bytes = try XCTUnwrap(v1Map.values.first)
         XCTAssertNotEqual(draft23Bytes, v1Bytes)
     }
 
@@ -217,8 +221,12 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         ).build(credentialToCredentialQueryIdMappings: &mappingsV1)
 
         // Each payload map has exactly one UUID-keyed entry; compare the byte values
-        let draft23Bytes = try XCTUnwrap((draft23Payload as? [String: String])?.values.first)
-        let v1Bytes = try XCTUnwrap((v1Payload as? [String: String])?.values.first)
+        let draft23Map = try XCTUnwrap(draft23Payload as? [String: String])
+        let v1Map = try XCTUnwrap(v1Payload as? [String: String])
+        XCTAssertEqual(draft23Map.count, 1)
+        XCTAssertEqual(v1Map.count, 1)
+        let draft23Bytes = try XCTUnwrap(draft23Map.values.first)
+        let v1Bytes = try XCTUnwrap(v1Map.values.first)
         XCTAssertNotEqual(draft23Bytes, v1Bytes)
     }
 

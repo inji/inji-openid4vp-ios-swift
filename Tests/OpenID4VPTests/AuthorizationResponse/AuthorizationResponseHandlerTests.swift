@@ -424,6 +424,15 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
                 expectedMessage: "The wallet encountered an internal error while preparing the authorization response.",
                 expectedCode: OpenID4VPErrorCodes.serverError
             )
+            // the uuid is runtime-generated so we match the prefix only.
+            if let causeMessage = (error as? OpenID4VPException)?.cause?.localizedDescription {
+                XCTAssertTrue(
+                    causeMessage.hasPrefix("Missing VP token signing result for credential identifier "),
+                    "Expected cause about missing signing result, got: \(causeMessage)"
+                )
+            } else {
+                XCTFail("Expected OpenID4VPException with an identifier-linked cause, got: \(error)")
+            }
         }
     }
     

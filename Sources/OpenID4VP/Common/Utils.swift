@@ -249,6 +249,15 @@ func constructSigningResults(
     unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])],
     signingResults: [VPTokenSigningResult]
 ) throws -> [FormatType: [VPTokenSigningResult]] {
+    let expectedIdentifiers = Set(unsignedVPTokenResults.values.flatMap { $0.1.map(\.id) })
+    let unexpectedIdentifiers = Set(signingResults.map(\.id)).subtracting(expectedIdentifiers)
+    guard unexpectedIdentifiers.isEmpty else {
+        throw InvalidData(
+            message: "Unexpected VP token signing result for credential identifier(s): \(unexpectedIdentifiers.sorted().joined(separator: ", "))",
+            className: "Openid4VPUtils"
+        )
+    }
+    
     var vpTokenSigningResultsByFormat: [FormatType: [VPTokenSigningResult]] = [:]
 
     for (format, unsignedVPTokenResultByFormat) in unsignedVPTokenResults {
