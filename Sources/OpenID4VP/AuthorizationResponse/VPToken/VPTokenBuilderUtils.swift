@@ -12,10 +12,18 @@ func getVPTokenSigningResult(
         )
     }
     let matchingSigningResults = vpTokenSigningResults.filter { $0.id == identifier }
-    guard matchingSigningResults.count == 1 else {
+    if matchingSigningResults.count == 0 {
         throw MissingInput(
             fieldPath: "",
             message: "Missing VP token signing result for credential identifier \(identifier)",
+            className: className
+        )
+    }
+    
+    if matchingSigningResults.count > 1 {
+        throw MissingInput(
+            fieldPath: "",
+            message: "Duplicate VP token signing result for credential identifier \(identifier)",
             className: className
         )
     }
@@ -35,9 +43,15 @@ func getUnsignedVPToken(
     className: String
 ) throws -> UnsignedVPToken {
     let matchingUnsignedVPTokens = unsignedVPTokens.filter { $0.id == identifier }
-    guard matchingUnsignedVPTokens.count == 1 else {
+    if matchingUnsignedVPTokens.count == 0 {
         throw InvalidData(
-            message: "Missing unsigned VP token for id: \(identifier)",
+            message: "Missing unsigned VP token for identifier \(identifier)",
+            className: className
+        )
+    }
+    if matchingUnsignedVPTokens.count > 1 {
+        throw InvalidData(
+            message: "Duplicate unsigned VP token for identifier \(identifier)",
             className: className
         )
     }

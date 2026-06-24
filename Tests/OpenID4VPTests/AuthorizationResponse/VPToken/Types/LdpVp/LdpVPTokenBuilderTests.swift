@@ -433,7 +433,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
             unsignedVPTokenResult: unsignedResult,
             vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("sig".utf8))]
         )) { error in
-            assertOpenID4VPException(error, expectedMessage: "Missing unsigned VP token for id: uuid1", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            assertOpenID4VPException(error, expectedMessage: "Missing unsigned VP token for identifier uuid1", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 

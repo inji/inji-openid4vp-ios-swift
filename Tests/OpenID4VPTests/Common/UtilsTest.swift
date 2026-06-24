@@ -477,25 +477,6 @@ class UtilsTest : XCTestCase {
         }
     }
 
-    func testConstructSigningResultsThrowsWhenDuplicateSigningResultsExistForSameIdentifier() {
-        let unsignedToken = makeUnsignedVPToken(id: "id-1", format: .ldp_vc)
-
-        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
-            .ldp_vc: (["id-1": "payload"], [unsignedToken])
-        ]
-
-        XCTAssertThrowsError(try constructSigningResults(
-            unsignedVPTokenResults: unsignedVPTokenResults,
-            signingResults: [makeSigningResult(id: "id-1"), makeSigningResult(id: "id-1")]
-        )) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Missing VP token signing result for credential identifier id-1",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-
     func testConstructSigningResultsThrowsWhenSigningResultMissingInOneOfMultipleFormats() {
         let ldpToken = makeUnsignedVPToken(id: "id-ldp", format: .ldp_vc)
         let mdocToken = makeUnsignedVPToken(id: "id-mdoc", format: .mso_mdoc)

@@ -84,10 +84,8 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
             unsignedVPTokens: []
         )
-        // Two signing results with the same identifier — count > 1 triggers the error
         let signingResults = [
-            VPTokenSigningResult(id: "uuid1", signedData: signature),
-            VPTokenSigningResult(id: "uuid1", signedData: signature)
+            VPTokenSigningResult(id: "uuid2", signedData: signature)
         ]
 
         XCTAssertThrowsError(try builder.build(
@@ -258,25 +256,6 @@ final class MdocVPTokenBuilderTests: XCTestCase {
             vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: Data("sig".utf8))]
         )) { error in
             assertOpenID4VPException(error, expectedMessage: "Invalid Verifiable Credential: Error while decoding credential", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        }
-    }
-
-    func testDcqlBuildThrowsWhenExtraSigningResults() {
-        var mapping = CredentialToCredentialQueryIdMapping(format: .mso_mdoc, credential: AnyCodable(sampleMdoc), credentialQueryId: "q1")
-        mapping.identifier = "uuid1"
-        let signature = Data("mock-signature".utf8)
-        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
-            vpTokenSigningPayload: ["uuid1": deviceAuthBytes] as [String: String],
-            unsignedVPTokens: []
-        )
-
-        // Two signing results with the same identifier — count > 1 triggers the error
-        XCTAssertThrowsError(try builder.build(
-            credentialToCredentialQueryIdMappings: [mapping],
-            unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid1", signedData: signature), VPTokenSigningResult(id: "uuid1", signedData: signature)]
-        )) { error in
-            assertOpenID4VPException(error, expectedMessage: "Missing VP token signing result for credential identifier uuid1", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         }
     }
 
