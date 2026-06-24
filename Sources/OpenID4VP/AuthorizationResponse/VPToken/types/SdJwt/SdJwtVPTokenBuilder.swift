@@ -52,34 +52,22 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
     ) throws -> [String: [VPToken]] {
         let uuidToUnsignedKBT = try extractUuidToUnsignedKBT(from: unsignedVPTokenResult)
         var vpTokenResult: [String: [VPToken]] = [:]
-
+        
         for mapping in credentialToCredentialQueryIdMappings {
             let identifier = try extractIdentifier(from: mapping.identifier)
-            let credentialQuery = try matchingDCQLCredentialQuery(authorizationRequest, for: mapping.credentialQueryId, className: className)
             let sdJwtCredential = try extractSDJwtString(from: mapping.credential, className: className)
             let unsignedKBJwt = uuidToUnsignedKBT[identifier]
-
-            let finalVPToken: String
-            if credentialQuery.requireCryptographicHolderBinding {
-                if unsignedKBJwt == nil {
-                    throw InvalidData(message: "Missing Key Binding JWT for uuid: \(identifier)", className: className)
-                }
-                finalVPToken = try buildFinalToken(
-                    identifier: identifier,
-                    sdJwtCredential: sdJwtCredential,
-                    unsignedKBJwt: unsignedKBJwt,
-                    vpTokenSigningResults: vpTokenSigningResults
-                )
-            } else {
-                guard unsignedKBJwt == nil else {
-                    throw InvalidData(message: "Unexpected key binding jwt for uuid: \(identifier)", className: className)
-                }
-                finalVPToken = sdJwtCredential
-            }
-
+            
+            let finalVPToken: String = try buildFinalToken(
+                identifier: identifier,
+                sdJwtCredential: sdJwtCredential,
+                unsignedKBJwt: unsignedKBJwt,
+                vpTokenSigningResults: vpTokenSigningResults
+            )
+            
             vpTokenResult[mapping.credentialQueryId, default: []].append(SdJwtVPToken(value: finalVPToken))
         }
-
+        
         return vpTokenResult
     }
 
@@ -93,10 +81,10 @@ class SdJwtVPTokenBuilder : VPTokenBuilder {
     }
 
     private func extractIdentifier(from identifier: String?) throws -> String {
-        guard let uuid = identifier else {
+        guard let identifier = identifier else {
             throw InvalidData(message: "identifier is null in CredentialInputDescriptorMapping for SD-JWT", className: className)
         }
-        return uuid
+        return identifier
     }
 
     private func buildFinalToken(

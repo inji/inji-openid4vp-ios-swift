@@ -171,8 +171,8 @@ final class LdpVPTokenBuilderTests: XCTestCase {
             credentialInputDescriptorMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
             vpTokenSigningResults: [
-                VPTokenSigningResult(id: "uuid1", signedData: Data("mockSig1".utf8)),
-                VPTokenSigningResult(id: "uuid2", signedData: Data("mockSig2".utf8))
+                VPTokenSigningResult(id: "uuid2", signedData: Data("mockSig2".utf8)),
+                VPTokenSigningResult(id: "uuid1", signedData: Data("mockSig1".utf8))
             ],
             rootIndex: 0
         )
@@ -405,7 +405,7 @@ final class LdpVPTokenBuilderTests: XCTestCase {
         }
     }
 
-    func testDcqlBuildWithEmptySignedDataDoesNotThrow() throws {
+    func testDcqlBuildThrowsWhenSignedDataIsEmpty() throws {
         let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
         let ldpToken = makeLdpVPToken()
         var mapping = CredentialToCredentialQueryIdMapping(format: .ldp_vc, credential: credential, credentialQueryId: "q1")

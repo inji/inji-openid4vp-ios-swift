@@ -282,7 +282,6 @@ public class AuthorizationResponseHandler {
     private func createVPTokenAndPresentationSubmission(
         vpTokenSigningResults: [FormatType: [VPTokenSigningResult]],
         authorizationRequest: AuthorizationRequest,
-        unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])],
         formatToCredentialInputDescriptorMapping: [FormatType: [CredentialInputDescriptorMapping]]
     ) throws -> (VPTokenType, PresentationSubmission) {
         var finalVpTokens: [VPToken] = []
@@ -321,7 +320,6 @@ public class AuthorizationResponseHandler {
     private func createVPToken(
         vpTokenSigningResults: [FormatType: [VPTokenSigningResult]],
         authorizationRequest: AuthorizationRequest,
-        unsignedVPTokenResults: [FormatType: (Any?, [UnsignedVPToken])],
         credentialToCredentialQueryIdMappingsGroupedByFormat: [FormatType: [CredentialToCredentialQueryIdMapping]]
     ) throws -> [String: [VPToken]] {
         var finalVpTokens: [String: [VPToken]] = [:]
@@ -492,7 +490,6 @@ public class AuthorizationResponseHandler {
                 let (vpToken, presentationSubmission) = try handler.createVPTokenAndPresentationSubmission(
                     vpTokenSigningResults: vpTokenSigningResults,
                     authorizationRequest: authorizationRequest,
-                    unsignedVPTokenResults: unsignedVPTokenResults,
                     formatToCredentialInputDescriptorMapping: handler.formatToCredentialInputDescriptorMapping
                 )
                 return .presentationExchange(
@@ -501,7 +498,7 @@ public class AuthorizationResponseHandler {
                     state: authorizationRequest.state
                 )
             case .specV1:
-                let vpTokensResult = try handler.createVPToken(vpTokenSigningResults: vpTokenSigningResults, authorizationRequest: authorizationRequest, unsignedVPTokenResults: unsignedVPTokenResults, credentialToCredentialQueryIdMappingsGroupedByFormat: handler.credentialToCredentialQueryIdMappingsGroupedByFormat)
+                let vpTokensResult = try handler.createVPToken(vpTokenSigningResults: vpTokenSigningResults, authorizationRequest: authorizationRequest, credentialToCredentialQueryIdMappingsGroupedByFormat: handler.credentialToCredentialQueryIdMappingsGroupedByFormat)
                 return .dcql(vpToken: vpTokensResult, state: authorizationRequest.state)
             }
         }

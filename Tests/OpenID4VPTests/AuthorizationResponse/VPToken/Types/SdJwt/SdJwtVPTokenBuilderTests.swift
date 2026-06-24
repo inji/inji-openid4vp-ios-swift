@@ -361,19 +361,19 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             )
         ]
         let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
-            vpTokenSigningPayload: ["uuid-1":"invalid-payload"],
+            vpTokenSigningPayload: ["uuid-1":1],
             unsignedVPTokens: []
         )
         
         XCTAssertThrowsError(try builder.build(
             credentialInputDescriptorMappings: mappings,
             unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [],
+            vpTokenSigningResults: [VPTokenSigningResult(id: "uuid-1", signedData: Data("sig".utf8))],
             rootIndex: 0
         )) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Missing VP token signing result for credential identifier uuid-1",
+                expectedMessage: "Missing uuidToUnsignedKBT in payload",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -743,29 +743,6 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         }
     }
     
-    func testDcqlBuildThrowsWhenCredentialQueryIdNotFoundInDcqlQuery() {
-        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
-        let mappings = [
-            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithoutBinding), credentialQueryId: "nonexistent", identifier: "uuid-1")
-        ]
-        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
-            vpTokenSigningPayload: [String: String]() as [String: String],
-            unsignedVPTokens: []
-        )
-        
-        XCTAssertThrowsError(try dcqlBuilder.build(
-            credentialToCredentialQueryIdMappings: mappings,
-            unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: []
-        )) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "No matching credential query found for credentialQueryId: nonexistent",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
     func testDcqlBuildThrowsWhenCredentialIsNotString() {
         let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: false)
         let mappings = [
@@ -784,30 +761,6 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
             assertOpenID4VPException(
                 error,
                 expectedMessage: "SD-JWT credential is not a String",
-                expectedCode: OpenID4VPErrorCodes.invalidRequest
-            )
-        }
-    }
-    
-    func testDcqlBuildThrowsWhenHolderBindingTrueButNoKBJwt() {
-        let uuid = "uuid-bound"
-        let dcqlBuilder = builderWithDcqlRequest(credentialQueryId: "q1", requireCryptographicHolderBinding: true)
-        let mappings = [
-            credentialQueryMapping(format: .dc_sd_jwt, credential: AnyCodable(credentialWithBinding), credentialQueryId: "q1", identifier: uuid)
-        ]
-        let unsignedResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) = (
-            vpTokenSigningPayload: [String: String]() as [String: String],
-            unsignedVPTokens: []
-        )
-        
-        XCTAssertThrowsError(try dcqlBuilder.build(
-            credentialToCredentialQueryIdMappings: mappings,
-            unsignedVPTokenResult: unsignedResult,
-            vpTokenSigningResults: [VPTokenSigningResult(id: uuid, signedData: Data("sig".utf8))]
-        )) { error in
-            assertOpenID4VPException(
-                error,
-                expectedMessage: "Missing Key Binding JWT for uuid: \(uuid)",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -879,7 +832,7 @@ final class SdJwtVPTokenBuilderTests: XCTestCase {
         )) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Unexpected key binding jwt for uuid: \(uuid)",
+                expectedMessage: "Missing VP token signing result for credential identifier uuid-unbound",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
