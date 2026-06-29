@@ -17,55 +17,47 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         self.walletConfig = walletConfig
     }
     
-    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
-        var uuidToUnsignedKBJWT = [String: String]()
+    func build(credentialInputDescriptorMappings: inout [CredentialInputDescriptorMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) {
+        var identifierToUnsignedKBJWT = [String: String]()
         var unsignedVPTokens: [UnsignedVPToken] = []
         
         for index in 0..<credentialInputDescriptorMappings.count {
-            let uuid = UUIDGenerator.generateUUID()
             let mapping = credentialInputDescriptorMappings[index]
             
-            credentialInputDescriptorMappings[index] = CredentialInputDescriptorMapping(
-                format: mapping.format,
-                credential: mapping.credential,
-                inputDescriptorId: mapping.inputDescriptorId,
-                identifier: uuid
-            )
-            
-            if let result = try await prepareUnsignedKeyBinding(
+            try await prepareUnsignedKeyBinding(
+                setIdentifier: { id in credentialInputDescriptorMappings[index].identifier = id },
                 credentialData: mapping.credential,
                 format: mapping.format,
                 clientId: authorizationRequest.clientId,
                 nonce: authorizationRequest.nonce,
-                shouldAddCryptographicHolderBinding: { cnf in cnf.isEmpty == false }
-            ) {
-                uuidToUnsignedKBJWT[uuid] = result.unsignedJWT
-                unsignedVPTokens.append(result.vpToken)
-            }
+                shouldAddCryptographicHolderBinding: { cnf in cnf.isEmpty == false },
+                identifierToUnsignedKBJWT: &identifierToUnsignedKBJWT,
+                unsignedVPTokens: &unsignedVPTokens
+            )
         }
         
-        return (vpTokenSigningPayload: uuidToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
+        return (vpTokenSigningPayload: identifierToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
     }
     
-    // Note: The signed result and CredentialToCredentialQueryIdMapping map are maintained in same order thereby resulting in construction of VP successfully with correct mapping of signed KB JWT to credential query's uuid. This UUID is then used to get the relavent unsigned data using the vpTokenSigningPayload returned from this function.
-    func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]) {
+    func build(credentialToCredentialQueryIdMappings: inout [CredentialToCredentialQueryIdMapping]) async throws -> (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]) {
         guard let authorizationRequest = authorizationRequest as? AuthorizationDcqlRequest else {
             throw InvalidData(message: "Expected AuthorizationDcqlRequest for DCQL flow", className: Self.className)
         }
         
-        var uuidToUnsignedKBJWT = [String: String]()
+        var identifierToUnsignedKBJWT = [String: String]()
         var unsignedVPTokens: [UnsignedVPToken] = []
         
         for index in 0..<credentialToCredentialQueryIdMappings.count {
-            let uuid = UUIDGenerator.generateUUID()
-            credentialToCredentialQueryIdMappings[index].identifier = uuid
+            let identifier = UUIDGenerator.generateUUID()
+            credentialToCredentialQueryIdMappings[index].identifier = identifier
             let credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings[index]
             
             let matchedCredentialQuery = try authorizationRequest.dcqlQuery.credentials.first(where: { $0.id == credentialToCredentialQueryIdMapping.credentialQueryId }) ?? {
                 throw InvalidData(message: "No matching credential query found for credential query id: \(credentialToCredentialQueryIdMapping.credentialQueryId)", className: Self.className)
             }()
             
-            if let result = try await prepareUnsignedKeyBinding(
+            try await prepareUnsignedKeyBinding(
+                setIdentifier: { id in credentialToCredentialQueryIdMappings[index].identifier = id },
                 credentialData: credentialToCredentialQueryIdMapping.credential,
                 format: credentialToCredentialQueryIdMapping.format,
                 clientId: authorizationRequest.clientId,
@@ -78,34 +70,37 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
                         return true
                     }
                     return false
-                }
-            ) {
-                uuidToUnsignedKBJWT[uuid] = result.unsignedJWT
-                unsignedVPTokens.append(result.vpToken)
-            }
+                },
+                identifierToUnsignedKBJWT: &identifierToUnsignedKBJWT,
+                unsignedVPTokens: &unsignedVPTokens
+            )
         }
         
-        return (vpTokenSigningPayload: uuidToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
+        return (vpTokenSigningPayload: identifierToUnsignedKBJWT, unsignedVPTokens: unsignedVPTokens)
     }
     
     private func prepareUnsignedKeyBinding(
+        setIdentifier: (String) -> Void,
         credentialData: AnyCodable,
         format: FormatType,
         clientId: String,
         nonce: String,
-        shouldAddCryptographicHolderBinding: ([String : Any]) throws -> Bool // Callback logic
-    ) async throws -> (unsignedJWT: String, vpToken: UnsignedVPToken)? {
+        shouldAddCryptographicHolderBinding: ([String : Any]) throws -> Bool,
+        identifierToUnsignedKBJWT: inout [String: String],
+        unsignedVPTokens: inout [UnsignedVPToken]
+    ) async throws  {
         let (credential, sdJWTPayload, _) = try extractSdJwtPayload(credentialData, className: Self.className)
         let confirmationKeyClaim = sdJWTPayload["cnf"] as? [String: Any] ?? [:]
-
-        // The callback decides if we should proceed, throw, or skip
+        let identifier = UUIDGenerator.generateUUID()
+        setIdentifier(identifier)
+        
         guard try shouldAddCryptographicHolderBinding(confirmationKeyClaim) else {
-            return nil
+            return
         }
         
         let signingAlgorithm: String
         let holderKeyReference: String
-
+        
         if confirmationKeyClaim["jwk"] != nil && confirmationKeyClaim["kid"] != nil {
             throw InvalidData(message: "Invalid cnf: provide exactly one of 'jwk' or 'kid'", className: Self.className)
         }
@@ -123,7 +118,7 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
         
         let sdHashAlgorithm = sdJWTPayload["_sd_alg"] as? String ?? HashAlgorithm.sha256.rawValue
         let sdHash = try hashData(credential, hashAlgorithm: sdHashAlgorithm, className: Self.className).toBase64UrlEncoded()
-
+        
         let jwtHeader = ["alg": signingAlgorithm, "typ": keyBindingJWT]
         let jwtPayload: [String: Any] = [
             "iat": Int(Date().timeIntervalSince1970),
@@ -131,16 +126,16 @@ struct UnsignedSdJwtVPTokenBuilder : UnsignedVPTokenBuilder {
             "nonce": nonce,
             "sd_hash": sdHash
         ]
-
+        
         let unsignedJWT = try JWSHandler.createUnsignedJWS(header: jwtHeader, payload: jwtPayload)
         
-        let vpToken = UnsignedVPToken(
+        unsignedVPTokens.append(UnsignedVPToken(
+            id: identifier,
             format: format,
             holderKeyReference: holderKeyReference,
             signatureAlgorithm: signingAlgorithm,
             dataToSign: Data(unsignedJWT.utf8)
-        )
-        
-        return (unsignedJWT, vpToken)
+        ))
+        identifierToUnsignedKBJWT[identifier] = unsignedJWT
     }
 }

@@ -65,6 +65,7 @@ public struct NetworkManager: NetworkManaging {
                         let exception = NetworkRequestException.networkRequestTimeout
                         OpenID4VPException.error(NetworkManager.logTag, exception)
                         continuation.resume(throwing: exception)
+                        return
                     }
                     if let statusCode = response.response?.statusCode {
                         let response = NetworkResponse(

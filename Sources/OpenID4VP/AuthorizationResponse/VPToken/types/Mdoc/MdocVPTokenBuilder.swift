@@ -12,33 +12,25 @@ class MdocVPTokenBuilder : VPTokenBuilder {
     
     func build(
         credentialInputDescriptorMappings: [CredentialInputDescriptorMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult],
         rootIndex: Int
     ) throws -> (vpTokens: [VPToken], DescriptorMaps: [DescriptorMap], nextIndex: Int) {
-        var documents : [CBOR] = []
-        guard let docTypeToDeviceAuthenticationBytes = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
+        var documents: [CBOR] = []
+        guard let payloadMap = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
             throw InvalidData(message: "Missing docTypeToDeviceAuthenticationBytes in payload", className: className)
         }
-        
-        var descriptorMaps : [DescriptorMap] = []
-        var signingResultsIterator = vpTokenSigningResults.makeIterator()
-        
-        // Process docTypes in the same deterministic sorted order used when unsigned tokens are flattened.
-        for docTypeString in docTypeToDeviceAuthenticationBytes.keys.sorted() {
-            guard let vpTokenSigningResult = signingResultsIterator.next() else {
-                throw InvalidData(message: "Missing signing result for \(docTypeString)", className: className)
-            }
-            
-            guard let credentialInputDescriptorMapping = credentialInputDescriptorMappings.first(where: { $0.identifier == docTypeString }) else {
-                throw InvalidData(message: "Missing mapping for \(docTypeString)", className: className)
-            }
-            
+
+        var descriptorMaps: [DescriptorMap] = []
+
+        for credentialInputDescriptorMapping in credentialInputDescriptorMappings {
             let document = try buildDocument(
                 credential: credentialInputDescriptorMapping.credential,
-                vpTokenSigningResult: vpTokenSigningResult
+                vpTokenSigningResults: vpTokenSigningResults,
+                identifier: credentialInputDescriptorMapping.identifier,
+                payloadMap: payloadMap
             )
-            
+
             documents.append(document)
             descriptorMaps.append(
                 DescriptorMap(
@@ -53,80 +45,58 @@ class MdocVPTokenBuilder : VPTokenBuilder {
                 )
             )
         }
-        
-        if signingResultsIterator.next() != nil {
-            throw InvalidData(message: "Extra signing results provided for mso_mdoc", className: className)
-        }
-        
-        let deviceResponse = CBOR.map([
-            .utf8String("version"): .utf8String("1.0"),
-            .utf8String("documents"): .array(documents),
-            .utf8String("status"): .unsignedInt(UInt64(0)), // Status = OK
-        ])
-        
-        //base64 url encode without padding the deviceResponse
-        let encodedDeviceResponseBase64Url = Data(cborEncode(deviceResponse)).toBase64UrlEncoded()
-        let mdocVPToken = MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
-        
+
+        let mdocVPToken = try buildMdocVPToken(documents: .array(documents))
+
         return ([mdocVPToken], descriptorMaps, rootIndex + 1)
     }
     
     func build(
         credentialToCredentialQueryIdMappings: [CredentialToCredentialQueryIdMapping],
-        unsignedVPTokenResult: (vpTokenSigningPayload: Any?, unsignedVPTokens: [UnsignedVPToken]),
+        unsignedVPTokenResult: (vpTokenSigningPayload: VPTokenSigningPayload, unsignedVPTokens: [UnsignedVPToken]),
         vpTokenSigningResults: [VPTokenSigningResult]
     ) throws -> [String: [VPToken]] {
-        var queryIdToDocumentsMap : [String: [CBOR]] = [:]
-        guard let docTypeToDeviceAuthenticationBytes = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
-            throw InvalidData(message: "Missing docTypeToDeviceAuthenticationBytes in payload", className: className)
+        guard let payloadMap = unsignedVPTokenResult.vpTokenSigningPayload as? [String: String] else {
+            throw InvalidData(message: "Missing uuidToDeviceAuthenticationBytes in payload", className: className)
         }
-        
-        var signingResultsIterator = vpTokenSigningResults.makeIterator()
-        var vpTokenResult : [String: [VPToken]] = [:]
-        
-        // Process docTypes in the same deterministic sorted order used when unsigned tokens are flattened.
-        for docTypeString in docTypeToDeviceAuthenticationBytes.keys.sorted() {
-            guard let vpTokenSigningResult = signingResultsIterator.next() else {
-                throw InvalidData(message: "Missing signing result for \(docTypeString)", className: className)
-            }
-            
-            guard let credentialToCredentialQueryIdMapping = credentialToCredentialQueryIdMappings.first(where: { $0.identifier == docTypeString }) else {
-                throw InvalidData(message: "Missing mapping for \(docTypeString)", className: className)
-            }
-            
+
+        var vpTokenResult: [String: [VPToken]] = [:]
+
+        for credentialToCredentialQueryIdMapping in credentialToCredentialQueryIdMappings {
             let document = try buildDocument(
                 credential: credentialToCredentialQueryIdMapping.credential,
-                vpTokenSigningResult: vpTokenSigningResult
+                vpTokenSigningResults: vpTokenSigningResults,
+                identifier: credentialToCredentialQueryIdMapping.identifier,
+                payloadMap: payloadMap
             )
-            
-            queryIdToDocumentsMap[credentialToCredentialQueryIdMapping.credentialQueryId, default: []]
-                .append(document)
+
+            let mdocVPToken = try buildMdocVPToken(documents: .array([document]))
+            vpTokenResult[credentialToCredentialQueryIdMapping.credentialQueryId, default: []].append(mdocVPToken)
         }
-        
-        if signingResultsIterator.next() != nil {
-            throw InvalidData(message: "Extra signing results provided for mso_mdoc", className: className)
-        }
-        
-        for (queryId, documents) in queryIdToDocumentsMap {
-            let deviceResponse = CBOR.map([
-                .utf8String("version"): .utf8String("1.0"),
-                .utf8String("documents"): .array(documents),
-                .utf8String("status"): .unsignedInt(UInt64(0)), // Status = OK
-            ])
-            //base64 url encode without padding the deviceResponse
-            let encodedDeviceResponseBase64Url = Data(cborEncode(deviceResponse)).toBase64UrlEncoded()
-            let mdocVPToken = MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
-            
-            vpTokenResult[queryId] = [mdocVPToken]
-        }
-        
+
         return vpTokenResult
     }
     
     func buildDocument(
         credential: AnyCodable,
-        vpTokenSigningResult: VPTokenSigningResult
+        vpTokenSigningResults: [VPTokenSigningResult],
+        identifier: String?,
+        payloadMap: [String: String]
     ) throws -> CBOR {
+        guard let identifier = identifier else {
+            throw InvalidData(message: "Missing identifier in credential mapping", className: className)
+        }
+
+        guard payloadMap[identifier] != nil else {
+            throw InvalidData(message: "Missing payload for identifier: \(identifier)", className: className)
+        }
+        
+        let vpTokenSigningResult = try getVPTokenSigningResult(
+            vpTokenSigningResults: vpTokenSigningResults,
+            identifier: identifier,
+            className: className
+        )
+        
         guard let mdocCredential = credential.value as? String else {
             throw InvalidType(
                 message: "Invalid MSO-MDOC token: expected String",
@@ -154,6 +124,16 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         document[CBOR.utf8String("deviceSigned")] = deviceSigned
         
         return document
+    }
+    
+    private func buildMdocVPToken(documents: CBOR) throws -> MdocVPToken {
+        let deviceResponse = CBOR.map([
+            .utf8String("version"): .utf8String("1.0"),
+            .utf8String("documents"): (documents),
+            .utf8String("status"): .unsignedInt(UInt64(0)),
+        ])
+        let encodedDeviceResponseBase64Url = Data(cborEncode(deviceResponse)).toBase64UrlEncoded()
+        return MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
     }
     
     // DeviceSignature is of COSE_Sign1 structure

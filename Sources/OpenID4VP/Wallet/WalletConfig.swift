@@ -11,9 +11,8 @@ public struct WalletConfig: Codable {
     let authorizationEncryptionEncValuesSupported: [EncryptionMethod]?
     let responseTypesSupported: [ResponseType]
     let isPresentationDefinitionUriSupported: Bool
-    let requestUriMethodsSupported: [RequestUriMethod]
     let trustedVerifiers: [Verifier]
-    let validatePreRegisteredVerifier: Bool
+    let validateTrustedVerifier: Bool
     
     enum CodingKeys: String, CodingKey {
         case vpFormatsSupported = "vp_formats_supported"
@@ -23,9 +22,8 @@ public struct WalletConfig: Codable {
         case authorizationEncryptionEncValuesSupported = "authorization_encryption_enc_values_supported"
         case responseTypesSupported = "response_types_supported"
         case presentationDefinitionUriSupported = "presentation_definition_uri_supported"
-        case requestUriMethodsSupported = "request_uri_methods_supported"
         case trustedVerifiers = "trusted_verifiers"
-        case validatePreRegisteredVerifier = "validate_pre_registered_verifier"
+        case validateTrustedVerifier = "validate_trusted_verifier"
     }
     
     public init(
@@ -36,9 +34,8 @@ public struct WalletConfig: Codable {
         authorizationEncryptionEncValuesSupported: [EncryptionMethod]? = WalletConfigDefaults.authorizationEncryptionEncValuesSupported,
         responseTypesSupported: [ResponseType] = WalletConfigDefaults.responseTypesSupported,
         isPresentationDefinitionUriSupported: Bool = WalletConfigDefaults.presentationDefinitionUriSupported,
-        requestUriMethodsSupported: [RequestUriMethod] = WalletConfigDefaults.requestUriMethodsSupported,
         trustedVerifiers: [Verifier] = WalletConfigDefaults.trustedVerifiers,
-        validatePreRegisteredVerifier: Bool = WalletConfigDefaults.validatePreRegisteredVerifier
+        validateTrustedVerifier: Bool = WalletConfigDefaults.validateTrustedVerifier
     ) {
         self.vpFormatsSupported = vpFormatsSupported
         self.clientIdPrefixesSupported = clientIdPrefixesSupported
@@ -47,9 +44,8 @@ public struct WalletConfig: Codable {
         self.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported
         self.responseTypesSupported = responseTypesSupported
         self.isPresentationDefinitionUriSupported = isPresentationDefinitionUriSupported
-        self.requestUriMethodsSupported = requestUriMethodsSupported
         self.trustedVerifiers = trustedVerifiers
-        self.validatePreRegisteredVerifier = validatePreRegisteredVerifier
+        self.validateTrustedVerifier = validateTrustedVerifier
     }
     
     public init(from decoder: Decoder) throws {
@@ -61,9 +57,8 @@ public struct WalletConfig: Codable {
         self.authorizationEncryptionEncValuesSupported = try container.decodeIfPresent([EncryptionMethod].self, forKey: .authorizationEncryptionEncValuesSupported) ?? WalletConfigDefaults.authorizationEncryptionEncValuesSupported
         self.responseTypesSupported = try container.decodeIfPresent([ResponseType].self, forKey: .responseTypesSupported) ?? WalletConfigDefaults.responseTypesSupported
         self.isPresentationDefinitionUriSupported = try container.decodeIfPresent(Bool.self, forKey: .presentationDefinitionUriSupported) ?? WalletConfigDefaults.presentationDefinitionUriSupported
-        self.requestUriMethodsSupported = try container.decodeIfPresent([RequestUriMethod].self, forKey: .requestUriMethodsSupported) ?? WalletConfigDefaults.requestUriMethodsSupported
         self.trustedVerifiers = try container.decodeIfPresent([Verifier].self, forKey: .trustedVerifiers) ?? WalletConfigDefaults.trustedVerifiers
-        self.validatePreRegisteredVerifier = try container.decodeIfPresent(Bool.self, forKey: .validatePreRegisteredVerifier) ?? WalletConfigDefaults.validatePreRegisteredVerifier
+        self.validateTrustedVerifier = try container.decodeIfPresent(Bool.self, forKey: .validateTrustedVerifier) ?? WalletConfigDefaults.validateTrustedVerifier
     }
     
     private static func parseVPFormatsSupported(from container: KeyedDecodingContainer<CodingKeys>) throws -> [VPFormatType: VPFormatSupported] {
@@ -170,9 +165,8 @@ public struct WalletConfig: Codable {
         try container.encode(authorizationEncryptionEncValuesSupported, forKey: .authorizationEncryptionEncValuesSupported)
         try container.encode(responseTypesSupported, forKey: .responseTypesSupported)
         try container.encode(isPresentationDefinitionUriSupported, forKey: .presentationDefinitionUriSupported)
-        try container.encode(requestUriMethodsSupported, forKey: .requestUriMethodsSupported)
         try container.encode(trustedVerifiers, forKey: .trustedVerifiers)
-        try container.encode(validatePreRegisteredVerifier, forKey: .validatePreRegisteredVerifier)
+        try container.encode(validateTrustedVerifier, forKey: .validateTrustedVerifier)
     }
 }
 
@@ -204,11 +198,8 @@ struct WalletConfigDefaults {
     static let presentationDefinitionUriSupported: Bool = true
     
     @usableFromInline
-    static let requestUriMethodsSupported: [RequestUriMethod] = [.get, .post]
-    
-    @usableFromInline
     static let trustedVerifiers: [Verifier] = []
     
     @usableFromInline
-    static let validatePreRegisteredVerifier : Bool = true
+    static let validateTrustedVerifier: Bool = true
 }

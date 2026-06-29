@@ -26,7 +26,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     }
     
     override func validateClientId() throws {
-        if walletConfig.validatePreRegisteredVerifier {
+        if walletConfig.validateTrustedVerifier {
             guard walletConfig.trustedVerifiers.contains(where: { $0.clientId == authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String }) else {
                 throw InvalidVerifier(message: "Verifier is not trusted by the wallet", className: className)
             }
@@ -45,7 +45,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     
     
     func isUnsignedRequestSupported() throws -> Bool {
-        if walletConfig.validatePreRegisteredVerifier {
+        if walletConfig.validateTrustedVerifier {
             let clientId = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId]) ?? ""
             let preRegisteredVerifier = try verifier(clientId: clientId)
             return preRegisteredVerifier.allowUnsignedRequest
@@ -72,7 +72,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
     }
     
     override func validateAndParseRequestFields() async throws {
-        if walletConfig.validatePreRegisteredVerifier {
+        if walletConfig.validateTrustedVerifier {
             let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as! String
             let preRegisteredClient = try verifier(clientId: clientId)
             

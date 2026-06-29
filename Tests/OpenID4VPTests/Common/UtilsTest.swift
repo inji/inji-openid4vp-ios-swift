@@ -336,4 +336,166 @@ class UtilsTest : XCTestCase {
             )
         }
     }
+
+    // MARK: - constructSigningResults Tests
+
+    private func makeUnsignedVPToken(id: String, format: FormatType) -> UnsignedVPToken {
+        UnsignedVPToken(id: id, format: format, holderKeyReference: "key-ref", signatureAlgorithm: "ES256", dataToSign: Data())
+    }
+
+    private func makeSigningResult(id: String) -> VPTokenSigningResult {
+        VPTokenSigningResult(id: id, signedData: Data("signed".utf8))
+    }
+
+    func testConstructSigningResultsSingleFormatSingleCredentialReturnsMatchedResult() throws {
+        let unsignedToken = makeUnsignedVPToken(id: "id-1", format: .ldp_vc)
+        let signingResult = makeSigningResult(id: "id-1")
+
+        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
+            .ldp_vc: (["id-1": "payload"], [unsignedToken])
+        ]
+
+        let result = try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            signingResults: [signingResult]
+        )
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[.ldp_vc]?.count, 1)
+        XCTAssertEqual(result[.ldp_vc]?.first?.id, "id-1")
+    }
+
+    func testConstructSigningResultsMultipleCredentialsSameFormatReturnsAllMatched() throws {
+        let token1 = makeUnsignedVPToken(id: "id-1", format: .ldp_vc)
+        let token2 = makeUnsignedVPToken(id: "id-2", format: .ldp_vc)
+        let sr1 = makeSigningResult(id: "id-1")
+        let sr2 = makeSigningResult(id: "id-2")
+
+        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
+            .ldp_vc: (["id-1": "p1", "id-2": "p2"], [token1, token2])
+        ]
+
+        let result = try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            signingResults: [sr1, sr2]
+        )
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[.ldp_vc]?.count, 2)
+        XCTAssertEqual(Set(result[.ldp_vc]!.map { $0.id }), ["id-1", "id-2"])
+    }
+
+    func testConstructSigningResultsMultipleFormatsReturnsResultsSplitByFormat() throws {
+        let ldpToken = makeUnsignedVPToken(id: "id-ldp", format: .ldp_vc)
+        let mdocToken = makeUnsignedVPToken(id: "id-mdoc", format: .mso_mdoc)
+        let ldpSR = makeSigningResult(id: "id-ldp")
+        let mdocSR = makeSigningResult(id: "id-mdoc")
+
+        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
+            .ldp_vc: (["id-ldp": "p1"], [ldpToken]),
+            .mso_mdoc: (["id-mdoc": "p2"], [mdocToken])
+        ]
+
+        let result = try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            signingResults: [ldpSR, mdocSR]
+        )
+
+        XCTAssertEqual(result.count, 2)
+        XCTAssertEqual(result[.ldp_vc]?.first?.id, "id-ldp")
+        XCTAssertEqual(result[.mso_mdoc]?.first?.id, "id-mdoc")
+    }
+
+    func testConstructSigningResultsEmptyInputsReturnsEmptyResult() throws {
+        let result = try constructSigningResults(
+            unsignedVPTokenResults: [:],
+            signingResults: []
+        )
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testConstructSigningResultsThrowsWhenSigningResultIdHasNoMatchingUnsignedToken() {
+        let unsignedToken = makeUnsignedVPToken(id: "id-1", format: .ldp_vc)
+
+        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
+            .ldp_vc: (["id-1": "payload"], [unsignedToken])
+        ]
+
+        XCTAssertThrowsError(try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            signingResults: [makeSigningResult(id: "id-1"), makeSigningResult(id: "unknown-id")]
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unexpected VP token signing result for credential identifier(s): unknown-id",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testConstructSigningResultsThrowsAndListsAllUnexpectedIdentifiers() {
+        let unsignedToken = makeUnsignedVPToken(id: "id-1", format: .ldp_vc)
+
+        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
+            .ldp_vc: (["id-1": "payload"], [unsignedToken])
+        ]
+
+        XCTAssertThrowsError(try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            signingResults: [makeSigningResult(id: "id-1"), makeSigningResult(id: "extra-1"), makeSigningResult(id: "extra-2")]
+        )) { error in
+            guard let ovpException = error as? OpenID4VPException else {
+                XCTFail("Expected OpenID4VPException but got \(error)")
+                return
+            }
+            XCTAssertEqual(ovpException.errorCode, OpenID4VPErrorCodes.invalidRequest)
+            XCTAssertTrue(
+                ovpException.message.hasPrefix("Unexpected VP token signing result for credential identifier(s):"),
+                "Unexpected message prefix: \(ovpException.message)"
+            )
+            XCTAssertTrue(ovpException.message.contains("extra-1"), "Expected 'extra-1' in: \(ovpException.message)")
+            XCTAssertTrue(ovpException.message.contains("extra-2"), "Expected 'extra-2' in: \(ovpException.message)")
+        }
+    }
+
+    func testConstructSigningResultsThrowsWhenSigningResultMissingForIdentifier() {
+        let unsignedToken = makeUnsignedVPToken(id: "id-1", format: .ldp_vc)
+
+        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
+            .ldp_vc: (["id-1": "payload"], [unsignedToken])
+        ]
+
+        XCTAssertThrowsError(try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            signingResults: []
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing VP token signing result for credential identifier id-1",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testConstructSigningResultsThrowsWhenSigningResultMissingInOneOfMultipleFormats() {
+        let ldpToken = makeUnsignedVPToken(id: "id-ldp", format: .ldp_vc)
+        let mdocToken = makeUnsignedVPToken(id: "id-mdoc", format: .mso_mdoc)
+
+        let unsignedVPTokenResults: [FormatType: (VPTokenSigningPayload, [UnsignedVPToken])] = [
+            .ldp_vc: (["id-ldp": "p1"], [ldpToken]),
+            .mso_mdoc: (["id-mdoc": "p2"], [mdocToken])
+        ]
+
+        // Only ldp SR provided — mdoc SR is missing
+        XCTAssertThrowsError(try constructSigningResults(
+            unsignedVPTokenResults: unsignedVPTokenResults,
+            signingResults: [makeSigningResult(id: "id-ldp")]
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing VP token signing result for credential identifier id-mdoc",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
 }

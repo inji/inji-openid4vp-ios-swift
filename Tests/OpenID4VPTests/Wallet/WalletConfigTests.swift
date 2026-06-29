@@ -17,9 +17,8 @@ final class WalletConfigTests: XCTestCase {
         encMethods: [EncryptionMethod]? = [.a256GCM],
         responseTypes: [ResponseType] = [.vp_token],
         presentationDefinitionUriSupported: Bool = true,
-        requestUriMethods: [RequestUriMethod] = [.get],
         trustedVerifiers: [Verifier] = [],
-        validatePreRegisteredVerifier: Bool = true
+        validateTrustedVerifier: Bool = true
     ) -> WalletConfig {
         let formats = vpFormats ?? [.ldp_vc: ldpVc, .mso_mdoc: msoMdoc, .dc_sd_jwt: sdJwt]
         return WalletConfig(
@@ -30,9 +29,8 @@ final class WalletConfigTests: XCTestCase {
             authorizationEncryptionEncValuesSupported: encMethods,
             responseTypesSupported: responseTypes,
             isPresentationDefinitionUriSupported: presentationDefinitionUriSupported,
-            requestUriMethodsSupported: requestUriMethods,
             trustedVerifiers: trustedVerifiers,
-            validatePreRegisteredVerifier: validatePreRegisteredVerifier
+            validateTrustedVerifier: validateTrustedVerifier
         )
     }
 
@@ -58,9 +56,8 @@ final class WalletConfigTests: XCTestCase {
             encMethods: [.a256GCM],
             responseTypes: [.vp_token],
             presentationDefinitionUriSupported: false,
-            requestUriMethods: [.get, .post],
             trustedVerifiers: [verifier],
-            validatePreRegisteredVerifier: false
+            validateTrustedVerifier: false
         )
         let formats = try encodeVpFormats(config)
         XCTAssertEqual(formats.keys.sorted(), ["dc+sd-jwt", "ldp_vc", "mso_mdoc"])
@@ -70,10 +67,9 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(config.authorizationEncryptionEncValuesSupported, [.a256GCM])
         XCTAssertEqual(config.responseTypesSupported, [.vp_token])
         XCTAssertEqual(config.isPresentationDefinitionUriSupported, false)
-        XCTAssertEqual(config.requestUriMethodsSupported, [.get, .post])
         XCTAssertEqual(config.trustedVerifiers.map { $0.clientId }, ["v1"])
         XCTAssertEqual(config.trustedVerifiers.map { $0.responseUris }, [["https://v.example.com"]])
-        XCTAssertFalse(config.validatePreRegisteredVerifier)
+        XCTAssertFalse(config.validateTrustedVerifier)
     }
 
     func testDefaultInitUsesWalletConfigDefaults() throws {
@@ -86,7 +82,6 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(config.authorizationEncryptionEncValuesSupported, WalletConfigDefaults.authorizationEncryptionEncValuesSupported)
         XCTAssertEqual(config.responseTypesSupported, WalletConfigDefaults.responseTypesSupported)
         XCTAssertEqual(config.isPresentationDefinitionUriSupported, WalletConfigDefaults.presentationDefinitionUriSupported)
-        XCTAssertEqual(config.requestUriMethodsSupported, WalletConfigDefaults.requestUriMethodsSupported)
         XCTAssertEqual(config.trustedVerifiers.map { $0.clientId }, WalletConfigDefaults.trustedVerifiers.map { $0.clientId })
     }
 
@@ -99,7 +94,6 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(WalletConfigDefaults.authorizationEncryptionEncValuesSupported, [.a256GCM])
         XCTAssertEqual(WalletConfigDefaults.responseTypesSupported, [.vp_token])
         XCTAssertEqual(WalletConfigDefaults.presentationDefinitionUriSupported, true)
-        XCTAssertEqual(WalletConfigDefaults.requestUriMethodsSupported, [.get, .post])
         XCTAssertEqual(WalletConfigDefaults.trustedVerifiers.map { $0.clientId }, [])
         XCTAssertEqual(WalletConfigDefaults.vpFormatsSupported.keys.map { $0.rawValue }.sorted(), ["dc+sd-jwt", "ldp_vc", "mso_mdoc"])
     }
@@ -113,8 +107,7 @@ final class WalletConfigTests: XCTestCase {
             encAlgs: [.ecdhES],
             encMethods: [.a256GCM],
             responseTypes: [.vp_token],
-            presentationDefinitionUriSupported: true,
-            requestUriMethods: [.get, .post]
+            presentationDefinitionUriSupported: true
         )
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(WalletConfig.self, from: data)
@@ -125,7 +118,6 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(decoded.authorizationEncryptionEncValuesSupported, original.authorizationEncryptionEncValuesSupported)
         XCTAssertEqual(decoded.responseTypesSupported, original.responseTypesSupported)
         XCTAssertEqual(decoded.isPresentationDefinitionUriSupported, original.isPresentationDefinitionUriSupported)
-        XCTAssertEqual(decoded.requestUriMethodsSupported, original.requestUriMethodsSupported)
         assertDictionariesEqual(expected: try encodeVpFormats(original), actual: try encodeVpFormats(decoded))
     }
 
@@ -146,7 +138,6 @@ final class WalletConfigTests: XCTestCase {
         XCTAssertEqual(decoded.authorizationEncryptionEncValuesSupported, WalletConfigDefaults.authorizationEncryptionEncValuesSupported)
         XCTAssertEqual(decoded.responseTypesSupported, WalletConfigDefaults.responseTypesSupported)
         XCTAssertEqual(decoded.isPresentationDefinitionUriSupported, WalletConfigDefaults.presentationDefinitionUriSupported)
-        XCTAssertEqual(decoded.requestUriMethodsSupported, WalletConfigDefaults.requestUriMethodsSupported)
     }
 
     func testDecodeWithNoTrustedVerifiers() throws {
@@ -254,7 +245,7 @@ final class WalletConfigTests: XCTestCase {
     // MARK: - encode(to:)
 
     func testEncodeContainsAllExpectedKeys() throws {
-        let json = try encodeToJson(makeConfig(requestUriMethods: [.get, .post]))
+        let json = try encodeToJson(makeConfig())
         XCTAssertEqual(json.keys.sorted(), [
             "authorization_encryption_alg_values_supported",
             "authorization_encryption_enc_values_supported",
@@ -262,10 +253,9 @@ final class WalletConfigTests: XCTestCase {
             "presentation_definition_uri_supported",
             "request_object_signing_alg_values_supported",
             "response_types_supported",
-            "request_uri_methods_supported",
             "trusted_verifiers",
             "vp_formats_supported",
-            "validate_pre_registered_verifier"
+            "validate_trusted_verifier"
         ].sorted())
     }
 
@@ -324,14 +314,6 @@ final class WalletConfigTests: XCTestCase {
                 validate: { json in
                     let encoded = try XCTUnwrap(json["presentation_definition_uri_supported"] as? Bool)
                     XCTAssertEqual(encoded, false)
-                }
-            ),
-            FieldTestCase(label: "requestUriMethods",
-                config: self.makeConfig(requestUriMethods: [.get, .post]),
-                key: "request_uri_methods_supported",
-                validate: { json in
-                    let encoded = try XCTUnwrap(json["request_uri_methods_supported"] as? [String])
-                    XCTAssertEqual(encoded.sorted(), ["get", "post"])
                 }
             )
         ]

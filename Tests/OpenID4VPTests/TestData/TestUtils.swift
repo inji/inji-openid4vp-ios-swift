@@ -303,7 +303,7 @@ func createWalletConfig(
         authorizationEncryptionEncValuesSupported: authorizationEncryptionEncValuesSupported,
         responseTypesSupported: responseTypesSupported,
         trustedVerifiers: trustedVerifiers,
-        validatePreRegisteredVerifier: validatePreregisteredVerifier
+        validateTrustedVerifier: validatePreregisteredVerifier
     )
 }
 

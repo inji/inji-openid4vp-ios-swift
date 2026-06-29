@@ -1,4 +1,4 @@
-public enum RequestUriMethod: String, Codable {
+internal enum RequestUriMethod: String, Codable {
     case get = "get"
     case post = "post"
     

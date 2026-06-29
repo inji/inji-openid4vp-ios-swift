@@ -80,7 +80,7 @@ func getAuthorizationRequestHandler(authorizationRequestParameters: [String:Any]
     let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as? String ?? ""
     
     let clientIdPrefix = try extractClientIdPrefix(authorizationRequestParams: authorizationRequestParameters)
-    let specVersion = findSpecVersionUsingClientId(clientId: clientId, clientIdPrefix: clientIdPrefix, trustedVerifiers: walletConfig.trustedVerifiers, checkSpecVersionInPreRegisteredList: walletConfig.validatePreRegisteredVerifier)
+    let specVersion = findSpecVersionUsingClientId(clientId: clientId, clientIdPrefix: clientIdPrefix, trustedVerifiers: walletConfig.trustedVerifiers, checkSpecVersionInPreRegisteredList: walletConfig.validateTrustedVerifier)
     
     switch clientIdPrefix {
     case ClientIdPrefix.preRegistered.rawValue:
@@ -164,7 +164,7 @@ func validateField<T>(_ field: T?, _ fieldPath: [String], _ className: String) t
     }
 }
 
-func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> String {      
+func extractClientIdPrefix(authorizationRequestParams: [String:Any]) throws -> String {
     try validateAttribute(AuthorizationRequestFieldConstants.clientId, values: authorizationRequestParams)
     let clientId = authorizationRequestParams[AuthorizationRequestFieldConstants.clientId] as? String ?? ""
     
