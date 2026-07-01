@@ -293,9 +293,9 @@ class MismatchingClientIdSchemeInRequest: OpenID4VPException {
     }
 }
 
-class UnsupportedKeyAgreementAlgorithm: OpenID4VPException {
+class UnsupportedKeyExchangeAlgorithm: OpenID4VPException {
     init(className: String) {
-        let message = "Required Key Agreement algorithm is not supported."
+        let message = "Required Key exchange algorithm is not supported"
         super.init(errorCode: OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
     }
 }

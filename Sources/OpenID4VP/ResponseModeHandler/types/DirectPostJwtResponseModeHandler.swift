@@ -130,18 +130,6 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             throw InvalidData(message: "response_uri is required in authorization request for response mode 'direct_post.jwt'", className: className)
         }()
     }
-
-    private func encryptResponse(
-        authorizationRequest: AuthorizationRequest,
-        responseParams: [String: String],
-        walletNonce: String,
-        walletConfig: WalletConfig
-    ) throws -> [String: String] {
-        let specVersionHandler = SpecVersionHandler.from(authorizationRequest)
-        let jweHandler = try specVersionHandler.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, walletConfig: walletConfig, className: className)
-        let encryptedBody = try jweHandler.encrypt(responseParams)
-        return ["response": encryptedBody]
-    }
     
     private func encryptResponse(
         authorizationRequest: AuthorizationRequest,
