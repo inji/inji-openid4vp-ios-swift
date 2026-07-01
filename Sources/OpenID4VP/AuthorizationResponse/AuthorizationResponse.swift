@@ -9,6 +9,52 @@ enum AuthorizationResponse {
     // Draft 23 compliant: DIF Presentation Exchange structure
     case presentationExchange(vpToken: VPTokenType, presentationSubmission: PresentationSubmission, state: String?)
     
+    func payloadData() throws -> Data {
+           var payload: [String: Any] = [:]
+
+           switch self {
+
+           case .dcql(let vpToken, let state):
+               let encodableMap = vpToken.mapValues { tokens in
+                   tokens.map { AnyEncodable($0) }
+               }
+
+               let vpTokenData = try JSON.encoder.encode(encodableMap)
+               payload["vp_token"] = try JSONSerialization.jsonObject(with: vpTokenData)
+
+               if let state {
+                   payload["state"] = state
+               }
+
+           case .presentationExchange(let vpToken,
+                                      let presentationSubmission,
+                                      let state):
+
+               switch vpToken {
+
+               case .vpTokenArray(let tokens):
+                   let data = try JSON.encoder.encode(tokens.map { AnyEncodable($0) })
+                   payload["vp_token"] = try JSONSerialization.jsonObject(with: data)
+
+               case .vpTokenElement(let token):
+                   let data = try JSON.encoder.encode(AnyEncodable(token))
+                   payload["vp_token"] = try JSONSerialization.jsonObject(with: data)
+               }
+
+               let psData = try JSON.encoder.encode(presentationSubmission)
+               payload["presentation_submission"] = try JSONSerialization.jsonObject(with: psData)
+
+               if let state {
+                   payload["state"] = state
+               }
+           }
+
+           return try JSONSerialization.data(
+               withJSONObject: payload,
+               options: []
+           )
+       }
+    
     func toJsonEncodedMap() throws -> [String: String] {
         var jsonEncodedAuthorizationResponse: [String: String] = [:]
         

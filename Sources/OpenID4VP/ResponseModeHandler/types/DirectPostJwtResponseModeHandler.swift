@@ -96,7 +96,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         walletNonce: String,
         walletConfig: WalletConfig
     ) throws -> [String: String] {
-        let responseParams = try authorizationResponse.toJsonEncodedMap()
+        let responseParams = try authorizationResponse.payloadData()
         return try encryptResponse(
             authorizationRequest: authorizationRequest,
             responseParams: responseParams,
@@ -138,6 +138,18 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     private func encryptResponse(
         authorizationRequest: AuthorizationRequest,
         responseParams: [String: String],
+        walletNonce: String,
+        walletConfig: WalletConfig
+    ) throws -> [String: String] {
+        let specVersionHandler = SpecVersionHandler.from(authorizationRequest)
+        let jweHandler = try specVersionHandler.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, walletConfig: walletConfig, className: className)
+        let encryptedBody = try jweHandler.encrypt(responseParams)
+        return ["response": encryptedBody]
+    }
+    
+    private func encryptResponse(
+        authorizationRequest: AuthorizationRequest,
+        responseParams: Data,
         walletNonce: String,
         walletConfig: WalletConfig
     ) throws -> [String: String] {

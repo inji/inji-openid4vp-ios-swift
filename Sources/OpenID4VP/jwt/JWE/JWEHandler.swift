@@ -38,6 +38,26 @@ public struct JWEHandler {
         
         return jwe.compactSerialization()
     }
+    
+    func encrypt(_ payload: Data) throws -> String {
+        let recipientKey: JWK = publicKey
+        try validateRecipientKey(
+            recipientKey,
+            for: KeyManagementAlgorithm.ecdhES
+        )
+        
+        var header = DefaultJWEHeaderImpl()
+        header.keyManagementAlgorithm = .ecdhES
+        header.encodingAlgorithm = .a256GCM
+        header.agreementPartyUInfo = Data(base64UrlEncoded: producerInfo)
+        header.agreementPartyVInfo = Data(base64UrlEncoded: recipientInfo)
+        header.keyID = recipientKey.keyID
+
+        let payloadData: Data = payload
+        let jwe = try JWE(payload: payloadData, protectedHeader: header, recipientKey: recipientKey)
+        
+        return jwe.compactSerialization()
+    }
 
     private func validateRecipientKey(
         _ jwk: JWK,
