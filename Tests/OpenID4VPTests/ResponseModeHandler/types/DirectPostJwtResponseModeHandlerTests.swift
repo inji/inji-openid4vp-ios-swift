@@ -664,7 +664,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
            )) { error in
                assertOpenID4VPException(
                    error,
-                   expectedMessage: "No encryption jwk found in client_metadata.jwks",
+                   expectedMessage: "No jwk matching the specified algorithm found for encryption",
                    expectedCode: OpenID4VPErrorCodes.invalidRequest
                )
            }

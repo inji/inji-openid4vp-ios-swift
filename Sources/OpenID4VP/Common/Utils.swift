@@ -81,7 +81,7 @@ func toData(_ input: [String: Any]) throws -> Data {
             className: "utils"
         )
     }
-    return try JSONSerialization.data(withJSONObject: input, options: [])
+    return try JSONSerialization.data(withJSONObject: processedInput, options: [])
 }
 
 func sha256Hash(from data: CBOR) -> [UInt8] {

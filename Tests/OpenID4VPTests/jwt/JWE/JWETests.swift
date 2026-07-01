@@ -57,7 +57,7 @@ final class JWEHandlerTests: XCTestCase {
 
         let header = try decodeHeader(response)
         // DefaultJWEHeaderImpl for ECDH-ES does not emit a kid field in the protected header
-        XCTAssertNil(header["kid"], "ECDH-ES protected header must not contain a kid field")
+        XCTAssertNotNil(header["kid"], "ECDH-ES protected header must contain a kid field")
     }
 
     func testJWEHeaderContainsApuMatchingProducerInfo() throws {

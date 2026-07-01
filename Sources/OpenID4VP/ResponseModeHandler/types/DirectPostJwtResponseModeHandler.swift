@@ -60,11 +60,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                  className: className)
         }
         
-        let encryptionKeys = jwks.keys.filter { $0.publicKeyUse == .encryption }
-        guard !encryptionKeys.isEmpty else {
-            throw InvalidData(message: "No encryption jwk found in client_metadata.jwks", className: className)
-        }
-        let verifierEncrptionAlgorithms = encryptionKeys.compactMap { $0.algorithm }
+        let verifierEncrptionAlgorithms = jwks.keys.compactMap { $0.algorithm }
         try validateEncryption(verifierEncryptionAlg: verifierEncrptionAlgorithms, verifierEnc: enc, jwks: jwks, walletConfig: walletConfig, shouldValidate: shouldValidateWithWalletMetadata)
         _ = try getEncryptionKey(jwks, walletConfig.authorizationEncryptionAlgValuesSupported?.compactMap { $0.rawValue } ?? [EncryptionAlgorithm.ecdhES.rawValue])
     }
