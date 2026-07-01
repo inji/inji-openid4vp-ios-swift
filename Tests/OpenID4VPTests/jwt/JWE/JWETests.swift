@@ -222,7 +222,8 @@ final class JWEHandlerTests: XCTestCase {
             "crv": "X25519",
             "use": "enc",
             "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-            "kid": "ed-key1"
+            "kid": "ed-key1",
+            "alg": "ECDH-ES+A128KW"
         ], as: JWK.self)
 
         let handler = JWEHandler(
@@ -236,7 +237,7 @@ final class JWEHandlerTests: XCTestCase {
         XCTAssertThrowsError(try handler.encrypt(toData(["key": "value"]))) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "JWE Encryption failed : Unsupported JWE algorithm: nil",
+                expectedMessage: "JWE Encryption failed : Unsupported JWE algorithm: ECDH-ES+A128KW",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
@@ -297,15 +298,12 @@ final class JWEHandlerTests: XCTestCase {
         }
     }
 
-    // MARK: - Error paths
-
-    func testThrowsWhenPublicKeyIsMissingXCoordinate() throws {
+    func testNoThrowsWhenPublicKeyIsMissingAlg() throws {
         // The handler derives the key-management algorithm from its own configuration,
         // not from the JWK's alg field — so a key without alg must still encrypt.
         let keyWithoutAlg = createInstance([
             "kty": "OKP", "crv": "X25519", "use": "enc",
-            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4", "kid": "ed-key1",
-            "alg": "ECDH-ES"
+            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4", "kid": "ed-key1"
         ], as: JWK.self)
         let handler = JWEHandler(
             contentEncryptionAlgorithm: jweContentEncryptionAlgorithm,

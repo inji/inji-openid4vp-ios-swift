@@ -46,12 +46,12 @@ public struct JWEHandler {
         let supportedAlgorithms: Set<KeyManagementAlgorithm> = [
             .ecdhES
         ]
-        let algorithm = KeyManagementAlgorithm(rawValue: jwk.algorithm ?? "")
+        let algorithm = KeyManagementAlgorithm(rawValue: jwk.algorithm ?? keyEncryptionAlgorithm)
         
         guard let algorithm = algorithm,
               supportedAlgorithms.contains(algorithm) else {
             throw JweEncryptionFailure(
-                message: "Unsupported JWE algorithm: \(String(describing: algorithm))",
+                message: "Unsupported JWE algorithm: \(algorithm?.rawValue ?? "nil")",
                 className: Self.className
             )
         }
