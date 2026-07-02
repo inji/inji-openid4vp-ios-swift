@@ -60,11 +60,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
                                  className: className)
         }
         
-        let encryptionKeys = jwks.keys.filter { $0.publicKeyUse == .encryption }
-        guard !encryptionKeys.isEmpty else {
-            throw InvalidData(message: "No encryption jwk found in client_metadata.jwks", className: className)
-        }
-        let verifierEncrptionAlgorithms = encryptionKeys.compactMap { $0.algorithm }
+        let verifierEncrptionAlgorithms = jwks.keys.compactMap { $0.algorithm }
         try validateEncryption(verifierEncryptionAlg: verifierEncrptionAlgorithms, verifierEnc: enc, jwks: jwks, walletConfig: walletConfig, shouldValidate: shouldValidateWithWalletMetadata)
         _ = try getEncryptionKey(jwks, walletConfig.authorizationEncryptionAlgValuesSupported?.compactMap { $0.rawValue } ?? [EncryptionAlgorithm.ecdhES.rawValue])
     }
@@ -96,7 +92,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         walletNonce: String,
         walletConfig: WalletConfig
     ) throws -> [String: String] {
-        let responseParams = try authorizationResponse.toJsonEncodedMap()
+        let responseParams = try authorizationResponse.payloadData()
         return try encryptResponse(
             authorizationRequest: authorizationRequest,
             responseParams: responseParams,
@@ -134,16 +130,16 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             throw InvalidData(message: "response_uri is required in authorization request for response mode 'direct_post.jwt'", className: className)
         }()
     }
-
+    
     private func encryptResponse(
         authorizationRequest: AuthorizationRequest,
-        responseParams: [String: String],
+        responseParams: Data,
         walletNonce: String,
         walletConfig: WalletConfig
     ) throws -> [String: String] {
         let specVersionHandler = SpecVersionHandler.from(authorizationRequest)
         let jweHandler = try specVersionHandler.getJWEHandler(authorizationRequest: authorizationRequest, walletNonce: walletNonce, walletConfig: walletConfig, className: className)
-        let encryptedBody = try jweHandler.generateEncryptedResponse(payload: responseParams)
+        let encryptedBody = try jweHandler.encrypt(responseParams)
         return ["response": encryptedBody]
     }
 
