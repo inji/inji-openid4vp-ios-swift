@@ -5,22 +5,16 @@ struct ResponseModeBasedHandlerFactory {
     
     static func get(responseMode: String?) throws -> ResponseModeBasedHandler {
         switch responseMode {
-        case ResponseMode.directPost.rawValue,
-             ResponseMode.iarPost.rawValue,
-             ResponseMode.iaePost.rawValue:
+        case ResponseMode.directPost.rawValue, ResponseMode.iarPost.rawValue:
             return DirectPostResponseModeHandler()
-
-        case ResponseMode.directPostJwt.rawValue,
-             ResponseMode.iarPostJwt.rawValue,
-             ResponseMode.iaePostJwt.rawValue:
+        case ResponseMode.directPostJwt.rawValue, ResponseMode.iarPostJwt.rawValue:
             return DirectPostJwtResponseModeHandler()
-
         default:
             throw InvalidData(
-                message: "Given response_mode - \(responseMode ?? "") is not supported",
-                className: className,
-                code: OpenID4VPErrorCodes.invalidRequest
-            )
+                            message: "Given response_mode - \(responseMode ?? "") is not supported",
+                            className: className,
+                            code: OpenID4VPErrorCodes.invalidRequest
+                        )
         }
     }
 }
