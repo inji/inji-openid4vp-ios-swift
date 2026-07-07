@@ -136,8 +136,8 @@ class InvalidLimitDisclosure: OpenID4VPException {
 
 
 class InvalidData: OpenID4VPException {
-    init(message: String, className: String, code: String? = nil) {
-        super.init(errorCode: code ?? OpenID4VPErrorCodes.invalidRequest, message: message, className: className)
+    init(message: String, className: String, code: String? = nil, notifyVerifier: Bool = true) {
+        super.init(errorCode: code ?? OpenID4VPErrorCodes.invalidRequest, message: message, className: className, notifyVerifier: notifyVerifier)
     }
 }
 

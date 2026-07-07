@@ -37,9 +37,8 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
     func getWalletMetadata(walletConfig: WalletConfig) throws -> [String: Any] {
         return try walletConfig.toWalletMetadata(specVersion: specVersion, excludeSignedRequestConfig: true)
     }
-
-    override func validateAndParseRequestFields()async throws {
-        try await super.validateAndParseRequestFields()
+    
+    func validateClientAuthenticity() throws {
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
         switch responseMode {
         case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
@@ -54,11 +53,10 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
            
         default:
             throw InvalidResponseMode(
-                message : "Given response_mode \(String(describing: responseMode)) is not supported",
+                message : "Given response_mode - \(responseMode ?? "nil") is not supported",
                 className: className
             )
         }
-
     }
 
     private func validateResponseUriMatchesClientId(authorizationRequestParameters: [String: Any]) throws {
@@ -70,7 +68,8 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         if responseUriValue as? String != clientIdValue {
             throw InvalidData(
                 message: "\(AuthorizationRequestFieldConstants.responseUri) should be equal to client_id for given client_id_prefix",
-                className: className
+                className: className,
+                notifyVerifier: false
             )
         }
     }

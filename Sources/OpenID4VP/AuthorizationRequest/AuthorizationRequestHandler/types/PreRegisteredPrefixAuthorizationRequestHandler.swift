@@ -71,7 +71,7 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
         }
     }
     
-    override func validateAndParseRequestFields() async throws {
+    func validateClientAuthenticity() throws {
         if walletConfig.validateTrustedVerifier {
             let clientId = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientId] as! String
             let preRegisteredClient = try verifier(clientId: clientId)
@@ -85,7 +85,6 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
             }
             
         }
-        try await super.validateAndParseRequestFields()
     }
     
     private func filterAndExtractKey(jwks publicKeys: JWKSet, keyId: String?, algorithm: String) throws -> JWK {
