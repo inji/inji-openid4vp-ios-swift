@@ -72,13 +72,13 @@ Build OpenID4VP capabilities faster with a library designed to remove protocol c
 | **VP Response Modes**                         |           |             |                                                                                                                                                              |
 | — direct_post                                 |     ✅     |      ✅      |                                                                                                                                                              |
 | — direct_post.jwt                             |     ✅     |      ✅      | Unsigned and Encrypted response                                                                                                                              |
-| — iar-post / iae_post                         |     ✅     |      ✅      |                                                                                                                                                              |
-| — iar-post.jwt / iae_post.jwt                 |     ✅     |      ✅      | Unsigned and Encrypted response                                                                                                                              |
+| — iar-post                                    |     ✅     |      ✅      |                                                                                                                                                              |
+| — iar-post.jwt                                |     ✅     |      ✅      | Unsigned and Encrypted response                                                                                                                              |
 | **VP Response Type**                          |           |             |                                                                                                                                                              |
 | — vp_token                                    |     ✅     |      ✅      |                                                                                                                                                              |
 | — vp_token id_token                           |     ❌     |      ❌      | Not implemented                                                                                                                                              |
 | — code                                        |     ❌     |      ❌      | Not implemented                                                                                                                                              |
-| **Authorization Response Encryption**         |           |             | For `direct_post.jwt` and `iar-post.jwt` / `iae_post.jwt` modes                                                                                              |
+| **Authorization Response Encryption**         |           |             | For `direct_post.jwt` and `iar-post.jwt` modes                                                                                                               |
 | — Encryption algorithm (content)              |     ✅     |      ✅      | A256GCM                                                                                                                                                      |
 | — Key agreement algorithm                     |     ✅     |      ✅      | ECDH-ES                                                                                                                                                      |
 | **VP Token Generation**                       |           |             |                                                                                                                                                              |
@@ -113,7 +113,7 @@ Build OpenID4VP capabilities faster with a library designed to remove protocol c
     - The response is encrypted using the public key provided in the client_metadata of the authorization request.
     - The created JWE's header contains the `apu` (producer info) as wallet generated nonce (with entropy 16 bytes) and `apv` (recipient info) as the verifier nonce i.e., the nonce received in the authorization request.
    > Note: If the Authorization request includes an `mso_mdoc` format VP, it can only use the `direct_post.jwt` response mode, as required by the ISO-18013-7 specification. Other supported response mode (`direct_post`) is not applicable.
-3. `iar-post` / `iae_post` :
+3. `iar-post` :
     - Authorization Response is constructed in unencrypted format.
     - Sample Authorization response structure of DIF Presentation Submission format:
    ```shell
@@ -122,7 +122,7 @@ Build OpenID4VP capabilities faster with a library designed to remove protocol c
       "presentation_submission": { ... } // presentation_submission if VP request contains Presentation Defintion
     }
     ```
-4. `iar-post.jwt` / `iae_post.jwt` :
+4. `iar-post.jwt` :
     - Authorization Response is constructed in encrypted format (and unsigned) using the public key provided in the client_metadata of the authorization request.
     - The created JWE's header contains the apu (producer info) as wallet generated nonce (with entropy 16 bytes) and apv (recipient info) as the verifier nonce i.e., the nonce received in the authorization request.
     - Sample Authorization response structure:

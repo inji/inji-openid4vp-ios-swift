@@ -533,7 +533,7 @@ func handleOVPFlow(
                 keyReference: unsignedVPToken.holderKeyReference,
                 algorithm: unsignedVPToken.signatureAlgorithm
             )
-            return VPTokenSigningResult(id: unsignedVPToken, signedData: signature)
+            return VPTokenSigningResult(id: unsignedVPToken.id, signedData: signature)
         }
 
         let vpSubmissionVerifierResponse = try await openID4VP.sendVPResponseToVerifier(
