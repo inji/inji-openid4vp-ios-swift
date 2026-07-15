@@ -487,15 +487,38 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
         }
     }
 
-    func testValidateClientAuthenticity_responseUriMissingInRequest_throwsInvalidVerifier() {
+    func testValidateClientAuthenticity_responseUriMissingInRequest_throwsMissingInput() {
         let authorizationRequestParameters: [String: Any] = [
-            AuthorizationRequestFieldConstants.clientId: "mock-client"
+            AuthorizationRequestFieldConstants.clientId: clientId
         ]
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
             clientId: clientId,
             specVersion: .v1,
             authorizationRequestParameters: authorizationRequestParameters,
             walletConfig: walletConfig,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        XCTAssertThrowsError(try preRegistered.validateClientAuthenticity()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: response_uri param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testValidateClientAuthenticity_responseUriNotAvailableInTrsutedList_throwsInvalidVerifier() {
+        let authorizationRequestParameters: [String: Any] = [
+            AuthorizationRequestFieldConstants.clientId: clientId,
+            AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com"
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            clientId: clientId,
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: createWalletConfig(trustedVerifiers: [Verifier(clientId: clientId, responseUris: ["https://some-other-verifier.com"])]),
             setResponseUri: mockSetResponseUri,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager

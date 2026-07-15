@@ -72,7 +72,9 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
         if walletConfig.validateTrustedVerifier {
             let preRegisteredClient = try verifier(clientId: super.clientId)
             
-            let responseUri = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri]) ?? "null"
+            guard let responseUri = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri]) else {
+                throw MissingInput(fieldPath: "response_uri", className: className, notifyVerifier: false)
+            }
             guard preRegisteredClient.responseUris.contains(responseUri) else {
                 throw InvalidVerifier(
                     message: "response_uri trust cannot be established",
