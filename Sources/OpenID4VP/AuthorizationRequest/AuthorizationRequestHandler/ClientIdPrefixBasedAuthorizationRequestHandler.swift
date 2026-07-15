@@ -8,7 +8,8 @@ protocol AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
     func clientIdPrefix() -> String
     func confirmSpecVersionIdentifiedFromRequest() -> Bool
-    // Validate if the Client is Valid or Some issues occur. This focuses on checking if a Client Posing as Say Pre-registered is actually pre-registered
+    /// Validates the authenticity of the client identifier.
+    /// For example, ensures that a client claiming to use a specific prefix is actually authorized or trusted.
     func validateClientAuthenticity() throws
 }
 

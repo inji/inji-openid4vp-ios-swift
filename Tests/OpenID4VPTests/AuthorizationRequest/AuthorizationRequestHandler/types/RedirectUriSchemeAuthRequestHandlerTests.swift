@@ -343,7 +343,13 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
                 walletNonce: "mock-nonce",
                 networkManager: mockNetworkManager
             )
-            XCTAssertThrowsError(try handler.validateClientAuthenticity(), "responseMode: \(responseMode)")
+            XCTAssertThrowsError(try handler.validateClientAuthenticity(), "responseMode: \(responseMode)") { error in
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: "Missing Input: response_uri param is required",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
+            }
         }
     }
 
