@@ -1094,7 +1094,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: nil], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: nil], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {

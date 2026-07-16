@@ -8,12 +8,17 @@ protocol AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
     func extractPublicKey(keyId: String?, algorithm: String) async throws -> PublicKeyType
     func clientIdPrefix() -> String
     func confirmSpecVersionIdentifiedFromRequest() -> Bool
+    /// Validates the authenticity of the client identifier.
+    /// For example, ensures that a client claiming to use a specific prefix is actually authorized or trusted.
+    func validateClientAuthenticity() throws
 }
 
 extension AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
     func confirmSpecVersionIdentifiedFromRequest() -> Bool {
         return true
     }
+    
+    func validateClientAuthenticity() throws {}
 }
 
 class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
@@ -54,6 +59,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     func handle() async throws -> AuthorizationRequest {
         try self.validateClientId()
         try await self.fetchAuthorizationRequest()
+        try delegate.validateClientAuthenticity()
         try self.setResponseUrl()
         try await self.validateAndParseRequestFields()
         return self.createAuthorizationRequest()

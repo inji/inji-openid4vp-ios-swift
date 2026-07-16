@@ -27,7 +27,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
             AuthorizationRequestFieldConstants.clientId: "untrusted-mock-client",
         ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: "untrusted-mock-client", specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.validateClientId()) { error in
             assertOpenID4VPException(
@@ -41,7 +41,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     func testThrowExceptionWhenTrustedVerifiersListIsEmpty(){
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId: "other-mock-client","response_uri": "https://mock-verifier.com"]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: "other-mock-client", specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.validateClientId()) { error in
             assertOpenID4VPException(
@@ -84,7 +84,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     func testisUnsignedRequestSupported_validatePreregisteredVerifierTrue_clientIdNotAvailable_throwsError() {
         let authorizationRequestParameters: [String : Any] = [AuthorizationRequestFieldConstants.clientId: "untrusted-client"]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: "untrusted-client", specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri, walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         XCTAssertThrowsError(try preRegistered.isUnsignedRequestSupported()) { error in
             assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
@@ -117,21 +117,6 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
         let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: createWalletConfig(trustedVerifiers: trustedVerifiersWithoutClientMetadata),setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
         
         await XCTAssertAsyncNoThrowsError(try await preRegistered.validateAndParseRequestFields(), "Error should not happen when client_metadata is not known to wallet but provided in authorization request")
-    }
-    
-    func testThrowExceptionWhenClientIdIsAvailableInTrustedVerifiersButResponseUriIsNotMatching() async{
-        let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, [
-            "client_id": "mock-client",
-            "response_uri": "https://some-other-url.com"
-        ])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager)
-        
-        await XCTAssertAsyncThrowsError(try await preRegistered.validateAndParseRequestFields()){ error in
-            assertOpenID4VPException(error,
-                                     expectedMessage: "response_uri trust cannot be established",
-                                     expectedCode: OpenID4VPErrorCodes.invalidClient
-            )
-        }
     }
     
     /// Fetch authorization request by value - validate authorization request object and authorization request query paramaters - spec version draft 23
@@ -222,7 +207,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
     
     func testExtractPublicKeyThrowErrorWhenPreRegisteredClientNotAvailable() async throws {
         let authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithPreRegisteredByValue, requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted-client"])) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: "untrusted-client", specVersion: .v1, authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig,setResponseUri: mockSetResponseUri,walletNonce: "mock-nonce", networkManager: mockNetworkManager!)
         
         await XCTAssertAsyncThrowsError(try await preRegistered.extractPublicKey(keyId: "ed-key2", algorithm: "ECDSA")){ error in
             assertOpenID4VPException(error, expectedMessage: "Verifier is not trusted by the wallet", expectedCode: OpenID4VPErrorCodes.invalidClient)
@@ -370,7 +355,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
             paramList: authRequestWithPreRegisteredByValue,
             requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted-client"])
         ) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1,
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: "untrusted-client", specVersion: .v1,
                                                                            
                                                                            authorizationRequestParameters: authorizationRequestParameters,
                                                                            walletConfig: walletConfig,
@@ -388,7 +373,7 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
             paramList: authRequestWithPreRegisteredByValue,
             requestParams: mergeMaps(authorizationRequestParamsWithValue, ["client_id": "untrusted-client"])
         ) as [String : Any]
-        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: clientId, specVersion: .v1,
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(clientId: "untrusted-client", specVersion: .v1,
                                                                            
                                                                            authorizationRequestParameters: authorizationRequestParameters,
                                                                            walletConfig: walletConfig,
@@ -422,6 +407,131 @@ class PreRegisteredClientIdPrefixTests : XCTestCase {
         }
     }
     
+    func testValidateClientAuthenticity_validateTrustedVerifierFalse_doesNotThrow() {
+        let authorizationRequestParameters: [String: Any] = [
+            AuthorizationRequestFieldConstants.clientId: "mock-client",
+            AuthorizationRequestFieldConstants.responseUri: "https://some-unregistered-uri.com"
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            clientId: clientId,
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: createWalletConfig(validatePreregisteredVerifier: false),
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        XCTAssertNoThrow(try preRegistered.validateClientAuthenticity())
+    }
+
+    func testValidateClientAuthenticity_responseUriMatchesTrustedVerifier_doesNotThrow() {
+        let authorizationRequestParameters: [String: Any] = [
+            AuthorizationRequestFieldConstants.clientId: "mock-client",
+            AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com"
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            clientId: clientId,
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        XCTAssertNoThrow(try preRegistered.validateClientAuthenticity())
+    }
+
+    func testValidateClientAuthenticity_responseUriNotInTrustedVerifier_throwsInvalidVerifier() {
+        let authorizationRequestParameters: [String: Any] = [
+            AuthorizationRequestFieldConstants.clientId: "mock-client",
+            AuthorizationRequestFieldConstants.responseUri: "https://untrusted-uri.com"
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            clientId: clientId,
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        XCTAssertThrowsError(try preRegistered.validateClientAuthenticity()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "response_uri trust cannot be established",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
+        }
+    }
+
+    func testValidateClientAuthenticity_clientIdNotInTrustedVerifiers_throwsInvalidVerifier() {
+        let authorizationRequestParameters: [String: Any] = [
+            AuthorizationRequestFieldConstants.clientId: "untrusted-client",
+            AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com"
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            clientId: "untrusted-client",
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        XCTAssertThrowsError(try preRegistered.validateClientAuthenticity()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Verifier is not trusted by the wallet",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
+        }
+    }
+
+    func testValidateClientAuthenticity_responseUriMissingInRequest_throwsMissingInput() {
+        let authorizationRequestParameters: [String: Any] = [
+            AuthorizationRequestFieldConstants.clientId: clientId
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            clientId: clientId,
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        XCTAssertThrowsError(try preRegistered.validateClientAuthenticity()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: response_uri param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+    
+    func testValidateClientAuthenticity_responseUriNotAvailableInTrsutedList_throwsInvalidVerifier() {
+        let authorizationRequestParameters: [String: Any] = [
+            AuthorizationRequestFieldConstants.clientId: clientId,
+            AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com"
+        ]
+        let preRegistered = PreRegisteredSchemeAuthorizationRequestHandler(
+            clientId: clientId,
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: createWalletConfig(trustedVerifiers: [Verifier(clientId: clientId, responseUris: ["https://some-other-verifier.com"])]),
+            setResponseUri: mockSetResponseUri,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        XCTAssertThrowsError(try preRegistered.validateClientAuthenticity()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "response_uri trust cannot be established",
+                expectedCode: OpenID4VPErrorCodes.invalidClient
+            )
+        }
+    }
+
     private func convertToJSONWebKey(_ jsonString: String) throws -> JWK {
         let data = jsonString.data(using: .utf8)!
         let decoded = try JSONDecoder().decode(JWK.self, from: data)
