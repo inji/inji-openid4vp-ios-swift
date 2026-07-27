@@ -116,8 +116,8 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         let deviceAuth = CBOR.map([.utf8String("deviceSignature"): deviceSignature])
         let deviceNamespacesBytes = wrapCBORInputWithTag24(input: CBOR.map([:]))!
         let deviceSigned = CBOR.map([
-            .utf8String("deviceAuthentication"): deviceAuth,
-            .utf8String("namespaces"): deviceNamespacesBytes,
+            .utf8String("deviceAuth"): deviceAuth,
+            .utf8String("nameSpaces"): deviceNamespacesBytes,
         ])
         
         // attach deviceSigned to cborCredential
