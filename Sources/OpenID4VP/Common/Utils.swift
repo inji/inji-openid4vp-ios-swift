@@ -171,21 +171,27 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
     }
     
     var decoded = try CBORDecoder(input: [UInt8](data)).decodeItem()
+    var issuerSignedMap : [CBOR: CBOR] = [:]
     
-    
-    guard case let CBOR.map(rootMap)? = decoded,
-          let issuerSigned = rootMap[CBOR.utf8String("issuerSigned")],
-          case let CBOR.map(issuerSignedMap) = issuerSigned else {
+    if case let CBOR.map(rootMap)? = decoded,
+       let issuerSigned = rootMap[CBOR.utf8String("issuerSigned")],
+       case let CBOR.map(issuerSignedMapValue) = issuerSigned  {
+        issuerSignedMap = issuerSignedMapValue
+    } else if case let CBOR.map(rootMap)? = decoded,
+              let issuerAuth = rootMap[CBOR.utf8String("issuerAuth")]
+    {
+        issuerSignedMap = rootMap
+    } else {
         throw InvalidData(message: "issuerSigned missing", className: "OpenID4VPUtils")
     }
-    
+
     
     guard let issuerAuth = issuerSignedMap[CBOR.utf8String("issuerAuth")],
-          case let CBOR.array(issuerAuthArray) = issuerAuth,
-          issuerAuthArray.count > 2,
-          case let CBOR.byteString(payloadBytes) = issuerAuthArray[2] else {
-        throw InvalidData(message: "issuerAuth payload missing", className: "OpenID4VPUtils")
-    }
+              case let CBOR.array(issuerAuthArray) = issuerAuth,
+              issuerAuthArray.count > 2,
+              case let CBOR.byteString(payloadBytes) = issuerAuthArray[2] else {
+            throw InvalidData(message: "issuerAuth payload missing", className: "OpenID4VPUtils")
+        }
     
     
     decoded = try CBORDecoder(input: payloadBytes).decodeItem()
