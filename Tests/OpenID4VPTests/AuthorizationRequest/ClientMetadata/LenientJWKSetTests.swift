@@ -83,4 +83,33 @@ final class LenientJWKSetTests: XCTestCase {
 
         XCTAssertThrowsError(try ClientMetadataDraft23.deserializeAndValidate(clientMetadata: input))
     }
+
+    func testV1RejectsExplicitNullJwks() {
+        let input = """
+        {
+            "client_name": "Test Client",
+            "logo_uri": "https://example.com/logo.png",
+            "encrypted_response_enc_values_supported": ["A256GCM"],
+            "vp_formats_supported": { "ldp_vc": { "proof_type_values": ["Ed25519Signature2020"] } },
+            "jwks": null
+        }
+        """.data(using: .utf8)!
+
+        XCTAssertThrowsError(try JSONDecoder().decode(ClientMetadata.self, from: input))
+    }
+
+    func testV1AcceptsOmittedJwks() throws {
+        let input = """
+        {
+            "client_name": "Test Client",
+            "logo_uri": "https://example.com/logo.png",
+            "encrypted_response_enc_values_supported": ["A256GCM"],
+            "vp_formats_supported": { "ldp_vc": { "proof_type_values": ["Ed25519Signature2020"] } }
+        }
+        """.data(using: .utf8)!
+
+        let metadata = try JSONDecoder().decode(ClientMetadata.self, from: input)
+
+        XCTAssertNil(metadata.jwks)
+    }
 }
