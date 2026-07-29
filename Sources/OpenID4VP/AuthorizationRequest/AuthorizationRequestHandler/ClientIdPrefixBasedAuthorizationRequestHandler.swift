@@ -274,7 +274,10 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
 
-        try ResponseModeBasedHandlerFactory.get(responseMode: responseMode).setResponseUrl(authorizationRequestParameters: authorizationRequestParameters,setResponseUri: setResponseUri)
+        let responseUri = try ResponseModeBasedHandlerFactory
+            .get(responseMode: responseMode)
+            .setResponseUrl(authorizationRequestParameters: authorizationRequestParameters)
+        setResponseUri(responseUri)
     }
     
     private func isClientIdPrefixSupported(walletConfig: WalletConfig) throws {

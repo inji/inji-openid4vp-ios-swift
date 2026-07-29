@@ -1,4 +1,5 @@
 import XCTest
+import JSONWebKey
 @testable import OpenID4VP
 
 final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
@@ -718,23 +719,183 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     // MARK: - getResponseEndpoint
 
     func testGetResponseEndpointThrowsWhenResponseUriIsNil() throws {
-        let requestWithNoResponseUri = AuthorizationPresentationExchangeRequest(
-            clientId: "client_id",
-            responseType: "vp_token",
-            responseMode: ResponseMode.directPostJwt.rawValue,
-            responseUri: nil,
-            redirectUri: nil,
-            nonce: "nonce",
-            walletNonce: nil,
-            state: "state",
-            presentationDefinition: mockPresentationDefinitionObject,
-            clientMetadata: mockClientMetadataSpecVersionDraft23[.directPostJwt]
-        )
-
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getResponseEndpoint(authorizationRequest: requestWithNoResponseUri)) { error in
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getResponseEndpoint(authorizationRequestParameters: [:])) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "response_uri is required in authorization request for response mode 'direct_post.jwt'",
+                expectedMessage: "Missing Input: response_uri param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    // MARK: - dispatchInfo-based method tests
+
+    private let encKeyJson: [String: Any] = [
+        "kty": "OKP",
+        "crv": "X25519",
+        "use": "enc",
+        "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+        "alg": "ECDH-ES",
+        "kid": "ed-key1"
+    ]
+
+    private func makeEncryptionSpec() throws -> ResponseEncryptionSpecification {
+        let jwk = try JSONDecoder().decode(JWK.self, from: JSONSerialization.data(withJSONObject: encKeyJson))
+        return ResponseEncryptionSpecification(
+            keyEncryptionAlg: "ECDH-ES",
+            contentEncryptionAlg: "A256GCM",
+            verifierPublicKey: jwk
+        )
+    }
+
+    private func makeJwtDispatchInfo(includeEncryption: Bool = true, state: String? = "state") throws -> ResponseDispatchInfo {
+        ResponseDispatchInfo(
+            responseMode: ResponseMode.directPostJwt.rawValue,
+            nonce: "auth-nonce",
+            walletNonce: "wallet-nonce",
+            state: state,
+            clientId: "client_id",
+            responseUrl: responseUri,
+            responseEncryptionSpecification: includeEncryption ? try makeEncryptionSpec() : nil
+        )
+    }
+
+    func testGetAuthorizationErrorResponseWithDispatchInfoReturnsEncryptedResponse() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let errorResponse = AuthorizationErrorResponse(error: "invalid_request", errorDescription: "Bad request", state: "err-state")
+
+        let result = try handler.getAuthorizationErrorResponse(
+            dispatchInfo: try makeJwtDispatchInfo(),
+            authorizationResponse: errorResponse
+        )
+
+        XCTAssertEqual(result.keys.count, 1)
+        XCTAssertNotNil(result["response"], "Error response should be encrypted for direct_post.jwt")
+        XCTAssertFalse(result["response"]!.isEmpty)
+        XCTAssertTrue(result["response"]!.contains("."), "Expected a JWE compact serialization (dots)")
+        XCTAssertNil(result["error"])
+        XCTAssertNil(result["error_description"])
+    }
+
+    func testGetAuthorizationErrorResponseWithDispatchInfoReturnsPlainMapWhenEncryptionSpecIsMissing() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let errorResponse = AuthorizationErrorResponse(error: "access_denied", errorDescription: "User denied", state: nil)
+
+        let result = try handler.getAuthorizationErrorResponse(
+            dispatchInfo: try makeJwtDispatchInfo(includeEncryption: false),
+            authorizationResponse: errorResponse
+        )
+
+        XCTAssertEqual(result["error"], "access_denied")
+        XCTAssertEqual(result["error_description"], "User denied")
+        XCTAssertNil(result["state"])
+        XCTAssertNil(result["response"], "Should not be encrypted when encryption spec is absent")
+    }
+
+    func testGetAuthorizationResponseWithDispatchInfoReturnsEncryptedResponse() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
+            vpToken: mockVPTokens,
+            presentationSubmission: mockPresentationSubmission,
+            state: "state"
+        )
+
+        let result = try handler.getAuthorizationResponse(
+            dispatchInfo: try makeJwtDispatchInfo(),
+            authorizationResponse: authorizationResponse
+        )
+
+        XCTAssertEqual(result.keys.count, 1)
+        XCTAssertNotNil(result["response"])
+        XCTAssertFalse(result["response"]!.isEmpty)
+        XCTAssertTrue(result["response"]!.contains("."), "Expected a JWE compact serialization (dots)")
+    }
+
+    func testGetAuthorizationResponseWithDispatchInfoThrowsWhenEncryptionSpecIsMissing() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
+            vpToken: mockVPTokens,
+            presentationSubmission: mockPresentationSubmission,
+            state: "state"
+        )
+
+        XCTAssertThrowsError(try handler.getAuthorizationResponse(
+            dispatchInfo: try makeJwtDispatchInfo(includeEncryption: false),
+            authorizationResponse: authorizationResponse
+        )) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "responseEncryptionSpecification is required for response mode 'direct_post.jwt'",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testSendAuthorizationErrorWithDispatchInfoPostsEncryptedResponseToUrl() async throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "error acknowledged")
+
+        let errorResponse = AuthorizationErrorResponse(error: "invalid_scope", errorDescription: "Bad scope", state: "s1")
+
+        let result = try await handler.sendAuthorizationError(
+            dispatchInfo: try makeJwtDispatchInfo(),
+            authorizationResponse: errorResponse,
+            networkManager: mockNetworkManager
+        )
+
+        let recorded = mockNetworkManager.recordedRequests[responseUri]
+        XCTAssertEqual(recorded?.requestMethod, .post)
+        XCTAssertEqual(recorded?.requestBody?.keys.count, 1)
+        XCTAssertNotNil(recorded?.requestBody?["response"], "Error response should be encrypted for direct_post.jwt")
+        XCTAssertNil(recorded?.requestBody?["error"])
+        assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: recorded?.requestHeaders)
+        XCTAssertEqual(result.body, "error acknowledged")
+    }
+
+    func testSendAuthorizationResponseWithDispatchInfoPostsEncryptedResponseToUrl() async throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "response received")
+
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
+            vpToken: mockVPTokens,
+            presentationSubmission: mockPresentationSubmission,
+            state: "state"
+        )
+
+        let result = try await handler.sendAuthorizationResponse(
+            dispatchInfo: try makeJwtDispatchInfo(),
+            authorizationResponse: authorizationResponse,
+            networkManager: mockNetworkManager
+        )
+
+        let recorded = mockNetworkManager.recordedRequests[responseUri]
+        XCTAssertEqual(recorded?.requestMethod, .post)
+        XCTAssertEqual(recorded?.requestBody?.keys.count, 1)
+        XCTAssertNotNil(recorded?.requestBody?["response"])
+        assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: recorded?.requestHeaders)
+        XCTAssertEqual(result.body, "response received")
+    }
+
+    func testSetResponseUrlReturnsResponseUriForDirectPostJwt() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+        let responseUrl = try handler.setResponseUrl(authorizationRequestParameters: [
+            AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com/callback"
+        ])
+
+        XCTAssertEqual(responseUrl, "https://mock-verifier.com/callback")
+    }
+
+    func testSetResponseUrlThrowsForInvalidUriForDirectPostJwt() throws {
+        let handler = DirectPostJwtResponseModeHandler()
+
+        XCTAssertThrowsError(try handler.setResponseUrl(authorizationRequestParameters: [
+            AuthorizationRequestFieldConstants.responseUri: "invalid-uri"
+        ])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "response_uri data is not valid",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

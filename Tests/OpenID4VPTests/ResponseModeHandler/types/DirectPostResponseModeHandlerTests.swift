@@ -145,4 +145,143 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         )
         XCTAssertNil(result)
     }
+
+    // MARK: - dispatchInfo-based method tests
+
+    private func makeDirectPostDispatchInfo(state: String? = "test-state") -> ResponseDispatchInfo {
+        ResponseDispatchInfo(
+            responseMode: ResponseMode.directPost.rawValue,
+            nonce: "auth-nonce",
+            walletNonce: "wallet-nonce",
+            state: state,
+            clientId: "client_id",
+            responseUrl: responseUri,
+            responseEncryptionSpecification: nil
+        )
+    }
+
+    func testGetAuthorizationErrorResponseWithDispatchInfoReturnsPlainMap() throws {
+        let handler = DirectPostResponseModeHandler()
+        let errorResponse = AuthorizationErrorResponse(
+            error: "invalid_request",
+            errorDescription: "Something went wrong",
+            state: "err-state"
+        )
+
+        let result = try handler.getAuthorizationErrorResponse(
+            dispatchInfo: makeDirectPostDispatchInfo(),
+            authorizationResponse: errorResponse
+        )
+
+        XCTAssertEqual(result["error"], "invalid_request")
+        XCTAssertEqual(result["error_description"], "Something went wrong")
+        XCTAssertEqual(result["state"], "err-state")
+        XCTAssertEqual(result.keys.count, 3)
+    }
+
+    func testGetAuthorizationErrorResponseWithDispatchInfoOmitsStateWhenNil() throws {
+        let handler = DirectPostResponseModeHandler()
+        let errorResponse = AuthorizationErrorResponse(error: "access_denied", errorDescription: "User denied", state: nil)
+
+        let result = try handler.getAuthorizationErrorResponse(
+            dispatchInfo: makeDirectPostDispatchInfo(),
+            authorizationResponse: errorResponse
+        )
+
+        XCTAssertEqual(result["error"], "access_denied")
+        XCTAssertEqual(result["error_description"], "User denied")
+        XCTAssertNil(result["state"])
+    }
+
+    func testGetAuthorizationResponseWithDispatchInfoReturnsPlainMap() throws {
+        let handler = DirectPostResponseModeHandler()
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
+            vpToken: mockVPTokens,
+            presentationSubmission: mockPresentationSubmission,
+            state: "sample-state"
+        )
+
+        let result = try handler.getAuthorizationResponse(
+            dispatchInfo: makeDirectPostDispatchInfo(),
+            authorizationResponse: authorizationResponse
+        )
+
+        XCTAssertNotNil(result["vp_token"])
+        XCTAssertNotNil(result["presentation_submission"])
+        XCTAssertEqual(result["state"], "sample-state")
+        XCTAssertEqual(result.keys.count, 3)
+    }
+
+    func testSendAuthorizationErrorWithDispatchInfoPostsToResponseUrl() async throws {
+        let handler = DirectPostResponseModeHandler()
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "error acknowledged")
+
+        let errorResponse = AuthorizationErrorResponse(error: "invalid_scope", errorDescription: "Bad scope", state: "s1")
+        let dispatchInfo = makeDirectPostDispatchInfo()
+
+        let result = try await handler.sendAuthorizationError(
+            dispatchInfo: dispatchInfo,
+            authorizationResponse: errorResponse,
+            networkManager: mockNetworkManager
+        )
+
+        let recorded = mockNetworkManager.recordedRequests[responseUri]
+        XCTAssertEqual(recorded?.requestMethod, .post)
+        XCTAssertEqual(recorded?.requestBody?["error"], "invalid_scope")
+        XCTAssertEqual(recorded?.requestBody?["error_description"], "Bad scope")
+        XCTAssertEqual(recorded?.requestBody?["state"], "s1")
+        assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: recorded?.requestHeaders)
+        XCTAssertEqual(result.body, "error acknowledged")
+    }
+
+    func testSendAuthorizationResponseWithDispatchInfoPostsToResponseUrl() async throws {
+        let handler = DirectPostResponseModeHandler()
+        mockNetworkManager.clearResponses()
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "response received")
+
+        let authorizationResponse = AuthorizationResponse.presentationExchange(
+            vpToken: mockVPTokens,
+            presentationSubmission: mockPresentationSubmission,
+            state: "my-state"
+        )
+        let dispatchInfo = makeDirectPostDispatchInfo()
+
+        let result = try await handler.sendAuthorizationResponse(
+            dispatchInfo: dispatchInfo,
+            authorizationResponse: authorizationResponse,
+            networkManager: mockNetworkManager
+        )
+
+        let recorded = mockNetworkManager.recordedRequests[responseUri]
+        XCTAssertEqual(recorded?.requestMethod, .post)
+        XCTAssertNotNil(recorded?.requestBody?["vp_token"])
+        XCTAssertNotNil(recorded?.requestBody?["presentation_submission"])
+        XCTAssertEqual(recorded?.requestBody?["state"], "my-state")
+        assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: recorded?.requestHeaders)
+        XCTAssertEqual(result.body, "response received")
+    }
+
+    func testSetResponseUrlReturnsResponseUriForDirectPost() throws {
+        let handler = DirectPostResponseModeHandler()
+        let responseUrl = try handler.setResponseUrl(authorizationRequestParameters: [
+            AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com/callback"
+        ])
+
+        XCTAssertEqual(responseUrl, "https://mock-verifier.com/callback")
+    }
+
+    func testSetResponseUrlThrowsForInvalidUriForDirectPost() throws {
+        let handler = DirectPostResponseModeHandler()
+
+        XCTAssertThrowsError(try handler.setResponseUrl(authorizationRequestParameters: [
+            AuthorizationRequestFieldConstants.responseUri: "invalid-uri"
+        ])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "response_uri data is not valid",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
 }

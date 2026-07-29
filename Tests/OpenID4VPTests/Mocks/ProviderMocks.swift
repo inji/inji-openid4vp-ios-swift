@@ -94,4 +94,34 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     ) throws -> [String: String] {
         return expectedErrorResponse
     }
+
+    func getAuthorizationErrorResponse(
+        dispatchInfo: ResponseDispatchInfo,
+        authorizationResponse: AuthorizationErrorResponse
+    ) throws -> [String: String] {
+        return expectedErrorResponse
+    }
+
+    func sendAuthorizationError(
+        dispatchInfo: ResponseDispatchInfo,
+        authorizationResponse: AuthorizationErrorResponse,
+        networkManager: NetworkManaging
+    ) async throws -> NetworkResponse {
+        fatalError("Not needed for unit testing")
+    }
+
+    func getAuthorizationResponse(
+        dispatchInfo: ResponseDispatchInfo,
+        authorizationResponse: AuthorizationResponse
+    ) throws -> [String: String] {
+        return expectedSuccessResponse
+    }
+
+    func sendAuthorizationResponse(
+        dispatchInfo: ResponseDispatchInfo,
+        authorizationResponse: AuthorizationResponse,
+        networkManager: NetworkManaging
+    ) async throws -> NetworkResponse {
+        fatalError("Not needed for unit testing")
+    }
 }
