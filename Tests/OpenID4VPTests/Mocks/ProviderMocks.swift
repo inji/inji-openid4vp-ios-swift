@@ -32,7 +32,8 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     
     override func constructVPResponse(
         signingResults: [VPTokenSigningResult],
-        authorizationRequest: AuthorizationRequest
+        authorizationRequest: AuthorizationRequest,
+        dispatchInfo: ResponseDispatchInfo?
     ) throws -> [String: String] {
         if(!expectedErrorResponse.isEmpty) {
             return expectedErrorResponse

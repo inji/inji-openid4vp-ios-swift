@@ -24,42 +24,42 @@ protocol ResponseModeBasedHandler {
     func getResponseEndpoint(authorizationRequestParameters: [String : Any]) throws -> String
     
     func getAuthorizationResponse(
-            authorizationRequest: AuthorizationRequest,
-            authorizationResponse: AuthorizationResponse,
-            walletNonce: String,
-            walletConfig: WalletConfig
-        ) throws -> [String: String]
-
-        func getAuthorizationErrorResponse(
-            authorizationRequest: AuthorizationRequest?,
-            authorizationResponse: AuthorizationErrorResponse,
-            walletNonce: String
-        ) throws -> [String: String]
-
+        authorizationRequest: AuthorizationRequest,
+        authorizationResponse: AuthorizationResponse,
+        walletNonce: String,
+        walletConfig: WalletConfig
+    ) throws -> [String: String]
+    
+    func getAuthorizationErrorResponse(
+        authorizationRequest: AuthorizationRequest?,
+        authorizationResponse: AuthorizationErrorResponse,
+        walletNonce: String
+    ) throws -> [String: String]
+    
     func getVerifierPublicKeyForEncryption(
         authorizationRequest: AuthorizationRequest,
         walletConfig: WalletConfig
     ) throws -> JWK?
-
+    
     /// Constructs an authorization error response body as per response mode.
     func getAuthorizationErrorResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationErrorResponse
     ) throws -> [String: String]
-
+    
     /// Sends an authorization error response to the verifier.
     func sendAuthorizationError(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationErrorResponse,
         networkManager: NetworkManaging
     ) async throws -> NetworkResponse
-
+    
     /// Constructs an authorization response body as per response mode.
     func getAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationResponse
     ) throws -> [String: String]
-
+    
     /// Sends an authorization response to the verifier.
     func sendAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
@@ -87,7 +87,7 @@ extension ResponseModeBasedHandler {
         
         return responseUriValue
     }
-
+    
     func getResponseEndpoint(authorizationRequestParameters: [String : Any]) throws -> String {
         try validateAttribute(AuthorizationRequestFieldConstants.responseUri, values: authorizationRequestParameters)
         

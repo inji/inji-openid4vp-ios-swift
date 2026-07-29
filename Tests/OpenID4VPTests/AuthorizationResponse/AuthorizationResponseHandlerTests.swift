@@ -1,4 +1,5 @@
 @testable import OpenID4VP
+import JSONWebKey
 import XCTest
 
 final class AuthorizationResponseHandlerTests: XCTestCase {
@@ -8,6 +9,44 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     let walletNonce = "_G6UkKgcsUPFlHAbzUMerA"
     let signatureSuite = SignatureSuite.ed25519Signature2020.rawValue
     let walletConfig = WalletConfig()
+
+    private func makeDispatchInfo(
+        responseMode: ResponseMode = .directPost,
+        responseUrl: String? = nil
+    ) -> ResponseDispatchInfo {
+        ResponseDispatchInfo(
+            responseMode: responseMode.rawValue,
+            nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
+            walletNonce: walletNonce,
+            state: "state",
+            clientId: "client_id",
+            responseUrl: responseUrl ?? responseUri,
+            responseEncryptionSpecification: nil
+        )
+    }
+
+    private func makeJwtDispatchInfo(responseUrl: String? = nil) throws -> ResponseDispatchInfo {
+        let encKeyJson: [String: Any] = [
+            "kty": "OKP", "crv": "X25519", "use": "enc",
+            "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+            "alg": "ECDH-ES", "kid": "ed-key1"
+        ]
+        let jwk = try JSONDecoder().decode(JWK.self, from: JSONSerialization.data(withJSONObject: encKeyJson))
+        let encSpec = ResponseEncryptionSpecification(
+            keyEncryptionAlg: EncryptionAlgorithm(rawValue: "ECDH-ES")!,
+            contentEncryptionAlg: EncryptionMethod(rawValue: "A256GCM")!,
+            verifierPublicKey: jwk
+        )
+        return ResponseDispatchInfo(
+            responseMode: ResponseMode.directPostJwt.rawValue,
+            nonce: "tHwahwI6M5_Cd_Sj5k2_Aw",
+            walletNonce: walletNonce,
+            state: "state",
+            clientId: "client_id",
+            responseUrl: responseUrl ?? responseUri,
+            responseEncryptionSpecification: encSpec
+        )
+    }
     
     // MARK: - OVP Spec Version Draft 23
     // MARK: Credential format = ldp_vc
@@ -48,7 +87,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
-            responseUri: responseUri
+            dispatchInfo: makeDispatchInfo()
         )
         
         XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
@@ -82,7 +121,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: mockAuthorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
-            responseUri: responseUri
+            dispatchInfo: try makeJwtDispatchInfo()
         )
         
         XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
@@ -100,7 +139,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: [],
-                responseUri: "https://client.example.org/cb"
+                dispatchInfo: makeDispatchInfo(responseUrl: "https://client.example.org/cb")
             )
             XCTFail("Expected error not thrown")
         } catch {
@@ -226,7 +265,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
             vpTokenSigningResults: mockVPTokenSigningResults,
-            responseUri: responseUri
+            dispatchInfo: makeDispatchInfo()
         )
         
         // Extract actual response
@@ -295,7 +334,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: unsignedVPTokens.map { VPTokenSigningResult(id: $0.id, signedData: Data("ayuht".utf8)) },
-            responseUri: responseUri
+            dispatchInfo: makeDispatchInfo()
         )
         
         XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
@@ -324,7 +363,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let authorizationResponse = try handler.constructVPResponse(
             signingResults: [],
-            authorizationRequest: authorizationRequest
+            authorizationRequest: authorizationRequest,
+            dispatchInfo: nil
         )
 
         let encodedVpToken = try XCTUnwrap(authorizationResponse["vp_token"])
@@ -380,7 +420,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
-            responseUri: responseUri
+            dispatchInfo: makeDispatchInfo()
         )
         
         let recordedRequest = (mockNetworkManager.recordedRequests[responseUri]!).requestBody
@@ -415,7 +455,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults,
-                responseUri: "https://client.example.org/cb"
+                dispatchInfo: makeDispatchInfo(responseUrl: "https://client.example.org/cb")
             )
             XCTFail("Expected error not thrown")
         } catch {
@@ -473,7 +513,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
         
         let authorizationResponse = try handler.constructVPResponse(
-            signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
+            signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest,
+            dispatchInfo: nil
         )
         
         XCTAssertNotNil(authorizationResponse["vp_token"])
@@ -488,7 +529,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertThrowsError(
             try handler.constructVPResponse(
                 signingResults: [],
-                authorizationRequest: authorizationRequest
+                authorizationRequest: authorizationRequest,
+                dispatchInfo: nil
             )
         ) { error in
             assertOpenID4VPException(error,
@@ -580,7 +622,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let result = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
-            responseUri: responseUri
+            dispatchInfo: makeDispatchInfo()
         )
 
         XCTAssertEqual(result.body(), "sending is success in AuthorizationResponseTests")
@@ -592,13 +634,12 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
     func testV1ConstructAndSendAuthorizationResponseThrowsForUnsupportedResponseType() async {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
-        // spec version v1, unsupported response type
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .v1)
-        
+
         await XCTAssertAsyncThrowsError(try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: [],
-            responseUri: "https://client.example.org/cb"
+            dispatchInfo: makeDispatchInfo(responseUrl: "https://client.example.org/cb")
         )) { error in
             assertOpenID4VPException(
                 error,
@@ -675,7 +716,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         _ = try await handler.constructAndSendAuthorizationResponseToVerifier(
             authorizationRequest: authorizationRequest,
             vpTokenSigningResults: vpTokenSigningResults,
-            responseUri: responseUri
+            dispatchInfo: makeDispatchInfo()
         )
 
         let recordedRequest = mockNetworkManager.recordedRequests[responseUri]!.requestBody
@@ -704,7 +745,8 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         }
 
         let authorizationResponse = try handler.constructVPResponse(
-            signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest
+            signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest,
+            dispatchInfo: nil
         )
 
         XCTAssertNotNil(authorizationResponse["vp_token"])
@@ -716,7 +758,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let authorizationRequest = getMockAuthorizationRequest(responseType: "fragment", specVersion: .v1)
 
         XCTAssertThrowsError(try handler.constructVPResponse(
-            signingResults: [], authorizationRequest: authorizationRequest
+            signingResults: [], authorizationRequest: authorizationRequest, dispatchInfo: nil
         )) { error in
             assertOpenID4VPException(error,
                                      expectedMessage: "The wallet encountered an internal error while preparing the authorization response.",
