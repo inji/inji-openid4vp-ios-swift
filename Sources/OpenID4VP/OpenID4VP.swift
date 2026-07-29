@@ -5,6 +5,7 @@ public class OpenID4VP {
     let networkManager: NetworkManaging
     var authorizationRequest: AuthorizationRequest!
     private var responseUri: String?
+    private var responseDispatchInfo: ResponseDispatchInfo?
     private var authorizationResponseHandler: AuthorizationResponseHandler
     private let walletConfig: WalletConfig
     private var walletNonce: String = ""
@@ -36,6 +37,10 @@ public class OpenID4VP {
 
     internal func setResponseUri(_ responseUri: String) {
         self.responseUri = responseUri
+    }
+    
+    internal func setResponseDispatchInfo(_ responseDispatchInfo: ResponseDispatchInfo) {
+        self.responseDispatchInfo = responseDispatchInfo
     }
     
     public func authenticateVerifier(

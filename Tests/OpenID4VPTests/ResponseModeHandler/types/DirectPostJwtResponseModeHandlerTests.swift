@@ -742,8 +742,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
     private func makeEncryptionSpec() throws -> ResponseEncryptionSpecification {
         let jwk = try JSONDecoder().decode(JWK.self, from: JSONSerialization.data(withJSONObject: encKeyJson))
         return ResponseEncryptionSpecification(
-            keyEncryptionAlg: "ECDH-ES",
-            contentEncryptionAlg: "A256GCM",
+            keyEncryptionAlg: EncryptionAlgorithm(rawValue: "ECDH-ES")!,
+            contentEncryptionAlg: EncryptionMethod(rawValue: "A256GCM")!,
             verifierPublicKey: jwk
         )
     }

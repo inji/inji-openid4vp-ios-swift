@@ -24,6 +24,7 @@ extension AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler {
 class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     var delegate: AbstractMethodsForClientIdPrefixBasedAuthorizationRequestHandler!
     let clientId: String
+    var responseDispatchInfo: ResponseDispatchInfo?
     var authorizationRequestParameters: [String: Any]
     let walletConfig: WalletConfig
     let setResponseUri: (String) -> Void
@@ -61,8 +62,29 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try await self.fetchAuthorizationRequest()
         try delegate.validateClientAuthenticity()
         try self.setResponseUrl()
+        try self.prepareDispatchInfo()
         try await self.validateAndParseRequestFields()
         return self.createAuthorizationRequest()
+    }
+    
+    func prepareDispatchInfo() throws {
+        // missing nonce is not notified to the verifier
+        try validateAttribute(AuthorizationRequestFieldConstants.nonce, values: authorizationRequestParameters, notifyVerifier: false)
+        
+        let optionalFields = [AuthorizationRequestFieldConstants.state, AuthorizationRequestFieldConstants.responseMode]
+        for field in optionalFields {
+            if (authorizationRequestParameters[field] != nil){
+                try validateAttribute(field, values: authorizationRequestParameters)
+            }
+        }
+        
+        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode]) ?? ResponseMode.directPost.rawValue
+        let nonce = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce])!
+        let state = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state])
+        let responseModeHandler = try ResponseModeBasedHandlerFactory.get(responseMode: responseMode)
+        let responseUrl = try responseModeHandler.getResponseEndpoint(authorizationRequestParameters: authorizationRequestParameters)
+        
+        self.responseDispatchInfo = ResponseDispatchInfo(responseMode: responseMode, nonce: nonce, walletNonce: self.walletNonce, state: state, clientId: self.clientId, responseUrl: responseUrl, responseEncryptionSpecification: nil)
     }
     
     func validateClientId() throws {
@@ -244,19 +266,12 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
         try validateAttribute(AuthorizationRequestFieldConstants.responseType, values: authorizationRequestParameters)
 
-        // missing nonce is not notified to the verifier
-        try validateAttribute(AuthorizationRequestFieldConstants.nonce, values: authorizationRequestParameters, notifyVerifier: false)
-
         try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType] as? String)!)
         
-        let optionalFields = [AuthorizationRequestFieldConstants.state, AuthorizationRequestFieldConstants.responseMode]
-        for field in optionalFields {
-            if (authorizationRequestParameters[field] != nil){
-                try validateAttribute(field, values: authorizationRequestParameters)
-            }
-        }
-        
         authorizationRequestParameters = try specVersionHandler.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
+        
+        let responseEncryptionSpecification = try specVersionHandler.validateClientMetadataAsPerResponseModeAndGetResponseEncryptionSpecification(authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata)
+        self.responseDispatchInfo?.responseEncryptionSpecification = responseEncryptionSpecification
         
         try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters,walletConfig: walletConfig, networkManager: networkManager)
     }
@@ -339,6 +354,26 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         func parseAndValidateClientMetadata(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletConfig: WalletConfig) throws -> [String: Any] {
             let clientMetadataHandler: ClientMetadataSpecVersionHandler = self == .draft23 ? .draft23 : .v1
             return try clientMetadataHandler.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
+        }
+        
+        func validateClientMetadataAsPerResponseModeAndGetResponseEncryptionSpecification(authorizationRequestParameters: [String: Any], walletConfig: WalletConfig, shouldValidateWithWalletMetadata: Bool) throws -> ResponseEncryptionSpecification? {
+            let parsedClientMetadata = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata]
+            let responseModeHandler = try ResponseModeBasedHandlerFactory.get(responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode]))
+                                                                                
+            return switch self {
+            case .specV1:
+                try responseModeHandler.validate(
+                    clientMetadata: (parsedClientMetadata as? ClientMetadata),
+                    walletConfig: walletConfig,
+                    shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata
+                )
+            case .draft23:
+                try responseModeHandler.validate(
+                    clientMetadata: (parsedClientMetadata as? ClientMetadataDraft23),
+                    walletConfig: walletConfig,
+                    shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata
+                )
+            }
         }
 
         func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], walletConfig: WalletConfig, networkManager: NetworkManaging) async throws {

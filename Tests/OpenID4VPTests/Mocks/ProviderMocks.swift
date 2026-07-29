@@ -13,7 +13,7 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedErrorResponse: [String: String] = [:]
     var expectedUnsignedVPTokens: [UnsignedVPToken] = []
     var expectedVPResponse: [String: String] = [:]
-
+    
     override func constructAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
         exception: Error,
@@ -29,7 +29,7 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     ) async throws -> [UnsignedVPToken] {
         return expectedUnsignedVPTokens
     }
-
+    
     override func constructVPResponse(
         signingResults: [VPTokenSigningResult],
         authorizationRequest: AuthorizationRequest
@@ -44,14 +44,18 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
 class MockResponseModeHandler: ResponseModeBasedHandler {
     var expectedSuccessResponse: [String: String] = [:]
     var expectedErrorResponse: [String: String] = [:]
-
+    
     func validate(clientMetadata: ClientMetadataDraft23?,
                   walletConfig: WalletConfig,
-                  shouldValidateWithWalletMetadata: Bool) throws {}
+                  shouldValidateWithWalletMetadata: Bool) throws -> ResponseEncryptionSpecification? {
+        return nil
+    }
     
     func validate(clientMetadata: ClientMetadata?,
                   walletConfig: WalletConfig,
-                  shouldValidateWithWalletMetadata: Bool) throws {}
+                  shouldValidateWithWalletMetadata: Bool) throws -> ResponseEncryptionSpecification? {
+        return nil
+    }
     
     func sendAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
@@ -64,8 +68,10 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     ) async throws -> NetworkResponse {
         fatalError("Not needed for unit testing constructAuthorizationResponse")
     }
-
-    func setResponseUrl(authorizationRequestParameters: [String : Any], setResponseUri: (String) -> Void) throws {}
+    
+    func setResponseUrl(authorizationRequestParameters: [String : Any]) throws -> String {
+        return authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as? String ?? "https://example.com/callback"
+    }
     
     func getAuthorizationResponse(
         authorizationRequest: AuthorizationRequest,
@@ -75,18 +81,18 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     ) throws -> [String: String] {
         return expectedSuccessResponse
     }
-
+    
     func getVerifierPublicKeyForEncryption(
         authorizationRequest: AuthorizationRequest,
-                walletConfig: WalletConfig
+        walletConfig: WalletConfig
     ) throws -> JWK? {
         return nil
     }
     
-    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String {
-        return authorizationRequest.responseUri ?? "https://example.com/callback"
+    func getResponseEndpoint(authorizationRequestParameters: [String : Any]) throws -> String {
+        return authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as? String ?? "https://example.com/callback"
     }
-
+    
     func getAuthorizationErrorResponse(
         authorizationRequest: AuthorizationRequest?,
         authorizationResponse: AuthorizationErrorResponse,
@@ -94,14 +100,14 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     ) throws -> [String: String] {
         return expectedErrorResponse
     }
-
+    
     func getAuthorizationErrorResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationErrorResponse
     ) throws -> [String: String] {
         return expectedErrorResponse
     }
-
+    
     func sendAuthorizationError(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationErrorResponse,
@@ -109,14 +115,14 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     ) async throws -> NetworkResponse {
         fatalError("Not needed for unit testing")
     }
-
+    
     func getAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationResponse
     ) throws -> [String: String] {
         return expectedSuccessResponse
     }
-
+    
     func sendAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationResponse,
