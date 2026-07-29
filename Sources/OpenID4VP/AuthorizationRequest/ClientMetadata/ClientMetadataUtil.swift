@@ -45,8 +45,6 @@ enum ClientMetadataSpecVersionHandler {
             }
         }
         
-        let responseMode = authorizationRequest[AuthorizationRequestFieldConstants.responseMode] as? String
-        
         return mutableParams
     }
         

@@ -34,10 +34,6 @@ public class OpenID4VP {
         self.walletConfig = walletConfig
         OpenID4VPException.setTraceabilityId(className: String(describing: type(of: self)), traceabilityId: traceabilityId)
     }
-
-    internal func setResponseUri(_ responseUri: String) {
-        self.responseUri = responseUri
-    }
     
     internal func setResponseDispatchInfo(_ responseDispatchInfo: ResponseDispatchInfo) {
         self.responseDispatchInfo = responseDispatchInfo
@@ -50,13 +46,14 @@ public class OpenID4VP {
         walletNonce = nonceProvider.generateNonce()
         authorizationRequest = nil
         responseUri = nil
+        responseDispatchInfo = nil
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletConfig: walletConfig)
 
         do {
             authorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 urlEncodedAuthorizationRequest: urlEncodedAuthorizationRequest,
                 walletConfig: walletConfig,
-                setResponseUri: setResponseUri,
+                setResponseDispatchInfo: setResponseDispatchInfo,
                 walletNonce: walletNonce,
                 networkManager: networkManager
             )
@@ -75,12 +72,13 @@ public class OpenID4VP {
             walletNonce = nonceProvider.generateNonce()
             self.authorizationRequest = nil
             responseUri = nil
+            responseDispatchInfo = nil
             authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletConfig: walletConfig)
 
             let validatedAuthorizationRequest = try await AuthorizationRequest.validateAndCreateAuthorizationRequest(
                 authRequest: authorizationRequest,
                 walletConfig: walletConfig,
-                setResponseUri: setResponseUri,
+                setResponseDispatchInfo: setResponseDispatchInfo,
                 walletNonce: walletNonce,
                 networkManager: networkManager
             )
@@ -140,13 +138,13 @@ public class OpenID4VP {
         vpTokenSigningResults: [VPTokenSigningResult]
     ) async throws -> VerifierResponse {
         do {
-            guard let responseUri = responseUri else {
+            guard let responseUrl = responseDispatchInfo?.responseUrl else {
                 throw UnsupportedOperationException(message: "Response URI is not available to send any response to Verifier", className: className)
             }
             return try await authorizationResponseHandler.constructAndSendAuthorizationResponseToVerifier(
                 authorizationRequest: authorizationRequest,
                 vpTokenSigningResults: vpTokenSigningResults,
-                responseUri: responseUri
+                responseUri: responseUrl
             )
         } catch {
              await safeSendError(error: error)
@@ -155,7 +153,7 @@ public class OpenID4VP {
     }
 
     public func sendErrorInfoToVerifier(error: Error) async throws -> VerifierResponse {
-        return try await authorizationResponseHandler.sendAuthorizationError(responseUri: responseUri, authorizationRequest: authorizationRequest, error: error)
+        return try await authorizationResponseHandler.sendAuthorizationError(responseUri: responseDispatchInfo?.responseUrl ?? responseUri, authorizationRequest: authorizationRequest, error: error)
     }
 
     private func safeSendError(error: Error) async {

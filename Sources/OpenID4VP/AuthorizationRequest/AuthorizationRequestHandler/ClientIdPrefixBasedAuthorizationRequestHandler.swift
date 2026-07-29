@@ -27,7 +27,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
     var responseDispatchInfo: ResponseDispatchInfo?
     var authorizationRequestParameters: [String: Any]
     let walletConfig: WalletConfig
-    let setResponseUri: (String) -> Void
+    let setResponseDispatchInfo: (ResponseDispatchInfo) -> Void
     let walletNonce: String
     let networkManager: NetworkManaging
     private var specVersionHandler: SpecVersionHandler = .specV1
@@ -41,11 +41,11 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
          specVersion: SpecVersion,
          authorizationRequestParameters: [String: Any],
          walletConfig: WalletConfig,
-         setResponseUri: @escaping (String) -> Void,
+         setResponseDispatchInfo: @escaping (ResponseDispatchInfo) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging = NetworkManager()) {
         self.authorizationRequestParameters = authorizationRequestParameters
-        self.setResponseUri = setResponseUri
+        self.setResponseDispatchInfo = setResponseDispatchInfo
         self.networkManager = networkManager
         self.walletConfig = walletConfig
         self.walletNonce = walletNonce
@@ -61,9 +61,16 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try self.validateClientId()
         try await self.fetchAuthorizationRequest()
         try delegate.validateClientAuthenticity()
-        try self.setResponseUrl()
         try self.prepareDispatchInfo()
+        // Notify early so error URLs are available if validateAndParseRequestFields throws
+        if let dispatchInfo = self.responseDispatchInfo {
+            setResponseDispatchInfo(dispatchInfo)
+        }
         try await self.validateAndParseRequestFields()
+        // Notify again with complete dispatch info (including encryption spec)
+        if let dispatchInfo = self.responseDispatchInfo {
+            setResponseDispatchInfo(dispatchInfo)
+        }
         return self.createAuthorizationRequest()
     }
     
@@ -78,13 +85,25 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
         
-        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode]) ?? ResponseMode.directPost.rawValue
+        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
         let nonce = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce])!
         let state = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state])
         let responseModeHandler = try ResponseModeBasedHandlerFactory.get(responseMode: responseMode)
         let responseUrl = try responseModeHandler.getResponseEndpoint(authorizationRequestParameters: authorizationRequestParameters)
         
-        self.responseDispatchInfo = ResponseDispatchInfo(responseMode: responseMode, nonce: nonce, walletNonce: self.walletNonce, state: state, clientId: self.clientId, responseUrl: responseUrl, responseEncryptionSpecification: nil)
+        
+        
+        // redirect_uri must not be present for direct_post / direct_post.jwt
+        if responseMode == ResponseMode.directPost.rawValue || responseMode == ResponseMode.directPostJwt.rawValue {
+            if authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.redirectUri) {
+                throw InvalidData(
+                    message: "\(AuthorizationRequestFieldConstants.redirectUri) should not be present for given response_mode",
+                    className: className
+                )
+            }
+        }
+        
+        self.responseDispatchInfo = ResponseDispatchInfo(responseMode: responseMode!, nonce: nonce, walletNonce: self.walletNonce, state: state, clientId: self.clientId, responseUrl: responseUrl, responseEncryptionSpecification: nil)
     }
     
     func validateClientId() throws {
@@ -121,7 +140,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         // After fetching the VP request, populate version logic
         specVersionHandler = SpecVersionHandler.from(specVersion)
     }
-
+    
     private func handleRequestObjectAsValue(_ request: String) async throws {
         try validate(request, fieldPath: AuthorizationRequestFieldConstants.request, className: className)
         guard (delegate.isSignedRequestSupported()) else {
@@ -265,7 +284,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             throw InvalidTransactionData(message: "Invalid Request: transaction_data is not supported in the authorization request", className: className)
         }
         try validateAttribute(AuthorizationRequestFieldConstants.responseType, values: authorizationRequestParameters)
-
+        
         try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType] as? String)!)
         
         authorizationRequestParameters = try specVersionHandler.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
@@ -274,25 +293,6 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         self.responseDispatchInfo?.responseEncryptionSpecification = responseEncryptionSpecification
         
         try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters,walletConfig: walletConfig, networkManager: networkManager)
-    }
-    
-    final func setResponseUrl() throws {
-        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
-
-        // redirect_uri must not be present for direct_post / direct_post.jwt
-        if responseMode == ResponseMode.directPost.rawValue || responseMode == ResponseMode.directPostJwt.rawValue {
-            if authorizationRequestParameters.keys.contains(AuthorizationRequestFieldConstants.redirectUri) {
-                throw InvalidData(
-                    message: "\(AuthorizationRequestFieldConstants.redirectUri) should not be present for given response_mode",
-                    className: className
-                )
-            }
-        }
-
-        let responseUri = try ResponseModeBasedHandlerFactory
-            .get(responseMode: responseMode)
-            .setResponseUrl(authorizationRequestParameters: authorizationRequestParameters)
-        setResponseUri(responseUri)
     }
     
     private func isClientIdPrefixSupported(walletConfig: WalletConfig) throws {
@@ -350,7 +350,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         static func from(_ specVersion: SpecVersion) -> SpecVersionHandler {
             return specVersion == .v1 ? .specV1 : .draft23
         }
-
+        
         func parseAndValidateClientMetadata(authorizationRequest: [String: Any], shouldValidateWithWalletMetadata: Bool, walletConfig: WalletConfig) throws -> [String: Any] {
             let clientMetadataHandler: ClientMetadataSpecVersionHandler = self == .draft23 ? .draft23 : .v1
             return try clientMetadataHandler.parseAndValidate(authorizationRequest: authorizationRequest, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
@@ -359,7 +359,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         func validateClientMetadataAsPerResponseModeAndGetResponseEncryptionSpecification(authorizationRequestParameters: [String: Any], walletConfig: WalletConfig, shouldValidateWithWalletMetadata: Bool) throws -> ResponseEncryptionSpecification? {
             let parsedClientMetadata = authorizationRequestParameters[AuthorizationRequestFieldConstants.clientMetadata]
             let responseModeHandler = try ResponseModeBasedHandlerFactory.get(responseMode: getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode]))
-                                                                                
+            
             return switch self {
             case .specV1:
                 try responseModeHandler.validate(
@@ -375,7 +375,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                 )
             }
         }
-
+        
         func validatePresentationRequest(authorizationRequestParameters: inout [String: Any], walletConfig: WalletConfig, networkManager: NetworkManaging) async throws {
             switch self {
             case .specV1:
@@ -387,7 +387,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
                     }
                 }
                 return
-           case .draft23:
+            case .draft23:
                 authorizationRequestParameters = try await parseAndValidatePresentationDefinition(authorizationRequestParameters, walletConfig.isPresentationDefinitionUriSupported, networkManager)
             }
         }
