@@ -153,7 +153,8 @@ public class OpenID4VP {
     }
 
     public func sendErrorInfoToVerifier(error: Error) async throws -> VerifierResponse {
-        return try await authorizationResponseHandler.sendAuthorizationError(responseUri: responseDispatchInfo?.responseUrl ?? responseUri, authorizationRequest: authorizationRequest, error: error)
+        return try await authorizationResponseHandler.sendAuthorizationError(dispatchInfo: responseDispatchInfo, authorizationRequest: authorizationRequest, error: error)
+        
     }
 
     private func safeSendError(error: Error) async {

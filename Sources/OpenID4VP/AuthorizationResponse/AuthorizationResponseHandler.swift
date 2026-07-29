@@ -99,6 +99,39 @@ public class AuthorizationResponseHandler {
         }
     }
     
+    func sendAuthorizationError(dispatchInfo: ResponseDispatchInfo?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> VerifierResponse {
+        guard let dispatchInfo = dispatchInfo else {
+            throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot send error to verifier.", className: Self.className)
+        }
+        
+        let resolvedError: OpenID4VPException
+        if let openidError = error as? OpenID4VPException {
+            resolvedError = openidError
+        } else {
+            resolvedError = GenericFailure(
+                message: error.localizedDescription.isEmpty ? "Unknown internal error" : error.localizedDescription,
+                className: String(describing: OpenID4VP.self)
+            )
+        }
+        
+        let state = dispatchInfo.state
+        let authorizationErrorResponse = resolvedError.toAuthorizationErrorResponse(state: state)
+        
+        let responseModeHandler = try ResponseModeBasedHandlerFactory.get(responseMode: dispatchInfo.responseMode)
+        
+        do {
+            let networkResponse = try await responseModeHandler.sendAuthorizationError(dispatchInfo: dispatchInfo, authorizationResponse: authorizationErrorResponse, networkManager: networkManager)
+            let verifierResponse = toVerifierResponse(networkResponse)
+            (error as? OpenID4VPException)?.setVerifierResponse(verifierResponse)
+            return verifierResponse
+        } catch {
+            throw ErrorDispatchFailure(
+                message: "Failed to send error to verifier: \(error)",
+                className: Self.className
+            )
+        }
+    }
+    
     func constructAndSendAuthorizationResponseToVerifier(
         authorizationRequest: AuthorizationRequest,
         vpTokenSigningResults: [VPTokenSigningResult],

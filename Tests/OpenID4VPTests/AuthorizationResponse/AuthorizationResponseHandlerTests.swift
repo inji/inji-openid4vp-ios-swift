@@ -759,4 +759,60 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         XCTAssertNotNil(response["error_description"])
         XCTAssertEqual(response["state"] as? String, state)
     }
+
+    func testSendAuthorizationErrorWithDispatchInfoSendsErrorViaResponseModeHandler() async throws {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
+        let authorizationRequest = getMockAuthorizationRequest(responseMode: .directPost, specVersion: .draft23)
+        let error = AccessDenied(message: "User denied", className: "test")
+        let dispatchInfo = ResponseDispatchInfo(
+            responseMode: ResponseMode.directPost.rawValue,
+            nonce: "nonce",
+            walletNonce: nil,
+            state: state,
+            clientId: "mock-client",
+            responseUrl: responseUri,
+            responseEncryptionSpecification: nil
+        )
+
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "{\"message\":\"Some additional info\"}")
+
+        let verifierResponse = try await handler.sendAuthorizationError(
+            dispatchInfo: dispatchInfo,
+            authorizationRequest: authorizationRequest,
+            error: error
+        )
+
+        XCTAssertEqual(verifierResponse.statusCode, 200)
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
+        XCTAssertNotNil(recordedRequest)
+        XCTAssertEqual(recordedRequest?.requestBody?["error"] as? String, "access_denied")
+        XCTAssertEqual(recordedRequest?.requestBody?["error_description"] as? String, "User denied")
+        XCTAssertEqual(recordedRequest?.requestBody?["state"] as? String, state)
+    }
+
+    func testSendAuthorizationErrorWithDispatchInfoThrowsWhenNetworkFails() async throws {
+        let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
+        let error = AccessDenied(message: "Denied", className: "test")
+        let failingUrl = "https://failing-verifier.com"
+        let dispatchInfo = ResponseDispatchInfo(
+            responseMode: ResponseMode.directPost.rawValue,
+            nonce: nil,
+            walletNonce: nil,
+            state: nil,
+            clientId: "mock-client",
+            responseUrl: failingUrl,
+            responseEncryptionSpecification: nil
+        )
+        mockNetworkManager.setMockResponse(for: failingUrl, error: NSError(domain: "NetworkError", code: -1))
+
+        await XCTAssertAsyncThrowsError(
+            try await handler.sendAuthorizationError(
+                dispatchInfo: dispatchInfo,
+                authorizationRequest: nil,
+                error: error
+            )
+        ) { thrownError in
+            XCTAssertTrue(thrownError.localizedDescription.contains("Failed to send error to verifier"))
+        }
+    }
 }

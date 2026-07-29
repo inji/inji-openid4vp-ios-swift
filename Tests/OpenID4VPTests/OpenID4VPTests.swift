@@ -409,7 +409,7 @@ class OpenID4VPTests: XCTestCase {
 
         // directly call sendErrorInfoToVerifier
         await XCTAssertAsyncThrowsError(try await openID4VP.sendErrorInfoToVerifier(error: error)) { error in
-            XCTAssertEqual(error.localizedDescription, "Failed to send error to verifier: Response URI is not set. Cannot send error to verifier.", "error_dispatch_failure")
+            XCTAssertEqual(error.localizedDescription, "Failed to send error to verifier: Response dispatch details are not set. Cannot send error to verifier.")
         }
     }
 
