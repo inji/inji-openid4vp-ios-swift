@@ -43,7 +43,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
             XCTAssertThrowsError(
                 try handler.validate(clientMetadata: draft23ClientMetadata, walletConfig: walletConfig, shouldValidateWithWalletMetadata: false)
             ) { error in
-                assertOpenID4VPException(error, expectedMessage: "encrypted_response_enc_values_supported or authorization_encrypted_response_alg SHOULD not be present for response mode 'direct_post'", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+                assertOpenID4VPException(error, expectedMessage: "authorization_encrypted_response_enc or authorization_encrypted_response_alg SHOULD not be present for response mode 'direct_post'", expectedCode: OpenID4VPErrorCodes.invalidRequest)
             }
         }
 

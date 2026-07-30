@@ -22,7 +22,7 @@ class OpenID4VPTests: XCTestCase {
         "{\"name\":\"dummyClient\"}"
     let processedSuccessfullyMessage = "{\"message\":\"Some additional info\"}"
     let responseUri = "https://mock-verifier.com"
-    let responseDispatchInfo = ResponseDispatchInfo(responseMode: "direct_post", nonce: "vakue", walletNonce: "wallet-nonce", state: "state", clientId: "clientId", responseUrl: "mock-verifier.com")
+    let responseDispatchInfo = ResponseDispatchInfo(responseMode: "direct_post", nonce: "vakue", walletNonce: "wallet-nonce", state: "state", clientId: "clientId", responseUrl: "https://mock-verifier.com")
     var walletConfig : WalletConfig!
 
     override func setUp() {

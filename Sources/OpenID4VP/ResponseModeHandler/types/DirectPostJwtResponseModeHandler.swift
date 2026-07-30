@@ -33,9 +33,15 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
 
         try validateEncryption(verifierEncryptionAlg: [encryptedResponseAlgorithm], verifierEnc: enc, jwks: jwks, walletConfig: walletConfig, shouldValidate: shouldValidateWithWalletMetadata)
         let encryptionKey = try getEncryptionKey(jwks, [encryptedResponseAlgorithm])
+        guard let keyAlg = EncryptionAlgorithm(rawValue: encryptedResponseAlgorithm) else {
+            throw InvalidData(message: "Unsupported key encryption algorithm: \(encryptedResponseAlgorithm)", className: className)
+        }
+        guard let contentAlg = EncryptionMethod(rawValue: enc) else {
+            throw InvalidData(message: "Unsupported content encryption algorithm: \(enc)", className: className)
+        }
         return ResponseEncryptionSpecification(
-            keyEncryptionAlg: EncryptionAlgorithm(rawValue: encryptedResponseAlgorithm)!,
-            contentEncryptionAlg: EncryptionMethod(rawValue: enc)!,
+            keyEncryptionAlg: keyAlg,
+            contentEncryptionAlg: contentAlg,
             verifierPublicKey: encryptionKey
         )
     }

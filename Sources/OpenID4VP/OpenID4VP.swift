@@ -45,7 +45,6 @@ public class OpenID4VP {
         walletNonce = nonceProvider.generateNonce()
         authorizationRequest = nil
         responseDispatchInfo = nil
-        responseDispatchInfo = nil
         authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletConfig: walletConfig)
 
         do {

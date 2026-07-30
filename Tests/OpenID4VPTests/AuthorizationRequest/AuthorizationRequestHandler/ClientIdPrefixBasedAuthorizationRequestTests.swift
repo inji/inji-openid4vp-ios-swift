@@ -1089,7 +1089,6 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         )
 
         XCTAssertNoThrow(try handler.prepareDispatchInfo())
-        XCTAssertNoThrow(try handler.prepareDispatchInfo())
         XCTAssertEqual(handler.responseDispatchInfo?.responseUrl, "https://mock-verifier.com")
     }
 
@@ -1353,13 +1352,14 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         ) as [String: Any]
         let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(
             clientId: "mock-client",
-            specVersion: .v1,
+            specVersion: .draft23,
             authorizationRequestParameters: authorizationRequestParameters,
             walletConfig: walletConfig,
             setResponseDispatchInfo: mockSetResponseDispatchInfo,
             walletNonce: "mock-nonce",
             networkManager: mockNetworkManager
         )
+        handler.setSpecVersionHandler(.draft23)
 
         await XCTAssertAsyncThrowsError((try await handler.validateAndParseRequestFields())) { error in
             assertOpenID4VPException(
@@ -1371,7 +1371,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     }
     
     
-    func testInvalidRequestFieldErrorForStateField() async {
+    func testInvalidRequestFieldErrorForStateField() {
         let testCases: [TestCase<[String: Any], Void>] = [
             TestCase(input: ["state": "null"], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: ["state": ""], expectedError: "Invalid Input: state value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
@@ -1394,14 +1394,14 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager
             )
             
-            await XCTAssertAsyncThrowsError(try handler.prepareDispatchInfo()) { error in
+            XCTAssertThrowsError(try handler.prepareDispatchInfo()) { error in
                 assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
             }
         }
     }
     
     
-    func testInvalidRequestFieldErrorForResponseModeField() async {
+    func testInvalidRequestFieldErrorForResponseModeField() {
         let testCases: [TestCase<[String: Any], Void>] = [
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
@@ -1424,7 +1424,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
                 networkManager: mockNetworkManager
             )
             
-            await XCTAssertAsyncThrowsError(try handler.prepareDispatchInfo()) { error in
+            XCTAssertThrowsError(try handler.prepareDispatchInfo()) { error in
                 assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
             }
         }
@@ -1458,6 +1458,32 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             XCTAssertThrowsError(try handler.prepareDispatchInfo()) { error in
                 assertOpenID4VPException(error, expectedMessage: testCase.expectedError!, expectedCode: testCase.expectedCode!)
             }
+        }
+    }
+    
+    func testPrepareDispatchInfoThrowsWhenNonceIsNonStringType() {
+        var authorizationRequestParameters = createAuthorizationRequest(
+            paramList: authRequestWithPreRegisteredByValue,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters)
+        ) as [String: Any]
+        authorizationRequestParameters["nonce"] = 12345
+
+        let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(
+            clientId: "mock-client",
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseDispatchInfo: mockSetResponseDispatchInfo,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        XCTAssertThrowsError(try handler.prepareDispatchInfo()) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid Input: nonce value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
         }
     }
     

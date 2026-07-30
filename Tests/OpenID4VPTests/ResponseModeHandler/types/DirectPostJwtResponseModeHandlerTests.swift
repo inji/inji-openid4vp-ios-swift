@@ -554,37 +554,20 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
     }
 
+    func testGetResponseEndpointThrowsWhenResponseUriIsNonStringType() throws {
+        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getResponseEndpoint(authorizationRequestParameters: [
+            AuthorizationRequestFieldConstants.responseUri: 12345
+        ])) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "response_uri data is not valid",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     // MARK: - dispatchInfo-based method tests
-
-    private let encKeyJson: [String: Any] = [
-        "kty": "OKP",
-        "crv": "X25519",
-        "use": "enc",
-        "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-        "alg": "ECDH-ES",
-        "kid": "ed-key1"
-    ]
-
-    private func makeEncryptionSpec() throws -> ResponseEncryptionSpecification {
-        let jwk = try JSONDecoder().decode(JWK.self, from: JSONSerialization.data(withJSONObject: encKeyJson))
-        return ResponseEncryptionSpecification(
-            keyEncryptionAlg: EncryptionAlgorithm(rawValue: "ECDH-ES")!,
-            contentEncryptionAlg: EncryptionMethod(rawValue: "A256GCM")!,
-            verifierPublicKey: jwk
-        )
-    }
-
-    private func makeJwtDispatchInfo(includeEncryption: Bool = true, state: String? = "state") throws -> ResponseDispatchInfo {
-        ResponseDispatchInfo(
-            responseMode: ResponseMode.directPostJwt.rawValue,
-            nonce: "auth-nonce",
-            walletNonce: "wallet-nonce",
-            state: state,
-            clientId: "client_id",
-            responseUrl: responseUri,
-            responseEncryptionSpecification: includeEncryption ? try makeEncryptionSpec() : nil
-        )
-    }
+    // makeJwtDispatchInfo is provided by the shared makeJwtDispatchInfo() free function in TestUtils.swift
 
     func testGetAuthorizationErrorResponseWithDispatchInfoReturnsEncryptedResponse() throws {
         let handler = DirectPostJwtResponseModeHandler()
@@ -728,6 +711,74 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
             assertOpenID4VPException(
                 error,
                 expectedMessage: "response_uri data is not valid",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testValidateDraft23ThrowsWhenKeyEncryptionAlgorithmIsUnsupported() throws {
+        let clientMetadataDict: [String: Any] = [
+            "client_name": "Test",
+            "authorization_encrypted_response_alg": "unsupported-alg",
+            "authorization_encrypted_response_enc": "A256GCM",
+            "jwks": [
+                "keys": [[
+                    "kty": "OKP", "crv": "X25519", "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "unsupported-alg", "kid": "ed-key1"
+                ]]
+            ],
+            "vp_formats": [
+                "ldp_vp": [
+                    "proof_type": [
+                        "Ed25519Signature2018",
+                        "Ed25519Signature2020"
+                    ]
+                ]
+            ]
+        ]
+        let clientMetadata = createInstance(clientMetadataDict, as: ClientMetadataDraft23.self)
+
+        XCTAssertThrowsError(
+            try directPostJwtResponseModeHandler.validate(clientMetadata: clientMetadata, walletConfig: walletConfig, shouldValidateWithWalletMetadata: false)
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported key encryption algorithm: unsupported-alg",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
+    func testValidateDraft23ThrowsWhenContentEncryptionMethodIsUnsupported() throws {
+        let clientMetadataDict: [String: Any] = [
+            "client_name": "Test",
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "authorization_encrypted_response_enc": "unsupported-enc",
+            "jwks": [
+                "keys": [[
+                    "kty": "OKP", "crv": "X25519", "use": "enc",
+                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
+                    "alg": "ECDH-ES", "kid": "ed-key1"
+                ]]
+            ],
+            "vp_formats": [
+                "ldp_vp": [
+                    "proof_type": [
+                        "Ed25519Signature2018",
+                        "Ed25519Signature2020"
+                    ]
+                ]
+            ]
+        ]
+        let clientMetadata = createInstance(clientMetadataDict, as: ClientMetadataDraft23.self)
+
+        XCTAssertThrowsError(
+            try directPostJwtResponseModeHandler.validate(clientMetadata: clientMetadata, walletConfig: walletConfig, shouldValidateWithWalletMetadata: false)
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Unsupported content encryption algorithm: unsupported-enc",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }

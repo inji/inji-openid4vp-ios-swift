@@ -53,7 +53,13 @@ extension ResponseModeBasedHandler {
         try validateAttribute(AuthorizationRequestFieldConstants.responseUri, values: authorizationRequestParameters)
         
         let className = String(describing: ResponseModeBasedHandler.self)
-        let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as! String
+        guard let responseUriValue = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as? String else {
+            throw InvalidData(
+                message: "response_uri data is not valid",
+                className: className,
+                code: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
         
         guard isValidUri(responseUriValue) else {
             throw InvalidData(

@@ -8,7 +8,7 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
                   walletConfig: WalletConfig,
                   shouldValidateWithWalletMetadata: Bool) throws -> ResponseEncryptionSpecification? {
         if (clientMetadata?.authorizationEncryptedResponseEnc != nil || clientMetadata?.authorizationEncryptedResponseAlg != nil) {
-            throw InvalidData(message: "encrypted_response_enc_values_supported or authorization_encrypted_response_alg SHOULD not be present for response mode 'direct_post'", className: Self.className)
+            throw InvalidData(message: "authorization_encrypted_response_enc or authorization_encrypted_response_alg SHOULD not be present for response mode 'direct_post'", className: Self.className)
         }
         
         return nil

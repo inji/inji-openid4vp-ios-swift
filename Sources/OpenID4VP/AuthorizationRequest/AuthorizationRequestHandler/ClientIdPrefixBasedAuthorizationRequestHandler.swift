@@ -83,8 +83,10 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
         
+        guard let nonce = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce]) else {
+            throw InvalidInput(fieldPath: [AuthorizationRequestFieldConstants.nonce], className: className, notifyVerifier: false)
+        }
         let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
-        let nonce = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce])!
         let state = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state])
         let responseModeHandler = try ResponseModeBasedHandlerFactory.get(responseMode: responseMode)
         let responseUrl = try responseModeHandler.getResponseEndpoint(authorizationRequestParameters: authorizationRequestParameters)

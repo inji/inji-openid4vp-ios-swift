@@ -46,7 +46,7 @@ class AuthorizationResponseHandler {
             )
             
             guard let dispatchInfo = dispatchInfo else {
-                throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot send error to verifier.", className: Self.className)
+                throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot construct VP response.", className: Self.className)
             }
             
             
@@ -100,10 +100,10 @@ class AuthorizationResponseHandler {
         dispatchInfo: ResponseDispatchInfo?
     ) async throws -> VerifierResponse {
         let authorizationResponse : AuthorizationResponse
+        guard let dispatchInfo = dispatchInfo else {
+            throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot send authorization response to verifier.", className: Self.className)
+        }
         do {
-            if dispatchInfo == nil {
-                throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot send error to verifier.", className: Self.className)
-            }
             let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
                 unsignedVPTokenResults: unsignedVPTokenResults,
                 signingResults: vpTokenSigningResults
@@ -118,7 +118,7 @@ class AuthorizationResponseHandler {
         }
         
         let response: NetworkResponse = try await sendAuthorizationResponse(
-            dispatchInfo: dispatchInfo!,
+            dispatchInfo: dispatchInfo,
             authorizationResponse: authorizationResponse,
             authorizationRequest: authorizationRequest
         )
