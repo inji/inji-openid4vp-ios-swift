@@ -44,26 +44,30 @@ protocol ResponseModeBasedHandler {
     /// Constructs an authorization error response body as per response mode.
     func getAuthorizationErrorResponse(
         dispatchInfo: ResponseDispatchInfo,
-        authorizationResponse: AuthorizationErrorResponse
+        authorizationResponse: AuthorizationErrorResponse,
+        authorizationRequest: AuthorizationRequest?
     ) throws -> [String: String]
     
     /// Sends an authorization error response to the verifier.
     func sendAuthorizationError(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationErrorResponse,
+        authorizationRequest: AuthorizationRequest?,
         networkManager: NetworkManaging
     ) async throws -> NetworkResponse
     
     /// Constructs an authorization response body as per response mode.
     func getAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
-        authorizationResponse: AuthorizationResponse
+        authorizationResponse: AuthorizationResponse,
+        authorizationRequest: AuthorizationRequest
     ) throws -> [String: String]
     
     /// Sends an authorization response to the verifier.
     func sendAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationResponse,
+        authorizationRequest: AuthorizationRequest,
         networkManager: NetworkManaging
     ) async throws -> NetworkResponse
 }

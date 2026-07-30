@@ -766,7 +766,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
 
         let result = try handler.getAuthorizationErrorResponse(
             dispatchInfo: try makeJwtDispatchInfo(),
-            authorizationResponse: errorResponse
+            authorizationResponse: errorResponse,
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
         )
 
         XCTAssertEqual(result.keys.count, 1)
@@ -783,7 +784,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
 
         let result = try handler.getAuthorizationErrorResponse(
             dispatchInfo: try makeJwtDispatchInfo(includeEncryption: false),
-            authorizationResponse: errorResponse
+            authorizationResponse: errorResponse,
+            authorizationRequest: nil
         )
 
         XCTAssertEqual(result["error"], "access_denied")
@@ -802,7 +804,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
 
         let result = try handler.getAuthorizationResponse(
             dispatchInfo: try makeJwtDispatchInfo(),
-            authorizationResponse: authorizationResponse
+            authorizationResponse: authorizationResponse,
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
         )
 
         XCTAssertEqual(result.keys.count, 1)
@@ -821,7 +824,8 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
 
         XCTAssertThrowsError(try handler.getAuthorizationResponse(
             dispatchInfo: try makeJwtDispatchInfo(includeEncryption: false),
-            authorizationResponse: authorizationResponse
+            authorizationResponse: authorizationResponse,
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
         )) { error in
             assertOpenID4VPException(
                 error,
@@ -841,6 +845,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         let result = try await handler.sendAuthorizationError(
             dispatchInfo: try makeJwtDispatchInfo(),
             authorizationResponse: errorResponse,
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23),
             networkManager: mockNetworkManager
         )
 
@@ -867,6 +872,7 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         let result = try await handler.sendAuthorizationResponse(
             dispatchInfo: try makeJwtDispatchInfo(),
             authorizationResponse: authorizationResponse,
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23),
             networkManager: mockNetworkManager
         )
 

@@ -170,7 +170,8 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
 
         let result = try handler.getAuthorizationErrorResponse(
             dispatchInfo: makeDirectPostDispatchInfo(),
-            authorizationResponse: errorResponse
+            authorizationResponse: errorResponse,
+            authorizationRequest: nil
         )
 
         XCTAssertEqual(result["error"], "invalid_request")
@@ -185,7 +186,8 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
 
         let result = try handler.getAuthorizationErrorResponse(
             dispatchInfo: makeDirectPostDispatchInfo(),
-            authorizationResponse: errorResponse
+            authorizationResponse: errorResponse,
+            authorizationRequest: nil
         )
 
         XCTAssertEqual(result["error"], "access_denied")
@@ -203,7 +205,8 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
 
         let result = try handler.getAuthorizationResponse(
             dispatchInfo: makeDirectPostDispatchInfo(),
-            authorizationResponse: authorizationResponse
+            authorizationResponse: authorizationResponse,
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPost)
         )
 
         XCTAssertNotNil(result["vp_token"])
@@ -223,6 +226,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         let result = try await handler.sendAuthorizationError(
             dispatchInfo: dispatchInfo,
             authorizationResponse: errorResponse,
+            authorizationRequest: nil,
             networkManager: mockNetworkManager
         )
 
@@ -250,6 +254,7 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         let result = try await handler.sendAuthorizationResponse(
             dispatchInfo: dispatchInfo,
             authorizationResponse: authorizationResponse,
+            authorizationRequest: getMockAuthorizationRequest(responseMode: .directPost),
             networkManager: mockNetworkManager
         )
 

@@ -70,7 +70,8 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
 
     func getAuthorizationErrorResponse(
         dispatchInfo: ResponseDispatchInfo,
-        authorizationResponse: AuthorizationErrorResponse
+        authorizationResponse: AuthorizationErrorResponse,
+        authorizationRequest: AuthorizationRequest?
     ) throws -> [String: String] {
         return authorizationResponse.toJsonEncodedMap()
     }
@@ -78,9 +79,10 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     func sendAuthorizationError(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationErrorResponse,
+        authorizationRequest: AuthorizationRequest?,
         networkManager: NetworkManaging
     ) async throws -> NetworkResponse {
-        let requestBody = try getAuthorizationErrorResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse)
+        let requestBody = try getAuthorizationErrorResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse, authorizationRequest: authorizationRequest)
         return try await networkManager.sendHTTPRequest(
             url: dispatchInfo.responseUrl,
             method: .post,
@@ -91,7 +93,8 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
 
     func getAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
-        authorizationResponse: AuthorizationResponse
+        authorizationResponse: AuthorizationResponse,
+        authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
         return try authorizationResponse.toJsonEncodedMap()
     }
@@ -99,9 +102,10 @@ struct DirectPostResponseModeHandler : ResponseModeBasedHandler {
     func sendAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationResponse,
+        authorizationRequest: AuthorizationRequest,
         networkManager: NetworkManaging
     ) async throws -> NetworkResponse {
-        let requestBody = try getAuthorizationResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse)
+        let requestBody = try getAuthorizationResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse, authorizationRequest: authorizationRequest)
         return try await networkManager.sendHTTPRequest(
             url: dispatchInfo.responseUrl,
             method: .post,

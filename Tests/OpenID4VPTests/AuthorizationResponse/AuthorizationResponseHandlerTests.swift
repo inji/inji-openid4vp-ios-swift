@@ -364,7 +364,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let authorizationResponse = try handler.constructVPResponse(
             signingResults: [],
             authorizationRequest: authorizationRequest,
-            dispatchInfo: nil
+            dispatchInfo: makeDispatchInfo()
         )
 
         let encodedVpToken = try XCTUnwrap(authorizationResponse["vp_token"])
@@ -514,7 +514,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         
         let authorizationResponse = try handler.constructVPResponse(
             signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest,
-            dispatchInfo: nil
+            dispatchInfo: makeDispatchInfo()
         )
         
         XCTAssertNotNil(authorizationResponse["vp_token"])
@@ -746,7 +746,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
 
         let authorizationResponse = try handler.constructVPResponse(
             signingResults: vpTokenSigningResults, authorizationRequest: authorizationRequest,
-            dispatchInfo: nil
+            dispatchInfo: makeDispatchInfo()
         )
 
         XCTAssertNotNil(authorizationResponse["vp_token"])
@@ -809,7 +809,7 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let dispatchInfo = ResponseDispatchInfo(
             responseMode: ResponseMode.directPost.rawValue,
             nonce: "nonce",
-            walletNonce: nil,
+            walletNonce: "wallet-nonce",
             state: state,
             clientId: "mock-client",
             responseUrl: responseUri,

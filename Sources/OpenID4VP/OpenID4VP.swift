@@ -147,7 +147,8 @@ public class OpenID4VP {
         return authorizationResponseHandler.constructAuthorizationErrorResponse(
             dispatchInfo: responseDispatchInfo,
             error: exception,
-            walletNonce: walletNonce
+            walletNonce: walletNonce,
+            authorizationRequest: authorizationRequest
         )
     }
 

@@ -5,13 +5,13 @@ import JSONWebKey
  * Data class that holds information required for dispatching responses to the verifier.
  */
 struct ResponseDispatchInfo {
-    public let responseMode: String
-    public var nonce: String?
-    public var walletNonce: String?
-    public let state: String?
-    public let clientId: String
-    public let responseUrl: String
-    public var responseEncryptionSpecification: ResponseEncryptionSpecification?
+    let responseMode: String
+    let nonce: String?
+    let walletNonce: String?
+    let state: String?
+    let clientId: String
+    let responseUrl: String
+    var responseEncryptionSpecification: ResponseEncryptionSpecification?
 }
 
 /**
@@ -19,10 +19,10 @@ struct ResponseDispatchInfo {
  *
  * @property keyEncryptionAlg The algorithm used for key encryption (e.g., "ECDH-ES")
  * @property contentEncryptionAlg The algorithm used for content encryption (e.g., "A256GCM")
- * @property verifierPublicKey The verifier's public key (JWK) used for encryption
+ * @property verifierPublicKey The verifier's key (JWK) used for encryption
  */
 struct ResponseEncryptionSpecification {
-    public let keyEncryptionAlg: EncryptionAlgorithm
-    public let contentEncryptionAlg: EncryptionMethod
-    public let verifierPublicKey: JWK
+    let keyEncryptionAlg: EncryptionAlgorithm
+    let contentEncryptionAlg: EncryptionMethod
+    let verifierPublicKey: JWK
 }

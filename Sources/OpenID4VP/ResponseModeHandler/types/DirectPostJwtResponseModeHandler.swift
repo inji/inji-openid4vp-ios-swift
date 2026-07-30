@@ -149,23 +149,26 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
     
     func getAuthorizationErrorResponse(
         dispatchInfo: ResponseDispatchInfo,
-        authorizationResponse: AuthorizationErrorResponse
+        authorizationResponse: AuthorizationErrorResponse,
+        authorizationRequest: AuthorizationRequest?
     ) throws -> [String: String] {
         let errorMap = authorizationResponse.toJsonEncodedMap()
         guard dispatchInfo.responseEncryptionSpecification != nil else {
             return errorMap
         }
         let responseParams = try JSONSerialization.data(withJSONObject: errorMap)
-        let jweHandler = try makeJWEHandler(from: dispatchInfo)
+        let recipientNonce = authorizationRequest?.nonce ?? dispatchInfo.nonce ?? ""
+        let jweHandler = try makeJWEHandler(from: dispatchInfo, recipientNonce: recipientNonce)
         return try encryptResponse(responseParams: responseParams, using: jweHandler)
     }
 
     func sendAuthorizationError(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationErrorResponse,
+        authorizationRequest: AuthorizationRequest?,
         networkManager: NetworkManaging
     ) async throws -> NetworkResponse {
-        let requestBody = try getAuthorizationErrorResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse)
+        let requestBody = try getAuthorizationErrorResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse, authorizationRequest: authorizationRequest)
         return try await networkManager.sendHTTPRequest(
             url: dispatchInfo.responseUrl,
             method: .post,
@@ -176,19 +179,21 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
 
     func getAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
-        authorizationResponse: AuthorizationResponse
+        authorizationResponse: AuthorizationResponse,
+        authorizationRequest: AuthorizationRequest
     ) throws -> [String: String] {
         let responseParams = try authorizationResponse.payloadData()
-        let jweHandler = try makeJWEHandler(from: dispatchInfo)
+        let jweHandler = try makeJWEHandler(from: dispatchInfo, recipientNonce: authorizationRequest.nonce)
         return try encryptResponse(responseParams: responseParams, using: jweHandler)
     }
 
     func sendAuthorizationResponse(
         dispatchInfo: ResponseDispatchInfo,
         authorizationResponse: AuthorizationResponse,
+        authorizationRequest: AuthorizationRequest,
         networkManager: NetworkManaging
     ) async throws -> NetworkResponse {
-        let requestBody = try getAuthorizationResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse)
+        let requestBody = try getAuthorizationResponse(dispatchInfo: dispatchInfo, authorizationResponse: authorizationResponse, authorizationRequest: authorizationRequest)
         return try await networkManager.sendHTTPRequest(
             url: dispatchInfo.responseUrl,
             method: .post,
@@ -197,7 +202,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
         )
     }
 
-    private func makeJWEHandler(from dispatchInfo: ResponseDispatchInfo) throws -> JWEHandler {
+    private func makeJWEHandler(from dispatchInfo: ResponseDispatchInfo, recipientNonce: String) throws -> JWEHandler {
         guard let encryptionSpec = dispatchInfo.responseEncryptionSpecification else {
             throw InvalidData(
                 message: "responseEncryptionSpecification is required for response mode 'direct_post.jwt'",
@@ -209,7 +214,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             keyEncryptionAlgorithm: encryptionSpec.keyEncryptionAlg.rawValue,
             publicKey: encryptionSpec.verifierPublicKey,
             producerInfo: dispatchInfo.walletNonce ?? "",
-            recipientInfo: dispatchInfo.nonce ?? ""
+            recipientInfo: recipientNonce
         )
     }
 
