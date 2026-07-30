@@ -1092,6 +1092,67 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         XCTAssertNoThrow(try handler.prepareDispatchInfo())
         XCTAssertEqual(handler.responseDispatchInfo?.responseUrl, "https://mock-verifier.com")
     }
+
+    func testPrepareDispatchInfoSetsExpectedDispatchInfoFields() throws {
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
+            paramList: authRequestWithPreRegisteredByValue,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters)
+        ) as [String: Any]
+
+        let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(
+            clientId: "mock-client",
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseDispatchInfo: mockSetResponseDispatchInfo,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        try handler.prepareDispatchInfo()
+        let dispatchInfo = try XCTUnwrap(handler.responseDispatchInfo)
+        XCTAssertEqual(dispatchInfo.responseMode, ResponseMode.directPost.rawValue)
+        XCTAssertEqual(dispatchInfo.nonce, authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce] as? String)
+        XCTAssertEqual(dispatchInfo.state, authorizationRequestParameters[AuthorizationRequestFieldConstants.state] as? String)
+        XCTAssertEqual(dispatchInfo.clientId, "mock-client")
+        XCTAssertEqual(dispatchInfo.walletNonce, "mock-nonce")
+        XCTAssertEqual(dispatchInfo.responseUrl, authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as? String)
+        XCTAssertNil(dispatchInfo.responseEncryptionSpecification)
+    }
+
+    func testValidateAndParseRequestFieldsPopulatesDispatchInfoWithEncryptionSpecification() async throws {
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
+            paramList: authRequestWithPreRegisteredByValue,
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                preRegisteredSchemeClientIdParameters,
+                [AuthorizationRequestFieldConstants.responseMode: ResponseMode.directPostJwt.rawValue]
+            ),
+            specVersion: .v1
+        ) as [String: Any]
+
+        let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(
+            clientId: "mock-client",
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseDispatchInfo: mockSetResponseDispatchInfo,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+        handler.setSpecVersionHandler(.v1)
+
+        try handler.prepareDispatchInfo()
+        await XCTAssertAsyncNoThrowsError(try await handler.validateAndParseRequestFields())
+
+        let dispatchInfo = try XCTUnwrap(handler.responseDispatchInfo)
+        let encryptionSpec = try XCTUnwrap(dispatchInfo.responseEncryptionSpecification)
+        XCTAssertEqual(dispatchInfo.responseMode, ResponseMode.directPostJwt.rawValue)
+        XCTAssertEqual(dispatchInfo.responseUrl, authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as? String)
+        XCTAssertEqual(encryptionSpec.keyEncryptionAlg.rawValue, "ECDH-ES")
+        XCTAssertEqual(encryptionSpec.contentEncryptionAlg.rawValue, "A256GCM")
+        XCTAssertEqual(encryptionSpec.verifierPublicKey.publicKeyUse, .encryption)
+    }
     
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
         let testCases: [TestCase<[String: String?], Void>] = [

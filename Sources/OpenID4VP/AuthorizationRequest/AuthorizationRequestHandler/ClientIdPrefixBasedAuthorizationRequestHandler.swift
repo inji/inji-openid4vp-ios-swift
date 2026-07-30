@@ -62,12 +62,10 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         try await self.fetchAuthorizationRequest()
         try delegate.validateClientAuthenticity()
         try self.prepareDispatchInfo()
-        // Notify early so error URLs are available if validateAndParseRequestFields throws
         if let dispatchInfo = self.responseDispatchInfo {
             setResponseDispatchInfo(dispatchInfo)
         }
         try await self.validateAndParseRequestFields()
-        // Notify again with complete dispatch info (including encryption spec)
         if let dispatchInfo = self.responseDispatchInfo {
             setResponseDispatchInfo(dispatchInfo)
         }
