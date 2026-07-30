@@ -21,13 +21,9 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.walletConfig = walletConfig
-        var responseEndpointParameters: [String: Any] = [:]
-        if let responseUri = authorizationRequest.responseUri {
-            responseEndpointParameters[AuthorizationRequestFieldConstants.responseUri] = responseUri
-        }
         self.responseUri = try ResponseModeBasedHandlerFactory
             .get(responseMode: authorizationRequest.responseMode)
-            .getResponseEndpoint(authorizationRequestParameters: responseEndpointParameters)
+            .getResponseEndpoint(authorizationRequest: authorizationRequest)
         self.mdocGeneratedNonce = mdocGeneratedNonce
     }
     

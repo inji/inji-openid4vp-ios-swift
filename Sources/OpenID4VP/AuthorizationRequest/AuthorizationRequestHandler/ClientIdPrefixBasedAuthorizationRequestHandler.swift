@@ -86,7 +86,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         guard let nonce = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.nonce]) else {
             throw InvalidInput(fieldPath: [AuthorizationRequestFieldConstants.nonce], className: className, notifyVerifier: false)
         }
-        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode])
+        let responseMode = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.responseMode]) ?? ResponseMode.directPost.rawValue
         let state = getStringValue(authorizationRequestParameters[AuthorizationRequestFieldConstants.state])
         let responseModeHandler = try ResponseModeBasedHandlerFactory.get(responseMode: responseMode)
         let responseUrl = try responseModeHandler.getResponseEndpoint(authorizationRequestParameters: authorizationRequestParameters)
@@ -103,7 +103,7 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
             }
         }
         
-        self.responseDispatchInfo = ResponseDispatchInfo(responseMode: responseMode!, nonce: nonce, walletNonce: self.walletNonce, state: state, clientId: self.clientId, responseUrl: responseUrl, responseEncryptionSpecification: nil)
+        self.responseDispatchInfo = ResponseDispatchInfo(responseMode: responseMode, nonce: nonce, walletNonce: self.walletNonce, state: state, clientId: self.clientId, responseUrl: responseUrl, responseEncryptionSpecification: nil)
     }
     
     func validateClientId() throws {
@@ -285,7 +285,10 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         }
         try validateAttribute(AuthorizationRequestFieldConstants.responseType, values: authorizationRequestParameters)
         
-        try validateResponseTypeSupported((authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType] as? String)!)
+        guard let responseType = authorizationRequestParameters[AuthorizationRequestFieldConstants.responseType] as? String else {
+            throw InvalidInput(fieldPath: [AuthorizationRequestFieldConstants.responseType], className: className)
+        }
+        try validateResponseTypeSupported(responseType)
         
         authorizationRequestParameters = try specVersionHandler.parseAndValidateClientMetadata(authorizationRequest: authorizationRequestParameters, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata, walletConfig: walletConfig)
         

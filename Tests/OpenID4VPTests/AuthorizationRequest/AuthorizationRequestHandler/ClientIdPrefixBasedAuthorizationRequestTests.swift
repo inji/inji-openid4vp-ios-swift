@@ -1119,6 +1119,29 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
         XCTAssertNil(dispatchInfo.responseEncryptionSpecification)
     }
 
+    func testPrepareDispatchInfoDefaultsToDirectPostWhenResponseModeIsAbsent() throws {
+        // paramList without "response_mode" so the key is absent from authorizationRequestParameters
+        let paramListWithoutResponseMode = authRequestWithPreRegisteredByValue.filter { $0 != AuthorizationRequestFieldConstants.responseMode }
+        let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
+            paramList: paramListWithoutResponseMode,
+            requestParams: mergeMaps(authorizationRequestParamsWithValue, preRegisteredSchemeClientIdParameters)
+        ) as [String: Any]
+
+        let handler = ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass(
+            clientId: "mock-client",
+            specVersion: .v1,
+            authorizationRequestParameters: authorizationRequestParameters,
+            walletConfig: walletConfig,
+            setResponseDispatchInfo: mockSetResponseDispatchInfo,
+            walletNonce: "mock-nonce",
+            networkManager: mockNetworkManager
+        )
+
+        try handler.prepareDispatchInfo()
+        let dispatchInfo = try XCTUnwrap(handler.responseDispatchInfo)
+        XCTAssertEqual(dispatchInfo.responseMode, ResponseMode.directPost.rawValue)
+    }
+
     func testValidateAndParseRequestFieldsPopulatesDispatchInfoWithEncryptionSpecification() async throws {
         let authorizationRequestParameters: [String: Any] = createAuthorizationRequest(
             paramList: authRequestWithPreRegisteredByValue,
@@ -1159,8 +1182,7 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
             // Empty string, "nil" string, and "null" string are caught by validateAttribute before reaching ResponseModeBasedHandlerFactory
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: nil], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         
         for testCase in testCases {

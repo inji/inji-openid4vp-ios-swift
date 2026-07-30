@@ -11,6 +11,7 @@ protocol ResponseModeBasedHandler {
                   shouldValidateWithWalletMetadata: Bool) throws -> ResponseEncryptionSpecification?
     
     func getResponseEndpoint(authorizationRequestParameters: [String : Any]) throws -> String
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String
     
     func getVerifierPublicKeyForEncryption(
         authorizationRequest: AuthorizationRequest,
@@ -70,5 +71,9 @@ extension ResponseModeBasedHandler {
         }
         
         return responseUriValue
+    }
+    
+    func getResponseEndpoint(authorizationRequest: AuthorizationRequest) throws -> String {
+        return authorizationRequest.responseUri ?? ""
     }
 }
