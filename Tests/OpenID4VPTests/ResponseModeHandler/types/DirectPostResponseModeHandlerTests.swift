@@ -21,68 +21,6 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         XCTAssertNoThrow(try directPostAuthorizationResponseModeHandler.validate(clientMetadata: mockClientMetadataSpecVersionDraft23[.directPost], walletConfig: walletConfig, shouldValidateWithWalletMetadata: true))
     }
 
-    func testSendAuthorizationResponseForDirectPostResponseMode() async throws {
-        let directPostAuthorizationResponseModeHandler = DirectPostResponseModeHandler()
-        let authorizationResponse: AuthorizationResponse = .presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-        mockNetworkManager.clearResponses()
-        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
-
-        do {
-            let result = try await directPostAuthorizationResponseModeHandler.sendAuthorizationResponse(authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode, authorizationResponse: authorizationResponse, url: mockAuthorizationRequestObjectWithDirectPostResponseMode.responseUri!, networkManager: mockNetworkManager,
-                                                                                                        producerInfo: "mock-nonce",
-                                                                                                        recipientInfo: "verifier-nonce",
-                                                                                                        walletConfig: walletConfig)
-
-            let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
-            XCTAssertEqual(HttpMethod.post, recordedRequest?.requestMethod)
-            XCTAssertTrue(recordedRequest?.requestBody?.keys.count == 3)
-            XCTAssertTrue((recordedRequest?.requestBody?.keys.allSatisfy(["vp_token", "presentation_submission", "state"].contains(_:))) != nil)
-            assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: recordedRequest?.requestHeaders)
-            XCTAssertEqual("Response has been shared successfully here.", result.body)
-        }
-    }
-    
-    func testShouldReturnGetAuthorizationSuccessResponseSuccesfully() throws {
-        let handler = DirectPostResponseModeHandler()
-
-        let authorizationResponse: AuthorizationResponse = AuthorizationResponse.presentationExchange(
-            vpToken: mockVPTokens,
-            presentationSubmission: mockPresentationSubmission,
-            state: "sample-state"
-        )
-
-        let result = try handler.getAuthorizationResponse(
-            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
-            authorizationResponse: authorizationResponse,
-            walletNonce: "mock-nonce",
-            walletConfig: walletConfig
-        )
-
-        XCTAssertEqual(result["state"], "sample-state")
-        XCTAssertNotNil(result["vp_token"])
-        XCTAssertNotNil(result["presentation_submission"])
-    }
-
-    func testShouldReturnGetAuthorizationErrorResponseSuccesfully() throws {
-        let handler = DirectPostResponseModeHandler()
-
-        let errorResponse = AuthorizationErrorResponse(
-            error: "invalid_request",
-            errorDescription: "Something went wrong",
-            state: "error-state"
-        )
-
-        let result = handler.getAuthorizationErrorResponse(
-            authorizationRequest: mockAuthorizationRequestObjectWithDirectPostResponseMode,
-            authorizationResponse: errorResponse,
-            walletNonce: "mock-nonce"
-        )
-
-        XCTAssertEqual(result["error"], "invalid_request")
-        XCTAssertEqual(result["error_description"], "Something went wrong")
-        XCTAssertEqual(result["state"], "error-state")
-    }
-
     func testThrowErrorWhenEncryptionRelatedPropertiesAvailableInVerifierMetadata() throws {
         let handler = DirectPostResponseModeHandler()
 
@@ -267,19 +205,19 @@ final class DirectPostResponseModeHandlerTests: XCTestCase {
         XCTAssertEqual(result.body, "response received")
     }
 
-    func testSetResponseUrlReturnsResponseUriForDirectPost() throws {
+    func testGetResponseEndpointReturnsResponseUriForDirectPost() throws {
         let handler = DirectPostResponseModeHandler()
-        let responseUrl = try handler.setResponseUrl(authorizationRequestParameters: [
+        let responseUrl = try handler.getResponseEndpoint(authorizationRequestParameters: [
             AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com/callback"
         ])
 
         XCTAssertEqual(responseUrl, "https://mock-verifier.com/callback")
     }
 
-    func testSetResponseUrlThrowsForInvalidUriForDirectPost() throws {
+    func testGetResponseEndpointThrowsForInvalidUriForDirectPost() throws {
         let handler = DirectPostResponseModeHandler()
 
-        XCTAssertThrowsError(try handler.setResponseUrl(authorizationRequestParameters: [
+        XCTAssertThrowsError(try handler.getResponseEndpoint(authorizationRequestParameters: [
             AuthorizationRequestFieldConstants.responseUri: "invalid-uri"
         ])) { error in
             assertOpenID4VPException(

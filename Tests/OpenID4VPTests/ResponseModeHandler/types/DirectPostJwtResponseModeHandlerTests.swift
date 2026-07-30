@@ -375,109 +375,6 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         }
     }
 
-    func testThrowErrorWhenV1ClientMetadataEncDoesNotContainSupportedValue() throws {
-        let invalidClientMetadataV1: [String: Any] = [
-            "authorization_encrypted_response_alg": "ECDH-ES",
-            "encrypted_response_enc_values_supported": ["A128GCM"],
-            "jwks": [
-                "keys": [[
-                    "kty": "OKP",
-                    "crv": "X25519",
-                    "use": "enc",
-                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-                    "alg": "ECDH-ES",
-                    "kid": "ed-key1"
-                ]]
-            ],
-            "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
-        ]
-        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
-        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: AuthorizationDcqlRequest(clientId: v1Request.clientId, responseType: v1Request.responseType, responseMode: v1Request.responseMode, responseUri: v1Request.responseUri, redirectUri: v1Request.redirectUri, nonce: v1Request.nonce, walletNonce: v1Request.walletNonce, state: v1Request.state, dcqlQuery: validDcqlQuery, clientMetadata: createInstance(invalidClientMetadataV1, as: ClientMetadata.self)), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletConfig: walletConfig)) { error in
-            assertOpenID4VPException(error, expectedMessage: "Unsupported content encryption algorithm", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        }
-    }
-    
-    func testGetAuthorizationResponseThrowsWhenV1ClientMetadataIsNil() throws {
-        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
-        let requestWithNilMetadata = AuthorizationDcqlRequest(
-            clientId: v1Request.clientId,
-            responseType: v1Request.responseType,
-            responseMode: v1Request.responseMode,
-            responseUri: v1Request.responseUri,
-            redirectUri: v1Request.redirectUri,
-            nonce: v1Request.nonce,
-            walletNonce: v1Request.walletNonce,
-            state: v1Request.state,
-            dcqlQuery: validDcqlQuery,
-            clientMetadata: nil
-        )
-        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: requestWithNilMetadata, authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletConfig: walletConfig)) { error in
-            assertOpenID4VPException(error, expectedMessage: "client_metadata must be present for given response mode", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        }
-    }
-
-    func testGetAuthorizationResponseThrowsWhenV1ClientMetadataHasNoJwks() throws {
-        let clientMetadataWithoutJwks: [String: Any] = [
-            "encrypted_response_enc_values_supported": ["A256GCM"],
-            "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
-        ]
-        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
-        let requestWithNoJwks = AuthorizationDcqlRequest(
-            clientId: v1Request.clientId,
-            responseType: v1Request.responseType,
-            responseMode: v1Request.responseMode,
-            responseUri: v1Request.responseUri,
-            redirectUri: v1Request.redirectUri,
-            nonce: v1Request.nonce,
-            walletNonce: v1Request.walletNonce,
-            state: v1Request.state,
-            dcqlQuery: validDcqlQuery,
-            clientMetadata: createInstance(clientMetadataWithoutJwks, as: ClientMetadata.self)
-        )
-        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: requestWithNoJwks, authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletConfig: walletConfig)) { error in
-            assertOpenID4VPException(error, expectedMessage: "Missing Input: client_metadata->jwks param is required", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        }
-    }
-
-    func testGetAuthorizationResponseThrowsWhenV1EncryptionKeyHasNoAlgorithm() throws {
-        let clientMetadataWithKeyWithoutAlg: [String: Any] = [
-            "encrypted_response_enc_values_supported": ["A256GCM"],
-            "jwks": [
-                "keys": [[
-                    "kty": "OKP",
-                    "crv": "X25519",
-                    "use": "enc",
-                    "x": "BVNVdqorpxCCnTOkkw8S2NAYXvfEvkC-8RDObhrAUA4",
-                    "kid": "ed-key1"
-                ]]
-            ],
-            "vp_formats_supported": ["ldp_vc": ["proof_type_values": ["Ed25519Signature2020"]]]
-        ]
-        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
-        let requestWithKeyWithoutAlg = AuthorizationDcqlRequest(
-            clientId: v1Request.clientId,
-            responseType: v1Request.responseType,
-            responseMode: v1Request.responseMode,
-            responseUri: v1Request.responseUri,
-            redirectUri: v1Request.redirectUri,
-            nonce: v1Request.nonce,
-            walletNonce: v1Request.walletNonce,
-            state: v1Request.state,
-            dcqlQuery: validDcqlQuery,
-            clientMetadata: createInstance(clientMetadataWithKeyWithoutAlg, as: ClientMetadata.self)
-        )
-        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-
-        XCTAssertThrowsError(try directPostJwtResponseModeHandler.getAuthorizationResponse(authorizationRequest: requestWithKeyWithoutAlg, authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletConfig: walletConfig)) { error in
-            assertOpenID4VPException(error, expectedMessage: "No jwk matching the specified algorithm found for encryption", expectedCode: OpenID4VPErrorCodes.invalidRequest)
-        }
-    }
-
     // MARK: - getVerifierPublicKeyForEncryption tests
 
     func testGetVerifierPublicKeyForEncryptionReturnsDraft23EncKey() throws {
@@ -568,77 +465,6 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
                 expectedMessage: "No jwk matching the specified algorithm found for encryption",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
-        }
-    }
-
-    /// Send authorization response tests
-
-    func testSendAuthorizationResponseForDirectPostJwtResponseMode() async throws {
-        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
-        let authorizationResponse: AuthorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "state")
-
-        let draft23Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23)
-        let presentationExchangeAuthorizationResponseResult = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: draft23Request, authorizationResponse: authorizationResponse, url: draft23Request.responseUri!, networkManager: mockNetworkManager, producerInfo: "mock-nonce", recipientInfo: "verifier-nonce", walletConfig: walletConfig)
-        let draft23RecordedRequest = mockNetworkManager.recordedRequests[responseUri]
-        XCTAssertEqual(HttpMethod.post, draft23RecordedRequest?.requestMethod)
-        XCTAssertEqual(1, draft23RecordedRequest?.requestBody?.keys.count)
-        XCTAssertTrue(draft23RecordedRequest?.requestBody?.keys.allSatisfy(["response"].contains(_:)) == true)
-        assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: draft23RecordedRequest?.requestHeaders)
-        XCTAssertEqual("Response has been shared successfully here.", presentationExchangeAuthorizationResponseResult.body)
-
-        mockNetworkManager.clearResponses()
-        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "Response has been shared successfully here.")
-
-        let v1Request = getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1)
-        let dcqlAuthorizationResult = try await directPostJwtResponseModeHandler.sendAuthorizationResponse(authorizationRequest: v1Request, authorizationResponse: authorizationResponse, url: v1Request.responseUri!, networkManager: mockNetworkManager, producerInfo: "tHwahwI6M5_Cd_Sj5k2_Aw", recipientInfo: "_G6UkKgcsUPFlHAbzUMerA", walletConfig: walletConfig)
-        let v1RecordedRequest = mockNetworkManager.recordedRequests[responseUri]
-        XCTAssertEqual(HttpMethod.post, v1RecordedRequest?.requestMethod)
-        XCTAssertEqual(1, v1RecordedRequest?.requestBody?.keys.count)
-        XCTAssertTrue(v1RecordedRequest?.requestBody?.keys.allSatisfy(["response"].contains(_:)) == true)
-        assertDictionariesEqual(expected: ["Content-Type": ContentTypes.applicationFormUrlEncoded.rawValue], actual: v1RecordedRequest?.requestHeaders)
-        XCTAssertEqual("Response has been shared successfully here.", dcqlAuthorizationResult.body)
-    }
-
-    func testShouldReturnEncryptedResponseForSuccessAuthorizationResponse() throws {
-        let handler = DirectPostJwtResponseModeHandler()
-        let authorizationResponse = AuthorizationResponse.presentationExchange(vpToken: mockVPTokens, presentationSubmission: mockPresentationSubmission, state: "test-state")
-
-        let presentationExchangeAuthorizationResponseResult = try handler.getAuthorizationResponse(authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .draft23), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletConfig: walletConfig)
-        XCTAssertEqual(1, presentationExchangeAuthorizationResponseResult.keys.count)
-        XCTAssertNotNil(presentationExchangeAuthorizationResponseResult["response"])
-        XCTAssertFalse(presentationExchangeAuthorizationResponseResult["response"]!.isEmpty)
-        XCTAssertTrue(presentationExchangeAuthorizationResponseResult["response"]!.contains("."))
-
-        let dcqlAuthorizationResult = try handler.getAuthorizationResponse(authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: .v1), authorizationResponse: authorizationResponse, walletNonce: "mock-nonce", walletConfig: walletConfig)
-        XCTAssertEqual(1, dcqlAuthorizationResult.keys.count)
-        XCTAssertNotNil(dcqlAuthorizationResult["response"])
-        XCTAssertFalse(dcqlAuthorizationResult["response"]!.isEmpty)
-        XCTAssertTrue(dcqlAuthorizationResult["response"]!.contains("."))
-    }
-
-    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGiven() throws {
-        let handler = DirectPostJwtResponseModeHandler()
-        let errorResponse = AuthorizationErrorResponse(error: "invalid_request", errorDescription: "something went wrong", state: "error-state")
-
-        for specVersion: SpecVersion in [.draft23, .v1] {
-            let result = try handler.getAuthorizationErrorResponse(authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: specVersion), authorizationResponse: errorResponse, walletNonce: "mock-nonce")
-            XCTAssertEqual(result["error"], "invalid_request")
-            XCTAssertEqual(result["error_description"], "something went wrong")
-            XCTAssertEqual(result["state"], "error-state")
-            XCTAssertNil(result["response"])
-        }
-    }
-
-    func testGetAuthorizationResponseShouldReturnPlainErrorMapWhenErrorResponseGivenAndStateIsNil() throws {
-        let handler = DirectPostJwtResponseModeHandler()
-        let errorResponse = AuthorizationErrorResponse(error: "invalid_request", errorDescription: "something went wrong", state: nil)
-
-        for specVersion: SpecVersion in [.draft23, .v1] {
-            let result = try handler.getAuthorizationErrorResponse(authorizationRequest: getMockAuthorizationRequest(responseMode: .directPostJwt, specVersion: specVersion), authorizationResponse: errorResponse, walletNonce: "mock-nonce")
-            XCTAssertEqual(result["error"], "invalid_request")
-            XCTAssertEqual(result["error_description"], "something went wrong")
-            XCTAssertNil(result["state"])
-            XCTAssertNil(result["response"])
         }
     }
 
@@ -884,19 +710,19 @@ final class DirectPostJwtResponseModeHandlerTests: XCTestCase {
         XCTAssertEqual(result.body, "response received")
     }
 
-    func testSetResponseUrlReturnsResponseUriForDirectPostJwt() throws {
+    func testGetResponseEndpointReturnsResponseUriForDirectPostJwt() throws {
         let handler = DirectPostJwtResponseModeHandler()
-        let responseUrl = try handler.setResponseUrl(authorizationRequestParameters: [
+        let responseUrl = try handler.getResponseEndpoint(authorizationRequestParameters: [
             AuthorizationRequestFieldConstants.responseUri: "https://mock-verifier.com/callback"
         ])
 
         XCTAssertEqual(responseUrl, "https://mock-verifier.com/callback")
     }
 
-    func testSetResponseUrlThrowsForInvalidUriForDirectPostJwt() throws {
+    func testGetResponseEndpointThrowsForInvalidUriForDirectPostJwt() throws {
         let handler = DirectPostJwtResponseModeHandler()
 
-        XCTAssertThrowsError(try handler.setResponseUrl(authorizationRequestParameters: [
+        XCTAssertThrowsError(try handler.getResponseEndpoint(authorizationRequestParameters: [
             AuthorizationRequestFieldConstants.responseUri: "invalid-uri"
         ])) { error in
             assertOpenID4VPException(

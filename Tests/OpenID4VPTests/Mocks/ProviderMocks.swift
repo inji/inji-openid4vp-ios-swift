@@ -15,9 +15,10 @@ final class MockAuthorizationResponseHandler: AuthorizationResponseHandler {
     var expectedVPResponse: [String: String] = [:]
     
     override func constructAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest?,
-        exception: Error,
-        walletNonce: String
+        dispatchInfo: ResponseDispatchInfo?,
+        error: Error,
+        walletNonce: String,
+        authorizationRequest: AuthorizationRequest?
     ) -> [String: Any] {
         return expectedErrorResponse
     }
@@ -58,31 +59,6 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         return nil
     }
     
-    func sendAuthorizationResponse(
-        authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponse,
-        url: String,
-        networkManager: any NetworkManaging,
-        producerInfo: String,
-        recipientInfo: String,
-        walletConfig: WalletConfig
-    ) async throws -> NetworkResponse {
-        fatalError("Not needed for unit testing constructAuthorizationResponse")
-    }
-    
-    func setResponseUrl(authorizationRequestParameters: [String : Any]) throws -> String {
-        return authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as? String ?? "https://example.com/callback"
-    }
-    
-    func getAuthorizationResponse(
-        authorizationRequest: AuthorizationRequest,
-        authorizationResponse: AuthorizationResponse,
-        walletNonce: String,
-        walletConfig: WalletConfig
-    ) throws -> [String: String] {
-        return expectedSuccessResponse
-    }
-    
     func getVerifierPublicKeyForEncryption(
         authorizationRequest: AuthorizationRequest,
         walletConfig: WalletConfig
@@ -92,14 +68,6 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
     
     func getResponseEndpoint(authorizationRequestParameters: [String : Any]) throws -> String {
         return authorizationRequestParameters[AuthorizationRequestFieldConstants.responseUri] as? String ?? "https://example.com/callback"
-    }
-    
-    func getAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest?,
-        authorizationResponse: AuthorizationErrorResponse,
-        walletNonce: String
-    ) throws -> [String: String] {
-        return expectedErrorResponse
     }
     
     func getAuthorizationErrorResponse(

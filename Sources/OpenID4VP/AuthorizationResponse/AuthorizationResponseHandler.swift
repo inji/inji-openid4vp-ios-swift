@@ -63,48 +63,6 @@ class AuthorizationResponseHandler {
         }
     }
     
-    func sendAuthorizationError(responseUri: String?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> VerifierResponse {
-        guard let responseUri = responseUri, !responseUri.isEmpty else {
-            throw ErrorDispatchFailure(message: "Response URI is not set. Cannot send error to verifier.", className: Self.className)
-        }
-        
-        var errorPayload: [String: String] = [:]
-        
-        let resolvedError: OpenID4VPException
-        if let openidError = error as? OpenID4VPException {
-            resolvedError = openidError
-        } else {
-            resolvedError = GenericFailure(
-                message: error.localizedDescription.isEmpty ? "Unknown internal error" : error.localizedDescription,
-                className: String(describing: OpenID4VP.self)
-            )
-        }
-        
-        errorPayload.merge(resolvedError.toErrorResponse()) { _, new in new }
-        
-        if let state = authorizationRequest?.state, !state.isEmpty {
-            errorPayload["state"] = state
-        }
-        
-        do {
-            let dispatchResult = try await networkManager.sendHTTPRequest(
-                url: responseUri,
-                method: .post,
-                bodyParams: errorPayload,
-                headers: [Header.contentType.rawValue: ContentTypes.applicationFormUrlEncoded.rawValue]
-            )
-            let verifierResponse: VerifierResponse = toVerifierResponse(dispatchResult)
-            
-            (error as? OpenID4VPException)?.setVerifierResponse(verifierResponse)
-            return verifierResponse
-        } catch {
-            throw ErrorDispatchFailure(
-                message: "Failed to send error to verifier: \(error)",
-                className: Self.className
-            )
-        }
-    }
-    
     func sendAuthorizationError(dispatchInfo: ResponseDispatchInfo?, authorizationRequest: AuthorizationRequest?, error: Error) async throws -> VerifierResponse {
         guard let dispatchInfo = dispatchInfo else {
             throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot send error to verifier.", className: Self.className)
@@ -143,7 +101,7 @@ class AuthorizationResponseHandler {
     ) async throws -> VerifierResponse {
         let authorizationResponse : AuthorizationResponse
         do {
-            guard let dispatchInfo = dispatchInfo else {
+            if dispatchInfo == nil {
                 throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot send error to verifier.", className: Self.className)
             }
             let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
@@ -259,42 +217,6 @@ class AuthorizationResponseHandler {
         }
         
         return unsignedVPTokenResults.values.flatMap { $0.1 }
-    }
-    
-    func constructAuthorizationErrorResponse(
-        authorizationRequest: AuthorizationRequest?,
-        exception: Error,
-        walletNonce: String
-    ) -> [String: Any] {
-        self.walletNonce = walletNonce
-        
-        let authorizationResponse: AuthorizationErrorResponse
-        
-        if let openIDException = exception as? OpenID4VPException {
-            authorizationResponse = openIDException.toAuthorizationErrorResponse(state: authorizationRequest?.state)
-        } else {
-            let genericException = GenericFailure(
-                message: exception.localizedDescription.isEmpty ? "Unknown internal error" : exception.localizedDescription,
-                className: String(describing: OpenID4VP.self)
-            )
-            authorizationResponse = genericException.toAuthorizationErrorResponse(state: authorizationRequest?.state)
-        }
-        
-        do {
-            return try ResponseModeBasedHandlerFactory
-                .get(responseMode: authorizationRequest?.responseMode ?? ResponseMode.directPost.rawValue)
-                .getAuthorizationErrorResponse(
-                    authorizationRequest: authorizationRequest,
-                    authorizationResponse: authorizationResponse,
-                    walletNonce: self.walletNonce
-                )
-        } catch {
-            OpenID4VPException.error(error, className: Self.className)
-            return [
-                "error": "invalid_request",
-                "error_description": "Failed to construct error response: \(error.localizedDescription)"
-            ]
-        }
     }
     
     func constructAuthorizationErrorResponse(

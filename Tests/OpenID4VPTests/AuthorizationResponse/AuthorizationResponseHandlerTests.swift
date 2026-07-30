@@ -480,14 +480,14 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
         let error = InvalidData(message: "Invalid input data", className: "Test")
-        
-        
+
         let response = handler.constructAuthorizationErrorResponse(
-            authorizationRequest: authorizationRequest,
-            exception: error,
-            walletNonce: "wallet-nonce"
+            dispatchInfo: makeDispatchInfo(),
+            error: error,
+            walletNonce: "wallet-nonce",
+            authorizationRequest: authorizationRequest
         )
-        
+
         XCTAssertEqual(response["error"] as? String, "invalid_request")
         XCTAssertEqual(response["error_description"] as? String, "Invalid input data")
         XCTAssertEqual(response["state"] as? String, state)
@@ -544,53 +544,63 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
     func testConstructAuthorizationErrorResponseWithOpenIDException() {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
-        
+
         let error = InvalidData(
             message: "Invalid input data",
             className: "TestClass"
         )
-        
+
         let response = handler.constructAuthorizationErrorResponse(
-            authorizationRequest: authorizationRequest,
-            exception: error,
-            walletNonce: "wallet-nonce"
+            dispatchInfo: makeDispatchInfo(),
+            error: error,
+            walletNonce: "wallet-nonce",
+            authorizationRequest: authorizationRequest
         )
-        
+
         XCTAssertEqual(response["error"] as? String, "invalid_request")
         XCTAssertEqual(response["error_description"] as? String, "Invalid input data")
         XCTAssertEqual(response["state"] as? String, state)
     }
-    
+
     func testConstructAuthorizationErrorResponseWithGenericError() {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
         let authorizationRequest = getMockAuthorizationRequest(specVersion: .draft23)
-        
+
         let error = NSError(domain: "test", code: 500)
-        
+
         let response = handler.constructAuthorizationErrorResponse(
-            authorizationRequest: authorizationRequest,
-            exception: error,
-            walletNonce: "wallet-nonce"
+            dispatchInfo: makeDispatchInfo(),
+            error: error,
+            walletNonce: "wallet-nonce",
+            authorizationRequest: authorizationRequest
         )
-        
+
         XCTAssertEqual(response["error"] as? String, "server_error")
         XCTAssertNotNil(response["error_description"])
         XCTAssertEqual(response["state"] as? String, state)
     }
-    
+
     // common spec version agnostic tests
     func testConstructAuthorizationErrorResponseReturnMinimalErrorResponseIfConstructionOfErrorFails() {
         let handler = AuthorizationResponseHandler(networkManager: mockNetworkManager, walletConfig: walletConfig)
-        let authorizationRequest = getMockAuthorizationRequest(responseModeValue: "fragment" )
-        
+        let dispatchInfo = ResponseDispatchInfo(
+            responseMode: "fragment",
+            nonce: nil,
+            walletNonce: nil,
+            state: nil,
+            clientId: "mock-client",
+            responseUrl: responseUri,
+            responseEncryptionSpecification: nil
+        )
+
         let error = NSError(domain: "test", code: 500)
-        
+
         let response = handler.constructAuthorizationErrorResponse(
-            authorizationRequest: authorizationRequest,
-            exception: error,
+            dispatchInfo: dispatchInfo,
+            error: error,
             walletNonce: "wallet-nonce"
         )
-        
+
         XCTAssertEqual(response["error"] as? String, "invalid_request")
         XCTAssertNotNil(response["error_description"])
         XCTAssertTrue((response["error_description"] as? String)?.starts(with: "Failed to construct error response:") == true)
@@ -776,9 +786,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let error = InvalidData(message: "Invalid input data", className: "Test")
 
         let response = handler.constructAuthorizationErrorResponse(
-            authorizationRequest: authorizationRequest,
-            exception: error,
-            walletNonce: "wallet-nonce"
+            dispatchInfo: makeDispatchInfo(),
+            error: error,
+            walletNonce: "wallet-nonce",
+            authorizationRequest: authorizationRequest
         )
 
         XCTAssertEqual(response["error"] as? String, "invalid_request")
@@ -792,9 +803,10 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         let error = NSError(domain: "test", code: 500)
 
         let response = handler.constructAuthorizationErrorResponse(
-            authorizationRequest: authorizationRequest,
-            exception: error,
-            walletNonce: "wallet-nonce"
+            dispatchInfo: makeDispatchInfo(),
+            error: error,
+            walletNonce: "wallet-nonce",
+            authorizationRequest: authorizationRequest
         )
 
         XCTAssertEqual(response["error"] as? String, "server_error")
