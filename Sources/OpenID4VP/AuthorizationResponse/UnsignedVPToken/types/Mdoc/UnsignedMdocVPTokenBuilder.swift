@@ -49,7 +49,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                 },
                 existingDocTypes: &existingDocTypes
             )
-            
+
             unsignedVPTokens.append(unsignedVPToken)
         }
         
@@ -132,13 +132,14 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         ])
         
         let wrapped = wrapCBORInputWithTag24(input: deviceAuthentication)!
-        let dataToSign = cborToByteString(cbor: wrapped)
+        let deviceAuthenticationBytes = cborEncode(wrapped)
+        let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
+        let signature1Bytes = try CoseSignature1Utils.createSignature1Structure(payload: deviceAuthenticationBytes, alg: alg)
+        let dataToSign = signature1Bytes.map { String(format: "%02x", $0) }.joined()
         let identifier = UUIDGenerator.generateUUID()
         
         updateIdentifier(identifier)
         uuidToDeviceAuthenticationBytes[identifier] = dataToSign
-        
-        let (keyRef, alg) = try resolveMdocKeyAndAlg(mdocCredential)
         
         return (
             docTypeString,
