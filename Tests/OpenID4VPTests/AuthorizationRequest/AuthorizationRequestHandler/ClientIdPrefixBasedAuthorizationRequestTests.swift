@@ -1096,9 +1096,10 @@ final class ClientIdPrefixBasedAuthorizationRequestTests : XCTestCase {
     func testFetchInfoForSendingResponseToVerifierForInvalidResponseModeThrowInvalidResponseModeError() {
         let testCases: [TestCase<[String: String?], Void>] = [
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "fragment"], expectedError: "Given response_mode - fragment is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Given response_mode -  is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
-            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Given response_mode - null is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            // Empty string, "nil" string, and "null" string are caught by validateAttribute before reaching ResponseModeBasedHandlerFactory
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: ""], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "nil"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
+            TestCase(input: [AuthorizationRequestFieldConstants.responseMode: "null"], expectedError: "Invalid Input: response_mode value cannot be empty or null", expectedCode: OpenID4VPErrorCodes.invalidRequest),
             TestCase(input: [AuthorizationRequestFieldConstants.responseMode: nil], expectedError: "Given response_mode - nil is not supported", expectedCode: OpenID4VPErrorCodes.invalidRequest)
         ]
         

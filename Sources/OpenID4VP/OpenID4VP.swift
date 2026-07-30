@@ -4,7 +4,6 @@ public class OpenID4VP {
     public let traceabilityId: String
     let networkManager: NetworkManaging
     var authorizationRequest: AuthorizationRequest!
-    private var responseUri: String?
     private var responseDispatchInfo: ResponseDispatchInfo?
     private var authorizationResponseHandler: AuthorizationResponseHandler
     private let walletConfig: WalletConfig
@@ -71,7 +70,6 @@ public class OpenID4VP {
         do {
             walletNonce = nonceProvider.generateNonce()
             self.authorizationRequest = nil
-            responseUri = nil
             responseDispatchInfo = nil
             authorizationResponseHandler = AuthorizationResponseHandler(networkManager: networkManager, walletConfig: walletConfig)
 

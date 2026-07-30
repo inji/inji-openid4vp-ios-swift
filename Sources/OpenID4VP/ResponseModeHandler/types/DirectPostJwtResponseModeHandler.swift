@@ -213,7 +213,7 @@ struct DirectPostJwtResponseModeHandler : ResponseModeBasedHandler {
             contentEncryptionAlgorithm: encryptionSpec.contentEncryptionAlg.rawValue,
             keyEncryptionAlgorithm: encryptionSpec.keyEncryptionAlg.rawValue,
             publicKey: encryptionSpec.verifierPublicKey,
-            producerInfo: dispatchInfo.walletNonce ?? "",
+            producerInfo: dispatchInfo.walletNonce ?? NonceProvider().generateNonce(),
             recipientInfo: recipientNonce
         )
     }
