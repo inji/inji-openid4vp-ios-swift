@@ -447,6 +447,76 @@ class OpenID4VPTests: XCTestCase {
         }
     }
 
+    func testAuthenticateVerifierDirectPostJwtSendsEncryptedErrorWhenValidationFailsAfterDispatchInfoPopulation() async {
+        let draft23JwtClientMetadata = clientMetadataSpecVersionDraft23.merging([
+            "authorization_encrypted_response_alg": "ECDH-ES",
+            "authorization_encrypted_response_enc": "A256GCM"
+        ]) { _, new in new }
+        let invalidPresentationDefinitionRequest = createUrlEncodedAuthorizationRequest(
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                preRegisteredSchemeClientIdParameters,
+                [
+                    AuthorizationRequestFieldConstants.responseMode: ResponseMode.directPostJwt.rawValue,
+                    AuthorizationRequestFieldConstants.presentationDefinition: convertToJsonString(["input_descriptor": []]),
+                    AuthorizationRequestFieldConstants.clientMetadata: draft23JwtClientMetadata
+                ]
+            ),
+            clientIdPrefix: .preRegistered,
+            specVersion: .draft23
+        )
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "{\"message\":\"Some additional info\"}")
+
+        await XCTAssertAsyncThrowsError(
+            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: invalidPresentationDefinitionRequest)
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Missing Input: presentation_definition->id param is required",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
+        XCTAssertNotNil(recordedRequest)
+        XCTAssertNotNil(recordedRequest?.requestBody?["response"])
+        XCTAssertNil(recordedRequest?.requestBody?["error"])
+        XCTAssertNil(recordedRequest?.requestBody?["error_description"])
+    }
+
+    func testAuthenticateVerifierDirectPostJwtSendsEncryptedErrorWhenValidationFailsAfterDispatchInfoPopulationSpecV1() async {
+        let invalidDcqlQueryRequest = createUrlEncodedAuthorizationRequest(
+            requestParams: mergeMaps(
+                authorizationRequestParamsWithValue,
+                preRegisteredSchemeClientIdParameters,
+                [
+                    AuthorizationRequestFieldConstants.responseMode: ResponseMode.directPostJwt.rawValue,
+                    AuthorizationRequestFieldConstants.dcqlQuery: convertToJsonString(["credentials": []]),
+                    AuthorizationRequestFieldConstants.clientMetadata: clientMetadataSpecVersion1
+                ]
+            ),
+            clientIdPrefix: .preRegistered,
+            specVersion: .v1
+        )
+        mockNetworkManager.setMockResponse(for: responseUri, responseBody: "{\"message\":\"Some additional info\"}")
+
+        await XCTAssertAsyncThrowsError(
+            try await openID4VP.authenticateVerifier(urlEncodedAuthorizationRequest: invalidDcqlQueryRequest)
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "Invalid Input: dcql_query->credentials value cannot be empty or null",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+
+        let recordedRequest = mockNetworkManager.recordedRequests[responseUri]
+        XCTAssertNotNil(recordedRequest)
+        XCTAssertNotNil(recordedRequest?.requestBody?["response"])
+        XCTAssertNil(recordedRequest?.requestBody?["error"])
+        XCTAssertNil(recordedRequest?.requestBody?["error_description"])
+    }
+
     func testAuthenticateVerifierSuccess_WithRedirectUriClientIdPrefix() async {
         let authorizationRequest = baseAuthRequest(
             clientId: "redirect_uri:https://example.com/iar/callback",
@@ -572,6 +642,4 @@ class OpenID4VPTests: XCTestCase {
 //        }
 //    }
 }
-
-
 

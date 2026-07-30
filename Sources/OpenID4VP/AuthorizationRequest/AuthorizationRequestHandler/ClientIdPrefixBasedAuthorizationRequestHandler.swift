@@ -289,6 +289,9 @@ class ClientIdPrefixBasedAuthorizationRequestHandlerBaseClass  {
         
         let responseEncryptionSpecification = try specVersionHandler.validateClientMetadataAsPerResponseModeAndGetResponseEncryptionSpecification(authorizationRequestParameters: authorizationRequestParameters, walletConfig: walletConfig, shouldValidateWithWalletMetadata: shouldValidateWithWalletMetadata)
         self.responseDispatchInfo?.responseEncryptionSpecification = responseEncryptionSpecification
+        if let dispatchInfo = self.responseDispatchInfo {
+            setResponseDispatchInfo(dispatchInfo)
+        }
         
         try await specVersionHandler.validatePresentationRequest(authorizationRequestParameters: &authorizationRequestParameters,walletConfig: walletConfig, networkManager: networkManager)
     }
