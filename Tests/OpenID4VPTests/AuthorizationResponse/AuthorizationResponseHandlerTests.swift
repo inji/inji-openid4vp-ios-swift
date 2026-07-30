@@ -553,8 +553,9 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
         ) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Failed to send error to verifier: Response dispatch details are not set. Cannot send authorization response to verifier.",
-                expectedCode: OpenID4VPErrorCodes.errorDispatchFailure
+                expectedMessage: "The wallet encountered an internal error while preparing the authorization response.",
+                expectedCode: OpenID4VPErrorCodes.serverError,
+                expectedUnderlyingErrorMessage: "Failed to send error to verifier: Response dispatch details are not set. Cannot send authorization response to verifier."
             )
         }
     }

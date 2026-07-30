@@ -101,7 +101,7 @@ class AuthorizationResponseHandler {
     ) async throws -> VerifierResponse {
         let authorizationResponse : AuthorizationResponse
         do {
-            guard let dispatchInfo = dispatchInfo else {
+            if dispatchInfo == nil {
                 throw ErrorDispatchFailure(message: "Response dispatch details are not set. Cannot send authorization response to verifier.", className: Self.className)
             }
             let reconstructedVpTokenSigningResult : [FormatType : [VPTokenSigningResult]] = try constructSigningResults(
