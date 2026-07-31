@@ -7,14 +7,14 @@ class PreRegisteredSchemeAuthorizationRequestHandler:  ClientIdPrefixBasedAuthor
          specVersion: SpecVersion,
          authorizationRequestParameters: [String: Any],
          walletConfig: WalletConfig,
-         setResponseUri: @escaping (String) -> Void,
+         setResponseDispatchInfo: @escaping (ResponseDispatchInfo) -> Void,
          walletNonce: String,
          networkManager: NetworkManaging) {
         super.init(clientId: clientId,
                    specVersion: specVersion,
                    authorizationRequestParameters: authorizationRequestParameters,
                    walletConfig: walletConfig,
-                   setResponseUri: setResponseUri,
+                   setResponseDispatchInfo: setResponseDispatchInfo,
                    walletNonce: walletNonce,
                    networkManager: networkManager)
         delegate = self

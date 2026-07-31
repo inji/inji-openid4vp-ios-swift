@@ -21,7 +21,9 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         self.authorizationRequest = authorizationRequest
         self.specVersion = specVersion
         self.walletConfig = walletConfig
-        self.responseUri = try ResponseModeBasedHandlerFactory.get(responseMode: authorizationRequest.responseMode).getResponseEndpoint(authorizationRequest: authorizationRequest)
+        self.responseUri = try ResponseModeBasedHandlerFactory
+            .get(responseMode: authorizationRequest.responseMode)
+            .getResponseEndpoint(authorizationRequest: authorizationRequest)
         self.mdocGeneratedNonce = mdocGeneratedNonce
     }
     
@@ -188,4 +190,3 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         }
     }
 }
-
