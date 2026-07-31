@@ -318,7 +318,7 @@ final class UnsignedMdocVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(unsignedVPTokens[0].id, identifier)
     }
 
-    // MARK: - Format 1 mDoc (issuerAuth at top level, no wrapping docType/issuerSigned)
+    // MARK: - // VCI 1.0 compliant mDoc - DeviceSigned structure
 
     func testCreationOfUnsignedMdocVPTokenWithFormat1Mdoc() async throws {
         let builder = try UnsignedMdocVPTokenBuilder(

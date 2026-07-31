@@ -139,29 +139,11 @@ class MdocVPTokenBuilder : VPTokenBuilder {
         return MdocVPToken(base64EncodedDeviceResponse: encodedDeviceResponseBase64Url)
     }
     
-    // DeviceSignature is of COSE_Sign1 structure
-    /**
-     COSE_Sign1 = [
-     Headers, //protected , unprotected in order
-     payload : bstr / nil,
-     signature : bstr
-     ]
-     */
-    private func createDeviceSignature(_ vpResponseMetadata: DeviceAuthentication) throws -> CBOR {
-        let rawSignatureBytes = [UInt8](vpResponseMetadata.signature)
-        
-        let protectedHeaders = CBOR.map([
-            .unsignedInt(1): try mapSigningAlgorithmToProtectedAlg(algorithm: vpResponseMetadata.algorithm)
-        ])
-        let unprotectedHeaders: CBOR = .map([:])
-        //Payload is available as detached content
-        let payload = CBOR.null
-        
-        return CBOR.array([
-            .byteString(cborEncode(protectedHeaders)),
-            unprotectedHeaders,
-            payload,
-            .byteString(rawSignatureBytes),
-        ])
+    private func createDeviceSignature(_ deviceAuthentication: DeviceAuthentication) throws -> CBOR {
+        let rawSignatureBytes = [UInt8](deviceAuthentication.signature)
+        return try CoseSignature1Utils.createCoseSign1(
+            signingAlgorithm: deviceAuthentication.algorithm,
+            signature: rawSignatureBytes
+        )
     }
 }

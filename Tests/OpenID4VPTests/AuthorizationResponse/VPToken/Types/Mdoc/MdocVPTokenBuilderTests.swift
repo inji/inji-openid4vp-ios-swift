@@ -274,7 +274,7 @@ final class MdocVPTokenBuilderTests: XCTestCase {
         XCTAssertEqual(result.count, 0)
     }
 
-    // MARK: - Format 1 mDoc (issuerAuth at top level, no wrapping docType/issuerSigned)
+    // MARK: - // VCI 1.0 compliant mDoc - DeviceSigned structure
 
     func testBuildSuccessWithFormat1Mdoc() throws {
         let signature = Data("mock-signature".utf8)

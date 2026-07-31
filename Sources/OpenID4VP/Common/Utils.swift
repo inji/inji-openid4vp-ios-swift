@@ -171,18 +171,16 @@ func resolveMdocKeyAndAlg(_ mdocCredential: String) throws -> (keyRef: String, a
     }
     
     var decoded = try CBORDecoder(input: [UInt8](data)).decodeItem()
-    var issuerSignedMap : [CBOR: CBOR] = [:]
+    guard let decodedMdoc = decoded else {
+        throw InvalidData(
+            message: "Invalid base64url mdoc credential",
+            className: "OpenID4VPUtils"
+        )
+    }
     
-    if case let CBOR.map(rootMap)? = decoded,
-       let issuerSigned = rootMap[CBOR.utf8String("issuerSigned")],
-       case let CBOR.map(issuerSignedMapValue) = issuerSigned  {
-        issuerSignedMap = issuerSignedMapValue
-    } else if case let CBOR.map(rootMap)? = decoded,
-              let issuerAuth = rootMap[CBOR.utf8String("issuerAuth")]
-    {
-        issuerSignedMap = rootMap
-    } else {
-        throw InvalidData(message: "issuerSigned missing", className: "OpenID4VPUtils")
+    let issuerSigned = try getIssuerSigned(from: decodedMdoc, className: "OpenID4VPUtils")
+    guard case let CBOR.map(issuerSignedMap) = issuerSigned else {
+        throw InvalidData(message: "issuerSigned is not a map", className: "OpenID4VPUtils")
     }
 
     
@@ -397,4 +395,3 @@ func serializeJwkToJson(_ jwk: [String: Any]) throws -> String {
     }
     return jsonString
 }
-
