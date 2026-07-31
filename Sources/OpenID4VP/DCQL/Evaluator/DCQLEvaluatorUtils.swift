@@ -54,15 +54,14 @@ func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ cr
             processedCredentials[credentialId] = (W3cProcessedCredential(
                 credentialId: credential.credentialId,
                 credentialFormat: credential.format,
-                claims: credentialData // TODO: recheck and rename it accordingly // credentialSubject, fullName
+                claims: credentialData
             ))
             
         case .mso_mdoc:
-            let (_, decodedMdocCredential) = try decodeMdoc(credential.data, className: className)
+            let (_, issuerSigned) = try getMdocDocTypeAndIssuerSigned(from: credential.data, className: className)
             
             var namespaces: [String: [String: Any]] = [:]
-            if let issuerSignedCBOR = getValueFromCBORMap(cborMap: decodedMdocCredential, key: "issuerSigned"),
-               let nameSpacesCBOR = getValueFromCBORMap(cborMap: issuerSignedCBOR, key: "nameSpaces") {
+            if let nameSpacesCBOR = getValueFromCBORMap(cborMap: issuerSigned, key: "nameSpaces") {
                 
                 if case let .map(items) = nameSpacesCBOR {
                     for (nsKey, nsValue) in items {
