@@ -127,7 +127,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
         let deviceAuthentication = CBOR.array([
             .utf8String("DeviceAuthentication"),
             sessionTranscript,
-            docType,
+            .utf8String(docTypeString),
             deviceNamespacesBytes
         ])
         
@@ -149,7 +149,7 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                 format: .mso_mdoc,
                 holderKeyReference: keyRef,
                 signatureAlgorithm: alg,
-                dataToSign: Data(dataToSign.utf8)
+                dataToSign: Data(signature1Bytes)
             )
         )
     }

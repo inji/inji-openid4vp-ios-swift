@@ -153,12 +153,12 @@ class MdocVPTokenBuilder : VPTokenBuilder {
      ]
      */
     private func createDeviceSignature(_ vpResponseMetadata: DeviceAuthentication) throws -> CBOR {
-        let base64DecodedSignature = vpResponseMetadata.signature
-        let cborEncodedSignature = cborEncode(toCBOR(base64DecodedSignature))
+        let rawSignatureBytes = [UInt8](vpResponseMetadata.signature)
+        
         let protectedHeaders = CBOR.map([
             .unsignedInt(1): try mapSigningAlgorithmToProtectedAlg(algorithm: vpResponseMetadata.algorithm)
         ])
-        let unprotectedHeaders = CBOR.map([:])
+        let unprotectedHeaders: CBOR = .map([:])
         //Payload is available as detached content
         let payload = CBOR.null
         
@@ -166,7 +166,7 @@ class MdocVPTokenBuilder : VPTokenBuilder {
             .byteString(cborEncode(protectedHeaders)),
             unprotectedHeaders,
             payload,
-            .byteString(cborEncodedSignature),
+            .byteString(rawSignatureBytes),
         ])
     }
 }
