@@ -114,7 +114,8 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
     ) async throws -> (docType: String, deviceAuthenticationBytes: String, unsignedVPToken: UnsignedVPToken) {
         let (mdocCredential, decodedMdocCredential) = try decodeMdoc(credential, className: Self.className)
         
-        let (docType, docTypeString) = try extractMdocDocType(from: decodedMdocCredential, className: Self.className)
+        let issuerSigned = try getIssuerSigned(from: decodedMdocCredential, className: Self.className)
+        let (_, docTypeString) = try extractMdocDocType(from: issuerSigned, className: Self.className)
         
         if existingDocTypes.contains(docTypeString) {
             throw InvalidData(
@@ -184,8 +185,10 @@ struct UnsignedMdocVPTokenBuilder: UnsignedVPTokenBuilder {
                     thumbprintCBOR,
                     .utf8String(responseUri)
                 ])
+                
                 let openId4VPHandoverInfoBytes: [UInt8] = openId4VPHandoverInfo.encode()
                 let handoverInfoHash = CBOR.byteString([UInt8](Data(SHA256.hash(data: Data(openId4VPHandoverInfoBytes)))))
+                
                 return CBOR.array([.utf8String("OpenID4VPHandover"), handoverInfoHash])
             }
         }

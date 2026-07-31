@@ -390,7 +390,6 @@ final class AuthorizationResponseHandlerTests: XCTestCase {
             authorizationRequest: authorizationRequest,
             walletNonce: walletNonce
         )
-        print("unsignedVPTokens: \(unsignedVPTokens)")
         
         let vpTokenSigningResults = unsignedVPTokens.map {
             VPTokenSigningResult(id: $0.id, signedData: Data("ayuht".utf8))

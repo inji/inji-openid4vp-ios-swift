@@ -103,18 +103,13 @@ class MdocVPTokenBuilder : VPTokenBuilder {
                 className: className
             )
         }
-        guard var document = try? decodeCBOR(base64EncodedInput: mdocCredential) else {
-            throw InvalidData( message: "Invalid Verifiable Credential: Error while decoding credential", className: className)
-        }
-        
-        if(getValueFromCBORMap(cborMap: document, key: "issuerSigned") == nil) {
-            let issuerSigned = document
-            let (docType, _) = try extractMdocDocType(from: issuerSigned, className: className)
-            document = [:]
-            document["docType"] = docType
-            document["issuerSigned"] = issuerSigned
-        }
-        
+
+        let (docType, issuerSigned) = try getMdocDocTypeAndIssuerSigned(from: credential, className: className)
+        var document = CBOR.map([
+            CBOR.utf8String("issuerSigned"): issuerSigned,
+            CBOR.utf8String("docType"): docType,
+        ])
+
         let (_, alg) = try resolveMdocKeyAndAlg(mdocCredential)
         
         let deviceAuthSignature = DeviceAuthentication(signature: vpTokenSigningResult.signedData, algorithm: alg)
