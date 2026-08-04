@@ -168,7 +168,7 @@ The holder key is identified using the `deviceKey` available in the `mso_mdoc` c
 
 ### What is WalletConfig?
 
-`WalletConfig` tells the OpenID4VP library which features your wallet supports, which verifiers you trust, and how to validate incoming requests. It defines capabilities, cryptographic algorithms, and trusted verifier settings. You create this once during app initialization.
+`WalletConfig` tells the OpenID4VP library which features your wallet supports, which verifiers you trust, and how to validate incoming requests. It defines capabilities, cryptographic algorithms, and trusted verifier settings.
 
 ### Quick Example
 
@@ -341,12 +341,11 @@ This method:
 
 **Client validation:**
 - For `pre-registered` clients: validates against `WalletConfig.trustedVerifiers`
-- Can be disabled by setting `**validateTrustedVerifier**` to `false` in wallet config
+- Can be disabled by setting `WalletConfig.validateTrustedVerifier` to `false` in wallet config
 
 ```swift
 let authorizationRequest: AuthorizationRequest = try await openID4VP.authenticateVerifier(
-    urlEncodedAuthorizationRequest: encodedAuthorizationRequest,
-    shouldValidateClient: true
+    urlEncodedAuthorizationRequest: encodedAuthorizationRequest
 )
 ```
 
@@ -951,8 +950,7 @@ func handleOVPFlow(
 
     do {
         let validatedVPRequest = try await openID4VP.authenticateVerifier(
-            urlEncodedAuthorizationRequest: encodedAuthorizationRequest,
-            shouldValidateClient: true
+            urlEncodedAuthorizationRequest: encodedAuthorizationRequest
         )
 
         var selectedCredentials: [String: [Credential]] = [:]

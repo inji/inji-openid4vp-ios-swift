@@ -116,10 +116,11 @@ then migrate it to `WalletConfig` like this:
 
 Additional fields now configured on `WalletConfig` in 1.0.0:
 
-| `WalletConfig`-only field              | Purpose                                        | Migration note                                                             |
-|----------------------------------------|------------------------------------------------|----------------------------------------------------------------------------|
-| `requestUriMethodsSupported`           | Supported `request_uri_method` values          |                                                                            |
-| `trustedVerifiers`                     | Default Wallet's pre-registered Verifiers list | Previously accepted as `trustedVerifiers` in `authenticateVerifier` method |
+| `WalletConfig`-only field | Purpose                                                                                                                                                                                                | Migration note                                                                      |
+|---------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `validateTrustedVerifier` | Boolean flag that determines whether client authentication for VP requests from clients with the **"Pre-registered"** client ID prefix should be validated against the wallet's trusted verifier list. | Previously provided as `shouldValidateClient` in the `authenticateVerifier` method. |
+| `trustedVerifiers`        | The wallet's default list of pre-registered trusted verifiers.                                                                                                                                         | Previously provided as `trustedVerifiers` in the `authenticateVerifier` method.     |
+
 
 Example migration:
 
@@ -158,7 +159,7 @@ let walletConfig = WalletConfig(
 
 Notes:
 - `ClientIdScheme.did` maps to `ClientIdPrefix.decentralizedIdentifier` in the current API.
-- `requestUriMethodsSupported` and `trustedVerifiers` are new `WalletConfig` concerns that were not part of this older `WalletMetadata` model.
+- `validateTrustedVerifier` and `trustedVerifiers` are new `WalletConfig` concerns that were not part of this older `WalletMetadata` model.
 - For the algorithm/encryption enums, direct `rawValue` conversion works when the old and new enum raw values match.
 
 ---
@@ -407,8 +408,8 @@ Signature:
 > 1.0.0 keeps the core entry point class, but several 0.7.0 methods were removed and some existing methods changed signatures.
 
 Current public methods in `OpenID4VP` 1.0.0:
-- `authenticateVerifier(urlEncodedAuthorizationRequest:shouldValidateClient:)`
-- `authenticateVerifier(authorizationRequest:shouldValidateClient:)`
+- `authenticateVerifier(urlEncodedAuthorizationRequest:)`
+- `authenticateVerifier(authorizationRequest:)`
 - `constructUnsignedVPToken(selectedCredentials:)`
 - `constructVPResponse(vpTokenSigningResults:)`
 - `constructErrorInfo(exception:)`
@@ -424,11 +425,11 @@ For detailed usage refer the [latest integration guide](../integration-guide.md)
 
 The following APIs have updated signatures in 1.0.0:
 
-* `authenticateVerifier(urlEncodedAuthorizationRequest:shouldValidateClient:)`
+* `authenticateVerifier(urlEncodedAuthorizationRequest:)`
 
-    * Trusted verifier configuration is now sourced from `WalletConfig` and is no longer passed at call time.
+    * Trusted verifier and shouldValidateClient configuration is now sourced from `WalletConfig` and is no longer passed at call time.
 
-* `authenticateVerifier(authorizationRequest:shouldValidateClient:)`
+* `authenticateVerifier(authorizationRequest:)`
 
     * Trusted verifier configuration is now sourced from `WalletConfig` and is no longer passed at call time.
 

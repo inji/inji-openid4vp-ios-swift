@@ -153,7 +153,7 @@ When your wallet receives an authorization request, check for these parameters t
 > **The library automatically detects the spec version after receiving the request.** You don't need to manually check.
 
 **Important:** A valid request must have exactly one of these parameters—never both:
-- ❌ Both `dcql_query` AND `presentation_definition` / `presentation_definition_uri` = Error
+- * ✅ If both `dcql_query` and `presentation_definition` (or `presentation_definition_uri`) are provided, `dcql_query` takes precedence, and `presentation_definition` / `presentation_definition_uri` are ignored.
 - ❌ Both `dcql_query` AND `scope` = Error
 
 ---
