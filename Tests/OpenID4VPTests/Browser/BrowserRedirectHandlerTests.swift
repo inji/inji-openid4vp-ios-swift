@@ -96,19 +96,16 @@ final class BrowserRedirectHandlerTests: XCTestCase {
         )
     }
 
-    func testBuildsTheExpectedRedirectUrlForEveryKnownBrowser() async {
-        let redirectUri = "https://client.example.org/cb"
-        let encodedRedirectUri = "https%3A%2F%2Fclient.example.org%2Fcb"
+    /// Lowercases only the scheme, so everything after `://` stays case sensitive.
+    private func normalizingScheme(_ url: String) -> String {
+        guard let separator = url.range(of: "://") else { return url }
+        return url[..<separator.lowerBound].lowercased() + url[separator.lowerBound...]
+    }
 
-        let cases: [(browser: BrowserApp, probeScheme: String, expectedURL: String)] = [
-            (.chrome, "googlechromes", "googlechromes://client.example.org/cb"),
-            (.firefox, "firefox", "firefox://open-url?url=\(encodedRedirectUri)"),
-            (.edge, "microsoft-edge-https", "microsoft-edge-https://client.example.org/cb"),
-            (.brave, "brave", "brave://open-url?url=\(encodedRedirectUri)"),
-            (.opera, "touch-https", "touch-https://client.example.org/cb"),
-            (.duckDuckGo, "ddgquicklink", "ddgQuickLink://client.example.org/cb")
-        ]
-
+    private func assertRedirectURLs(
+        redirectUri: String,
+        cases: [(browser: BrowserApp, probeScheme: String, expectedURL: String)]
+    ) async {
         XCTAssertEqual(cases.count, BrowserApp.knownBrowsers.count)
 
         for testCase in cases {
@@ -120,11 +117,59 @@ final class BrowserRedirectHandlerTests: XCTestCase {
             XCTAssertTrue(redirected, "expected redirection for \(testCase.browser.displayName)")
             XCTAssertEqual(urlOpener.openedURLs.count, 1, "expected one open for \(testCase.browser.displayName)")
             XCTAssertEqual(
-                urlOpener.openedURLs.first?.absoluteString.caseInsensitiveCompare(testCase.expectedURL),
-                .orderedSame,
+                urlOpener.openedURLs.first.map { normalizingScheme($0.absoluteString) },
+                normalizingScheme(testCase.expectedURL),
                 "unexpected URL for \(testCase.browser.displayName)"
             )
         }
+    }
+
+    func testBuildsTheExpectedRedirectUrlForEveryKnownBrowser() async {
+        let encodedRedirectUri = "https%3A%2F%2Fclient.example.org%2Fcb"
+
+        await assertRedirectURLs(
+            redirectUri: "https://client.example.org/cb",
+            cases: [
+                (.chrome, "googlechromes", "googlechromes://client.example.org/cb"),
+                (.firefox, "firefox", "firefox://open-url?url=\(encodedRedirectUri)"),
+                (.edge, "microsoft-edge-https", "microsoft-edge-https://client.example.org/cb"),
+                (.brave, "brave", "brave://open-url?url=\(encodedRedirectUri)"),
+                (.opera, "touch-https", "touch-https://client.example.org/cb"),
+                (.duckDuckGo, "ddgquicklink", "ddgQuickLink://client.example.org/cb")
+            ]
+        )
+    }
+
+    func testBuildsTheExpectedRedirectUrlForEveryKnownBrowserOverHttp() async {
+        let encodedRedirectUri = "http%3A%2F%2Fclient.example.org%2Fcb"
+
+        await assertRedirectURLs(
+            redirectUri: "http://client.example.org/cb",
+            cases: [
+                (.chrome, "googlechrome", "googlechrome://client.example.org/cb"),
+                (.firefox, "firefox", "firefox://open-url?url=\(encodedRedirectUri)"),
+                (.edge, "microsoft-edge-http", "microsoft-edge-http://client.example.org/cb"),
+                (.brave, "brave", "brave://open-url?url=\(encodedRedirectUri)"),
+                (.opera, "touch-http", "touch-http://client.example.org/cb"),
+                (.duckDuckGo, "ddgquicklink", "ddgQuickLink://client.example.org/cb")
+            ]
+        )
+    }
+
+    func testPreservesTheCaseOfThePathAndQueryOfTheRedirectUri() async {
+        let encodedRedirectUri = "https%3A%2F%2Fclient.example.org%2FCb%3FRef%3DAbC"
+
+        await assertRedirectURLs(
+            redirectUri: "https://client.example.org/Cb?Ref=AbC",
+            cases: [
+                (.chrome, "googlechromes", "googlechromes://client.example.org/Cb?Ref=AbC"),
+                (.firefox, "firefox", "firefox://open-url?url=\(encodedRedirectUri)"),
+                (.edge, "microsoft-edge-https", "microsoft-edge-https://client.example.org/Cb?Ref=AbC"),
+                (.brave, "brave", "brave://open-url?url=\(encodedRedirectUri)"),
+                (.opera, "touch-https", "touch-https://client.example.org/Cb?Ref=AbC"),
+                (.duckDuckGo, "ddgquicklink", "ddgQuickLink://client.example.org/Cb?Ref=AbC")
+            ]
+        )
     }
 
     func testKeepsThePlainHttpSchemeWhenOpeningAnHttpRedirectUri() async {
