@@ -96,6 +96,37 @@ final class BrowserRedirectHandlerTests: XCTestCase {
         )
     }
 
+    func testBuildsTheExpectedRedirectUrlForEveryKnownBrowser() async {
+        let redirectUri = "https://client.example.org/cb"
+        let encodedRedirectUri = "https%3A%2F%2Fclient.example.org%2Fcb"
+
+        let cases: [(browser: BrowserApp, probeScheme: String, expectedURL: String)] = [
+            (.chrome, "googlechromes", "googlechromes://client.example.org/cb"),
+            (.firefox, "firefox", "firefox://open-url?url=\(encodedRedirectUri)"),
+            (.edge, "microsoft-edge-https", "microsoft-edge-https://client.example.org/cb"),
+            (.brave, "brave", "brave://open-url?url=\(encodedRedirectUri)"),
+            (.opera, "touch-https", "touch-https://client.example.org/cb"),
+            (.duckDuckGo, "ddgquicklink", "ddgQuickLink://client.example.org/cb")
+        ]
+
+        XCTAssertEqual(cases.count, BrowserApp.knownBrowsers.count)
+
+        for testCase in cases {
+            let urlOpener = MockBrowserURLOpener(installedSchemes: [testCase.probeScheme])
+
+            let redirected = await BrowserRedirectHandler(urlOpener: urlOpener)
+                .redirect(verifierResponse(redirectUri: redirectUri), using: testCase.browser)
+
+            XCTAssertTrue(redirected, "expected redirection for \(testCase.browser.displayName)")
+            XCTAssertEqual(urlOpener.openedURLs.count, 1, "expected one open for \(testCase.browser.displayName)")
+            XCTAssertEqual(
+                urlOpener.openedURLs.first?.absoluteString.caseInsensitiveCompare(testCase.expectedURL),
+                .orderedSame,
+                "unexpected URL for \(testCase.browser.displayName)"
+            )
+        }
+    }
+
     func testKeepsThePlainHttpSchemeWhenOpeningAnHttpRedirectUri() async {
         let urlOpener = MockBrowserURLOpener(installedSchemes: ["googlechrome"])
 

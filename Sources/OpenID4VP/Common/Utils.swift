@@ -55,9 +55,7 @@ private let rfc3986UriCharacters = CharacterSet(
 )
 
 private func containsOnlyRfc3986Characters(_ value: String) -> Bool {
-    return value.unicodeScalars.allSatisfy { scalar in
-        !scalar.isASCII || rfc3986UriCharacters.contains(scalar)
-    }
+    return value.unicodeScalars.allSatisfy { rfc3986UriCharacters.contains($0) }
 }
 
 public func sanitizeRedirectUri(_ redirectUri: String?) -> String? {

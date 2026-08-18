@@ -97,7 +97,11 @@ class UtilsTest : XCTestCase {
             "https:",
             "https:///cb",
             "http://",
-            "https://:8080/cb"
+            "https://:8080/cb",
+            "https://exämple.com/cb",
+            "https://verifier.example.com/cä",
+            "https://verifier.example.com/cb?q=café",
+            "https://verifier.example.com/cb#fragmént"
         ]
 
         for uri in nonNavigableUris {
