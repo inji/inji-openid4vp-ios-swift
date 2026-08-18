@@ -104,3 +104,28 @@ class MockResponseModeHandler: ResponseModeBasedHandler {
         fatalError("Not needed for unit testing")
     }
 }
+
+final class MockBrowserURLOpener: BrowserURLOpening {
+    var installedSchemes: Set<String>
+    var openSucceeds: Bool
+
+    private(set) var openedURLs: [URL] = []
+    private(set) var probedURLs: [URL] = []
+
+    init(installedSchemes: Set<String> = [], openSucceeds: Bool = true) {
+        self.installedSchemes = installedSchemes
+        self.openSucceeds = openSucceeds
+    }
+
+    func canOpen(_ url: URL) async -> Bool {
+        probedURLs.append(url)
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return installedSchemes.contains(scheme)
+    }
+
+    @discardableResult
+    func open(_ url: URL) async -> Bool {
+        openedURLs.append(url)
+        return openSucceeds
+    }
+}

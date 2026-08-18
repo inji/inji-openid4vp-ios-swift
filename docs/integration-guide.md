@@ -25,6 +25,7 @@ This guide provides detailed information on integrating the OpenID4VP SDK into y
   - [2. User Selection of Credentials and Consent](#2-user-selection-of-credentials-and-consent)
   - [3. Construction of a Verifiable Presentation and Submission to the Verifier](#3-construction-of-a-verifiable-presentation-and-submission-to-the-verifier)
   - [4. Dispatch Error to Verifier](#4-dispatch-errors-to-the-verifier)
+  - [5. Redirect to the Verifier's redirect_uri](#5-redirect-to-the-verifiers-redirect_uri)
 
 ---
 
@@ -36,6 +37,7 @@ This guide provides detailed information on integrating the OpenID4VP SDK into y
     - Provide the validated Authorization Request (Presentation Definition or DCQL query) to the Wallet.
 - Prepare the Verifiable Presentation response by requesting the Wallet to sign the required data.
 - Submit the Authorization Response to the Verifier in accordance with the received presentation request.
+- Redirect the End-User's browser to the `redirect_uri` returned by the Verifier after submission, listing the browsers available on the device for the End-User to choose from.
 
 
 > **Note:** Fetching Verifiable Presentations request via the [`scope`](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#name-using-scope-parameter-to-re) parameter is not supported by this SDK.
@@ -918,6 +920,76 @@ let verifierResponse: VerifierResponse = try await openID4VP.sendErrorInfoToVeri
 #### Exceptions
 
 * `ErrorDispatchFailure` — Thrown if the error response cannot be successfully delivered to the Verifier.
+
+---
+
+## 5. Redirect to the Verifier's `redirect_uri`
+
+After the Authorization Response has been submitted, the Verifier's Response Endpoint MAY return a `redirect_uri` in its JSON body. As per [OpenID4VP 1.0 Section 8.2](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#section-8.2):
+
+> `redirect_uri`: OPTIONAL. String containing a URI. When this parameter is present the Wallet MUST redirect the user agent to this URI.
+
+The URI must be opened in the End-User's browser — it must **not** be fetched as a back-channel HTTP request. If the response does not contain a `redirect_uri`, the Wallet is not required to perform any further steps.
+
+`BrowserRedirectHandler` performs this redirection and lists the browsers available on the device so the End-User can choose one.
+
+```swift
+import OpenID4VP
+
+let verifierResponse: VerifierResponse = try await openID4VP.sendVPResponseToVerifier(
+    vpTokenSigningResults: signingResults
+)
+
+let redirectHandler = BrowserRedirectHandler()
+
+if redirectHandler.canRedirect(verifierResponse) {
+    let browsers: [BrowserApp] = await redirectHandler.getAvailableBrowsers()
+    // Render `browsers` and let the End-User pick one, then:
+    await redirectHandler.redirect(verifierResponse, using: selectedBrowser)
+}
+```
+
+The same handler applies to the `VerifierResponse` returned by `sendErrorInfoToVerifier`, since the Response Endpoint may return a `redirect_uri` for Error Responses too.
+
+### Methods
+
+| Method                                        | Returns        | Description                                                                                                                |
+|-----------------------------------------------|----------------|----------------------------------------------------------------------------------------------------------------------------|
+| `canRedirect(_:)`                             | `Bool`         | Whether the Verifier returned a `redirect_uri` that is an absolute, navigable URI.                                          |
+| `shouldOfferBrowserChoice(_:)`                | `Bool`         | Whether a browser chooser is meaningful. Only `http(s)` URIs are opened in a browser.                                        |
+| `getAvailableBrowsers()`                      | `[BrowserApp]` | Browsers available on the device, the End-User's default browser first.                                                     |
+| `redirect(_:using:)`                          | `Bool`         | Opens the `redirect_uri`. Pass `nil` as `using` to open the default browser. Returns whether navigation started.             |
+
+**`BrowserApp` Structure**
+
+| Field         | Type     | Description                                                          |
+|---------------|----------|------------------------------------------------------------------------|
+| `id`          | `String` | Stable identifier of the browser, e.g. `chrome`.                      |
+| `displayName` | `String` | Human readable name to show to the End-User, e.g. `Chrome`.           |
+| `isDefault`   | `Bool`   | Whether this entry opens the End-User's default browser.               |
+
+### Detecting third party browsers
+
+iOS does not expose the list of installed browsers. The End-User's default browser is always offered; a third party browser is only detected when your Wallet declares its URL scheme under `LSApplicationQueriesSchemes` in `Info.plist`, otherwise `canOpenURL` always reports `false`.
+
+```xml
+<key>LSApplicationQueriesSchemes</key>
+<array>
+    <string>googlechromes</string>
+    <string>firefox</string>
+    <string>microsoft-edge-https</string>
+    <string>brave</string>
+    <string>touch-https</string>
+    <string>ddgQuickLink</string>
+</array>
+```
+
+### Behaviour notes
+
+- A `redirect_uri` that is blank, relative or malformed is ignored and `redirect` returns `false`, so a non-conformant Verifier cannot break the flow.
+- Non-`http(s)` absolute URIs (for example `mywallet://callback`) are handed to the application registered for that scheme instead of a browser.
+- **Security:** the `redirect_uri` is chosen by the Verifier, and a non-`http(s)` value launches whatever application is registered for that scheme (e.g. `tel:`, `sms:`, a third-party app's deep link) with the Wallet's implied legitimacy. If your Wallet only interacts with web-based Verifiers, gate the call on `shouldOfferBrowserChoice(verifierResponse)` so that only `http(s)` URIs are ever opened.
+- `BrowserRedirectHandler` accepts a custom `BrowserURLOpening` implementation via its initializer, which is useful in tests.
 
 ---
 

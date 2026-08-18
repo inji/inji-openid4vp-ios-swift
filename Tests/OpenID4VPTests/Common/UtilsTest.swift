@@ -58,7 +58,77 @@ class UtilsTest : XCTestCase {
             XCTAssertTrue(isValidUri(url), "expected valid: \(url)")
         }
     }
-    
+
+    /// Validate redirect_uri returned by the Verifier response endpoint tests
+
+    func testSanitizeRedirectUri() {
+        let redirectUri = "https://client.example.org/cb#response_code=091535f699ea575c7937fa5f0f454aee"
+
+        XCTAssertEqual(sanitizeRedirectUri(redirectUri), redirectUri)
+        XCTAssertEqual(
+            sanitizeRedirectUri("https://verifier.example.com/cb?response_code=1234"),
+            "https://verifier.example.com/cb?response_code=1234"
+        )
+        XCTAssertEqual(
+            sanitizeRedirectUri("https://my_verifier.example.com/cb"),
+            "https://my_verifier.example.com/cb"
+        )
+    }
+
+    func testSanitizeRedirectUriTrimsSurroundingWhitespace() {
+        XCTAssertEqual(
+            sanitizeRedirectUri("  https://verifier.example.com/cb  "),
+            "https://verifier.example.com/cb"
+        )
+    }
+
+    func testNonNavigableRedirectUri() {
+        let nonNavigableUris: [String?] = [
+            nil,
+            "",
+            "   ",
+            "/cb?response_code=123",
+            "cb",
+            "//verifier.example.com/cb",
+            "https://verifier.example.com/a b",
+            "ht tp://verifier.example.com",
+            "https://verifier.example.com/cb?next={code}",
+            "https://verifier.example.com/a|b",
+            "https:",
+            "https:///cb",
+            "http://",
+            "https://:8080/cb"
+        ]
+
+        for uri in nonNavigableUris {
+            XCTAssertNil(sanitizeRedirectUri(uri), "expected non navigable: \(String(describing: uri))")
+            XCTAssertFalse(isNavigableRedirectUri(uri), "expected non navigable: \(String(describing: uri))")
+            XCTAssertFalse(isBrowserNavigableRedirectUri(uri), "expected non browser navigable: \(String(describing: uri))")
+        }
+    }
+
+    func testBrowserNavigableRedirectUri() {
+        let browserNavigableUris = [
+            "http://verifier.example.com/cb",
+            "https://verifier.example.com/cb",
+            "HTTPS://verifier.example.com/cb",
+            "Http://verifier.example.com/cb"
+        ]
+
+        for uri in browserNavigableUris {
+            XCTAssertTrue(isNavigableRedirectUri(uri), "expected navigable: \(uri)")
+            XCTAssertTrue(isBrowserNavigableRedirectUri(uri), "expected browser navigable: \(uri)")
+        }
+    }
+
+    func testAppLinkRedirectUriIsNavigableButNotBrowserNavigable() {
+        let appLink = "mywallet://verifier-callback?response_code=123"
+
+        XCTAssertEqual(sanitizeRedirectUri(appLink), appLink)
+        XCTAssertTrue(isNavigableRedirectUri(appLink))
+        XCTAssertFalse(isBrowserNavigableRedirectUri(appLink))
+    }
+
     /// Check if input is JWT tests
     
     func testIsStringIsJWT() {

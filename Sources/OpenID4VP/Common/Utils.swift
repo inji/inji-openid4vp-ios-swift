@@ -47,6 +47,47 @@ public func isValidUri(_ urlString: String) -> Bool {
     return match.range == range
 }
 
+private let browserSchemes: Set<String> = ["http", "https"]
+
+private let rfc3986UriCharacters = CharacterSet(
+    charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        + "-._~:/?#[]@!$&'()*+,;=%"
+)
+
+private func containsOnlyRfc3986Characters(_ value: String) -> Bool {
+    return value.unicodeScalars.allSatisfy { scalar in
+        !scalar.isASCII || rfc3986UriCharacters.contains(scalar)
+    }
+}
+
+public func sanitizeRedirectUri(_ redirectUri: String?) -> String? {
+    guard let value = redirectUri?.trimmingCharacters(in: .whitespacesAndNewlines),
+          !value.isEmpty,
+          containsOnlyRfc3986Characters(value),
+          let components = URLComponents(string: value),
+          let scheme = components.scheme?.lowercased(),
+          !scheme.isEmpty,
+          URL(string: value) != nil
+    else { return nil }
+
+    if browserSchemes.contains(scheme), (components.host ?? "").isEmpty {
+        return nil
+    }
+
+    return value
+}
+
+public func isNavigableRedirectUri(_ redirectUri: String?) -> Bool {
+    return sanitizeRedirectUri(redirectUri) != nil
+}
+
+public func isBrowserNavigableRedirectUri(_ redirectUri: String?) -> Bool {
+    guard let value = sanitizeRedirectUri(redirectUri),
+          let scheme = URLComponents(string: value)?.scheme?.lowercased()
+    else { return false }
+    return browserSchemes.contains(scheme)
+}
+
 func convertToInstance<T: Decodable>(_ dictionary: [String: Any], as type: T.Type) throws -> T {
     let data = try JSONSerialization.data(withJSONObject: dictionary, options: [])
     return try JSONDecoder().decode(T.self, from: data)
