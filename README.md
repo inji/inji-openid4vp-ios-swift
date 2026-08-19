@@ -152,9 +152,10 @@ When your wallet receives an authorization request, check for these parameters t
 
 > **The library automatically detects the spec version after receiving the request.** You don't need to manually check.
 
-**Important:** A valid request must have exactly one of these parameters—never both:
-- * ✅ If both `dcql_query` and `presentation_definition` (or `presentation_definition_uri`) are provided, `dcql_query` takes precedence, and `presentation_definition` / `presentation_definition_uri` are ignored.
-- ❌ Both `dcql_query` AND `scope` = Error
+**Important:** Parameter handling:
+- ✅ If both `dcql_query` and `presentation_definition` (or `presentation_definition_uri`) are provided, `dcql_query` takes precedence, and `presentation_definition` / `presentation_definition_uri` are ignored.
+- ❌ Both `dcql_query` AND `scope` = Error (rejected by SDK)
+- ❌ Both `presentation_definition` (or `presentation_definition_uri`) AND `scope` = Error (rejected by SDK)
 
 ---
 
@@ -245,7 +246,7 @@ import OpenID4VP
 
 ### Quick Start Example
 
-This section provides a minimal working example to help you get started with the library.
+This section provides a minimal example to help you get started with the library.
 
 **Scenario:** Basic OpenID4VP flow with DCQL or Presentation Exchange request
 
@@ -282,14 +283,26 @@ let authRequest = try await openID4VP.authenticateVerifier(
 )
 
 // 4. Get matching credentials
-// DCQL flow
-let dcqlHelper = DCQLHelper(jsonLdExpander: jsonLdExpanderCallback)
-let matchingVcsResult = try await dcqlHelper.getMatchingCredentials(
-    inputCredentials: walletAvailableCredentials,
-    dcqlQuery: vpRequest.dcqlQuery
-)
-// In case Presentation Exchange flow handle the Get matching credentials 
+
+let matchingVcsResult: MatchingCredentialsResult
+
+if let vpRequest = authRequest as? AuthorizationDcqlRequest {
+    // DCQL flow
+    let dcqlHelper = DCQLHelper()
+
+    matchingVcsResult = try await dcqlHelper.getMatchingCredentials(
+        inputCredentials: walletAvailableCredentials,
+        dcqlQuery: vpRequest.dcqlQuery
+    )
+} else {
+    // Handle Presentation Exchange flow
+    return
+}
+
 // ... your credential selection logic ...
+
+// User selects and consents to a subset of `matchingVcsResult`.
+// `selectedCredentials` is of type `[String: [Credential]]`.
 
 // 5. Prepare VP data to sign
 let unsignedVPTokens = try await openID4VP.constructUnsignedVPToken(
@@ -298,7 +311,7 @@ let unsignedVPTokens = try await openID4VP.constructUnsignedVPToken(
 
 // 6. Sign the tokens (using your secure key storage)
 let signingResults = unsignedVPTokens.map { unsignedVPToken in
-    VPTokenSigningResult(id: unsignedVPToken.id, signedData: signWithYourKey(unsignedVPToken.dataToSign))
+    VPTokenSigningResult(id: unsignedVPToken.id, signedData: sign(unsignedVPToken.dataToSign, keyReference: unsignedVPToken.holderKeyReference, algorithm: unsignedVPToken.signatureAlgorithm))
 }
 
 // 7. Send VP response to verifier
@@ -409,7 +422,7 @@ This library is officially supported and available in both Kotlin and Swift, ens
 
 * **Verifier:** An external entity that requests Verifiable Presentations from a Holder (Wallet). Examples: banks, government agencies, identity verification services.
 * **Presentation:** A structured format containing Verifiable Credentials selected by the user in response to an Authorization Request. Created by the Wallet and sent to the Verifier.
-* **Verifiable Presentation (VP):** A Verifiable Credential that includes proof of authorization from the Holder. Created in response to a Verifier's request.
+* **Verifiable Presentation (VP):** A presentation containing one or more Verifiable Credentials that may include cryptographic proof of authorization from the Holder. Created in response to a Verifier's request.
 * **OpenID4VP:** OpenID for Verifiable Presentations. A standard protocol for secure presentation of Verifiable Credentials.
 * **Cryptographic Holder Binding:** A mechanism that cryptographically binds a Verifiable Presentation to the holder (credential owner) to prevent misuse or unauthorized sharing.
 

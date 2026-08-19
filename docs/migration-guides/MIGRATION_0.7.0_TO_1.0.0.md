@@ -105,7 +105,6 @@ then migrate it to `WalletConfig` like this:
 
 | Old `WalletMetadata` field                  | New `WalletConfig` parameter                | Migration note                                                |
 |---------------------------------------------|---------------------------------------------|---------------------------------------------------------------|
-| `presentationDefinitionURISupported`        | `isPresentationDefinitionUriSupported`      | Same capability, naming updated                               |
 | `vpFormatsSupported`                        | `vpFormatsSupported`                        | Same capability                                               |
 | `clientIdSchemesSupported`                  | `clientIdPrefixesSupported`                 | `ClientIdScheme` values map to public `ClientIdPrefix` values |
 | `requestObjectSigningAlgValuesSupported`    | `requestObjectSigningAlgValuesSupported`    | `RequestSigningAlgorithm` -> `SignatureAlgorithm`             |
@@ -463,7 +462,7 @@ The following APIs are unchanged in 1.0.0:
 
 ---
 
-## Minimal working Swift example in 1.0.0
+## Illustrative Swift Integration Skeleton
 
 ```swift
 import Foundation
@@ -508,20 +507,26 @@ func handleOVPFlow(
             if(result.userConsentRejected) {
                 let vpRejectionVerifierResponse = try await openID4VP.sendErrorInfoToVerifier(error: AccessDenied(message: "User rejected to share credentials", className: "SampleWalletApp"))
                 handleVeriferResponse(vpRejectionVerifierResponse)
+                return
             } else {
                 selectedCredentials = result.selectedCredentials
             }
-        } else {
+        } else if let vpRequest = validatedVPRequest as? AuthorizationPresentationExchangeRequest {
             // Presentation Exchange flow
-            let vpRequest = (validatedVPRequest as? AuthorizationPresentationExchangeRequest) ?? {fatalError("Unexpected request type")}()
             let result = getCredentialsForVPRequestWithConsent(vpRequest)
             
             if(result.userConsentRejected) {
                 let vpRejectionVerifierResponse = try await openID4VP.sendErrorInfoToVerifier(error: AccessDenied(message: "User rejected to share credentials", className: "SampleWalletApp"))
                 handleVeriferResponse(vpRejectionVerifierResponse)
+                return
             } else {
                 selectedCredentials = result.selectedCredentials
             }
+        } else {
+            // Unexpected request type
+            let vpRejectionVerifierResponse = try await openID4VP.sendErrorInfoToVerifier(error: InvalidData(message: "Unexpected request type", className: "SampleWalletApp"))
+            handleVeriferResponse(vpRejectionVerifierResponse)
+            return
         }
 
         let unsignedVpTokens = try await openID4VP.constructUnsignedVPToken(

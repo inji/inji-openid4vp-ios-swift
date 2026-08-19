@@ -294,7 +294,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         ]
 
         let (payload, unsignedVPTokens) = try await builder.build(credentialToCredentialQueryIdMappings: &mappings)
-        
+
         XCTAssertEqual(unsignedVPTokens.count, 0)
         assertLdpVPTokenPayload(payload, expectedCredentialsInPresentation: convertToJsonString([ldpVC()]), tokenType: .vc)
     }
