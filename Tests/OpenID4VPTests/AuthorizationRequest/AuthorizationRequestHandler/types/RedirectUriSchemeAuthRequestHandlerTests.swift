@@ -45,7 +45,7 @@ class RedirectUriSchemeAuthRequestHandlerTests : XCTestCase {
         
         await XCTAssertAsyncNoThrowsError(try await redirectUriSchemeAuthRequestHandler.validateAndParseRequestFields())
     }
-    
+
     func testThrowErrorWhenBothResponseUriAndRedirectUriPresentForDirectPost() {
         var authorizationRequestParameters: [String : Any] = createAuthorizationRequest(paramList: authRequestWithRedirectUriByValue , requestParams: mergeMaps(authorizationRequestParamsWithValue, redirectUriSchemeClientIdParameter), addEncryptionClientMetadataParams: false) as [String : Any]
         authorizationRequestParameters[AuthorizationRequestFieldConstants.redirectUri] = "https://mock-verifier.com"

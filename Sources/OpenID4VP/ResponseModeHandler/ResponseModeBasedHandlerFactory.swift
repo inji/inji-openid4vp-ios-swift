@@ -17,10 +17,10 @@ struct ResponseModeBasedHandlerFactory {
 
         default:
             throw InvalidData(
-                message: "Given response_mode - \(responseMode ?? "nil") is not supported",
-                className: className,
-                code: OpenID4VPErrorCodes.invalidRequest
-            )
+                            message: "Given response_mode - \(responseMode ?? "nil") is not supported",
+                            className: className,
+                            code: OpenID4VPErrorCodes.invalidRequest
+                        )
         }
     }
 }

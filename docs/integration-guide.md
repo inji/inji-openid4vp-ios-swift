@@ -444,7 +444,6 @@ You can obtain the DCQL query from a validated `AuthorizationDcqlRequest` and us
 | Name             | Type                      | Required | Default Value | Description                                                                                                                                                                                              |
 |------------------|---------------------------|:--------:|:-------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `jsonLdExpander` | `JsonLdExpanderCallback?` |    No    |     `nil`     | Optional callback used to expand JSON-LD credentials before DCQL evaluation. This is required when the Wallet credentials are JSON-LD based as credential matching depends on expanded JSON-LD contexts. |
-|
 
 #### Example Usage
 
@@ -731,7 +730,7 @@ let unsignedVPTokens: [UnsignedVPToken] = try await openID4VP.constructUnsignedV
 )
 
 // The wallet can now iterate through unsignedVPTokens and sign each one
-let signingResults = unsignedVPTokens.map { unsignedVPToken in
+let signingResults = try unsignedVPTokens.map { unsignedVPToken in
     let signature = try signData(
         unsignedVPToken.dataToSign,
         keyReference: unsignedVPToken.holderKeyReference,
@@ -921,7 +920,7 @@ let verifierResponse: VerifierResponse = try await openID4VP.sendErrorInfoToVeri
 
 ---
 
-## Minimal Working Swift Example
+## Illustrative Swift Integration Skeleton
 
 **Scenario:** Complete end-to-end OpenID4VP flow handling both DCQL and Presentation Exchange requests
 
@@ -968,20 +967,26 @@ func handleOVPFlow(
             if(result.userConsentRejected) {
                 let vpRejectionVerifierResponse = try await openID4VP.sendErrorInfoToVerifier(error: AccessDenied(message: "User rejected to share credentials", className: "SampleWalletApp"))
                 handleVeriferResponse(vpRejectionVerifierResponse)
+                return
             } else {
                 selectedCredentials = result.selectedCredentials
             }
-        } else {
+        } else if let vpRequest = validatedVPRequest as? AuthorizationPresentationExchangeRequest {
             // Presentation Exchange flow
-            let vpRequest = (validatedVPRequest as? AuthorizationPresentationExchangeRequest) ?? {fatalError("Unexpected request type")}()
             let result = getCredentialsForVPRequestWithConsent(vpRequest)
             
             if(result.userConsentRejected) {
                 let vpRejectionVerifierResponse = try await openID4VP.sendErrorInfoToVerifier(error: AccessDenied(message: "User rejected to share credentials", className: "SampleWalletApp"))
                 handleVeriferResponse(vpRejectionVerifierResponse)
+                return
             } else {
                 selectedCredentials = result.selectedCredentials
             }
+        } else {
+            // Unexpected request type
+            let vpRejectionVerifierResponse = try await openID4VP.sendErrorInfoToVerifier(error: InvalidData(message: "Unexpected request type", className: "SampleWalletApp"))
+            handleVeriferResponse(vpRejectionVerifierResponse)
+            return
         }
 
         let unsignedVpTokens = try await openID4VP.constructUnsignedVPToken(

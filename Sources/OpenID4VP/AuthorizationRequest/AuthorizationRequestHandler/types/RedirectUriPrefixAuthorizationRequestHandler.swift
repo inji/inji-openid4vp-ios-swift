@@ -44,13 +44,8 @@ class RedirectUriPrefixAuthorizationRequestHandler:  ClientIdPrefixBasedAuthoriz
         case ResponseMode.directPost.rawValue, ResponseMode.directPostJwt.rawValue:
             try validateResponseUriMatchesClientId(authorizationRequestParameters: authorizationRequestParameters)
             break
-            
-        case ResponseMode.iarPost.rawValue,
-             ResponseMode.iarPostJwt.rawValue,
-             ResponseMode.iaePost.rawValue,
-             ResponseMode.iaePostJwt.rawValue:
-            break
-           
+        case ResponseMode.iarPost.rawValue, ResponseMode.iarPostJwt.rawValue:
+            print("IAR_POST or IAR_POST_JWT response_mode is used")
         default:
             throw InvalidResponseMode(
                 message : "Given response_mode - \(responseMode ?? "nil") is not supported",
