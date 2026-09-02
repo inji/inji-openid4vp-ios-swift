@@ -121,7 +121,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         let ldpVP = ldpVPTokenPayload.values.first!
         guard case let .vp(ldpToken) = ldpVP else { XCTFail("Expected LdpVP.vp"); return }
 
-        // holderId must come from credentialSubject.id (didJwkKey already contains #0, sanitize keeps it unchanged)
+        // holderId must come from credentialSubject.id and be preserved as is by validateHolderId
         XCTAssertEqual(ldpToken.holder, didJwkKey)
         XCTAssertEqual(ldpToken.proof?.verificationMethod, didJwkKey)
         XCTAssertEqual(unsignedVPTokens.count, 1)
@@ -347,7 +347,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
             [
                 "format": FormatType.ldp_vc,
                 "signatureAlgorithm": SignatureAlgorithm.edDsa.rawValue,
-                "holderKeyReference": didJwkKey,
+                "holderKeyReference": bareJwkDid,
                 "dataToSign": ["header": ["alg": "EdDSA", "crit": ["b64"], "b64": false] as [String: Any], "payload": "canonicalized"] as [String: Any]
             ]
         ])
@@ -358,7 +358,7 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
             XCTFail("Expected LdpVP.vp entry in payload"); return
         }
         XCTAssertNotNil(ldpToken.proof)
-        XCTAssertEqual(ldpToken.proof?.verificationMethod, didJwkKey)
+        XCTAssertEqual(ldpToken.proof?.verificationMethod, bareJwkDid)
         XCTAssertEqual(ldpToken.proof?.challenge, "nonce")
         XCTAssertEqual(ldpToken.proof?.domain, "client_id")
         XCTAssertEqual(ldpToken.proof?.type, SignatureSuite.jsonWebSignature2020.rawValue)
@@ -390,10 +390,10 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
         })
         XCTAssertEqual(ldpToken.context, ["https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/jws-2020/v1"])
         XCTAssertEqual(ldpToken.type, ["VerifiablePresentation"])
-        XCTAssertEqual(ldpToken.holder, didJwkKey)
+        XCTAssertEqual(ldpToken.holder, bareJwkDid)
         XCTAssertEqual(ldpToken.verifiableCredential.count, 1)
         XCTAssertEqual(ldpToken.proof?.type, SignatureSuite.jsonWebSignature2020.rawValue)
-        XCTAssertEqual(ldpToken.proof?.verificationMethod, didJwkKey)
+        XCTAssertEqual(ldpToken.proof?.verificationMethod, bareJwkDid)
         XCTAssertEqual(ldpToken.proof?.challenge, "nonce")
         XCTAssertEqual(ldpToken.proof?.domain, "client_id")
     }
@@ -410,28 +410,81 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
             [
                 "format": FormatType.ldp_vc,
                 "signatureAlgorithm": SignatureAlgorithm.edDsa.rawValue,
-                "holderKeyReference": didJwkKey,
+                "holderKeyReference": bareJwkDid,
                 "dataToSign": ["header": ["alg": "EdDSA", "crit": ["b64"], "b64": false] as [String: Any], "payload": "canonicalized"] as [String: Any]
             ]
         ])
     }
 
+    // MARK: - Holder ID validation
+
+    func testValidateHolderIdPreservesSupportedDidsWithOptionalFragments() throws {
+        let holderIds = [
+            "did:jwk:eyJrdHkiOiJFQyJ9",
+            "did:jwk:eyJrdHkiOiJFQyJ9#0",
+            "did:key:z6MkhWUE3JPyK6n4F6yA",
+            "did:key:z6MkhWUE3JPyK6n4F6yA#z6MkhWUE3JPyK6n4F6yA",
+            "did:web:example.com",
+            "did:web:example.com:user:alice",
+            "did:web:example.com#key-1"
+        ]
+        let builder = UnsignedLdpVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+            specVersion: .draft23,
+            id: "vp-id"
+        )
+
+        for holderId in holderIds {
+            XCTAssertEqual(try builder.validateHolderId(holderId), holderId)
+        }
+    }
+
+    func testBuildThrowsForUnsupportedOrMalformedHolderDids() async throws {
+        let holderIds = [
+            "did:example:123",
+            "did:key:z6MkhWUE3JPyK6n4F6yA#z6MkDifferentFingerprint",
+            "did:jwk:eyJrdHkiOiJFQyJ9#1",
+            "did:web:",
+            "not-a-did",
+            "did:jwk:eyJrdHkiOiJFQyJ9=="
+        ]
+
+        for holderId in holderIds {
+            let builder = UnsignedLdpVPTokenBuilder(
+                authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+                specVersion: .draft23,
+                id: "vp-id"
+            )
+            var mappings = [
+                CredentialInputDescriptorMapping(format: .ldp_vc, credential: AnyCodable(ldpVC(holderId: holderId)), inputDescriptorId: "cred-input-1")
+            ]
+
+            await XCTAssertAsyncThrowsError(
+                try await builder.build(credentialInputDescriptorMappings: &mappings)
+            ) { error in
+                assertOpenID4VPException(
+                    error,
+                    expectedMessage: "Holder ID must be a valid did:jwk, did:key, or did:web identifier: \(holderId)",
+                    expectedCode: OpenID4VPErrorCodes.invalidRequest
+                )
+            }
+        }
+    }
+
     // MARK: - Helpers
 
-    private func ldpVC() -> [String: Any] {
+    private func ldpVC(holderId: String = didJwkKey) -> [String: Any] {
         return [
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ["VerifiableCredential"],
             "issuer": "did:example:issuer",
             "issuanceDate": "2020-08-19T21:41:50Z",
-            "credentialSubject": ["id": didJwkKey]
+            "credentialSubject": ["id": holderId]
         ]
     }
 
     private func ldpVCWithJwkHolder() -> [String: Any] {
-        // Use the bare JWK DID without the fragment (#0) so that sanitize() appends #0
-        // and produces exactly didJwkKey as the holderKeyReference/verificationMethod
-        let bareJwkDid = String(didJwkKey.dropLast(2)) // strips "#0"
+        // Use the bare JWK DID without the fragment (#0); validateHolderId() preserves it as is
         return [
             "@context": ["https://www.w3.org/2018/credentials/v1"],
             "type": ["VerifiableCredential"],

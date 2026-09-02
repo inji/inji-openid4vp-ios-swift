@@ -49,7 +49,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 identifier: identifier,
                 with: verifiableCredentials,
                 signatureSuite: result.signatureSuite,
-                holder: sanitize(result.holder)
+                holder: try validateHolderId(result.holder)
             )
             
             vpTokenSigningPayloads[identifier] = vpTokenSigningPayload
@@ -94,7 +94,7 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
                 identifier: identifier,
                 with: verifiableCredentials,
                 signatureSuite: result.signatureSuite,
-                holder: sanitize(result.holder)
+                holder: try validateHolderId(result.holder)
             )
             
             vpTokenSigningPayloads[identifier] = vpTokenSigningPayload
@@ -206,14 +206,21 @@ class UnsignedLdpVPTokenBuilder: UnsignedVPTokenBuilder {
         return (holder: holderId, signatureSuite: SignatureSuite.jsonWebSignature2020.rawValue)
     }
     
-    private func sanitize(_ holderId: String?) -> String? {
-        guard let holderId = holderId else {
-            return nil
+    func validateHolderId(_ holderId: String) throws -> String {
+        let hasValidDidSyntax = holderId.range(of: supportedHolderDidPattern, options: .regularExpression) != nil
+        let hasValidDidKeyFragment: Bool
+        if holderId.hasPrefix("did:key:"), let separatorIndex = holderId.firstIndex(of: "#") {
+            let fingerprint = holderId[holderId.index(holderId.startIndex, offsetBy: "did:key:".count)..<separatorIndex]
+            let fragment = holderId[holderId.index(after: separatorIndex)...]
+            hasValidDidKeyFragment = fragment == fingerprint
+        } else {
+            hasValidDidKeyFragment = true
         }
-        let sanitizedHolderId = holderId
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-        return sanitizedHolderId.contains("#") ? sanitizedHolderId : sanitizedHolderId + "#0"
+
+        guard hasValidDidSyntax, hasValidDidKeyFragment else {
+            throw InvalidData(message: "Holder ID must be a valid did:jwk, did:key, or did:web identifier: \(holderId)", className: className)
+        }
+
+        return holderId
     }
 }
