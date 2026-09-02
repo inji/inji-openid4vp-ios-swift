@@ -21,6 +21,7 @@ let jwkSet = """
 """
 
 let didJwkKey =  "did:jwk:eyJrdHkiOiAiT0tQIiwiY3J2IjogIkVkMjU1MTkiLCJ4IjogIlhtdDBlTnE1TWNtLUZvbV9tbTAteHUxZTEtLWpJcXUtcUpuZTlOU25LRkUifQ#0"
+let bareJwkDid = String(didJwkKey.dropLast(2)) // didJwkKey without the "#0" fragment
 
 let clientMetadataString = """
         {
