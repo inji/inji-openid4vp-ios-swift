@@ -14,10 +14,13 @@ func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpande
         }
         let credentialSubjectId: String? = (credentialData["credentialSubject"] as? [String:Any] ?? [:])["id"] as? String
         let expandedCredential = try await jsonLdExpander(credentialData)
+        let isVcdm2 = (try? isVcdm2Credential(credential.data, className: className)) ?? false
         return W3cTaggedCredential(
             credentialFormat: credential.format,
             hasCryptographicHolderBinding: credentialSubjectId != nil,
-            types: expandedCredential["@type"] as? [String] ?? []
+            types: expandedCredential["@type"] as? [String] ?? [],
+            holderId: credentialSubjectId,
+            isVcdm2: isVcdm2
         )
     case .mso_mdoc:
         let (_, decodedMdocCredential) = try decodeMdoc(credential.data, className: className)
@@ -38,6 +41,44 @@ func expandCredentialTag(_ credential: Credential, jsonLdExpander: JsonLdExpande
     }
 }
 
+
+private let supportedVcdm2Algorithms: Set<String> = [
+    SignatureAlgorithm.edDsa.rawValue,
+    SignatureAlgorithm.es256.rawValue
+]
+
+func canPreparePresentation(
+    requireCryptographicHolderBinding: Bool,
+    walletCredential: TaggedCredential,
+    holderAlgorithmCache: HolderAlgorithmCache
+) async -> Bool {
+    // A query which does not request holder binding is presented as a bare credential with no
+    // proof, so no holder key is involved.
+    guard requireCryptographicHolderBinding else { return true }
+    guard let w3cCredential = walletCredential as? W3cTaggedCredential,
+          w3cCredential.isVcdm2,
+          let holderId = w3cCredential.holderId else { return true }
+
+    // An unresolvable holder key (e.g. a slow did:web) keeps the credential eligible; VP
+    // construction reports the resolution error.
+    guard let algorithm = await holderAlgorithmCache.algorithm(for: holderId) else { return true }
+
+    return supportedVcdm2Algorithms.contains(algorithm)
+}
+
+/// Memoizes holder DID resolution for the duration of a single evaluation.
+internal final class HolderAlgorithmCache {
+    private var storage: [String: String?] = [:]
+
+    func algorithm(for holderId: String) async -> String? {
+        if let cached = storage[holderId] { return cached }
+
+        let algorithm = try? await getJWSAlgorithm(from: holderId)
+        storage[holderId] = algorithm
+
+        return algorithm
+    }
+}
 
 func convertToProcessedCredentials(_ filteredWalletCredentialIds: [String], _ credentialIdToCredential: [String: Credential]) throws -> [String: any ProcessedCredential] {
     var processedCredentials: [String: any ProcessedCredential] = [:]

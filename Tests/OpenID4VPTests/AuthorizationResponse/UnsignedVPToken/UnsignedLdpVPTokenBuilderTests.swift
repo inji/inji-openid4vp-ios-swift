@@ -473,6 +473,118 @@ final class UnsignedLdpVPTokenBuilderTests: XCTestCase {
 
     // MARK: - Helpers
 
+    // MARK: - VC 2.0 Data Integrity
+
+    private static let p256JwkDid = "did:jwk:eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6ImY4M09KM0QyeEYxQmc4dnViOXRMZTFnSE16Vjc2ZThUdXM5dVBIdlJWRVUiLCJ5IjoieF9GRXpSdTltMzZITE5fdHVlNjU5TE5wWFc2cEN5U3Rpa1lqS0lXSTVhMCJ9#0"
+    private static let rsaJwkDid = "did:jwk:eyJrdHkiOiJSU0EiLCJlIjoiQVFBQiIsIm4iOiIwdng3YWdvZWJHY1FTdXVQaUxKWFpwdE45bm5kclFtYlhFcHMyYWlBRmJXaE03OExoV3g0Y2JiZkFBdFZUODZ6d3UxUks3YVBGRnh1aERSMUw2dFNvY19CSkVDUGViV0tSWGpCWkNpRlY0bjNva25qaE1zdG42NHRaXzJXLTVKc0dZNEhjNW45eUJYQXJ3bDkzbHF0N19STjV3NkNmMGg0UXlRNXYtNjVZR2pRUjBfRkRXMlF2enFZMzY4UVFNaWNBdGFTcXpzOEtKWmduWWI5YzdkMHpnZEFaSHp1NnFNUXZSTDVoYWpybjFuOTFDYk9wYklTRDA4cU5MeXJka3QtYkZUV2hBSTR2TVFGaDZXZVp1MGZNNGxGZDJOY1J3cjNYUGtzSU5IYVEtR194Qm5pSXFidzBMczFqRjQ0LWNzRkN1ci1rRWdVOGF3YXBKektucURLZ3cifQ#0"
+
+    private func vcdm2Credential(holderId: String = didJwkKey) -> [String: Any] {
+        return [
+            "@context": ["https://www.w3.org/ns/credentials/v2"],
+            "type": ["VerifiableCredential"],
+            "issuer": "did:example:issuer",
+            "credentialSubject": ["id": holderId]
+        ]
+    }
+
+    func testVcdm2CredentialBuildsEddsaDataIntegrityPresentation() async throws {
+        let builder = UnsignedLdpVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+            specVersion: .draft23,
+            id: "vp-id"
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .ldp_vc, credential: AnyCodable(vcdm2Credential()), inputDescriptorId: "vc2")
+        ]
+
+        let (payload, unsignedVPTokens) = try await builder.build(credentialInputDescriptorMappings: &mappings)
+
+        let parsedPayload = try XCTUnwrap(payload as? [String: LdpVP])
+        guard case let .vp(vpToken) = parsedPayload.values.first else {
+            return XCTFail("Expected an LdpVPToken payload")
+        }
+
+        XCTAssertEqual(vpToken.context, ["https://www.w3.org/ns/credentials/v2"])
+        XCTAssertEqual(vpToken.proof?.type, "DataIntegrityProof")
+        XCTAssertEqual(vpToken.proof?.cryptosuite, "eddsa-rdfc-2022")
+        XCTAssertEqual(vpToken.proof?.proofPurpose, ProofPurpose.vpProofPurpose)
+        XCTAssertEqual(vpToken.proof?.verificationMethod, didJwkKey)
+        // Data Integrity signs the canonicalization output directly, with no JWS header prefix.
+        XCTAssertEqual(unsignedVPTokens.first?.dataToSign, try Base64Decoder.decodeBase64ToData(canonicalized))
+    }
+
+    func testVcdm2CredentialBuildsEcdsaDataIntegrityPresentation() async throws {
+        let builder = UnsignedLdpVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+            specVersion: .draft23,
+            id: "vp-id"
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .ldp_vc, credential: AnyCodable(vcdm2Credential(holderId: Self.p256JwkDid)), inputDescriptorId: "vc2")
+        ]
+
+        let (payload, unsignedVPTokens) = try await builder.build(credentialInputDescriptorMappings: &mappings)
+
+        let parsedPayload = try XCTUnwrap(payload as? [String: LdpVP])
+        guard case let .vp(vpToken) = parsedPayload.values.first else {
+            return XCTFail("Expected an LdpVPToken payload")
+        }
+
+        XCTAssertEqual(vpToken.proof?.type, "DataIntegrityProof")
+        XCTAssertEqual(vpToken.proof?.cryptosuite, "ecdsa-rdfc-2019")
+        XCTAssertEqual(unsignedVPTokens.first?.signatureAlgorithm, SignatureAlgorithm.es256.rawValue)
+    }
+
+    func testVcdm2CredentialRejectsRsaHolderKey() async throws {
+        let builder = UnsignedLdpVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+            specVersion: .draft23,
+            id: "vp-id"
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .ldp_vc, credential: AnyCodable(vcdm2Credential(holderId: Self.rsaJwkDid)), inputDescriptorId: "vc2")
+        ]
+
+        await XCTAssertAsyncThrowsError(
+            try await builder.build(credentialInputDescriptorMappings: &mappings)
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "VC 2.0 presentation sharing supports only Ed25519 and P-256 holder keys; found RS256",
+                expectedCode: OpenID4VPErrorCodes.accessDenied
+            )
+        }
+    }
+
+    func testVcdm2ContextMustBeTheFirstContextEntry() async throws {
+        let credential: [String: Any] = [
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://www.w3.org/ns/credentials/v2"
+            ],
+            "type": ["VerifiableCredential"],
+            "credentialSubject": ["id": didJwkKey]
+        ]
+        let builder = UnsignedLdpVPTokenBuilder(
+            authorizationRequest: getMockAuthorizationRequest(specVersion: .draft23),
+            specVersion: .draft23,
+            id: "vp-id"
+        )
+        var mappings = [
+            CredentialInputDescriptorMapping(format: .ldp_vc, credential: AnyCodable(credential), inputDescriptorId: "vc2")
+        ]
+
+        await XCTAssertAsyncThrowsError(
+            try await builder.build(credentialInputDescriptorMappings: &mappings)
+        ) { error in
+            assertOpenID4VPException(
+                error,
+                expectedMessage: "VC 2.0 context must be the first @context entry",
+                expectedCode: OpenID4VPErrorCodes.invalidRequest
+            )
+        }
+    }
+
     private func ldpVC(holderId: String = didJwkKey) -> [String: Any] {
         return [
             "@context": ["https://www.w3.org/2018/credentials/v1"],
