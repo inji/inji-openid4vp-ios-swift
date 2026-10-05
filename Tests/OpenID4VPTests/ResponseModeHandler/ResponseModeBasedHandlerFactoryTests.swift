@@ -42,7 +42,7 @@ final class ResponseModeBasedHandlerFactoryTests: XCTestCase {
         ) { error in
             assertOpenID4VPException(
                 error,
-                expectedMessage: "Given response_mode -  is not supported",
+                expectedMessage: "Given response_mode - nil is not supported",
                 expectedCode: OpenID4VPErrorCodes.invalidRequest
             )
         }
